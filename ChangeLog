@@ -1,0 +1,102 @@
+2012-12-18  Andreas Papritz  <papritz@env.ethz.ch>
+
+* georob.cv.R (print.cv.georob, print.summary.cv.georob): return invisible(x)
+* georob.S3methods.R (print.georob, print.summary.georob): return invisible(x)
+* variogram.R (print.summary.sample.variogram, print.fitted.variogram)
+(print.summary.fitted.variogram): return invisible(x)
+
+
+2012-12-18  Andreas Papritz  <papritz@env.ethz.ch>
+
+* georob.S3methods.R (model.frame.georob, model.matrix.georob)
+(nobs.georob): new respective methods for class "georob"
+
+
+2012-12-18  Andreas Papritz  <papritz@env.ethz.ch>
+
+* variogram.R (plot.sample.variogram, plot.georob): correction of error in
+processing col and pch arguments
+
+
+2012-12-22  Andreas Papritz  <papritz@env.ethz.ch>
+
+* georob.S3methods.R (logLik.georob): computation of unrestricted loglikelihood
+(deviance.georob): new function
+
+
+2013-01-19  Andreas Papritz  <papritz@env.ethz.ch>
+
+* georob.predict.R (predict.georob): computation of lag vectors
+
+
+2013-01-20  Andreas Papritz  <papritz@env.ethz.ch>
+
+* NAMESPACE (--): changed imports for constrainedKriging and spatialCovariance
+* DESCRIPTION (--): changed imports for constrainedKriging and spatialCovariance
+* internal.functions.Rd (--): new help file for unexported functions
+
+
+2013-04-23  Andreas Papritz  <papritz@env.ethz.ch>
+
+* georob.exported.functions.R (georob, georob.control): new names for robustness weights
+* georob.predict.R (predict.georob): new names for robustness weights
+* georob.private.functions.R (compute.covariances, update.betahat.bhat, estimate.betahat.bhat, compute.estimating equations, georob.fit): new names for robustness weights
+* georob.S3methods.R (ranef.georob, rstandard.georob, summary.georob, print.summary.georob): new names for robustness weights
+* georob.cv.R (cv.georob): changes for parallelization on windows os
+
+
+2013-04-29  Andreas Papritz  <papritz@env.ethz.ch>
+
+* georob_example.R: correction of argument names in examples
+
+
+2013-05-12  Andreas Papritz  <papritz@env.ethz.ch>
+
+* variogram.R (plot.sample.variogram): correction of handling optional arguments
+
+
+2013-05-14  Andreas Papritz  <papritz@env.ethz.ch>
+
+* DESCRIPTION: attaching instead of importing functionS of package parallel
+* NAMESPACE: attaching instead of importing functionS of package parallel
+
+
+
+2013-05-23  Andreas Papritz  <papritz@env.ethz.ch>
+
+* georob.cv.R (cv.georob): correct handling of missing observations
+* georob.exported.functions.R (georob): improved way to handle missing observations and to construct model.frame
+* georob.predict.R (predict.georob): correct handling of missing observations
+* georob.S3methods.R (georob.residuals): new argument "terms"
+* georob.S3methods.R (ranef.georob, residuals.georob, rstandard.georob, deviance.georob): correct handling of missing observations
+* variogram.R (plot.georob): correct handling of missing observations
+
+
+2013-05-24  Andreas Papritz  <papritz@env.ethz.ch>
+
+* georob.cv.R (cv.georob): separate initial variogram parameters for each cross-validation set
+
+
+2013-05-31  Andreas Papritz  <papritz@env.ethz.ch>
+
+* georob.S3methods.R (ranef.georob, residuals.georob,rstandard.georob,deviance.georob): correct handling of missing observations
+* georob.S3methods.R (deviance.georob, ranef.georob, rstandard.georob, summary.georob): revised expansion of covariance matrices
+
+
+2013-06-06  Andreas Papritz  <papritz@env.ethz.ch>
+
+* georob.exported.function.R (georob, georob.control): handling fixed effects model matrices with rank < ncol(x) for robust estimation
+* georob.private.function.R (prepare.likelihood.calculations, compute.estimating.equations, negative.restr.loglikelihood, gradient.negative.restricted.loglikelihood, georob.fit) : solving estimating equations for xi
+* georob.S3methods.R ranef.georob, rstandard.georob) : solving estimating equations for xi
+* georob.private.function.R (estimate.xihat, prepare.likelihood.calculations, compute.estimating.equations, negative.restr.loglikelihood, gradient.negative.restricted.loglikelihood, georob.fit): handling fixed effects model matrices with rank < ncol(x) for robust estimation
+
+
+2013-06-11  Andreas Papritz  <papritz@env.ethz.ch>
+
+* georob.exported.function.R (georob): handling fixed effects model matrices with rank < ncol(x) for non-robust estimation
+* georob.private.function.R (estimate.xihat, prepare.likelihood.calculations, compute.estimating.equations, negative.restr.loglikelihood, gradient.negative.restricted.loglikelihood, georob.fit): handling fixed effects model matrices with rank < ncol(x) for non-robust estimation
+
+
+2013-06-12  Andreas Papritz  <papritz@env.ethz.ch>
+
+* georob.cv.R (all functions): substituting [["x"]] for $x in all lists* georob.exported.functions.R (all functions): substituting [["x"]] for $x in all lists* georob.lgnpp.R (all functions): substituting [["x"]] for $x in all lists* georob.predict.R (all functions): substituting [["x"]] for $x in all lists* georob.private.functions.R (all functions): substituting [["x"]] for $x in all lists* georob.S3methods.R (all functions): substituting [["x"]] for $x in all lists* variogram.R (all functions): substituting [["x"]] for $x in all lists
