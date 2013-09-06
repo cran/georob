@@ -90,6 +90,7 @@ print.georob <-
   ## 2012-02-07 AP change for anisotropic variograms 
   ## 2012-12-18 AP invisible(x)
   ## 2013-06-12 AP substituting [["x"]] for $x in all lists
+  ## 2013-07-02 AP new transformation of rotation angles
   
   ## code borrowed from print.lmrob for printing fixed effects coeffcients
   
@@ -123,7 +124,7 @@ print.georob <-
     
     cat("\n")
     cat( "Anisotropy parameters: ", "\n" )
-    aniso <- x[["aniso"]][["aniso"]] * c( rep(1, 2), rep( 180/pi, 3 ) )
+    aniso <- x[["aniso"]][["aniso"]]
     names( aniso ) <- ifelse(
       x[["initial.objects"]][["fit.aniso"]],
       names( aniso ),
@@ -484,6 +485,7 @@ summary.georob <-
   ## 2013-04-23 AP new names for robustness weights
   ## 2013-05-31 AP revised expansion of covariance matrices
   ## 2013-06-12 AP substituting [["x"]] for $x in all lists
+  ## 2013-07-03 AP new transformation of rotation angles
   
   covmat       <- expand( object[["cov"]] )
   
@@ -521,7 +523,7 @@ summary.georob <-
   
   if( !object[["aniso"]][["isotropic"]] ) ans[["param"]] <- rbind( 
     ans[["param"]],
-    as.matrix( object[["aniso"]][["aniso"]], ncol = 1 ) * c( rep( 1, 2 ), rep( 180/pi, 3 ) )
+    as.matrix( object[["aniso"]][["aniso"]], ncol = 1 )
   )
   
   colnames( ans[["param"]] ) <- "Estimate"
@@ -579,28 +581,46 @@ summary.georob <-
         )
         sel.names <- sel.names[sr]
         
-        ff <- c( rep( 1, length( object[["param"]] ) + 2 ), rep( 180/pi, 3 ) )
-        names( ff ) <- names( c( object[["param"]], object[["aniso"]][["aniso"]] ) )
-        
         ci[sel.names, ] <- t( 
           sapply(
             sel.names,
-            function( x, param, f, se, param.tf, trafo.fct, inv.trafo.fct ){
+            function( x, param, se, param.tf, trafo.fct, inv.trafo.fct ){
               inv.trafo.fct[[param.tf[x]]]( 
                 trafo.fct[[param.tf[x]]]( param[x] ) + 
                 c(-1, 1) * se[x] * qnorm( (1-signif)/2, lower.tail = FALSE ) 
               )
             },
             param         = c( object[["param"]], object[["aniso"]][["aniso"]] ),
-            f             = ff,
             se            = se,
             param.tf      = object[["param.tf"]],
             trafo.fct     = object[["fwd.tf"]],
             inv.trafo.fct = object[["bwd.tf"]]
           )
         )
-        is.angle <- rownames( ci ) %in% c( "omega", "phi", "zeta" )
-        if( sum(is.angle) > 0 ) ci[is.angle, ] <- ci[is.angle, ] * 180/pi
+        
+        if( !object[["aniso"]][["isotropic"]] ){
+        
+          ## map angles to halfcircle
+          
+          if( !object[["aniso"]][["isotropic"]] ){
+            sel <- match( "omega", rownames(ci) )
+            if( !is.na( sel ) ){
+              ci[sel, ] <- ifelse( ci[sel, ] <   0., ci[sel, ] + 180., ci[sel, ] )
+              ci[sel, ] <- ifelse( ci[sel, ] > 180., ci[sel, ] - 180., ci[sel, ] )
+            }
+            sel <- match( "phi", rownames(ci) )
+            if( !is.na( sel ) ){
+              ci[sel, ] <- ifelse( ci[sel, ] <   0., ci[sel, ] + 180., ci[sel, ] )
+              ci[sel, ] <- ifelse( ci[sel, ] > 180., ci[sel, ] - 180., ci[sel, ] )
+            }
+            sel <- match( "zeta", rownames(ci) )
+            if( !is.na( sel ) ){
+              ci[sel, ] <- ifelse( ci[sel, ] < -90., ci[sel, ] + 180., ci[sel, ] )
+              ci[sel, ] <- ifelse( ci[sel, ] >  90., ci[sel, ] - 180., ci[sel, ] )
+            }
+          }
+          
+        }
         
         ans[["param"]] <- cbind( ans[["param"]], ci )
         if( correlation ) ans[["cor.tf.param"]] <- cor.tf.param

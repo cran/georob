@@ -100,3 +100,39 @@ processing col and pch arguments
 2013-06-12  Andreas Papritz  <papritz@env.ethz.ch>
 
 * georob.cv.R (all functions): substituting [["x"]] for $x in all lists* georob.exported.functions.R (all functions): substituting [["x"]] for $x in all lists* georob.lgnpp.R (all functions): substituting [["x"]] for $x in all lists* georob.predict.R (all functions): substituting [["x"]] for $x in all lists* georob.private.functions.R (all functions): substituting [["x"]] for $x in all lists* georob.S3methods.R (all functions): substituting [["x"]] for $x in all lists* variogram.R (all functions): substituting [["x"]] for $x in all lists
+
+
+2013-07-02  Andreas Papritz  <papritz@env.ethz.ch>
+
+* georob.exported.functions.R (georob, param.transf, fwd.transf, dfwd.transf, bwd.transf): new transformation of rotation angles
+* georob.private.functions.R (georob.fit, prepare.likelihood.calculations): new transformation of rotation angles
+* georob.S3methods.R (print.georob, summary.georob): new transformation of rotation angles
+* georob.cv.R (cv.georob): passing initial values of aniso and fit.aniso to georob via update
+
+
+2013-07-05  Andreas Papritz  <papritz@env.ethz.ch>
+
+* georob.cv.R (cv.georob): return "variogram.model" as part of 'fit' component
+
+
+2013-07-09  Andreas Papritz  <papritz@env.ethz.ch>
+
+* georob.private.functions.R (georob.fit): catching errors occuring when fitting anisotropic variogram models with default anisotropy parameters
+
+
+2013-07-10  Andreas Papritz  <papritz@env.ethz.ch>
+
+* georob.exported.functions.R (georob): computing robust initial variogram parameter estimates by minimizing sum of squared estimating equations
+* georob.private.functions.R (georob.fit, compute.estimating.equations): computing robust initial variogram parameter estimates by minimizing sum of squared estimating equations
+
+
+2013-07-12  Andreas Papritz  <papritz@env.ethz.ch>
+
+* georob.exported.functions.R (georob, georob.control, bbsolve.control): solving estimating equations by BBsolve{BB} (in addition to nleqlsv)
+* georob.private.functions.R (compute.estimating.equations, compute.expanded.estimating.equations, estimating.eqations.xihat, estimate.xihat, georob.fit, gradient.negative.restricted.loglikelihood, negative.restr.loglikelihood, prepare.likelihood.calculations): solving estimating equations by BBsolve{BB} (in addition to nleqlsv)
+
+
+2013-09-06  Andreas Papritz  <papritz@env.ethz.ch>
+
+* georob.exported.functions.R (georob, georob.control, bbsolve.control): code for solving estimating equations by BBsolve{BB} commented out (released to CRAN as version 0.1-2)
+* georob.private.functions.R (compute.estimating.equations, compute.expanded.estimating.equations, estimating.eqations.xihat, estimate.xihat, georob.fit, gradient.negative.restricted.loglikelihood, negative.restr.loglikelihood, prepare.likelihood.calculations): code for solving estimating equations by BBsolve{BB} commented out (released to CRAN as version 0.1-2)

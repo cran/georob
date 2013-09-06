@@ -1,4 +1,4 @@
-% 2013-06-12 A. Papritz
+% 2013-09-06 A. Papritz
 % R CMD Rdconv -t html -o bla.html georob.Rd ; open bla.html; R CMD Rd2pdf --force georob.Rd; 
 
 \encoding{macintosh}
@@ -28,7 +28,9 @@ georob(formula, data, subset, weights, na.action, model = TRUE,
     aniso = c(f1 = 1, f2 = 1, omega = 90, phi = 90, zeta = 0), 
     fit.aniso = c(f1 = FALSE, f2 = FALSE, omega = FALSE, 
         phi = FALSE, zeta = FALSE), 
-    tuning.psi = 2, initial.param = TRUE, control = georob.control(...),
+    tuning.psi = 2, initial.param = c("exclude", "minimize", "no"), 
+%     root.finding = c("nleqslv", "bbsolve"),
+    control = georob.control(...),
     verbose = 0, ...)
 }
 %
@@ -117,7 +119,7 @@ georob(formula, data, subset, weights, na.action, model = TRUE,
     \itemize{
     
       \item{\code{f1}: ratio \eqn{f_1} of lengths of second and first
-        second semi-principal axes of an ellipsoidal surface with constant
+        semi-principal axes of an ellipsoidal surface with constant
         semivariance in \eqn{\mathrm{I}\!\mathrm{R}^3}{R^3} (default \code{f1 = 1}).}
       
       \item{\code{f2}: ratio \eqn{f_2} of lengths of third and first
@@ -144,12 +146,41 @@ georob(formula, data, subset, weights, na.action, model = TRUE,
   \item{tuning.psi}{positive numeric.  The tuning constant \eqn{c} of the
     \eqn{\psi_c}-function of the robust REML algorithm.}
     
-  \item{initial.param}{logical.  If \code{TRUE} (default) robust initial
-  values of variogram parameters are computed by discarding outlying
-  observations based on the \dQuote{robustness weights} of the initial fit
-  of the regression model by \code{\link[robustbase]{lmrob}} and fitting
-  the spatial linear model by Gaussian REML to the pruned data set (see
-  \emph{Details}).}
+  \item{initial.param}{character, controlling whether initial values of
+  parameters are computed for solving the estimating equations of the
+  variogram and anisotropy parameters.  
+  
+  If \code{initial.param = "minimize"} (defaullt) robust initial values are
+  computed by minimizing the sum of the squared robustified estimating
+  equations using \code{\link[stats]{optim}} (see \emph{Details}).
+  If \code{initial.param = "exclude"} robust initial values of parameters are
+  computed by discarding outlying observations based on the
+  \dQuote{robustness weights} of the initial fit of the regression model by
+  \code{\link[robustbase]{lmrob}} and fitting the spatial linear model by
+  Gaussian REML to the pruned data set (see \emph{Details}).  
+  For \code{initial.param = "no"} no initial parameter values are computed
+  and the estimating equations are solved with the initial values passed by
+  \code{param} and \code{aniso} to \code{georob}.}
+  
+%   \item{root.finding}{character string defining what solver is used 
+%   for solving the system of nonlinear estimating equations.  Possible
+%   values are:
+%   
+%     \itemize{
+%       \item{\code{nleqslv} (default), which invokes
+%       \code{\link[nleqslv]{nleqslv}} to solve the estimating equations of the
+%       variogram and anisotropy parameters in combination with iterated
+%       re-weighted least squares for solving the estimating equations of 
+%       \eqn{ \widehat{\mbox{\boldmath$B$\unboldmath}}}{hatB} and 
+%       \eqn{\widehat{\mbox{\boldmath$\beta$\unboldmath}}}{hat\beta}.}
+%       
+%       \item{\code{bbsolve} which invokes \code{\link[BB]{BBsolve}} for solving
+%       the estimating equations of \eqn{ \widehat{\mbox{\boldmath$\xi$\unboldmath}}}{hatxi} 
+%       and of the variogram and anisotropy parameters directly.
+%       }
+%     }
+%   
+%   }
     
   \item{control}{a list specifying parameters that control the behaviour of
   \code{georob}.  Use the function \code{\link{georob.control}} and see its
@@ -308,12 +339,20 @@ georob(formula, data, subset, weights, na.action, model = TRUE,
     }
   
     Finding the roots of the robustified estimating equations of the
-    variogram parameters is more sensitive to a good choice of initial
-    values than maximizing the Gaussian restricted loglikelihood with
-    respect to the same parameters.  To get good initial values that are
-    often sufficiently close to the roots so that
-    \code{\link[nleqslv]{nleqslv}} converges, one can use
-    \code{initial.param = TRUE}.  This has the following effects:
+    variogram and anisotropy parameters is more sensitive to a good choice
+    of initial values than maximizing the Gaussian restricted loglikelihood
+    with respect to the same parameters.  Two options are implemented to
+    get good initial values that are often sufficiently close to the roots
+    so that \code{\link[nleqslv]{nleqslv}} converges:
+    
+    Setting \code{initial.param = "minimize"} invokes
+    \code{\link[stats]{optim}} to minimize the \emph{sum of squared
+    estimating equations}.  The required accuracy of the initial estimates
+    are best controlled by the argument \code{abstol} of
+    \code{\link[stats]{optim}}, e.g. by using the argument
+    \code{control = georob.control(optim = optim.control(optim.control = list(abstol = 1.e-6)))}.
+    
+    Setting \code{initial.param = "exclude"} has the following effects:
     
     \enumerate{
     
