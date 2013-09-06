@@ -1,10 +1,12 @@
-% 2013-05-23 A. Papritz
+% 2013-09-06 A. Papritz
 % R CMD Rdconv -t html -o bla.html S3methods.georob.Rd ; open bla.html; R CMD Rd2pdf --force S3methods.georob.Rd; 
 
 \encoding{macintosh}
 \name{georob-S3methods}
 \alias{deviance.georob}
+\alias{fixed.effects}
 \alias{fixed.effects.georob}
+\alias{fixef}
 \alias{fixef.georob}
 \alias{georobMethods}
 \alias{logLik.georob}
@@ -13,7 +15,9 @@
 \alias{nobs.georob}
 \alias{print.georob}
 \alias{print.summary.georob}
+\alias{random.effects}
 \alias{random.effects.georob}
+\alias{ranef}
 \alias{ranef.georob}
 \alias{resid.georob}
 \alias{residuals.georob}
@@ -21,6 +25,7 @@
 \alias{rstudent.georob}
 \alias{summary.georob}
 \alias{vcov.georob}
+\alias{waldtest}
 \alias{waldtest.georob}
 
 \title{Common S3 Methods for Class \code{georob}}

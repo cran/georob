@@ -1,37 +1,45 @@
-import( stats, parallel )
+import( stats, parallel, sp )
 
+# importFrom( BB, BBsolve )
 importFrom( constrainedKriging, covmodel, f.point.block.cov, K, preCKrige )
 importFrom( lmtest, waldtest, waldtest.default )
 importFrom( nlme, fixef, fixed.effects, ranef, random.effects )
 importFrom( nleqslv, nleqslv )
 importFrom( quantreg, rq.fit )
 importFrom( RandomFields, Variogram )
+importFrom( robustbase, lmrob.control, lmrob.fit, Qn, summarizeRobWeights )
 
 # exported functions
 
 export(
+#   bbsolve.control,                  # ok
   bwd.transf,                       # ok
   compress,                         # ok
   cv,                               # ok
   dfwd.transf,                      # ok
   expand,                           # ok
+  fixed.effects,                    # ok export of generic fixed.effects{nlme}
+  fixef,                            # ok export of generic fixef{nlme}
   fwd.transf,                       # ok
   param.bounds,                     # ok  
   param.names,                      # ok
   fit.variogram.model,              # ok
   georob.control,                   # ok
   georob,                           # ok 
-  K,                                # ok re-export of K{constrainedKriging}
+  K,                                # ok export of K{constrainedKriging}, which is (indirectly) needed by f.point.block.cov{constrainedKriging}
   lgnpp,                            # ok
   nleqslv.control,                  # ok
   optim.control,                    # ok
   param.transf,                     # ok
+  random.effects,                   # ok export of generic random.effects{nlme}
+  ranef,                            # ok export of generic ranef{nlme}
   rq.control,                       # ok
   sample.variogram,                 # ok
-  validate.predictions              # ok
+  validate.predictions,             # ok
+  waldtest                          # ok export of generic waldtest{lmtest}
 )
 
-# documented but not exported functions
+# documented but unexported functions
 #
 #   deviance.georob,                # ok
 #   fixed.effects.georob,           # ok
@@ -75,8 +83,10 @@ export(
 ##
 ##   compute.covariances,
 ##   compute.estimating.equations,
+##   compute.expanded.estimating.equations,
 ##   compute.semivariance,
 ##   dcorr.dparam,
+##   estimating.eqations.xihat,
 ##   estimate.xihat,
 ##   gcr,
 ##   georob.fit,

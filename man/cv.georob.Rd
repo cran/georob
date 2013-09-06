@@ -1,4 +1,4 @@
-% 2013-06-12 A. Papritz
+% 2013-07-10 A. Papritz
 % R CMD Rdconv -t html -o bla.html cv.georob.Rd ; open bla.html; R CMD Rd2pdf --force cv.georob.Rd; 
 
 \encoding{macintosh}
@@ -24,7 +24,9 @@
 \method{cv}{georob}(object, formula = NULL, subset = NULL, nset = 10, 
     seed = NULL, sets = NULL, duplicates.in.same.set = TRUE, 
     re.estimate = TRUE, param = object[["param"]], 
-    fit.param = object[["initial.objects"]][["fit.param"]], 
+    fit.param = object[["initial.objects"]][["fit.param"]],
+    aniso = object[["aniso"]][["aniso"]], 
+    fit.aniso = object[["initial.objects"]][["fit.aniso"]],
     return.fit = FALSE, reduced.output = TRUE, lgn = FALSE, 
     ncores = min(nset, detectCores()), verbose = 0, ...)
 }
@@ -82,9 +84,28 @@
   cross-validation sets and \code{colnames(param)} must match
   \code{names(object[["param"]])}.}
   
+  \item{aniso}{an optional named numeric vector or a matrix or data frame
+  with anisotropy parameters passed by \code{\link[stats]{update}} to
+  \code{\link{georob}}, see \emph{Details}.  If \code{aniso} is a matrix
+  (or a data frame) then it must have \code{nset} rows and
+  \code{length(object[["aniso"]][["aniso"]])} columns with initial values
+  of anisotropy parameters for the \code{nset} cross-validation sets and
+  \code{colnames(aniso)} must match
+  \code{names(object[["aniso"]][["aniso"]])}.}
+  
+  \item{fit.aniso}{an optional named logical vector or a matrix or data
+  frame defining which anisotropy parameters should be adjusted when passed
+  by \code{\link[stats]{update}} to \code{\link{georob}}, see
+  \emph{Details}.  If \code{fit.aniso} is a matrix (or a data frame) then
+  it must have \code{nset} rows and
+  \code{length(object[["aniso"]][["aniso"]])} columns with anisotropy
+  parameter fitting flags for the \code{nset} cross-validation sets and
+  \code{colnames(aniso)} must match
+  \code{names(object[["aniso"]][["aniso"]])}.}
+  
   \item{return.fit}{logical controlling whether information about the fit
   should be returned for when re-estimating the model with the reduced data
-  sets (default \code{TRUE}).}
+  sets (default \code{FALSE}).}
   
   \item{reduced.output}{logical controlling whether the complete fitted
   model objects, fitted to the reduced data sets, are returned
@@ -159,8 +180,8 @@
   \code{georob}, fitted for the \eqn{K} reduced data set
   (\code{reduced.output = FALSE}), or \eqn{K} lists with the components
   \code{tuning.psi}, \code{converged}, \cr \code{convergence.code},
-  \code{gradient}, \code{param}, \code{aniso$aniso}, \code{coefficients}
-  along with the standard errors of
+  \code{gradient}, \code{variogram.model}, \code{param},
+  \code{aniso$aniso}, \code{coefficients} along with the standard errors of
   \eqn{\widehat{\mbox{\boldmath$\beta$\unboldmath}}}{hat\beta}, see
   \code{\link{georobObject}}.
  

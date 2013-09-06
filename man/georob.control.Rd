@@ -1,4 +1,4 @@
-% 2013-06-12 A. Papritz
+% 2013-09-06 A. Papritz
 % R CMD Rdconv -t html -o bla.html georob.control.Rd ; open bla.html; R CMD Rd2pdf --force georob.control.Rd; 
 \encoding{macintosh}
 \name{georob.control}
@@ -8,6 +8,7 @@
 \alias{dfwd.transf}
 \alias{bwd.transf}
 \alias{rq.control}
+% \alias{bbsolve.control}
 \alias{nleqslv.control}
 \alias{optim.control}
 
@@ -38,14 +39,15 @@ georob.control(initial.method = c("lmrob", "rq", "lm"), bhat = NULL,
     cov.ehat.p.bhat = FALSE, full.cov.ehat.p.bhat = FALSE,
     aux.cov.pred.target = FALSE, min.condnum = 1.e-12,
     rq = rq.control(), lmrob = lmrob.control(),
-    nleqslv = nleqslv.control(), optim = optim.control(),
-    full.output = TRUE)
+    nleqslv = nleqslv.control(), 
+%     bbsolve = bbsolve.control(), 
+    optim = optim.control(), full.output = TRUE)
     
 param.transf(variance = "log", snugget = "log", nugget = "log", scale = "log", 
     a = "identity", alpha = "identity", beta = "identity", delta = "identity", 
     gamma = "identity", lambda = "identity", n = "identity", nu = "identity",
-    f1 = "log", f2  ="log", omega = "identity", phi = "identity",
-    zeta = "identity")
+    f1 = "log", f2  ="log", omega = "rad", phi = "rad",
+    zeta = "rad")
   
 fwd.transf(...)
 
@@ -60,6 +62,8 @@ rq.control(tau = 0.5, rq.method = "br", rq.alpha = 0.1, ci = FALSE, iid = TRUE,
 nleqslv.control(nleqslv.method = c("Broyden", "Newton"), 
     global = c( "dbldog", "pwldog", "qline", "gline", "none" ),
     xscalm = c( "fixed", "auto" ), nleqslv.control = NULL)
+    
+% bbsolve.control(bbsolve.method = c("2", "3", "1"), bbsolve.control = NULL)
     
 optim.control(optim.method = c("BFGS", "Nelder-Mead", "CG", 
         "L-BFGS-B", "SANN", "Brent"), lower = -Inf, upper = Inf, 
@@ -231,15 +235,19 @@ optim.control(optim.method = c("BFGS", "Nelder-Mead", "CG",
   \code{\link[quantreg]{rq}} for allowed arguments).}
   
   \item{lmrob}{a list of arguments passed to the \code{control} argument of
-  \code{lmrob} or a function such as \code{lmrob.control} that generates
-  such a list (see \code{\link[robustbase]{lmrob.control}} for allowed
-  arguments).}
+  \code{lmrob} or a function such as
+  \code{lmrob.control} that generates such a list (see
+  \code{\link[robustbase]{lmrob.control}} for allowed arguments).}
   
-  \item{nleqslv}{a list of arguments passed to \code{nleqslv} or a function
-  such as \code{nleqslv.control} that generates such a list (see
+  \item{nleqslv}{a list of arguments passed to
+  \code{{nleqslv}} or a function such as
+  \code{nleqslv.control} that generates such a list (see
   \code{\link[nleqslv]{nleqslv}} for allowed arguments).}
   
-  
+%   \item{bbsolve}{a list of arguments passed to \code{BBsolve} or a function
+%   such as \code{bbsolve.control} that generates such a list (see
+%   \code{\link[BB]{BBsolve}} for allowed arguments).}
+    
   \item{optim}{a list of arguments passed to \code{optim} or a function
   such as \code{optim.control} that generates such a list (see
   \code{\link[stats]{optim}} for allowed arguments).}
@@ -270,6 +278,10 @@ optim.control(optim.method = c("BFGS", "Nelder-Mead", "CG",
   to related arguments of \code{\link[nleqslv]{nleqslv}}.  Note that
   \code{nleqslv.} is stripped from the argument names on passing.}
   
+%   \item{bbsolve.method, bbsolve.control}{arguments passed
+%   to related arguments of \code{\link[BB]{BBsolve}}.  Note that
+%   \code{bbsolve.} is stripped from the argument names on passing.}
+  
   \item{optim.method, lower, upper, hessian, optim.control}{arguments
   passed to related arguments of \code{\link[stats]{optim}}. Note that
   \code{optim.} is stripped from the argument names on passing.}
@@ -282,12 +294,13 @@ optim.control(optim.method = c("BFGS", "Nelder-Mead", "CG",
 
   The arguments \code{param.tf}, \code{fwd.tf}, \code{deriv.fwd.tf},
   \code{bwd.tf} define the transformations of the variogram parameters for
-  robust REML estimation.  Implemented are currently \code{"log"} and
-  \code{"identity"} (= no) transformations.  These are the possible values
-  that the many arguments of the function \code{param.transf} accept (as
-  quoted character strings) and these are the names of the list
-  components returned by \code{fwd.transf}, \code{dfwd.transf} and 
-  \code{bwd.transf}.  Additional transformations can be implemented by:
+  robust REML estimation.  Implemented are currently \code{"log"},
+  \code{"rad"} (conversion from degree to radian) and \code{"identity"} (= no)
+  transformations.  These are the possible values that the many arguments
+  of the function \code{param.transf} accept (as quoted character strings)
+  and these are the names of the list components returned by
+  \code{fwd.transf}, \code{dfwd.transf} and \code{bwd.transf}.  Additional
+  transformations can be implemented by:
   
   \enumerate{
   

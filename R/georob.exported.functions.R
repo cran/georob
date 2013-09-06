@@ -18,7 +18,8 @@ georob <-
     )[ names(param) ],
     aniso = c( f1 = 1., f2 = 1., omega = 90., phi = 90., zeta = 0. ),
     fit.aniso = c( f1 = FALSE, f2 = FALSE, omega = FALSE, phi = FALSE, zeta = FALSE ),
-    tuning.psi = 2, initial.param  = TRUE,
+    tuning.psi = 2, initial.param  = c( "exclude", "minimize", "no" ),
+    ## root.finding = c( "nleqslv", "bbsolve" ),
     control = georob.control( ... ), verbose = 0,
     ...
   )
@@ -77,6 +78,9 @@ georob <-
   ## 2013-05-23 AP correct handling of missing observations and to construct model.frame
   ## 2013-06-03 AP handling design matrices with rank < ncol(x)
   ## 2013-06-12 AP substituting [["x"]] for $x in all lists
+  ## 2013-07-02 AP new transformation of rotation angles
+  ## 2013-07-12 AP solving estimating equations by BBsolve{BB} (in addition to nleqlsv)
+  ## 2013-09-06 AP exclusive use of nleqslv for solving estimating equations
   
   ## check whether input is complete
   
@@ -187,7 +191,7 @@ georob <-
       signif( condnum, 2 ), ")\ninitial values of fixed effects coefficients are computed by 'lm'\n\n"
     )
     control[["initial.method"]] <- "lm"
-    initial.param <- FALSE
+    initial.param <- "mininimize"
     warning( 
       "design matrix has not full column rank (condition number of X^T X: ", 
       signif( condnum, 2 ), ")\ninitial values of fixed effects coefficients are computed by 'lm'"
@@ -201,7 +205,7 @@ georob <-
   
   ## adjust choice for initial.method to compute regression coefficients
   
-  if( initial.param ) control[["initial.method"]] <- "lmrob"
+  if( identical( initial.param, "exclude" ) ) control[["initial.method"]] <- "lmrob"
   
   ## compute initial guess of fixed effects parameters (betahat)
   
@@ -314,88 +318,170 @@ georob <-
   
   aniso.missing <- missing( aniso ) && missing( fit.aniso )
   
-  ## prune data set for computing initial values of variogram and
-  ## anisotropy parameters by reml
+  initial.param <- match.arg( initial.param )
+  ## root.finding <- match.arg( root.finding )
   
-  if( initial.param && tuning.psi < control[["tuning.psi.nr"]] ){
-    
-    t.sel <- switch(
-      control[["initial.method"]],
-      lmrob = r.initial.fit[["rweights"]] > control[["min.rweight"]],
-      stop(
-        "computing initial values of covariance parameters requires 'lmrob' as ",
-        "method for computing initial regression coefficients"
+  ## compute initial values of variogram and anisotropy parameters
+  
+  if( tuning.psi < control[["tuning.psi.nr"]] ){
+        
+    if( identical( initial.param, "exclude" ) ){
+      
+      if( verbose > 0 ) cat( "\ncomputing robust initial parameter estimates ...\n" )
+      
+      t.sel <- switch(
+        control[["initial.method"]],
+        lmrob = r.initial.fit[["rweights"]] > control[["min.rweight"]],
+        stop(
+          "computing initial values of covariance parameters requires 'lmrob' as ",
+          "method for computing initial regression coefficients"
+        )
       )
-    )
-    
-    if( verbose > 0 ) cat( 
-      "\ndiscarding", sum( !t.sel ), "of", length( t.sel ), 
-      "observations for computing initial estimates of variogram\nand anisotropy parameter by gaussian reml\n"
-    )
-    
-    ## collect.items for initial object
-    
-    initial.objects <- list(
-      x = as.matrix( x[t.sel, ] ),
-      y = yy[t.sel],
-      betahat = coef( r.initial.fit ),
-      bhat = if( is.null( control[["bhat"]] ) ){
-        rep( 0., length( yy ) )[t.sel]
-      } else {
-        control[["bhat"]][t.sel]
-      },
-      initial.fit = r.initial.fit,
-      locations.objects = list(
-        locations = locations,
-        coordinates = locations.coords[t.sel, ]
-      ),
-      isotropic = aniso.missing
-    )
-    
-    ## estimate model parameters with pruned data set
-    
-    t.georob <- georob.fit(
-      envir = envir,
-      initial.objects = initial.objects,
-      variogram.model = variogram.model, param = param, fit.param = fit.param,
-      aniso = aniso, fit.aniso = fit.aniso,
-      param.tf = control[["param.tf"]],
-      fwd.tf = control[["fwd.tf"]], 
-      deriv.fwd.tf = control[["deriv.fwd.tf"]],
-      bwd.tf = control[["bwd.tf"]], 
-      safe.param = control[["safe.param"]],
-      tuning.psi = control[["tuning.psi.nr"]],
-      cov.bhat = control[["cov.bhat"]], full.cov.bhat = control[["full.cov.bhat"]],
-      cov.betahat = control[["cov.betahat"]], 
-      cov.bhat.betahat = control[["cov.bhat.betahat"]],
-      cov.delta.bhat = control[["cov.delta.bhat"]],
-      full.cov.delta.bhat = control[["full.cov.delta.bhat"]],
-      cov.delta.bhat.betahat = control[["cov.delta.bhat.betahat"]],
-      cov.ehat = control[["cov.ehat"]], full.cov.ehat = control[["full.cov.ehat"]],
-      cov.ehat.p.bhat = control[["cov.ehat.p.bhat"]], full.cov.ehat.p.bhat = control[["full.cov.ehat.p.bhat"]],
-      aux.cov.pred.target = control[["aux.cov.pred.target"]],
-      min.condnum = control[["min.condnum"]],
-      rankdef.x = rankdef.x,
-      psi.func = control[["psi.func"]],
-      tuning.psi.nr = control[["tuning.psi.nr"]],
-      irwls.initial = control[["irwls.initial"]],
-      irwls.maxiter = control[["irwls.maxiter"]],
-      irwls.reltol = control[["irwls.reltol"]],
-      force.gradient = control[["force.gradient"]],
-      zero.dist = control[["zero.dist"]],
-      nleqslv.method =  control[["nleqslv"]][["method"]],
-      nleqslv.control = control[["nleqslv"]][["control"]],
-      optim.method =  control[["optim"]][["method"]],
-      optim.lower = control[["optim"]][["lower"]],
-      optim.upper = control[["optim"]][["upper"]],
-      hessian =       control[["optim"]][["hessian"]],
-      optim.control = control[["optim"]][["control"]],
-      full.output = control[["full.output"]],
-      verbose = verbose
-    )
-    
-    param = t.georob[["param"]][names(fit.param)]
-    aniso = t.georob[["aniso"]][["aniso"]][names(fit.aniso)] * c( 1, 1, rep( 180/pi, 3 ) )
+      
+      if( verbose > 0 ) cat( 
+        "\ndiscarding", sum( !t.sel ), "of", length( t.sel ), 
+        "observations for computing initial estimates of variogram\nand anisotropy parameter by gaussian reml\n"
+      )
+      
+      ## collect.items for initial object
+      
+      initial.objects <- list(
+        x = as.matrix( x[t.sel, ] ),
+        y = yy[t.sel],
+        betahat = coef( r.initial.fit ),
+        bhat = if( is.null( control[["bhat"]] ) ){
+          rep( 0., length( yy ) )[t.sel]
+        } else {
+          control[["bhat"]][t.sel]
+        },
+        initial.fit = r.initial.fit,
+        locations.objects = list(
+          locations = locations,
+          coordinates = locations.coords[t.sel, ]
+        ),
+        isotropic = aniso.missing
+      )
+      
+      ## estimate model parameters with pruned data set
+      
+      t.georob <- georob.fit(
+        ## root.finding = root.finding,
+        slv = TRUE,
+        envir = envir,
+        initial.objects = initial.objects,
+        variogram.model = variogram.model, param = param, fit.param = fit.param,
+        aniso = aniso, fit.aniso = fit.aniso,
+        param.tf = control[["param.tf"]],
+        fwd.tf = control[["fwd.tf"]], 
+        deriv.fwd.tf = control[["deriv.fwd.tf"]],
+        bwd.tf = control[["bwd.tf"]], 
+        safe.param = control[["safe.param"]],
+        tuning.psi = control[["tuning.psi.nr"]],
+        cov.bhat = control[["cov.bhat"]], full.cov.bhat = control[["full.cov.bhat"]],
+        cov.betahat = control[["cov.betahat"]], 
+        cov.bhat.betahat = control[["cov.bhat.betahat"]],
+        cov.delta.bhat = control[["cov.delta.bhat"]],
+        full.cov.delta.bhat = control[["full.cov.delta.bhat"]],
+        cov.delta.bhat.betahat = control[["cov.delta.bhat.betahat"]],
+        cov.ehat = control[["cov.ehat"]], full.cov.ehat = control[["full.cov.ehat"]],
+        cov.ehat.p.bhat = control[["cov.ehat.p.bhat"]], full.cov.ehat.p.bhat = control[["full.cov.ehat.p.bhat"]],
+        aux.cov.pred.target = control[["aux.cov.pred.target"]],
+        min.condnum = control[["min.condnum"]],
+        rankdef.x = rankdef.x,
+        psi.func = control[["psi.func"]],
+        tuning.psi.nr = tuning.psi,
+        irwls.initial = control[["irwls.initial"]],
+        irwls.maxiter = control[["irwls.maxiter"]],
+        irwls.reltol = control[["irwls.reltol"]],
+        force.gradient = control[["force.gradient"]],
+        zero.dist = control[["zero.dist"]],
+        nleqslv.method =  control[["nleqslv"]][["method"]],
+        nleqslv.control = control[["nleqslv"]][["control"]],
+        ## bbsolve.method =  control[["bbsolve"]][["method"]],
+        ## bbsolve.control = control[["bbsolve"]][["control"]],
+        optim.method =  control[["optim"]][["method"]],
+        optim.lower = control[["optim"]][["lower"]],
+        optim.upper = control[["optim"]][["upper"]],
+        hessian =       control[["optim"]][["hessian"]],
+        optim.control = control[["optim"]][["control"]],
+        full.output = control[["full.output"]],
+        verbose = verbose
+      )
+      
+      param = t.georob[["param"]][names(fit.param)]
+      aniso = t.georob[["aniso"]][["aniso"]][names(fit.aniso)]
+      
+    } else if( identical( initial.param, "minimize" ) ){
+      
+      if( verbose > 0 ) cat( "\ncomputing robust initial parameter estimates ...\n" )
+      
+      initial.objects <- list(
+        x = as.matrix( x ),
+        y = yy,
+        betahat = coef( r.initial.fit ),
+        bhat = if( is.null( control[["bhat"]] ) ){
+          rep( 0., length( yy ) )
+        } else {
+          control[["bhat"]]
+        },
+        initial.fit = r.initial.fit,
+        locations.objects = list(
+          locations = locations,
+          coordinates = locations.coords
+        ),
+        isotropic = aniso.missing
+      )
+      
+      ## estimate model parameters by minimizing sum( gradient^2)
+      
+      t.georob <- georob.fit(
+        ## root.finding = root.finding,
+        slv = FALSE,
+        envir = envir,
+        initial.objects = initial.objects,
+        variogram.model = variogram.model, param = param, fit.param = fit.param,
+        aniso = aniso, fit.aniso = fit.aniso,
+        param.tf = control[["param.tf"]],
+        fwd.tf = control[["fwd.tf"]], 
+        deriv.fwd.tf = control[["deriv.fwd.tf"]],
+        bwd.tf = control[["bwd.tf"]], 
+        safe.param = control[["safe.param"]],
+        tuning.psi = tuning.psi,
+        cov.bhat = control[["cov.bhat"]], full.cov.bhat = control[["full.cov.bhat"]],
+        cov.betahat = control[["cov.betahat"]], 
+        cov.bhat.betahat = control[["cov.bhat.betahat"]],
+        cov.delta.bhat = control[["cov.delta.bhat"]],
+        full.cov.delta.bhat = control[["full.cov.delta.bhat"]],
+        cov.delta.bhat.betahat = control[["cov.delta.bhat.betahat"]],
+        cov.ehat = control[["cov.ehat"]], full.cov.ehat = control[["full.cov.ehat"]],
+        cov.ehat.p.bhat = control[["cov.ehat.p.bhat"]], full.cov.ehat.p.bhat = control[["full.cov.ehat.p.bhat"]],
+        aux.cov.pred.target = control[["aux.cov.pred.target"]],
+        min.condnum = control[["min.condnum"]],
+        rankdef.x = rankdef.x,
+        psi.func = control[["psi.func"]],
+        tuning.psi.nr = control[["tuning.psi.nr"]],
+        irwls.initial = control[["irwls.initial"]],
+        irwls.maxiter = control[["irwls.maxiter"]],
+        irwls.reltol = control[["irwls.reltol"]],
+        force.gradient = control[["force.gradient"]],
+        zero.dist = control[["zero.dist"]],
+        nleqslv.method =  control[["nleqslv"]][["method"]],
+        nleqslv.control = control[["nleqslv"]][["control"]],
+        ## bbsolve.method =  control[["bbsolve"]][["method"]],
+        ## bbsolve.control = control[["bbsolve"]][["control"]],
+        optim.method =  control[["optim"]][["method"]],
+        optim.lower = control[["optim"]][["lower"]],
+        optim.upper = control[["optim"]][["upper"]],
+        hessian =       control[["optim"]][["hessian"]],
+        optim.control = control[["optim"]][["control"]],
+        full.output = control[["full.output"]],
+        verbose = verbose
+      )
+      
+      param = t.georob[["param"]][names(fit.param)]
+      aniso = t.georob[["aniso"]][["aniso"]][names(fit.aniso)]
+      
+    }
     
   }
   
@@ -419,8 +505,12 @@ georob <-
   )
   
   ## estimate model parameters
-  
+
+  if( verbose > 0 ) cat( "computing final parameter estimates ...\n" )
+
   r.georob <- georob.fit(
+    ## root.finding = root.finding,
+    slv = TRUE,
     envir = envir,
     initial.objects = initial.objects,
     variogram.model = variogram.model, param = param, fit.param = fit.param,
@@ -451,6 +541,8 @@ georob <-
     zero.dist = control[["zero.dist"]],
     nleqslv.method =  control[["nleqslv"]][["method"]],
     nleqslv.control = control[["nleqslv"]][["control"]],
+    ## bbsolve.method =  control[["bbsolve"]][["method"]],
+    ## bbsolve.control = control[["bbsolve"]][["control"]],
     optim.method =  control[["optim"]][["method"]],
     optim.lower = control[["optim"]][["lower"]],
     optim.upper = control[["optim"]][["upper"]],
@@ -531,68 +623,15 @@ georob.control <-
     rq = rq.control(),
     lmrob = lmrob.control(),
     nleqslv = nleqslv.control(),
+    ## bbsolve = bbsolve.control(),
     optim = optim.control(),
     full.output = TRUE
   )
 {
   
   ## auxiliary function to set meaningful default values for the
-  ## arguments of the function georob.fit
-  
-  ## Arguments:
-  
-  ## initial.method    character scalar, controlling how the intitial estimate of the fixed-effects
-  ##                   parameters are computed, possible values are 
-  ##                   "rq"    to use rq{quantreg},
-  ##                   "lmrob" to use lmrob{robustbase},
-  ## param.tf       list, used to pass arguents to param.tf{georob}
-  ##                   parameters, implemented values are "log" or "identity" (no transformation)
-  ## fwd.tf
-  ## rho.function      character, defining the rho/psi functions family
-  ## tuning.psi.nr numeric, if tuning.psi exceeds tuning.psi.nr for
-  ##                   logistic or huber rho.function then only one IRWLS iteration is executed
-  ##                   to estimate beta and z
-  ## min.rweight  minimum robustness weights of lmrob fit required for 
-  ##                   including an observations into the pruned data set from which initial values
-  ##                   of variogram and anisotropy parameters are computed by Gaussian REML
-  ## irwls.initial  logical, flag controlling whether IRWLS starts from the lmrob 
-  ##                   estimates of beta and from z=0 (TRUE) or from the previous IRWLS results
-  ## irwls.maxiter     integer, maximum number of IRWLS steps
-  ## irwls.reltol      numeric, relative convergence tolerance for IRWLS, see optim{stats}
-  ## force.gradient    logical, flag controlling whether the gradient (REML) or the
-  ##                   estimation equations should be evaluated if all variogram parameter are 
-  ##                   fixed
-  ## zero.dist         observations from sampling locations less than zero.dist apart will be 
-  ##				   considered as multiple observations from same location
-  ## cov.bhat        logical, flag controlling whether the covariances of bhat should be computed
-  ## full.cov.bhat   logical, flag controlling whether the full covariance matrix of bhat 
-  ##                   is computed (TRUE) or only the diagonal elements (FALSE)
-  ## cov.betahat     logical, flag controlling whether the covariance matrix of betahat 
-  ##                   should be computed
-  ## cov.bhat.betahat  logical, flag controlling whether the covariance matrix of 
-  ##                   bhat and betahat should be computed
-  ## cov.delta.bhat      logical, flag controlling whether the covariances of z-bhat should be computed
-  ## full.cov.delta.bhat logical, flag controlling whether the full covariance matrix of z-bhat 
-  ##                   is computed (TRUE) or only the diagonal elements (FALSE)
-  ## cov.delta.bhat.betahat    logical, flag controlling whether the covariance matrix of z-bhat
-  ##                    and betahat should be computed
-  ## cov.ehat        logical, flag controlling whether the covariances of the resdiuals should be computed
-  ## full.cov.ehat   logical, flag controlling whether the full covariance matrix of the residuals 
-  ##                   is computed (TRUE) or only the diagonal elements (FALSE)
-  ## cov.ehat.p.bhat       logical, flag controlling whether the covariances of the resdiuals+bhat should be computed
-  ## full.cov.ehat.p.bhat  logical, flag controlling whether the full covariance matrix of the resdiuals+bhat 
-  ##                   is computed (TRUE) or only the diagonal elements (FALSE)
-  ## aux.cov.pred.target  logical, flag controlling whether the auxiliary matrix for computing the covariances
-  ##                   of the predicted and true y should be computed
-  ##                   is computed (TRUE) or only the diagonal elements (FALSE)
-  ## min.condnum       minimum condition number for a matrix to be numerically non-singular
-  ## rq                list, see rq{quantreg}
-  ## lmrob             list, see lmrob.control{robustbase}
-  ## nleqslv           list, used to pass arguent to nleqslv, see nleqslv.control{georob}
-  ## optim             list, used to pass arguments to optim, see optim.control{georob}
-  ## full.output       logical, flag used to control the amount of output returned by georob, warning:
-  ##                   is TRUE then the output will not contain all required items required by some methods
-  
+
+  ## Arguments: 
   
   ## 2012-04-21 A. Papritz   
   ## 2012-05-03 AP bounds for safe parameter values
@@ -600,6 +639,7 @@ georob.control <-
   ## 2013-04-23 AP new names for robustness weights
   ## 2013-06-12 AP changes in stored items of Valpha object
   ## 2013-06-12 AP substituting [["x"]] for $x in all lists
+  ## 2013-07-12 AP solving estimating equations by BBsolve{BB} (in addition to nleqlsv)
   
   if( 
     !( all( param.tf %in% names( fwd.tf ) ) &&
@@ -632,7 +672,9 @@ georob.control <-
     aux.cov.pred.target = aux.cov.pred.target,
     min.condnum = min.condnum,
     irf.models = c( "DeWijsian", "fractalB", "genB" ),
-    rq = rq, lmrob = lmrob, nleqslv = nleqslv, optim = optim, 
+    rq = rq, lmrob = lmrob, nleqslv = nleqslv, 
+    ## bbsolve = bbsolve, 
+    optim = optim, 
     full.output = full.output
   )
   
@@ -644,14 +686,14 @@ param.transf <-
     variance = "log", snugget = "log", nugget = "log", scale = "log", 
     a = "identity", alpha = "identity", beta = "identity", delta = "identity", 
     gamma = "identity", lambda = "identity", n = "identity", nu = "identity",
-    f1 = "log", f2  ="log", omega = "identity", phi = "identity", zeta = "identity"
+    f1 = "log", f2  ="log", omega = "rad", phi = "rad", zeta = "rad"
   )
 {
   
   ## function sets meaningful defaults for transformation of variogram
   ## parameters
   
-  ## 2012-11-27 A. Papritz
+  ## 2013-07-02 A. Papritz
   
   c( 
     variance = variance, snugget = snugget, nugget = nugget, scale = scale,
@@ -671,9 +713,9 @@ fwd.transf <-
   
   ## definition of forward transformation of variogram parameters
   
-  ## 2012-11-27 A. Papritz
+  ## 2013-07-02 A. Papritz
   
-  list( log = function(x) log(x),  identity = function(x) x, ... )
+  list( log = function(x) log(x),  identity = function(x) x, rad = function(x) x/180*pi, ... )
 }
 
 ## ======================================================================
@@ -685,10 +727,15 @@ dfwd.transf<-
   
   ## definition of first derivative of forward transformation of variogram
   ## parameters
+  ## NOTE: dfwd.transf[["rad"]] must be equal to one since sine and cosine 
+  ## are evaluated for transformed angles
   
-  ## 2012-11-27 A. Papritz
+  ## 2013-07-02 A. Papritz
   
-  list( log = function(x) 1/x, identity = function(x) rep(1, length(x)), ... )  
+  list( 
+    log = function(x) 1/x, identity = function(x) rep(1, length(x)), 
+    rad = function(x) rep(1., length(x)), ... 
+  )  
   
 }
 
@@ -701,9 +748,9 @@ bwd.transf <-
   
   ## definition of backward transformation of variogram parameters
   
-  ## 2012-11-27 A. Papritz
+  ## 2013-07-02 A. Papritz
   
-  list( log = function(x) exp(x), identity = function(x) x, ... )
+  list( log = function(x) exp(x), identity = function(x) x, rad = function(x) x/pi*180, ... )
   
 }
 
@@ -749,9 +796,7 @@ nleqslv.control <-
   ## function sets meaningful defaults for selected arguments of function
   ## nleqslv{nleqslv} 
   
-  ## 2012-12-14 A. Papritz
-  
-  aux <- function( trace = 0, ... ) list( trace = trace, ... )
+  ## 2013-07-12 A. Papritz
   
   list( 
     method = match.arg( nleqslv.method ),
@@ -760,6 +805,25 @@ nleqslv.control <-
     control = nleqslv.control
   )
 }
+
+## ======================================================================
+## bbsolve.control <-
+##   function( 
+##     bbsolve.method = c( "2", "3", "1" ), 
+##     bbsolve.control = NULL
+##   )
+## {
+##   
+##   ## function sets meaningful defaults for selected arguments of function
+##   ## BBSolve{BB} 
+##   
+##   ## 2013-07-12 A. Papritz
+##   
+##   list( 
+##     method = as.integer( match.arg( bbsolve.method ) ),
+##     control = bbsolve.control
+##   )
+## }
 
 ## ======================================================================
 optim.control <-

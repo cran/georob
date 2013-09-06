@@ -1,4 +1,4 @@
-% 2012-12-14 A. Papritz
+% 2013-07-01 A. Papritz
 % R CMD Rdconv -t html -o bla.html plot.georob.Rd ; open bla.html; R CMD Rd2pdf --force plot.georob.Rd; 
 
 \encoding{macintosh}
@@ -46,19 +46,19 @@ sample variogram of the (robust) regression residuals.
   grouping the lag distances or a numeric vector with the upper bounds of a
   set of contiguous bins.}
   
-  \item{xy.angle.def}{an numeric vector defining angular classes
-  in the horizontal plane for computing directional variograms.
+  \item{xy.angle.def}{an numeric vector defining angular classes in the
+  horizontal plane for computing directional variograms.
   \code{xy.angle.def} must contain an ascending sequence of azimuth angles
-  in degrees from north (positive clockwise to south), see \emph{Details}.
-  Omnidirectional variograms are computed with the default 
-  \code{c(0,180)}.}
+  in degrees from north (positive clockwise to south), see
+  \code{\link{sample.variogram}}.  Omnidirectional variograms are computed
+  with the default \code{c(0,180)}.}
   
-  \item{xz.angle.def}{an numeric vector defining angular classes
-  in the \eqn{x}-\eqn{z}-plane for computing directional variograms.
+  \item{xz.angle.def}{an numeric vector defining angular classes in the
+  \eqn{x}-\eqn{z}-plane for computing directional variograms.
   \code{xz.angle.def} must contain an ascending sequence of angles in
   degrees from zenith (positive clockwise to nadir), see
-  \emph{Details}.  Omnidirectional variograms are computed with the default
-  \code{c(0,180)}.}
+  \code{\link{sample.variogram}}.  Omnidirectional variograms are computed
+  with the default \code{c(0,180)}.}
   
   \item{max.lag}{positive numeric defining the largest lag distance for
   which semivariances should be computed (default no restriction).}

@@ -795,11 +795,35 @@ update.xihat <-
   
 }
 
+
+##    ##############################################################################
+
+estimating.eqations.xihat <- function( 
+  res, TT, xihat, nugget, eta, Valpha.inverse.Palpha, 
+  psi.function, tuning.psi
+){
+  
+  ## auxiliary function to compute estimating equations for xihat
+
+  ## 2013-07-12 AP solving estimating equations by BBsolve{BB} (in addition to nleqlsv)
+
+  Ttpsi <- psi.function( res / sqrt( nugget ), tuning.psi )
+  TtT   <- rep( 1, length( Ttpsi ) )      
+  
+  if( sum( duplicated( TT ) > 0 ) ){
+    Ttpsi <- as.vector( tapply( Ttpsi, factor( TT ), sum ) )
+    TtT   <- as.vector( table( TT ) )
+  }
+  
+  Ttpsi - drop( Valpha.inverse.Palpha %*% xihat ) / sqrt( nugget ) / eta
+}
+
 ##    ##############################################################################
 
 estimate.xihat <- 
   function(
-    XX, min.condnum, rankdef.x, yy, betahat, TT, xihat, 
+    compute.xihat,
+    XX, min.condnum, rankdef.x, yy, TT, xihat, 
     psi.function, tuning.psi, tuning.psi.nr, 
     maxit, reltol,
     nugget, eta, Valpha.inverse,
@@ -810,29 +834,12 @@ estimate.xihat <-
   ## 2013-02-04 AP solving estimating equations for xi
   ## 2013-06-03 AP handling design matrices with rank < ncol(x)
   ## 2013-06-12 AP substituting [["x"]] for $x in all lists
+  ## 2013-07-12 AP solving estimating equations by BBsolve{BB} (in addition to nleqlsv)
    
   ## function computes (1) estimates xihat, bhat, betahat by
   ## solving robustified estimating equations by IRWLS,
   ## (2) the weights of the IRWLS, (3) the unstandardized residuals
   ## (= estimated epsilons); the results are returned as a list
-  
-  ## auxiliary function to compute estimating equations for xihat
-  
-  f.eeq <- function( 
-    res, TT, xihat, nugget, eta, Valpha.inverse.Palpha, 
-    psi.function, tuning.psi
-  ){
-    
-    Ttpsi <- psi.function( res / sqrt( nugget ), tuning.psi )
-    TtT   <- rep( 1, length( Ttpsi ) )      
-    
-    if( sum( duplicated( TT ) > 0 ) ){
-      Ttpsi <- as.vector( tapply( Ttpsi, factor( TT ), sum ) )
-      TtT   <- as.vector( table( TT ) )
-    }
-    
-    Ttpsi - drop( Valpha.inverse.Palpha %*% xihat ) / sqrt( nugget ) / eta
-  }
   
   ##  compute projection matrix Palpha and related items
   
@@ -866,89 +873,113 @@ estimate.xihat <-
   rownames( result[["Valpha.inverse.Palpha"]] ) <- rownames( XX )
   colnames( result[["Valpha.inverse.Palpha"]] ) <- rownames( XX )
   
-  ##  initialization
+  if( compute.xihat ){
   
-  res <- yy - xihat[TT]
-  
-  eeq.old <- f.eeq(     
-    res, TT, xihat, nugget, eta, result[["Valpha.inverse.Palpha"]], 
-    psi.function, tuning.psi
-  )
-  eeq.old.l2 <- sum( eeq.old^2 )
-
-  if( !is.finite( eeq.old.l2 ) ) {
-    result[["error"]] <- TRUE
-    return( result )
-  }
-  
-  converged <- FALSE
-  
-  if( verbose > 2 ) cat(
-    "\n  IRWLS\n",
-    "      it        L2.old        L2.new      delta.L2\n", sep = ""
-  )
-  
-  ##  IRWLS
-  
-  for( i in 1:maxit ){
+    ##  initialization
     
-    ##  compute new estimates 
+    res <- yy - xihat[TT]
     
-    new <- update.xihat(
-      XX, yy, res, TT, 
-      nugget, eta, 
-      result[["Valpha.inverse.Palpha"]],
-      psi.function, tuning.psi, 
-      verbose
-    )
-    
-    if( new[["error"]] ) {
-      result[["error"]] <- TRUE
-      return( result )
-    }
-    
-    
-    ##  evaluate estimating equations for xi and compute its l2 norm
-    
-    eeq.new <- f.eeq(       
-      new[["residuals"]], TT, new[["xihat"]], nugget, eta, result[["Valpha.inverse.Palpha"]], 
+    eeq.old <- estimating.eqations.xihat(     
+      res, TT, xihat, nugget, eta, result[["Valpha.inverse.Palpha"]], 
       psi.function, tuning.psi
     )
-    eeq.new.l2 <- sum( eeq.new^2 )
+    eeq.old.l2 <- sum( eeq.old^2 )
     
-    if( !is.finite( eeq.new.l2 ) ) {
+    if( !is.finite( eeq.old.l2 ) ) {
       result[["error"]] <- TRUE
       return( result )
     }
     
-    if( verbose > 2 ) cat( 
-      format( i, width = 8 ),
-      format( 
-        signif( 
-          c( eeq.old.l2, eeq.new.l2, eeq.old.l2 - eeq.new.l2 ), digits = 7 
-        ), scientific = TRUE, width = 14 
-      ), "\n", sep = ""
+    converged <- FALSE
+    
+    if( verbose > 2 ) cat(
+      "\n  IRWLS\n",
+      "      it        L2.old        L2.new      delta.L2\n", sep = ""
     )
     
-    ##  check for convergence (cf. help( optim ) )
-
-    if( max( abs( res - new[["residuals"]] ) ) < sqrt(  reltol ) * sqrt( nugget ) ) {
-      converged <- TRUE
-      break
+    ##  IRWLS
+    
+    for( i in 1:maxit ){
+      
+      ##  compute new estimates 
+      
+      new <- update.xihat(
+        XX, yy, res, TT, 
+        nugget, eta, 
+        result[["Valpha.inverse.Palpha"]],
+        psi.function, tuning.psi, 
+        verbose
+      )
+      
+      if( new[["error"]] ) {
+        result[["error"]] <- TRUE
+        return( result )
+      }
+      
+      
+      ##  evaluate estimating equations for xi and compute its l2 norm
+      
+      eeq.new <- estimating.eqations.xihat(       
+        new[["residuals"]], TT, new[["xihat"]], nugget, eta, result[["Valpha.inverse.Palpha"]], 
+        psi.function, tuning.psi
+      )
+      eeq.new.l2 <- sum( eeq.new^2 )
+      
+      if( !is.finite( eeq.new.l2 ) ) {
+        result[["error"]] <- TRUE
+        return( result )
+      }
+      
+      if( verbose > 2 ) cat( 
+        format( i, width = 8 ),
+        format( 
+          signif( 
+            c( eeq.old.l2, eeq.new.l2, eeq.old.l2 - eeq.new.l2 ), digits = 7 
+          ), scientific = TRUE, width = 14 
+        ), "\n", sep = ""
+      )
+      
+      ##  check for convergence (cf. help( optim ) )
+      
+      if( max( abs( res - new[["residuals"]] ) ) < sqrt(  reltol ) * sqrt( nugget ) ) {
+        converged <- TRUE
+        break
+      }
+      
+      ##  update xihat, residuals and eeq.old.l2
+      
+      eeq.old.l2 <- eeq.new.l2
+      xihat      <- new[["xihat"]]
+      res        <- new[["residuals"]]
+      
     }
     
-    ##  update xihat, residuals and eeq.old.l2
+    ##  collect output
     
-    eeq.old.l2 <- eeq.new.l2
-    xihat      <- new[["xihat"]]
-    res        <- new[["residuals"]]
+    result[["xihat"]]            <- new[["xihat"]]
+    names( result[["xihat"]] )   <- rownames( XX )
+    
+    result[["residuals"]]        <- new[["residuals"]]
+    result[["rweights"]]         <- new[["rweights"]]
+    result[["converged"]]        <- converged
+    result[["nit"]]              <- i
+    
+  } else {
+    
+    result[["xihat"]]            <- xihat
+    names( result[["xihat"]] )   <- rownames( XX )
+    
+    result[["residuals"]]        <- yy - xihat[TT]
+    
+    result[["rweights"]]         <- ifelse( 
+      abs( std.res <- result[["residuals"]] / sqrt( nugget ) ) < sqrt( .Machine[["double.eps"]] ),
+      1.,
+      psi.function( std.res, tuning.psi ) / std.res
+    )
+    result[["converged"]]        <- NA
+    result[["nit"]]              <- NA_integer_
     
   }
-  
-  ##  collect output
-  
-  result[["xihat"]]            <- new[["xihat"]]
-  names( result[["xihat"]] )   <- rownames( XX )
   
   result[["bhat"]]             <- drop( result[["Palpha"]] %*% result[["xihat"]] )
   names( result[["bhat"]] )    <- rownames( XX )
@@ -956,12 +987,8 @@ estimate.xihat <-
   result[["betahat"]]          <- drop( result[["Aalpha"]] %*% result[["xihat"]] )
   names( result[["betahat"]] ) <- colnames( XX )
   
-  result[["residuals"]]        <- new[["residuals"]]
-  result[["rweights"]]         <- new[["rweights"]]
   result[["z.star"]]           <- drop( Valpha.inverse %*% result[["bhat"]] )
-  result[["converged"]]        <- converged
-  result[["nit"]]              <- i
-  
+
   return( result )
   
 }
@@ -1065,9 +1092,10 @@ prepare.likelihood.calculations <-
     adjustable.param, variogram.model, fixed.param, param.name, aniso.name,
     param.tf, bwd.tf, safe.param,
     lag.vectors,
-    XX, min.condnum, rankdef.x, yy, betahat, TT, bhat, 
+    XX, min.condnum, rankdef.x, yy, TT, xihat, 
     psi.function, dpsi.function, tuning.psi, tuning.psi.nr, 
     irwls.initial, irwls.maxiter, irwls.reltol,
+    compute.xihat = TRUE,
     compute.Q,
     verbose
   )
@@ -1083,6 +1111,8 @@ prepare.likelihood.calculations <-
   ## 2012-11-27 AP changes in check allowed parameter range
   ## 2013-02-04 AP solving estimating equations for xi
   ## 2013-06-12 AP substituting [["x"]] for $x in all lists
+  ## 2013-07-02 AP new transformation of rotation angles
+  ## 2013-07-12 AP solving estimating equations by BBsolve{BB} (in addition to nleqlsv)
   
   ##  function transforms (1) the variogram parameters back to their
   ##  original scale; computes (2) the correlation matrix, its inverse
@@ -1102,7 +1132,7 @@ prepare.likelihood.calculations <-
   )
   names( param ) <- param.name
   
-  aniso <- c( adjustable.param, fixed.param )[aniso.name]
+  fwd.tf.aniso <- aniso<- c( adjustable.param, fixed.param )[aniso.name]
   
   aniso <- sapply(
     aniso.name,
@@ -1180,12 +1210,12 @@ prepare.likelihood.calculations <-
     
     lik.item[["aniso"]][["aniso"]] <- aniso
     lik.item[["aniso"]][["sincos"]] <- list(
-      co = unname( cos( aniso["omega"] ) ),
-      so = unname( sin( aniso["omega"] ) ),
-      cp = unname( cos( aniso["phi"] ) ),
-      sp = unname( sin( aniso["phi"] ) ),
-      cz = unname( cos( aniso["zeta"] ) ),
-      sz = unname( sin( aniso["zeta"] ) )
+      co = unname( cos( fwd.tf.aniso["omega"] ) ),
+      so = unname( sin( fwd.tf.aniso["omega"] ) ),
+      cp = unname( cos( fwd.tf.aniso["phi"] ) ),
+      sp = unname( sin( fwd.tf.aniso["phi"] ) ),
+      cz = unname( cos( fwd.tf.aniso["zeta"] ) ),
+      sz = unname( sin( fwd.tf.aniso["zeta"] ) )
     )
     
     n <- NCOL( lag.vectors)
@@ -1285,15 +1315,14 @@ prepare.likelihood.calculations <-
     ##  irwls iteration from initial.object or from previous iteration
     
     if( 
-      !irwls.initial && !is.null( lik.item[["effects"]][["betahat"]] ) &&  
-      !is.null( lik.item[["effects"]][["bhat"]] )
+      !irwls.initial && !is.null( lik.item[["effects"]][["xihat"]] ) 
     ){
-      betahat <- lik.item[["effects"]][["betahat"]]
-      bhat <- lik.item[["effects"]][["bhat"]]
+      xihat <- lik.item[["effects"]][["xihat"]]
     }
     
     lik.item[["effects"]] <- estimate.xihat( 
-      XX, min.condnum, rankdef.x, yy, betahat, TT, bhat, 
+      compute.xihat,
+      XX, min.condnum, rankdef.x, yy, TT, xihat, 
       psi.function, tuning.psi, tuning.psi.nr, 
       irwls.maxiter, irwls.reltol,
       lik.item[["param"]]["nugget"], lik.item[["eta"]], lik.item[["Valpha"]][["Valpha.inverse"]],
@@ -1435,48 +1464,6 @@ dcorr.dparam <-
         ( c( 0., 0., -1. / aniso[["aniso"]]["f2"]^2 )[1:n] * aniso[["sclmat"]] ) * aux^2 
       )
     },
-    
-#     omega = {
-#       drotmat <- with(
-#         aniso[["sincos"]],
-#         rbind(
-#           c(             cp*co,            -cp*so, 0. ),
-#           c(  co*sz*sp + cz*so,  cz*co - sz*sp*so, 0. ),
-#           c( -cz*co*sp + sz*so,  co*sz + cz*sp*so, 0. )
-#         )[ 1:n, 1:n, drop = FALSE ]
-#       )
-#       colSums( 
-#         ( aniso[["sclmat"]] * drotmat %*% t(x) ) * ( aniso[["sclmat"]] * aux ) 
-#       )
-#     },
-#     
-#     phi = {
-#       drotmat <- with(
-#         aniso[["sincos"]],
-#         rbind(
-#           c(    -sp*so,    -co*sp,     cp ),
-#           c(  cp*sz*so,  cp*co*sz,  sz*sp ),
-#           c( -cz*cp*so, -cz*cp*co, -cz*sp )
-#         )[ 1:n, 1:n, drop = FALSE ]
-#       )
-#       colSums( 
-#         ( aniso[["sclmat"]] * drotmat %*% t(x) ) * ( aniso[["sclmat"]] * aux ) 
-#       )
-#     },
-#     
-#     zeta = {
-#       drotmat <- with(
-#         aniso[["sincos"]],
-#         rbind(
-#           c(                0.,               0.,     0. ),
-#           c(  co*sz + cz*sp*so, cz*co*sp - sz*so, -cz*cp ),
-#           c( -cz*co + sz*sp*so, co*sz*sp + cz*so, -cp*sz )
-#         )[ 1:n, 1:n, drop = FALSE ]
-#       )
-#       colSums( 
-#         ( aniso[["sclmat"]] * drotmat %*% t(x) ) * ( aniso[["sclmat"]] * aux ) 
-#       )
-#     },
     omega = {
       drotmat <- with(
         aniso[["sincos"]],
@@ -1521,7 +1508,7 @@ dcorr.dparam <-
     
     NA
   ) / ( hs * alpha^2 )
-  
+    
   ##  partial derivative of scaled lag distance with respect to scale
   ##  parameter
   
@@ -2389,11 +2376,12 @@ dcorr.dparam <-
 compute.estimating.equations <- 
   function(
     adjustable.param,
+    slv,
     envir,
     variogram.model, fixed.param, param.name, aniso.name,
     param.tf, bwd.tf, safe.param,
     lag.vectors,
-    XX, min.condnum, rankdef.x, yy, betahat, TT, bhat, 
+    XX, min.condnum, rankdef.x, yy, TT, xihat, 
     psi.function, dpsi.function, 
     tuning.psi, tuning.psi.nr,
     irwls.initial, irwls.maxiter, irwls.reltol,
@@ -2413,6 +2401,7 @@ compute.estimating.equations <-
   ## 2013-04-23 AP new names for robustness weights
   ## 2013-05-06 AP changes for solving estimating equations for xi
   ## 2013-06-12 AP substituting [["x"]] for $x in all lists
+  ## 2013-07-12 AP solving estimating equations by BBsolve{BB} (in addition to nleqlsv)
 
   ##  get lik.item
   
@@ -2421,11 +2410,11 @@ compute.estimating.equations <-
     adjustable.param, variogram.model, fixed.param, param.name, aniso.name,
     param.tf, bwd.tf, safe.param,
     lag.vectors,
-    XX, min.condnum, rankdef.x, yy, betahat, TT, bhat, 
+    XX, min.condnum, rankdef.x, yy, TT, xihat, 
     psi.function, dpsi.function, tuning.psi, tuning.psi.nr,
     irwls.initial, irwls.maxiter, irwls.reltol,
-    compute.Q = FALSE,
-    verbose
+    compute.xihat = TRUE, compute.Q = FALSE,
+    verbose = verbose
   )
   
   ##  check whether generalized covariance matrix is positive definite
@@ -2630,7 +2619,19 @@ compute.estimating.equations <-
     
     assign( "lik.item", lik.item, pos = as.environment( envir ) )
     
-    return( eeq.emp / eeq.exp - 1. )
+    if( slv ){
+      return( eeq.emp / eeq.exp - 1. )
+    } else {
+      res <- sum( (eeq.emp / eeq.exp - 1.)^2 )
+      if( verbose > 1 ) cat( 
+        "  sum(EEQ^2)         :",
+        format( 
+          signif( res, digits = 7 ), 
+          scientific = TRUE, width = 14
+        ), "\n", sep = "" 
+      )
+      return( res )
+    }
     
   } else {
     
@@ -2645,6 +2646,267 @@ compute.estimating.equations <-
 
 ##   ##############################################################################
 
+## compute.expanded.estimating.equations <- 
+##   function(
+##     allpar,
+##     slv,
+##     envir,
+##     variogram.model, fixed.param, param.name, aniso.name,
+##     param.tf, bwd.tf, safe.param,
+##     lag.vectors,
+##     XX, min.condnum, rankdef.x, yy, TT, 
+##     psi.function, dpsi.function, 
+##     tuning.psi, tuning.psi.nr,
+##     irwls.initial, irwls.maxiter, irwls.reltol,
+##     force.gradient,
+##     expectations,
+##     verbose
+##   )
+## {
+##   
+##   ## function evaluates the robustified estimating equations of
+##   ## variogram parameters derived from the Gaussian log-likelihood
+##   
+##   ## 2013-07-12 AP solving estimating equations by BBsolve{BB} (in addition to nleqlsv)
+##   
+##   ## select xihat and variogram parameters
+##   
+##   xihat <- allpar[ 1:NROW(XX) ]
+##   adjustable.param <- allpar[ -(1:NROW(XX)) ]
+## 
+##   ##  get lik.item
+##   
+##   lik.item <- prepare.likelihood.calculations(
+##     envir,
+##     adjustable.param, variogram.model, fixed.param, param.name, aniso.name,
+##     param.tf, bwd.tf, safe.param,
+##     lag.vectors,
+##     XX, min.condnum, rankdef.x, yy, TT, xihat, 
+##     psi.function, dpsi.function, tuning.psi, tuning.psi.nr,
+##     irwls.initial, irwls.maxiter, irwls.reltol,
+##     compute.xihat = FALSE, compute.Q = FALSE,
+##     verbose
+##   )
+##   
+##   ##  check whether generalized covariance matrix is positive definite
+##   
+##   if( lik.item[["Valpha"]][["error"]] ) {
+##     if( verbose > 0 ) cat(
+##       "\n(generalized) correlation matrix Valpha is not positive definite\n"
+##     )
+##     t.result <- rep( Inf, length( adjustable.param ) )
+##     names( t.result ) <- names( adjustable.param )
+##     return( t.result )
+##   }
+##     
+##   ##  check whether estimating equations should be computed for fixed parameters
+##   
+##   if( length( adjustable.param ) == 0 && force.gradient ){
+##     adjustable.param <- fixed.param
+##   }
+##   
+##   ##  evaluate estimating equations
+##   
+##   ##  compute auxiliary items
+##   
+##   TtT <- as.vector( table( TT ) )
+##   
+##   ##  compute Cov[bhat]
+##   
+##   r.cov <- compute.covariances(
+##     Valpha.objects = lik.item[["Valpha"]],
+##     Aalpha = lik.item[["effects"]][["Aalpha"]],
+##     Palpha = lik.item[["effects"]][["Palpha"]],
+##     rweights = lik.item[["effects"]][["rweights"]],
+##     XX = XX, TT = TT, names.yy = names( yy ),
+##     nugget = lik.item[["param"]]["nugget"],
+##     eta = lik.item[["eta"]],
+##     expectations = expectations,
+##     cov.bhat = TRUE, full.cov.bhat = TRUE,
+##     cov.betahat = FALSE,
+##     cov.bhat.betahat = FALSE,
+##     cov.delta.bhat = FALSE, full.cov.delta.bhat = FALSE,
+##     cov.delta.bhat.betahat = FALSE,
+##     cov.ehat = FALSE, full.cov.ehat = FALSE,
+##     cov.ehat.p.bhat = FALSE, full.cov.ehat.p.bhat = FALSE,
+##     aux.cov.pred.target = FALSE,
+##     extended.output = FALSE,
+##     verbose = verbose
+##   )
+##   
+##   if( r.cov[["error"]] ) {
+##     if( verbose > 0 ) cat(
+##       "\nan error occurred when computing the covariances of fixed and random effects\n"
+##     )
+##     t.result <- rep( Inf, length( adjustable.param ) )
+##     names( t.result ) <- names( adjustable.param )
+##     return( t.result )
+##   }
+##   
+##   ## estimating equations for xihat
+##   
+##   eeq.xihat <- estimating.eqations.xihat(
+##     res = lik.item[["effects"]][["residuals"]],
+##     TT = TT, xihat = xihat, 
+##     nugget = lik.item[["param"]]["nugget"],
+##     eta = lik.item[["eta"]],
+##     Valpha.inverse.Palpha = lik.item[["effects"]][["Valpha.inverse.Palpha"]],
+##     psi.function = psi.function, 
+##     tuning.psi = tuning.psi  
+##   )
+##   
+##   ##  initialize estimating equations for variogram parameters
+##   
+##   eeq.emp <- rep( NA, length( adjustable.param ) )
+##   names( eeq.emp ) <- names( adjustable.param )
+##   
+##   eeq.exp <- rep( NA, length( adjustable.param ) )
+##   names( eeq.exp ) <- names( adjustable.param )
+##   
+##   ##  estimation equation for nugget
+##   
+##   if( "nugget" %in% names( adjustable.param ) ) {
+##     
+##     ##  compute trace of Cov[ psi( residuals/sqrt(nugget) ) ]
+##     
+##     eeq.exp["nugget"] <- sum( 
+##       diag( 
+##         lik.item[["Valpha"]][["Valpha.inverse"]] %*%             
+##         ( 1/TtT * lik.item[["Valpha"]][["Valpha.inverse"]] ) %*% 
+##         r.cov[["cov.bhat"]] 
+##       ) 
+##     )
+##     eeq.emp["nugget"] <- sum( 
+##       ( lik.item[["effects"]][["z.star"]] )^2 / TtT
+##     )
+##     
+##   }
+##   
+##   ##  estimation equation for spatial nugget
+##   
+##   if( "snugget" %in% names( adjustable.param ) ) {
+##     
+##     ##  compute trace( Valpha^-1 Cov[bhat] )
+##     
+##     eeq.exp["snugget"] <- sum(
+##       rowSums( 
+##         (lik.item[["Valpha"]][["Valpha.inverse"]] %*% lik.item[["Valpha"]][["Valpha.inverse"]] ) * 
+##         r.cov[["cov.bhat"]]
+##       )
+##     )
+##     eeq.emp["snugget"] <- sum( lik.item[["effects"]][["z.star"]]^2 )
+##     
+##   }
+##   
+##   ##  estimation equation for variance
+##   
+##   if( "variance" %in% names( adjustable.param ) ) {
+##     
+##     ##  compute trace( Valpha^-1 Cov[bhat] )
+##     
+##     eeq.exp["variance"] <- sum(
+##       rowSums( 
+##         ( lik.item[["Valpha"]][["Valpha.inverse"]] %*% lik.item[["Valpha"]][["Valpha0"]] %*% lik.item[["Valpha"]][["Valpha.inverse"]] ) * 
+##         r.cov[["cov.bhat"]]
+##       )
+##     )
+##     eeq.emp["variance"] <- sum( 
+##       lik.item[["effects"]][["z.star"]] * drop( lik.item[["Valpha"]][["Valpha0"]] %*% lik.item[["effects"]][["z.star"]] )
+##     )
+##     
+##   }
+##   
+##   ##  estimation equations for scale, extra variogram and anisotropy
+##   ##  parameters
+##   
+##   extra.par <- names( adjustable.param )[ !( 
+##     names( adjustable.param ) %in% c( "variance", "snugget", "nugget" )
+##   )]
+##   
+##   for( t.i in extra.par ){
+##     
+##     ##  compute trace( Valpha^-1 * dValpha/dalpha * Valpha^-1 * Cov[bhat] )
+##     
+##     dValpha <- dcorr.dparam(
+##       x = lag.vectors, variogram.model = variogram.model, param = lik.item[["param"]], 
+##       d.param = t.i,
+##       aniso = lik.item[["aniso"]],
+##       verbose = verbose
+##     )
+##     ##       if( identical( class( dValpha ), "try-error" ) ){
+##     ##         if( verbose > 0 ) cat( "error in dcorr.dparam\n\n" )
+##     ##         t.result <- rep( Inf, length( adjustable.param ) )
+##     ##         names( t.result ) <- names( adjustable.param )
+##     ##         return( t.result )
+##     ##       }
+##     
+##     eeq.exp[t.i] <- sum(
+##       rowSums( 
+##         (lik.item[["Valpha"]][["Valpha.inverse"]] %*% dValpha %*% lik.item[["Valpha"]][["Valpha.inverse"]]) * 
+##         r.cov[["cov.bhat"]]
+##       )
+##     )
+##     eeq.emp[t.i] <- sum( 
+##       lik.item[["effects"]][["z.star"]] * drop( dValpha %*% lik.item[["effects"]][["z.star"]] )
+##     )
+##     
+##   }
+##   
+##   if( verbose > 1 ) {
+##     cat( "\n                      ",
+##       format( c( "min(xihat)", "max(xihat)" ), width = 14, justify = "right" ), 
+##       "\n", sep =""
+##     )
+##     cat( "  EEQ                :", 
+##       format( 
+##         signif( range(eeq.xihat), digits = 7 ), 
+##         scientific = TRUE, width = 14
+##       ), "\n", sep = "" 
+##     )
+##     cat( "\n                      ",
+##       format( names( eeq.emp), width = 14, justify = "right" ), 
+##       "\n", sep =""
+##     )
+##     cat( "  EEQ                :", 
+##       format( 
+##         signif( eeq.emp / eeq.exp - 1, digits = 7 ), 
+##         scientific = TRUE, width = 14
+##       ), "\n", sep = "" 
+##     )
+##     if( verbose > 2 ){
+##       cat( "      empirical terms:", 
+##         format( 
+##           signif( eeq.emp, digits = 7 ), 
+##           scientific = TRUE, width = 14
+##         ), "\n", sep = "" 
+##       )
+##       cat( "      expected  terms:", 
+##         format( 
+##           signif( eeq.exp, digits = 7 ), 
+##           scientific = TRUE, width = 14
+##         ), "\n", sep = ""
+##       )
+##     }
+##     cat("\n")
+##   }
+##   
+##   ##  store terms in lik.item object
+##   
+##   lik.item[["eeq"]] <- list(
+##     eeq.xihat = eeq.xihat,
+##     eeq.emp = eeq.emp,
+##     eeq.exp = eeq.exp
+##   )
+##   
+##   assign( "lik.item", lik.item, pos = as.environment( envir ) )
+##   
+##   return( c( eeq.xihat, eeq.emp / eeq.exp - 1. ) )
+##   
+## }
+
+
+##   ##############################################################################
+
 negative.restr.loglikelihood <- 
   function(
     adjustable.param,
@@ -2652,7 +2914,7 @@ negative.restr.loglikelihood <-
     variogram.model, fixed.param, param.name, aniso.name,
     param.tf, bwd.tf, safe.param,
     lag.vectors,
-    XX, min.condnum, rankdef.x, yy, betahat, TT, bhat, 
+    XX, min.condnum, rankdef.x, yy, TT, xihat, 
     psi.function, dpsi.function, 
     tuning.psi, tuning.psi.nr, 
     irwls.initial, irwls.maxiter, irwls.reltol,
@@ -2670,6 +2932,7 @@ negative.restr.loglikelihood <-
   ## 2012-11-27 AP changes in parameter back-transformation
   ## 2013-06-03 AP changes for estimating xihat
   ## 2013-06-12 AP substituting [["x"]] for $x in all lists
+  ## 2013-07-12 AP solving estimating equations by BBsolve{BB} (in addition to nleqlsv)
   
   #     sel <- !c( param.name, aniso.name ) %in% names( fixed.param )
   #     names( adjustable.param ) <- c( param.name, aniso.name )[sel]
@@ -2682,10 +2945,10 @@ negative.restr.loglikelihood <-
     adjustable.param, variogram.model, fixed.param, param.name, aniso.name,
     param.tf, bwd.tf, safe.param,
     lag.vectors,
-    XX, min.condnum, rankdef.x, yy, betahat, TT, bhat, 
+    XX, min.condnum, rankdef.x, yy, TT, xihat, 
     psi.function, dpsi.function, tuning.psi, tuning.psi.nr,
     irwls.initial, irwls.maxiter, irwls.reltol,
-    compute.Q = TRUE,
+    compute.xihat = TRUE, compute.Q = TRUE,
     verbose
   )
   
@@ -2768,7 +3031,7 @@ gradient.negative.restricted.loglikelihood <-
     variogram.model, fixed.param, param.name, aniso.name,
     param.tf, deriv.fwd.tf, bwd.tf, safe.param,
     lag.vectors,
-    XX, min.condnum, rankdef.x, yy, betahat, TT, bhat, 
+    XX, min.condnum, rankdef.x, yy, TT, xihat, 
     psi.function, dpsi.function, d2psi.function, 
     tuning.psi, tuning.psi.nr,
     irwls.initial, irwls.maxiter, irwls.reltol,
@@ -2786,6 +3049,7 @@ gradient.negative.restricted.loglikelihood <-
   ## 2012-11-04 AP unscaled psi-function
   ## 2012-11-27 AP changes in parameter back-transformation
   ## 2013-06-12 AP substituting [["x"]] for $x in all lists
+  ## 2013-07-12 AP solving estimating equations by BBsolve{BB} (in addition to nleqlsv)
 
   ##   dtrafo.fct <- list(
   ##     log      = function( x ) 1/x,
@@ -2799,10 +3063,10 @@ gradient.negative.restricted.loglikelihood <-
     adjustable.param, variogram.model, fixed.param, param.name, aniso.name,
     param.tf, bwd.tf, safe.param,
     lag.vectors,
-    XX, min.condnum, rankdef.x, yy, betahat, TT, bhat, 
+    XX, min.condnum, rankdef.x, yy, TT, xihat, 
     psi.function, dpsi.function, tuning.psi, tuning.psi.nr,
     irwls.initial, irwls.maxiter, irwls.reltol,
-    compute.Q = TRUE,
+    compute.xihat = TRUE, compute.Q = TRUE,
     verbose
   )
   
@@ -3196,6 +3460,8 @@ gradient.negative.restricted.loglikelihood <-
 
 georob.fit <- 
   function(
+    ## root.finding,
+    slv,
     envir,
     initial.objects,
     variogram.model, param, fit.param,
@@ -3222,13 +3488,9 @@ georob.fit <-
     irwls.reltol, 
     force.gradient,
     zero.dist,
-    nleqslv.method,
-    nleqslv.control,
-    optim.method, 
-    optim.lower, 
-    optim.upper, 
-    hessian,
-    optim.control,
+    nleqslv.method, nleqslv.control,
+    ## bbsolve.method, bbsolve.control,
+    optim.method, optim.lower, optim.upper, hessian, optim.control,
     full.output,
     verbose
   )
@@ -3260,6 +3522,10 @@ georob.fit <-
   ## 2013-05-06 AP changes for solving estimating equations for xi
   ## 2013-06-12 AP changes in stored items of Valpha object
   ## 2013-06-12 AP substituting [["x"]] for $x in all lists
+  ## 2013-07-03 AP new transformation of rotation angles
+  ## 2013-07-09 AP catching errors occuring when fitting anisotropic
+  ##               variograms with default anisotropy parameters
+  ## 2013-07-12 AP solving estimating equations by BBsolve{BB} (in addition to nleqlsv)
   
   ##  ToDos:
   
@@ -3567,7 +3833,17 @@ georob.fit <-
   if( aniso["zeta"] < -90. ||  aniso["zeta"] > 90. ) stop(
     "initial value of parameter 'zeta' must be in [-90, 90]" 
   )
-
+  
+  ## adjust default initial values of anisotropy parameters if these are
+  ## fitted
+  
+  if( fit.aniso["omega"] && aniso["f1"] == 1. ) aniso["f1"] <- aniso["f1"] - sqrt( .Machine$double.eps )
+  if( fit.aniso["phi"] ){
+    if( aniso["f1"] == 1. ) aniso["f1"] <- aniso["f1"] - 0.0001
+    if( aniso["f2"] == 1. ) aniso["f2"] <- aniso["f2"] - 0.0001
+  }
+  if( fit.aniso["zeta"] && aniso["f2"] == 1. ) aniso["f2"] <- aniso["f2"] - 0.0001
+  
   ##  rearrange and check flags controlling anisotropy parameter fitting 
   
   fit.aniso <- fit.aniso[aniso.name]
@@ -3585,10 +3861,6 @@ georob.fit <-
 #   if( !all( aniso.tf %in% c( "log", "identity" ) ) ) stop(
 #     "undefined transformation of anisotropy parameter"
 #   )
-  
-  ##  convert angles to radian
-  
-  aniso[c("omega", "phi", "zeta" )] <- aniso[c("omega", "phi", "zeta" )] / 180 * pi
   
   ##  transform initial anisotropy parameters
   
@@ -3639,7 +3911,7 @@ georob.fit <-
   if( !identical( t.exp[["message"]], "OK" ) ) stop( t.exp[["message"]] )
   expectations["dpsi"] <- t.exp[["value"]]
   if( verbose > 1 ) cat( 
-    "\nexpectation of psi'(epsilon/sigma)                             :", 
+    "\nexpectation of psi'(epsilon/sigma)                    :", 
     signif( expectations["dpsi"] ), "\n" 
   )
   
@@ -3656,81 +3928,263 @@ georob.fit <-
   if( !identical( t.exp[["message"]], "OK" ) ) stop( t.exp[["message"]] )
   expectations["psi2"] <- t.exp[["value"]]
   if( verbose > 1 ) cat( 
-    "expectation of (psi(epsilon/sigma))^2                          :", 
+    "expectation of (psi(epsilon/sigma))^2                 :", 
     signif( t.exp[["value"]] ), "\n" 
   )
   
+  ## xihat
   
+  xihat <- drop( XX %*% betahat + bhat )
+  names( xihat ) <- rownames( XX )
   
   r.hessian <- NULL
   
   if( tuning.psi < tuning.psi.nr ) {
     
+    ## robust REML estimation
+    
     if( any( c( fit.param, fit.aniso ) ) ){
       
-      ##  some variogram parameters are fitted
+      ##  find roots of estimating equations
       
-      ##  find root of estimating equations
+      if( slv ){
+        
+        ##         if( identical( root.finding, "nleqslv" ) ){
       
-      r.root <- nleqslv(
-        x = c( 
-          transformed.param[ fit.param ], 
-          transformed.aniso[ fit.aniso ] 
-        ),
-        fn = compute.estimating.equations,
-        method = nleqslv.method,
-        control = nleqslv.control,
-        envir = envir,        
-        variogram.model = variogram.model,
-        fixed.param = c( 
-          transformed.param[ !fit.param ], 
-          transformed.aniso[ !fit.aniso ]
-        ),
-        param.name = param.name, 
-        aniso.name = aniso.name,
-        param.tf = param.tf,
-        bwd.tf = bwd.tf,
-        safe.param = safe.param,
-        lag.vectors = lag.vectors,
-        XX = XX, min.condnum = min.condnum, rankdef.x = rankdef.x,
-        yy = yy, betahat = betahat, TT = TT, bhat = bhat, 
-        psi.function = rho.psi.etc[["psi.function"]], 
-        dpsi.function = rho.psi.etc[["dpsi.function"]], 
-        tuning.psi = tuning.psi,
-        tuning.psi.nr = tuning.psi.nr,
-        irwls.initial = irwls.initial,
-        irwls.maxiter = irwls.maxiter,
-        irwls.reltol = irwls.reltol,
-        force.gradient = force.gradient,
-        expectations = expectations,
-        verbose = verbose
-      ) 
-      
-      #       r.param <- r.root[["x"]]
-      #       names( r.param ) <- names( transformed.param[ fit.param ] )
-      
-      r.gradient <- r.root[["fvec"]]
-      names( r.gradient ) <- c(
-        names( transformed.param[ fit.param ] ),
-        names( transformed.aniso[ fit.aniso ] )
-      )
-      
-      r.converged <- r.root[["termcd"]] == 1
-      r.convergence.code <- r.root[["termcd"]] 
-      
-      r.counts <- c( nfcnt = r.root[["nfcnt"]], njcnt = r.root[["njcnt"]] )
+          r.root <- nleqslv(
+            x = c( 
+              transformed.param[ fit.param ], 
+              transformed.aniso[ fit.aniso ] 
+            ),
+            fn = compute.estimating.equations,
+            method = nleqslv.method,
+            control = nleqslv.control,
+            slv = slv,
+            envir = envir,        
+            variogram.model = variogram.model,
+            fixed.param = c( 
+              transformed.param[ !fit.param ], 
+              transformed.aniso[ !fit.aniso ]
+            ),
+            param.name = param.name, 
+            aniso.name = aniso.name,
+            param.tf = param.tf,
+            bwd.tf = bwd.tf,
+            safe.param = safe.param,
+            lag.vectors = lag.vectors,
+            XX = XX, min.condnum = min.condnum, rankdef.x = rankdef.x,
+            yy = yy, TT = TT, xihat = xihat, 
+            psi.function = rho.psi.etc[["psi.function"]], 
+            dpsi.function = rho.psi.etc[["dpsi.function"]], 
+            tuning.psi = tuning.psi,
+            tuning.psi.nr = tuning.psi.nr,
+            irwls.initial = irwls.initial,
+            irwls.maxiter = irwls.maxiter,
+            irwls.reltol = irwls.reltol,
+            force.gradient = force.gradient,
+            expectations = expectations,
+            verbose = verbose
+          ) 
+          
+          #       r.param <- r.root[["x"]] names( r.param ) <- names(
+          #       transformed.param[ fit.param ] )
+          
+          r.gradient <- r.root[["fvec"]]
+          names( r.gradient ) <- c(
+            names( transformed.param[ fit.param ] ),
+            names( transformed.aniso[ fit.aniso ] )
+          )
+          
+          r.converged <- r.root[["termcd"]] == 1
+          r.convergence.code <- r.root[["termcd"]] 
+          
+          r.counts <- c( nfcnt = r.root[["nfcnt"]], njcnt = r.root[["njcnt"]] )
+          
+          ##         } 
+          ##        
+          ##         else if( identical( root.finding, "bbsolve" ) ) {
+          ##           
+          ##           r.root <- BBsolve(
+          ##             par = c( 
+          ##               xihat,
+          ##               transformed.param[ fit.param ], 
+          ##               transformed.aniso[ fit.aniso ] 
+          ##             ),
+          ##             fn = compute.expanded.estimating.equations,
+          ##             method = bbsolve.method,
+          ##             control = bbsolve.control,
+          ##             quiet = verbose == 0,
+          ##             slv = slv,
+          ##             envir = envir,        
+          ##             variogram.model = variogram.model,
+          ##             fixed.param = c( 
+          ##               transformed.param[ !fit.param ], 
+          ##               transformed.aniso[ !fit.aniso ]
+          ##             ),
+          ##             param.name = param.name, 
+          ##             aniso.name = aniso.name,
+          ##             param.tf = param.tf,
+          ##             bwd.tf = bwd.tf,
+          ##             safe.param = safe.param,
+          ##             lag.vectors = lag.vectors,
+          ##             XX = XX, min.condnum = min.condnum, rankdef.x = rankdef.x,
+          ##             yy = yy, TT = TT, 
+          ##             psi.function = rho.psi.etc[["psi.function"]], 
+          ##             dpsi.function = rho.psi.etc[["dpsi.function"]], 
+          ##             tuning.psi = tuning.psi,
+          ##             tuning.psi.nr = tuning.psi.nr,
+          ##             irwls.initial = irwls.initial,
+          ##             irwls.maxiter = irwls.maxiter,
+          ##             irwls.reltol = irwls.reltol,
+          ##             force.gradient = force.gradient,
+          ##             expectations = expectations,
+          ##             verbose = verbose
+          ##           ) 
+          ##
+          ##           r.converged <- r.root[["convergence"]] == 0
+          ##           r.convergence.code <- r.root[["convergence"]] 
+          ##           r.counts <- c( nfcnt = r.root[["feval"]], njcnt = NA_integer_ )
+          ## 
+          ##           r.gradient <- compute.expanded.estimating.equations(
+          ##             allpar = r.root[["par"]],
+          ##             slv = TRUE,
+          ##             envir = envir,        
+          ##             variogram.model = variogram.model,
+          ##             fixed.param = c( 
+          ##               transformed.param[ !fit.param ], 
+          ##               transformed.aniso[ !fit.aniso ]
+          ##             ),
+          ##             param.name = param.name, 
+          ##             aniso.name = aniso.name,
+          ##             param.tf = param.tf,
+          ##             bwd.tf = bwd.tf,
+          ##             safe.param = safe.param,
+          ##             lag.vectors = lag.vectors,
+          ##             XX = XX, min.condnum = min.condnum, rankdef.x = rankdef.x,
+          ##             yy = yy, TT = TT,  
+          ##             psi.function = rho.psi.etc[["psi.function"]], 
+          ##             dpsi.function = rho.psi.etc[["dpsi.function"]], 
+          ##             tuning.psi = tuning.psi,
+          ##             tuning.psi.nr = tuning.psi.nr,
+          ##             irwls.initial = irwls.initial,
+          ##             irwls.maxiter = irwls.maxiter,
+          ##             irwls.reltol = irwls.reltol,
+          ##             force.gradient = force.gradient,
+          ##             expectations = expectations,
+          ##             verbose = verbose
+          ##           )
+          ##           
+          ##         }
+          
+      } else {
+        
+        ## minimize sum of squared estimating equations
+        
+        r.opt.eeq.sq <- optim(
+          par = c( 
+            transformed.param[ fit.param ], 
+            transformed.aniso[ fit.aniso ] 
+          ),
+          fn = compute.estimating.equations,
+          #         gr = gradient.negative.restricted.loglikelihood,
+          method = optim.method, 
+          lower = optim.lower,
+          upper = optim.upper,
+          control = optim.control,
+          hessian = FALSE,
+          slv = slv,
+          envir = envir,        
+          variogram.model = variogram.model,
+          fixed.param = c( 
+            transformed.param[ !fit.param ], 
+            transformed.aniso[ !fit.aniso ]
+          ),
+          param.name = param.name, 
+          aniso.name = aniso.name,
+          param.tf = param.tf,
+          bwd.tf = bwd.tf,
+          safe.param = safe.param,
+          lag.vectors = lag.vectors,
+          XX = XX, min.condnum = min.condnum, rankdef.x = rankdef.x,
+          yy = yy, TT = TT, xihat = xihat, 
+          psi.function = rho.psi.etc[["psi.function"]], 
+          dpsi.function = rho.psi.etc[["dpsi.function"]], 
+          tuning.psi = tuning.psi,
+          tuning.psi.nr = tuning.psi.nr,
+          irwls.initial = irwls.initial,
+          irwls.maxiter = irwls.maxiter,
+          irwls.reltol = irwls.reltol,
+          force.gradient = force.gradient,
+          expectations = expectations,
+          verbose = verbose
+        )
+        
+        r.converged <- r.opt.eeq.sq[["convergence"]] == 0
+        r.convergence.code <- r.opt.eeq.sq[["convergence"]]      
+        r.counts <- r.opt.eeq.sq[["counts"]]
+        
+        if( verbose > 0 ){
+          cat( 
+            "\n  sum(EEQ^2)         :",
+            format( 
+              signif( r.opt.eeq.sq[["value"]], digits = 7 ), 
+              scientific = TRUE, width = 14
+            ), sep = "" 
+          )
+          cat( 
+            "\n  convergence code   :", 
+            format( 
+              signif( r.opt.eeq.sq[["convergence"]], digits = 0 ), 
+              scientific = FALSE, width = 14
+            ), "\n\n", sep = "" 
+          )
+        }
+               
+        #         if( hessian ) r.hessian <- r.opt.eeq.sq[["hessian"]]
+        
+        r.gradient <- compute.estimating.equations(
+          adjustable.param = r.opt.eeq.sq[["par"]],
+          slv = TRUE,
+          envir = envir,        
+          variogram.model = variogram.model,
+          fixed.param = c( 
+            transformed.param[ !fit.param ], 
+            transformed.aniso[ !fit.aniso ]
+          ),
+          param.name = param.name, 
+          aniso.name = aniso.name,
+          param.tf = param.tf,
+          bwd.tf = bwd.tf,
+          safe.param = safe.param,
+          lag.vectors = lag.vectors,
+          XX = XX, min.condnum = min.condnum, rankdef.x = rankdef.x,
+          yy = yy, TT = TT, xihat = xihat, 
+          psi.function = rho.psi.etc[["psi.function"]], 
+          dpsi.function = rho.psi.etc[["dpsi.function"]], 
+          tuning.psi = tuning.psi,
+          tuning.psi.nr = tuning.psi.nr,
+          irwls.initial = irwls.initial,
+          irwls.maxiter = irwls.maxiter,
+          irwls.reltol = irwls.reltol,
+          force.gradient = force.gradient,
+          expectations = expectations,
+          verbose = verbose
+        )
+
+      }
       
     } else {
       
       ##  all variogram parameters are fixed
       
-      ##  compute values of estimating equations
+      ##  evaluate estimating equations
       
       r.gradient <- compute.estimating.equations(
         adjustable.param = c( 
           transformed.param[ fit.param ], 
           transformed.aniso[ fit.aniso ] 
         ),
+        slv = TRUE,
         envir = envir,        
         variogram.model = variogram.model,
         fixed.param = c( 
@@ -3744,7 +4198,7 @@ georob.fit <-
         safe.param = safe.param,
         lag.vectors = lag.vectors,
         XX = XX, min.condnum = min.condnum, rankdef.x = rankdef.x,
-        yy = yy, betahat = betahat, TT = TT, bhat = bhat, 
+        yy = yy, TT = TT, xihat = xihat, 
         psi.function = rho.psi.etc[["psi.function"]], 
         dpsi.function = rho.psi.etc[["dpsi.function"]], 
         tuning.psi = tuning.psi,
@@ -3769,8 +4223,7 @@ georob.fit <-
     
     if( any( fit.param ) ){
       
-      ##  some variogram parameters are fitted
-      ##  minimize laplace approximation of negative restricted loglikelihood
+      ##  Gaussian REML estimation
       
       r.opt.neg.restricted.loglik <- optim(
         par = c( 
@@ -3798,7 +4251,7 @@ georob.fit <-
         safe.param = safe.param,
         lag.vectors = lag.vectors,
         XX = XX, min.condnum = min.condnum, rankdef.x = rankdef.x,
-        yy = yy, betahat = betahat, TT = TT, bhat = bhat, 
+        yy = yy, TT = TT, xihat = xihat, 
         psi.function = rho.psi.etc[["psi.function"]], 
         dpsi.function = rho.psi.etc[["dpsi.function"]], 
         d2psi.function = rho.psi.etc[["d2psi.function"]], 
@@ -3818,7 +4271,6 @@ georob.fit <-
       
       if( hessian ) r.hessian <- r.opt.neg.restricted.loglik[["hessian"]]
       
-      
       r.gradient <- gradient.negative.restricted.loglikelihood(
         adjustable.param = r.opt.neg.restricted.loglik[["par"]],
         envir = envir,
@@ -3835,7 +4287,7 @@ georob.fit <-
         safe.param = safe.param,
         lag.vectors = lag.vectors,
         XX = XX, min.condnum = min.condnum, rankdef.x = rankdef.x,
-        yy = yy, betahat = betahat, TT = TT, bhat = bhat, 
+        yy = yy, TT = TT, xihat = xihat, 
         psi.function = rho.psi.etc[["psi.function"]], 
         dpsi.function = rho.psi.etc[["dpsi.function"]], 
         d2psi.function = rho.psi.etc[["d2psi.function"]], 
@@ -3873,7 +4325,7 @@ georob.fit <-
         safe.param = safe.param,
         lag.vectors = lag.vectors,
         XX = XX, min.condnum = min.condnum, rankdef.x = rankdef.x,
-        yy = yy, betahat = betahat, TT = TT, bhat = bhat, 
+        yy = yy, TT = TT, xihat = xihat, 
         psi.function = rho.psi.etc[["psi.function"]], 
         dpsi.function = rho.psi.etc[["dpsi.function"]], 
         tuning.psi = tuning.psi,
@@ -3903,7 +4355,7 @@ georob.fit <-
         safe.param = safe.param,
         lag.vectors = lag.vectors,
         XX = XX, min.condnum = min.condnum, rankdef.x = rankdef.x,
-        yy = yy, betahat = betahat, TT = TT, bhat = bhat, 
+        yy = yy, TT = TT, xihat = xihat, 
         psi.function = rho.psi.etc[["psi.function"]], 
         dpsi.function = rho.psi.etc[["dpsi.function"]], 
         d2psi.function = rho.psi.etc[["d2psi.function"]], 
@@ -4007,6 +4459,37 @@ georob.fit <-
     
     result.list[["cov"]] <- compress( r.cov )
     
+  }
+  
+  ## map angles to halfcircle
+  
+  if( !result.list[["aniso"]][["isotropic"]] ){
+    
+    if( result.list[["aniso"]][["aniso"]]["omega"] < 0. ){
+      result.list[["aniso"]][["aniso"]]["omega"] <- 
+      result.list[["aniso"]][["aniso"]]["omega"] + 180.
+    }
+    if( result.list[["aniso"]][["aniso"]]["omega"] > 180. ){
+      result.list[["aniso"]][["aniso"]]["omega"] <- 
+      result.list[["aniso"]][["aniso"]]["omega"] - 180.
+    }
+    if( result.list[["aniso"]][["aniso"]]["phi"] < 0. ){
+      result.list[["aniso"]][["aniso"]]["phi"] <- 
+      result.list[["aniso"]][["aniso"]]["phi"] + 180.
+    }
+    if( result.list[["aniso"]][["aniso"]]["phi"] > 180. ){
+      result.list[["aniso"]][["aniso"]]["phi"] <- 
+      result.list[["aniso"]][["aniso"]]["phi"] - 180.
+    }
+    if( result.list[["aniso"]][["aniso"]]["zeta"] < 90. ){
+      result.list[["aniso"]][["aniso"]]["zeta"] <- 
+      result.list[["aniso"]][["aniso"]]["zeta"] + 180.
+    }
+    if( result.list[["aniso"]][["aniso"]]["zeta"] > 90. ){
+      result.list[["aniso"]][["aniso"]]["zeta"] <- 
+      result.list[["aniso"]][["aniso"]]["zeta"] - 180.
+    }
+  
   }
   
   ##      result.list[["df.model"]] <- r.df

@@ -1,4 +1,4 @@
-% 2013-06-03 A. Papritz
+% 2013-09-06 A. Papritz
 % R CMD Rdconv -t html -o bla.html internal.functions.Rd ; open bla.html; R CMD Rd2pdf --force internal.functions.Rd 
 \name{internal.functions}
 \alias{compute.covariances}
@@ -18,23 +18,29 @@
 \title{Internal Functions of Package \pkg{georob}}
 %
 \description{
-The internal, unexported functions 
-\code{compute.covariances},
-\code{compute.estimating.equations},
-\code{compute.semivariance},
-\code{dcorr.dparam},
-\code{estimate.xihat},
-\code{gcr},
-\code{georob.fit},
-\code{getCall.georob},
-\code{gradient.negative.restricted.loglikelihood},
-\code{K},
-\code{negative.restr.loglikelihood},
-\code{prepare.likelihood.calculations},
-\code{update.xihat}
+The internal unexported functions 
+\itemize{
+  \item\code{compute.covariances},
+  \item\code{compute.estimating.equations},
+  \item\code{compute.semivariance},
+  \item\code{dcorr.dparam},
+  \item\code{estimate.xihat},
+  \item\code{gcr},
+  \item\code{georob.fit},
+  \item\code{getCall.georob},
+  \item\code{gradient.negative.restricted.loglikelihood},
+  \item\code{negative.restr.loglikelihood},
+  \item\code{prepare.likelihood.calculations},
+  \item\code{update.xihat}
+}
 are not intended for direct use.  However, as any unexported function they
 can be accessed by typing
-\code{georob:::\var{function-name}}.
+\code{georob:::\var{function-name}}.  
+
+In addition, the (exported) function \code{K} is required for computing
+block kriging predictions by the (unexported) function
+\code{f.point.block.cov} of the package
+\pkg{constrainedKriging}.
 }
 
 \author{
