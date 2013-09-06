@@ -36,14 +36,15 @@ georob(formula, data, subset, weights, na.action, model = TRUE,
 %
 \arguments{
   \item{formula}{a symbolic description of the regression model to be fit.  See
-    \code{\link{lm}} and \code{\link{formula}} for more details.}
+    \code{\link[stats]{lm}} and \code{\link[stats]{formula}} for more details.}
     
-  \item{data}{an optional data frame, list or environment (or another object
-    coercible by \cr \code{\link{as.data.frame}} to a data frame) containing
-    the variables in the model and the coordinates where the data was
-    recorded.  If not found in \code{data}, the variables are taken from
-    \code{environment(formula)}, typically the environment from which
-    \code{georob} is called.}
+  \item{data}{an optional data frame, a
+  \code{\link[sp]{SpatialPointsDataFrame}}, list or environment (or another
+  object coercible by \code{\link{as.data.frame}} to a data frame)
+  containing the variables in the model and the coordinates where the data
+  was recorded.  If not found in \code{data}, the variables are taken from
+  \code{environment(formula)}, typically the environment from which
+  \code{georob} is called.}
     
   \item{subset}{an optional vector specifying a subset of observations
     to be used in the fitting process.}
@@ -298,7 +299,7 @@ georob(formula, data, subset, weights, na.action, model = TRUE,
         
         \item \emph{Exploiting the functionality of \code{optim}}: If a
         spatial model is fitted non-robustly, then the arguments
-        \code{lower}, \code{upper} and \code{method} of \code{\link{optim}}
+        \code{lower}, \code{upper} and \code{method} of \code{\link[stats]{optim}}
         can be used to constrain the parameters (see
         \code{\link{optim.control}} how to pass them to \code{optim}).  To
         achieve this one has to use the arguments \code{method = "L-BFGS-B"},
@@ -410,6 +411,7 @@ fit of a spatial linear model.  See
   \code{\link{georob.control}} for controlling the behaviour of \code{georob};
   \code{\link{cv.georob}} for assessing the goodness of a fit by \code{georob}; 
   \code{\link{predict.georob}} for computing robust kriging predictions; and finally
+  \code{\link{georobModelBuilding}} for stepwise building models of class \code{georob};
   \code{\link{georobMethods}} for further methods for the class \code{georob}.
 }
 

@@ -4,6 +4,13 @@
 #                                   #
 #####################################
 
+# add1.georob
+# deviance.georob
+# drop1.georob
+# extractAIC.georob
+# logLik.georob
+# step.default
+# step.georob
 # model.frame.georob
 # model.matrix.georob
 # nobs.georob
@@ -671,6 +678,7 @@ print.summary.georob <-
   ## 2012-12-18 AP invisible(x)
   ## 2013-04-23 AP new names for robustness weights
   ## 2013-06-12 AP substituting [["x"]] for $x in all lists
+  ## 2014-01-23 AP prints maximized loglik even if all parameters fixed
   
   cat("\nCall:")
   cat( paste( deparse(x[["call"]]), sep = "\n", collapse = "\n"),  "\n", sep = "" )
@@ -701,13 +709,13 @@ print.summary.georob <-
     cat( "\nEstimating equations (gradient)\n")
     print( x[["gradient"]], digits = digits, ... )
     
-    if( x[["tuning.psi"]] >= 
-      georob.control()[["tuning.psi.nr"]] ) cat(
-      "\nMaximized restricted log-likelihood:", 
-      x[["loglik"]], "\n"
-    )
-    
   }
+  
+  if( x[["tuning.psi"]] >= 
+    georob.control()[["tuning.psi.nr"]] ) cat(
+    "\nMaximized restricted log-likelihood:", 
+    x[["loglik"]], "\n"
+  )
   
   df <- x[["df.residual"]]
   
@@ -814,20 +822,23 @@ vcov.georob <-
 waldtest.georob <- 
   function(
     object, ..., vcov = NULL, test = c("Chisq", "F"), name = NULL,
-    fixed = TRUE, verbose = 1
+    fixed = TRUE
   )
 {
 
+  ## waldtest method for class georob
+  
   ## 2012-02-08 AP change for anisotropic variograms
   ## 2013-06-12 AP substituting [["x"]] for $x in all lists
+  ## 2013-02-19 AP correcting option for verbose output
 
-  ## refit model with fixed variogram parameters
-  
   test <- match.arg( test )
+  
+  ## refit object with fixed variogram parameters
   
   if( fixed ) {
     
-    if( verbose > 0 ) cat( "\nWald-Test with fixed variogram parameters of model 1\n\n" )
+    cat( "\nWald-Test with fixed variogram parameters of model 1\n\n" )
     
     object <- update( 
       object, 
@@ -849,7 +860,7 @@ waldtest.georob <-
   ## Wald-Test
   
   waldtest.default(
-    object = object, ..., vcov = vcov, test = test, name = name 
+    object = object, ..., vcov = vcov, test = test, name = name
   )
   
 }
@@ -862,15 +873,17 @@ logLik.georob <-
   
   ## 2012-12-22 method for extracting (restricted) loglikelihood
   ## 2013-06-12 AP substituting [["x"]] for $x in all lists
+  ## 2014-02-27 AP computing 'pseudo' likelihood for robustly fitted models
   
-   val <- if( REML ){
+  
+  val <- if( REML ){
     val <- object[["loglik"]] 
-  } else if( object[["tuning.psi"]] >= georob.control()[["tuning.psi.nr"]] ){
+  } else {
     D <- deviance( object )
     -0.5 * ( 
       D + attr( D, "log.det.covmat" ) + length( object[["residuals"]] ) * log( 2 * pi )
     ) 
-  } else NA_real_
+  }
   
   attr(val, "nall") <- length(object[["residuals"]])
   attr(val, "nobs") <- object[["df.residual"]]
@@ -886,9 +899,9 @@ logLik.georob <-
 ## ##############################################################################
 
 deviance.georob <- 
-  function( 
-    object, ...
-  )
+function( 
+  object, ...
+)
 {
   ## deviance method for class georob
   
@@ -896,6 +909,7 @@ deviance.georob <-
   ## 2013-05-23 AP correct handling of missing observations
   ## 2013-05-31 AP revised expansion of covariance matrices
   ## 2013-06-12 AP substituting [["x"]] for $x in all lists
+  ## 2014-02-27 AP computing 'pseudo' deviance for robustly fitted models
   
   ## redefine na.action component of object
   
@@ -903,32 +917,517 @@ deviance.georob <-
     class( object[["na.action"]] ) <- "omit"
   }
   
+  ## determine factor to compute heteroscedastic nugget
+  
   if( object[["tuning.psi"]] < georob.control()[["tuning.psi.nr"]] ){
-    result <- NA_real_
-  } else {
-    Valpha.objects <- expand( object[["Valpha.objects"]] )
-    G <- sum( object[["param"]][c("variance", "snugget")] ) * Valpha.objects[["Valpha"]]
-      
-    diag( G ) <- diag( G ) + object[["param"]]["nugget"]
-    G <- G[object[["Tmat"]], object[["Tmat"]]]
-    iucf <- try(
-      backsolve( 
-        chol( G ), 
-        diag( length( object[["Tmat"]] ) ), 
-        k = length( object[["Tmat"]] )
-      ),
-      silent = TRUE
+    warning( 
+      "deviance for robustly fitted model approximated by deviance of\n",
+      "  equivalent model with heteroscedastic nugget"
     )
-    if( identical( class( iucf ), "try-error" ) ) {
-      stop( "(generalized) covariance matrix of observations not positive definite" )
-    } else {
-      result <- sum( colSums( residuals( object, level = 0 ) * iucf )^2 )
-      attr( result, "log.det.covmat" ) <- -2 * sum( log( diag( iucf ) ) )
-    }
+    w <- object[["rweights"]]
+  } else {
+    w <- 1.
+  }
+  
+  ## invert covariance matrix of observations
+  
+  Valpha.objects <- expand( object[["Valpha.objects"]] )
+  G <- sum( object[["param"]][c("variance", "snugget")] ) * Valpha.objects[["Valpha"]]
+  G <- G[object[["Tmat"]], object[["Tmat"]]]
+  diag( G ) <- diag( G ) + object[["param"]]["nugget"] / w
+  iucf <- try(
+    backsolve( 
+      chol( G ), 
+      diag( length( object[["Tmat"]] ) ), 
+      k = length( object[["Tmat"]] )
+    ),
+    silent = TRUE
+  )
+  
+  ## compute deviance
+  
+  if( identical( class( iucf ), "try-error" ) ) {
+    stop( "(generalized) covariance matrix of observations not positive definite" )
+  } else {
+    result <- sum( colSums( residuals( object, level = 0 ) * iucf )^2 )
+    attr( result, "log.det.covmat" ) <- -2 * sum( log( diag( iucf ) ) )
   }
   result
 }
 
 
+## ##############################################################################
 
+extractAIC.georob <- function( fit, scale = 0, k = 2, ... )
+{
+  ## extractAIC method for class georob
+  
+  ## 2014-02-27 AP
+  
+  edf <- sum( !is.na( fit[["coefficients"]] ) ) + 
+    sum( fit[["initial.objects"]][["fit.param"]] ) +
+    sum( fit[["initial.objects"]][["fit.aniso"]] )
+  loglik <- logLik( fit )
+  c(edf, -2 * loglik + k * edf)
+}
+ 
+
+## ##############################################################################
+
+safe_pchisq <- function(q, df, ...)
+
+## same code as safe_pchisq{stats}
+
+{
+  df[df <= 0] <- NA
+  pchisq(q=q, df=df, ...)
+}
+
+## ##############################################################################
+
+add1.georob <- function( object, scope, scale = 0, test=c("none", "Chisq" ),
+  k = 2, trace = FALSE, fixed = TRUE, use.fitted.param = TRUE, verbose = 0, ... )
+{
+  
+  ## add1 method for class georob based on add1.default{stats}
+  
+  ## 2014-03-01 AP 
+  
+  ## check scope
+  
+  if( missing(scope ) || is.null( scope ) ) stop("no terms in scope")
+  if( !is.character( scope ) ) scope <- add.scope( object, update.formula(object, scope) )
+  if( !length(scope)) stop( "no terms in scope for adding to object" )
+  
+  ## initialize result
+  
+  ns <- length( scope )
+  ans <- matrix(
+    nrow = ns + 1L, ncol = 2L, dimnames = list(c("<none>", scope), c("df", "AIC"))
+  )
+  ans[1L,  ] <- extractAIC( object, scale, k = k, ... )
+  
+  ## loop over all components of scope
+  
+  n0 <- nobs( object, use.fallback = TRUE )
+  env <- environment( formula(object) )
+  
+  all.converged <- TRUE
+  
+  for( i in seq(ns) ) {
+    tt <- scope[i]
+    if(trace > 1) {
+      cat("trying +", tt, "\n", sep = "")
+      utils::flush.console()
+    }
+    ## was:
+    ##     nfit <- update( object, as.formula(paste("~ . +", tt)), evaluate = FALSE )
+    ##     nfit <- eval( nfit, envir=env ) # was  eval.parent(nfit)
+    if( fixed ){
+      nfit <- update( 
+        object, as.formula(paste("~ . +", tt)), 
+        param = object[["param"]],
+        aniso = object[["aniso"]][["aniso"]],
+        fit.param = c( 
+          variance = FALSE, snugget = FALSE, nugget = FALSE, scale = FALSE, 
+          a = FALSE, alpha = FALSE, beta = FALSE, delta = FALSE, 
+          gamma = FALSE, lambda = FALSE, n = FALSE, nu = FALSE
+        )[names( object[["param"]] )],
+        fit.aniso = c(
+          f1 = FALSE, f2 = FALSE, omega = FALSE, phi = FALSE, zeta = FALSE 
+        ),
+        verbose = verbose
+      )
+    } else {
+      if( use.fitted.param ){
+        nfit <- update( 
+          object, as.formula(paste("~ . +", tt)), 
+          param = object[["param"]], aniso = object[["aniso"]][["aniso"]],
+          initial.param = "no", verbose = verbose
+        )
+      } else {
+        nfit <- update( object, as.formula(paste("~ . +", tt)), verbose = verbose )
+      }
+      if( !nfit$converged ){
+        all.converged <- FALSE
+        if( verbose > 0 ) cat( 
+          "lack of convergence when fitting model", as.character(formula(nfit)), 
+          "\nconvergence code:", nfit$convergence.code, "\n"
+        )
+      }
+    }
+    ans[i+1L, ] <- extractAIC( nfit, scale, k = k, ... )
+    nnew <- nobs( nfit, use.fallback = TRUE )
+    if( all(is.finite(c(n0, nnew))) && nnew != n0 ) stop(
+      "number of rows in use has changed: remove missing values?"
+    )
+  }
+  
+  if( !all.converged ) warning( "lack of convergence when fitting models" )
+
+  ## store results
+  
+  dfs <- ans[, 1L] - ans[1L, 1L]
+  dfs[1L] <- NA
+  aod <- data.frame( Df = dfs, AIC = ans[, 2L] )
+  
+  ## likelihood ratio test
+  
+  test <- match.arg(test)
+  if(test == "Chisq") {
+    dev <- ans[, 2L] - k*ans[, 1L]
+    dev <- dev[1L] - dev; dev[1L] <- NA
+    nas <- !is.na(dev)
+    P <- dev
+    P[nas] <- safe_pchisq(dev[nas], dfs[nas], lower.tail=FALSE)
+    aod[, c("LRT", "Pr(>Chi)")] <- list(dev, P)
+  }
+  
+  ## format results
+  
+  head <- c(
+    "Single term additions", "\nModel:", deparse(formula(object)),
+    if(scale > 0) paste("\nscale: ", format(scale), "\n")
+  )
+  class(aod) <- c("anova", "data.frame")
+  attr( aod, "heading") <- head
+  aod
+  
+}
+
+
+## ##############################################################################
+
+drop1.georob <- function( object, scope, scale = 0, test=c( "none", "Chisq" ),
+  k = 2, trace = FALSE, fixed = TRUE, use.fitted.param = TRUE, verbose = 0, ... )
+{
+  
+  ## drop1 method for class georob based on drop1.default{stats}
+  
+  ## 2014-02-27 AP 
+  
+  ## check scope
+  
+  tl <- attr( terms(object), "term.labels" )
+  if( missing(scope) ) {
+    scope <- drop.scope( object )
+  } else {
+    if( !is.character(scope) ) scope <- attr(
+      terms(update.formula(object, scope)), "term.labels"
+    )
+    if( !all( match(scope, tl, 0L) > 0L) ) stop("scope is not a subset of term labels")
+  }
+  
+  ## initialize result
+  
+  ns <- length( scope )
+  ans <- matrix( 
+    nrow = ns + 1L, ncol = 2L, dimnames =  list(c("<none>", scope), c("df", "AIC"))
+  )
+  ans[1, ] <- extractAIC( object, scale, k = k, ... )
+  
+  ## loop over all components of scope
+  
+  n0 <- nobs( object, use.fallback = TRUE )
+  env <- environment( formula(object) )
+  
+  all.converged <- TRUE
+  
+  for( i in seq(ns) ) {
+    tt <- scope[i]
+    if(trace > 1) {
+      cat("trying -", tt, "\n", sep = "")
+      utils::flush.console()
+    }
+    ## was:
+    ##     nfit <- update( object, as.formula(paste("~ . -", tt)), evaluate = FALSE )
+    ##     nfit <- eval( nfit, envir=env ) # was  eval.parent(nfit)
+    if( fixed ){
+      nfit <- update( 
+        object, as.formula(paste("~ . -", tt)), 
+        param = object[["param"]],
+        aniso = object[["aniso"]][["aniso"]],
+        fit.param = c( 
+          variance = FALSE, snugget = FALSE, nugget = FALSE, scale = FALSE, 
+          a = FALSE, alpha = FALSE, beta = FALSE, delta = FALSE, 
+          gamma = FALSE, lambda = FALSE, n = FALSE, nu = FALSE
+        )[names( object[["param"]] )],
+        fit.aniso = c(
+          f1 = FALSE, f2 = FALSE, omega = FALSE, phi = FALSE, zeta = FALSE 
+        ),
+        verbose = verbose
+      )
+    } else {
+      if( use.fitted.param ){
+        nfit <- update( 
+          object, as.formula(paste("~ . -", tt)), 
+          param = object[["param"]], aniso = object[["aniso"]][["aniso"]],
+          initial.param = "no", verbose = verbose
+        )
+      }
+      else {
+        nfit <- update( object, as.formula(paste("~ . -", tt)), verbose = verbose )
+      }
+      if( !nfit$converged ){
+        all.converged <- FALSE
+        if( verbose > 0 ) cat( 
+          "lack of convergence when fitting model", as.character(formula(nfit)), 
+          "\nconvergence code:", nfit$convergence.code, "\n"
+        )
+      }
+    }
+    ans[i+1, ] <- extractAIC( nfit, scale, k = k, ... )
+    nnew <- nobs( nfit, use.fallback = TRUE )
+    if( all(is.finite(c(n0, nnew))) && nnew != n0 ) stop(
+      "number of rows in use has changed: remove missing values?"
+    )
+  }
+  
+  if( !all.converged ) warning( "lack of convergence when fitting models" )
+
+  ## store results
+  
+  dfs <- ans[1L , 1L] - ans[, 1L]
+  dfs[1L] <- NA
+  aod <- data.frame( Df = dfs, AIC = ans[,2] )
+  
+  ## likelihood ratio test
+  
+  test <- match.arg(test)
+  if(test == "Chisq") {
+    dev <- ans[, 2L] - k*ans[, 1L]
+    dev <- dev - dev[1L] ; dev[1L] <- NA
+    nas <- !is.na(dev)
+    P <- dev
+    P[nas] <- safe_pchisq(dev[nas], dfs[nas], lower.tail = FALSE)
+    aod[, c("LRT", "Pr(>Chi)")] <- list(dev, P)
+  }
+  
+  ## format results
+  
+  head <- c("Single term deletions", "\nModel:", deparse(formula(object)),
+    if(scale > 0) paste("\nscale: ", format(scale), "\n"))
+  class(aod) <- c("anova", "data.frame")
+  attr(aod, "heading") <- head
+  aod
+  
+}
+
+
+##  ############################################################################
+
+step <- function( object, ... ) UseMethod( "step" )
+
+
+##  ############################################################################
+
+step.default <- stats::step
+
+##  ############################################################################
+
+step.georob <- function( object, scope, scale = 0, 
+  direction = c( "both", "backward", "forward" ), trace = 1, keep = NULL, steps = 1000, 
+  k = 2, fixed = TRUE, use.fitted.param =TRUE, verbose = 0, ... )
+{
+  
+  ## step method for class georob
+  
+  ## 2014-01-03 AP 
+  
+  ## code of step{stats} complemented by argument fixed to control whether
+  ## variogram parameters should be kept fixed
+  
+  mydeviance <- function(x, ...)
+  {
+    dev <- deviance(x)
+    if(!is.null(dev)) dev else extractAIC(x, k=0)[2L]
+  }
+  
+  cut.string <- function(string)
+  {
+    if(length(string) > 1L)
+    string[-1L] <- paste0("\n", string[-1L])
+    string
+  }
+  re.arrange <- function(keep)
+  {
+    namr <- names(k1 <- keep[[1L]])
+    namc <- names(keep)
+    nc <- length(keep)
+    nr <- length(k1)
+    array(unlist(keep, recursive = FALSE), c(nr, nc), list(namr, namc))
+  }
+  
+  step.results <- function(models, fit, object, usingCp=FALSE)
+  {
+    change <- sapply(models, "[[", "change")
+    rd <- sapply(models, "[[", "deviance")
+    dd <- c(NA, abs(diff(rd)))
+    rdf <- sapply(models, "[[", "df.resid")
+    ddf <- c(NA, diff(rdf))
+    AIC <- sapply(models, "[[", "AIC")
+    heading <- c("Stepwise Model Path \nAnalysis of Deviance Table",
+      "\nInitial Model:", deparse(formula(object)),
+      "\nFinal Model:", deparse(formula(fit)),
+      "\n")
+    aod <- data.frame(Step = I(change), Df = ddf, Deviance = dd,
+      "Resid. Df" = rdf, "Resid. Dev" = rd, AIC = AIC,
+      check.names = FALSE)
+    if(usingCp) {
+      cn <- colnames(aod)
+      cn[cn == "AIC"] <- "Cp"
+      colnames(aod) <- cn
+    }
+    attr(aod, "heading") <- heading
+    ##stop gap attr(aod, "class") <- c("anova", "data.frame")
+    fit$anova <- aod
+    fit
+  }
+  
+  Terms <- terms(object)
+  object$call$formula <- object$formula <- Terms
+  md <- missing(direction)
+  direction <- match.arg(direction)
+  backward <- direction == "both" | direction == "backward"
+  forward  <- direction == "both" | direction == "forward"
+  if(missing(scope)) {
+    fdrop <- numeric()
+    fadd <- attr(Terms, "factors")
+    if(md) forward <- FALSE
+  }
+  else {
+    if(is.list(scope)) {
+      fdrop <- if(!is.null(fdrop <- scope$lower))
+      attr(terms(update.formula(object, fdrop)), "factors")
+      else numeric()
+      fadd <- if(!is.null(fadd <- scope$upper))
+      attr(terms(update.formula(object, fadd)), "factors")
+    }
+    else {
+      fadd <- if(!is.null(fadd <- scope))
+      attr(terms(update.formula(object, scope)), "factors")
+      fdrop <- numeric()
+    }
+  }
+  models <- vector("list", steps)
+  if(!is.null(keep)) keep.list <- vector("list", steps)
+  n <- nobs(object, use.fallback = TRUE)  # might be NA
+  fit <- object
+  bAIC <- extractAIC(fit, scale, k = k, ...)
+  edf <- bAIC[1L]
+  bAIC <- bAIC[2L]
+  if(is.na(bAIC))
+  stop("AIC is not defined for this model, so 'step' cannot proceed")
+  if(bAIC == -Inf)
+  stop("AIC is -infinity for this model, so 'step' cannot proceed")
+  nm <- 1
+  ## Terms <- fit$terms
+  if(trace) {
+    cat("Start:  AIC=", format(round(bAIC, 2)), "\n",
+      cut.string(deparse(formula(fit))), "\n\n", sep = "")
+    utils::flush.console()
+  }
+  
+  ## FIXME think about df.residual() here
+  models[[nm]] <- list(deviance = mydeviance(fit), df.resid = n - edf,
+    change = "", AIC = bAIC)
+  if(!is.null(keep)) keep.list[[nm]] <- keep(fit, bAIC)
+  usingCp <- FALSE
+  while(steps > 0) {
+    steps <- steps - 1
+    AIC <- bAIC
+    ffac <- attr(Terms, "factors")
+    scope <- factor.scope(ffac, list(add = fadd, drop = fdrop))
+    aod <- NULL
+    change <- NULL
+    if(backward && length(scope$drop)) {
+      aod <- drop1.georob(fit, scope$drop, scale = scale,
+        trace = trace, k = k, fixed = fixed, verbose = verbose, ...)
+      rn <- row.names(aod)
+      row.names(aod) <- c(rn[1L], paste("-", rn[-1L], sep=" "))
+      ## drop zero df terms first: one at time since they
+      ## may mask each other
+      if(any(aod$Df == 0, na.rm=TRUE)) {
+        zdf <- aod$Df == 0 & !is.na(aod$Df)
+        change <- rev(rownames(aod)[zdf])[1L]
+      }
+    }
+    if(is.null(change)) {
+      if(forward && length(scope$add)) {
+        aodf <- add1.georob(fit, scope$add, scale = scale,
+          trace = trace, k = k, fixed = fixed, verbose = verbose, ...)
+        rn <- row.names(aodf)
+        row.names(aodf) <- c(rn[1L], paste("+", rn[-1L], sep=" "))
+        aod <-
+        if(is.null(aod)) aodf
+        else rbind(aod, aodf[-1, , drop = FALSE])
+      }
+      attr(aod, "heading") <- NULL
+      ## need to remove any terms with zero df from consideration
+      nzdf <- if(!is.null(aod$Df))
+      aod$Df != 0 | is.na(aod$Df)
+      aod <- aod[nzdf, ]
+      if(is.null(aod) || ncol(aod) == 0) break
+      nc <- match(c("Cp", "AIC"), names(aod))
+      nc <- nc[!is.na(nc)][1L]
+      o <- order(aod[, nc])
+      if(trace) print(aod[o, ])
+      if(o[1L] == 1) break
+      change <- rownames(aod)[o[1L]]
+    }
+    usingCp <- match("Cp", names(aod), 0L) > 0L
+    ## may need to look for a `data' argument in parent
+    ## was:
+    ##     fit <- update(fit, paste("~ .", change), evaluate = FALSE)
+    ##     fit <- eval.parent(fit)
+    if( fixed ){
+      fit <- update(
+        fit, paste("~ .", change), 
+        param = fit[["param"]],
+        aniso = fit[["aniso"]][["aniso"]],
+        fit.param = c( 
+          variance = FALSE, snugget = FALSE, nugget = FALSE, scale = FALSE, 
+          a = FALSE, alpha = FALSE, beta = FALSE, delta = FALSE, 
+          gamma = FALSE, lambda = FALSE, n = FALSE, nu = FALSE
+        )[names( fit[["param"]] )],
+        fit.aniso = c(
+          f1 = FALSE, f2 = FALSE, omega = FALSE, phi = FALSE, zeta = FALSE 
+        ),
+        verbose = verbose
+      )
+    } else {
+      if( use.fitted.param ){
+        fit <- update( 
+          fit, paste("~ .", change), 
+          param = fit[["param"]], aniso = fit[["aniso"]][["aniso"]],
+          verbose = verbose 
+        )
+      } else {
+        fit <- update( fit, paste("~ .", change), verbose = verbose )
+      }
+    }
+    nnew <- nobs(fit, use.fallback = TRUE)
+    if(all(is.finite(c(n, nnew))) && nnew != n)
+    stop("number of rows in use has changed: remove missing values?")
+    Terms <- terms(fit)
+    bAIC <- extractAIC(fit, scale, k = k, ...)
+    edf <- bAIC[1L]
+    bAIC <- bAIC[2L]
+    if(trace) {
+      cat("\nStep:  AIC=", format(round(bAIC, 2)), "\n",
+        cut.string(deparse(formula(fit))), "\n\n", sep = "")
+      utils::flush.console()
+    }
+    ## add a tolerance as dropping 0-df terms might increase AIC slightly
+    if(bAIC >= AIC + 1e-7) break
+    nm <- nm + 1
+    ## FIXME: think about using df.residual() here.
+    models[[nm]] <-
+    list(deviance = mydeviance(fit), df.resid = n - edf,
+      change = change, AIC = bAIC)
+    if(!is.null(keep)) keep.list[[nm]] <- keep(fit, bAIC)
+  }
+  if(!is.null(keep)) fit$keep <- re.arrange(keep.list[seq(nm)])
+  step.results(models = models[seq(nm)], fit, object, usingCp)
+}
 

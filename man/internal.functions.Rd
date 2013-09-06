@@ -31,6 +31,7 @@ The internal unexported functions
   \item\code{gradient.negative.restricted.loglikelihood},
   \item\code{negative.restr.loglikelihood},
   \item\code{prepare.likelihood.calculations},
+  \item\code{safe_pchisq},
   \item\code{update.xihat}
 }
 are not intended for direct use.  However, as any unexported function they

@@ -267,6 +267,7 @@
   \code{\link{plot.georob}} for display of REML variogram estimates;
   \code{\link{cv.georob}} for assessing the goodness of a fit by \code{georob}; 
   \code{\link{predict.georob}} for computing robust kriging predictions; and finally
+  \code{\link{georobModelBuilding}} for stepwise building models of class \code{georob};
   \code{\link{georobMethods}} for further methods for the class \code{georob}.
 }
 

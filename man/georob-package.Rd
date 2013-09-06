@@ -74,9 +74,9 @@
     that cannot be resolved with the chosen sampling design, and 
     \eqn{\sigma^2} is the variance of the captured auto-correlated variation in 
     \eqn{B(\mbox{\boldmath$s$\unboldmath})}{B(s)}. To estimate both 
-    \eqn{\sigma_\mathrm{n}^2} and \eqn{\tau^2} (and not only their sum), one needs
+    \eqn{\sigma_n^2} and \eqn{\tau^2} (and not only their sum), one needs
     replicated measurements for some of the 
-    \eqn{\mbox{\boldmath$s$\unboldmath}_i}.
+    \eqn{\mbox{\boldmath$s$\unboldmath}_i}{s_i}.
     
     We define 
     \eqn{\mbox{\boldmath$V$\unboldmath}_\alpha}{V_\alpha} 
@@ -373,6 +373,7 @@
   \code{\link{georob.control}} for controlling the behaviour of \code{georob};
   \code{\link{cv.georob}} for assessing the goodness of a fit by \code{georob}; 
   \code{\link{predict.georob}} for computing robust kriging predictions; and finally
+  \code{\link{georobModelBuilding}} for stepwise building models of class \code{georob};
   \code{\link{georobMethods}} for further methods for the class \code{georob},
   \code{\link{sample.variogram}} and \code{\link{fit.variogram.model}} 
   for robust estimation and modelling of sample variograms.

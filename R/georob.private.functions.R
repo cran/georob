@@ -702,8 +702,6 @@ compute.covariances <-
   ##   ##   
   ##   ##   stop()
   ##   
-  ##   browser()
-  ##   
   ##   sapply(
   ##     names( result ),
   ##     function( i, old, new  ){ 
@@ -1015,6 +1013,7 @@ gcr <-
   ##  2011-12-27 ap
   ##  2012-02-07 AP modified for geometrically anisotropic variograms
   ## 2013-06-12 AP substituting [["x"]] for $x in all lists
+  ## 2014-03-05 AP changes for version 3 of RandomFields
   
   result <- list( error = TRUE )
   
@@ -1022,18 +1021,35 @@ gcr <-
   
   A <- aniso[["sclmat"]] * aniso[["rotmat"]] / param["scale"]
   
+  ## prepare model
+  
   model.list <- list( variogram.model )
   model.list <- c( model.list, as.list( param[-(1:4)] ) )
+  model.list <- list( "$", var = 1., A = A, model.list )
   
   ##  negative semivariance matrix
-
+  
+  ## functions of version 3 of RandomFields
+  
+  RFoptions(newAniso=FALSE)
+  
   Valpha0 <- try(
-    -Variogram(
-      x, 
-      model = list( "$", var = 1., A = A, model.list )
+    -RFvariogram(
+      x = x, model = model.list, dim = NCOL( x ), grid = FALSE
     ),
     silent = TRUE
   )
+
+  ## functions of version 2.xx of RandomFields
+  
+  ##   RFoldstyle()
+  ##   Valpha0 <- try(
+  ##     -Variogram(
+  ##       x, 
+  ##       model = model.list
+  ##     ),
+  ##     silent = TRUE
+  ##   )
   
   if( !(identical( class( Valpha0 ), "try-error" ) || any( is.na( Valpha0 ) )) ){
     
@@ -1169,7 +1185,7 @@ prepare.likelihood.calculations <-
     
     lik.item[["Valpha"]][["error"]] <- TRUE
     
-    if( any( c( param, aniso ) > safe.param ) ){
+    if( length( c( param, aniso ) ) && any( c( param, aniso ) > safe.param ) ){
       if( verbose > 1 ){
         t.param <- param
         if( !lik.item[["aniso"]][["isotropic"]] ) t.param <- c( t.param, aniso )
@@ -3526,6 +3542,7 @@ georob.fit <-
   ## 2013-07-09 AP catching errors occuring when fitting anisotropic
   ##               variograms with default anisotropy parameters
   ## 2013-07-12 AP solving estimating equations by BBsolve{BB} (in addition to nleqlsv)
+  ## 2014-02-18 AP correcting error when fitting models with offset
   
   ##  ToDos:
   
@@ -3934,7 +3951,8 @@ georob.fit <-
   
   ## xihat
   
-  xihat <- drop( XX %*% betahat + bhat )
+  sel <- !is.na (betahat )
+  xihat <- drop( XX[, sel, drop=FALSE] %*% betahat[sel] + bhat )
   names( xihat ) <- rownames( XX )
   
   r.hessian <- NULL
@@ -4570,6 +4588,7 @@ compute.semivariance <-
   ## 2012-04-13 A. Papritz
   ## 2012-05-23 ap correction in model.list for models with more than 4 parameters
   ## 2013-06-12 AP substituting [["x"]] for $x in all lists
+  ## 2014-03-05 AP changes for version 3 of RandomFields
   
   ## matrix for coordinate transformation
   
@@ -4596,12 +4615,26 @@ compute.semivariance <-
     )
   )
   
-  ##  negative semivariance matrix
+  ##  semivariance 
+  
+  ## functions of version 3 of RandomFields
+  
+  RFoptions(newAniso=FALSE)
   
   r.gamma <- try(
-    Variogram( lag.vectors, model = model.list ),
+    RFvariogram(
+      x = lag.vectors, model = model.list, dim = NCOL( lag.vectors ), grid = FALSE
+    ),
     silent = TRUE
   )
+
+  ## functions of version 3 of RandomFields
+
+  ##   RFoldstyle()
+  ##   r.gamma <- try(
+  ##     Variogram( lag.vectors, model = model.list ),
+  ##     silent = TRUE
+  ##   )
   
   return( r.gamma )
   

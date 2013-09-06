@@ -6,8 +6,8 @@ importFrom( lmtest, waldtest, waldtest.default )
 importFrom( nlme, fixef, fixed.effects, ranef, random.effects )
 importFrom( nleqslv, nleqslv )
 importFrom( quantreg, rq.fit )
-importFrom( RandomFields, Variogram )
-importFrom( robustbase, lmrob.control, lmrob.fit, Qn, summarizeRobWeights )
+importFrom( RandomFields, RFvariogram, RFoldstyle, RFoptions)
+importFrom( robustbase, lmrob.control, lmrob.fit, Qn, robMD, summarizeRobWeights )
 
 # exported functions
 
@@ -35,13 +35,17 @@ export(
   ranef,                            # ok export of generic ranef{nlme}
   rq.control,                       # ok
   sample.variogram,                 # ok
+  step,                             # ok
   validate.predictions,             # ok
   waldtest                          # ok export of generic waldtest{lmtest}
 )
 
 # documented but unexported functions
 #
+#   add1.georob,                    # ok
 #   deviance.georob,                # ok
+#   drop1.georob,                   # ok
+#   exportAIC.georob,               # ok
 #   fixed.effects.georob,           # ok
 #   fixef.georob,                   # ok
 #   lines.fitted.variogram,         # ok
@@ -68,6 +72,8 @@ export(
 #   rstandard.georob,               # ok
 #   rstudent.georob,                # ok
 #   rstudent.cv.georob,             # ok
+#   step.default,                   # ok
+#   step.georob,                    # ok
 #   summary.fitted.variogram,       # ok
 #   summary.georob,                 # ok
 #   summary.sample.variogram,       # ok
@@ -94,9 +100,13 @@ export(
 ##   gradient.negative.restricted.loglikelihood,
 ##   negative.restr.loglikelihood,
 ##   prepare.likelihood.calculations,
+##   safe_pchisq,
 ##   update.xihat
 
+S3method( add1, georob  )
 S3method( deviance, georob  )
+S3method( drop1, georob  )
+S3method( extractAIC, georob  )
 S3method( fixed.effects, georob  )
 S3method( fixef, georob  )
 S3method( lines, fitted.variogram )
@@ -123,12 +133,15 @@ S3method( resid, georob )
 S3method( residuals, georob )
 S3method( rstandard, georob )
 S3method( rstudent, georob )
+S3method( step, default )
+S3method( step, georob )
 S3method( summary, fitted.variogram )
 S3method( summary, georob )
 S3method( summary, sample.variogram )
 S3method( summary, cv.georob )
 S3method( vcov, georob )
 S3method( waldtest, georob )
+# S3method( cv, default )
 S3method( cv, georob )
 # S3method( cv, likGRF )
 # S3method( cv, variomodel )

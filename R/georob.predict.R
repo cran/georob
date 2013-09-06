@@ -82,6 +82,7 @@ function(
   ## 2013-05-23 AP correct handling of missing observations
   ## 2013-05-06 AP changes for solving estimating equations for xi
   ## 2013-06-12 AP substituting [["x"]] for $x in all lists
+  ## 2014-02-18 AP correcting error in computing predictions for model with offset
 
   
   ##  ##############################################################################
@@ -93,7 +94,7 @@ function(
     function(
       type, terms,
       locations.coords, betahat, bhat,
-      pred.X, pred.coords, newdata,
+      pred.X, pred.coords, offset, newdata,
       variogram.model, param, aniso,
       cov.delta.bhat.betahat.l, cov.betahat.l, cov.bhat.betahat, cov.p.t, Valpha.objects,
       pwidth, pheight, napp,
@@ -128,7 +129,7 @@ function(
     
     if( any( !ex ) ){
       
-      t.pred <- t.trend <- drop( pred.X[!ex, , drop = FALSE ] %*% betahat )
+      t.pred <- t.trend <- drop( pred.X[!ex, , drop = FALSE ] %*% betahat ) + offset[!ex]
       
       if( !identical( type, "trend" ) ){
         
@@ -167,16 +168,36 @@ function(
             
             ##  negative semivariance matrix
             
+            ## functions of version 3 of RandomFields
+  
+            RFoptions(newAniso=FALSE)
+            
             t.var.target <- try(
-              -Variogram(
+              -RFvariogram(
                 lag.vectors,
                 model = list( "+",
                   list( "$", var = param["variance"], A = A, model.list ),
                   list( "$", var = param["snugget"], list( "nugget" ) )
-                )
+                ),
+                dim = NCOL( lag.vectors ), grid = FALSE
               ),
               silent = TRUE
             )
+
+            ## functions of version 2 of RandomFields
+  
+            ##             RFoldstyle()
+            ##             RFoptions(newAniso=FALSE)
+            ##             t.var.target <- try(
+            ##               -Variogram(
+            ##                 lag.vectors,
+            ##                 model = list( "+",
+            ##                   list( "$", var = param["variance"], A = A, model.list ),
+            ##                   list( "$", var = param["snugget"], list( "nugget" ) )
+            ##                 )
+            ##               ),
+            ##               silent = TRUE
+            ##             )
             
             if( 
               identical( class( t.var.target ), "try-error" ) || 
@@ -234,16 +255,33 @@ function(
           lag.vectors <- locations.coords[ indices.pairs[, 2], ] - 
           (pred.coords[!ex, , drop = FALSE ])[ indices.pairs[, 1], ]
           
+          ## functions of version 3 of RandomFields
+          
+          RFoptions(newAniso=FALSE)
+          
           gamma <- try(
-            -Variogram(
+            -RFvariogram(
               lag.vectors,
               model = list( "+",
                 list( "$", var = param["variance"], A = A, model.list ),
                 list( "$", var = param["snugget"], list( "nugget" ) )
-              )
+              ), 
+              dim = NCOL( lag.vectors ), grid = FALSE
             ),
             silent = TRUE
           )
+          ##           RFoldstyle()
+          ##           RFoptions(newAniso=FALSE)
+          ##           gamma <- try(
+          ##             -Variogram(
+          ##               lag.vectors,
+          ##               model = list( "+",
+          ##                 list( "$", var = param["variance"], A = A, model.list ),
+          ##                 list( "$", var = param["snugget"], list( "nugget" ) )
+          ##               )
+          ##             ),
+          ##             silent = TRUE
+          ##           )
           
           if( 
             identical( class( gamma ), "try-error" ) || 
@@ -1037,7 +1075,6 @@ function(
     
     offset <- rep( 0, NROW(pred.X) )
     if( !is.null( off.num <- attr( tt, "offset" ) ) ){
-      warning( "prediction with non-zero offset not yet debugged" )
       for( i in off.num ) {
         offset <- offset + eval( attr( tt, "variables" )[[i + 1]], newdata )
       }
@@ -1115,7 +1152,7 @@ function(
       rs, re, n.part,
       type,
       locations.coords, betahat, bhat,
-      pred.X, pred.coords, newdata, 
+      pred.X, pred.coords, offset, newdata, 
       variogram.model, param, aniso,
       cov.delta.bhat.betahat.l, cov.betahat.l, cov.bhat.betahat, cov.p.t, Valpha.objects,
       pwidth, pheight, napp,
@@ -1130,6 +1167,7 @@ function(
       ## select the data for the current part
       
       pred.X <- pred.X[ rs[i]:re[i], , drop = FALSE]
+      offset <- offset[ rs[i]:re[i] ]
       newdata <- newdata[ rs[i]:re[i], ]
       if( !is.null( pred.coords ) ) {
         pred.coords <- pred.coords[ rs[i]:re[i], , drop = FALSE]
@@ -1142,7 +1180,7 @@ function(
         locations.coords = locations.coords, 
         betahat = betahat,
         bhat = bhat,
-        pred.X = pred.X, pred.coords = pred.coords, newdata = newdata,
+        pred.X = pred.X, pred.coords = pred.coords, offset = offset, newdata = newdata,
         variogram.model = variogram.model, param = param, aniso = aniso,
         cov.delta.bhat.betahat.l = cov.delta.bhat.betahat.l,
         cov.betahat.l = cov.betahat.l, 
@@ -1181,7 +1219,7 @@ function(
           locations.coords = locations.coords,
           betahat = object[["coefficients"]],
           bhat = object[["bhat"]],
-          pred.X = pred.X, pred.coords = pred.coords, newdata = newdata,
+          pred.X = pred.X, pred.coords = pred.coords, offset = offset, newdata = newdata,
           variogram.model = object[["variogram.model"]],
           param = object[["param"]],
           aniso = object[["aniso"]],
@@ -1211,7 +1249,7 @@ function(
           locations.coords = locations.coords,
           betahat = object[["coefficients"]],
           bhat = object[["bhat"]],
-          pred.X = pred.X, pred.coords = pred.coords, newdata = newdata,
+          pred.X = pred.X, pred.coords = pred.coords, offset = offset, newdata = newdata,
           variogram.model = object[["variogram.model"]],
           param = object[["param"]],
           aniso = object[["aniso"]],
@@ -1240,7 +1278,7 @@ function(
         locations.coords = locations.coords,
         betahat = object[["coefficients"]],
         bhat = object[["bhat"]],
-        pred.X = pred.X, pred.coords = pred.coords, newdata = newdata,
+        pred.X = pred.X, pred.coords = pred.coords, offset = offset, newdata = newdata,
         variogram.model = object[["variogram.model"]],
         param = object[["param"]],
         aniso = object[["aniso"]],
