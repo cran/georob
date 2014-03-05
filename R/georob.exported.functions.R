@@ -81,6 +81,7 @@ georob <-
   ## 2013-07-02 AP new transformation of rotation angles
   ## 2013-07-12 AP solving estimating equations by BBsolve{BB} (in addition to nleqlsv)
   ## 2013-09-06 AP exclusive use of nleqslv for solving estimating equations
+  ## 2014-02-18 AP correcting error when fitting models with offset
   
   ## check whether input is complete
   
@@ -132,9 +133,9 @@ georob <-
   mt     <- terms( formula )
   mt.loc <- terms( locations )
     
-  ## ... and assign fixed effects terms object as attribute to model.frame
-  
-  attr( mf, "terms" ) <- mt
+#   ## ... and assign fixed effects terms object as attribute to model.frame
+#   
+#   attr( mf, "terms" ) <- mt
   
   ## check whether 'empty' models have been entered
   
@@ -169,14 +170,16 @@ georob <-
         length(offset), NROW(y) ), domain = NA )
   }
   
+  x <- model.matrix( mt, mf, contrasts )
+  
   ## check if optionally provided bhat has correct length
   
   if( !is.null( control[["bhat"]] ) && length( y ) != length( control[["bhat"]] ) ) stop(
     "lengths of response vector and 'bhat' do not match"    
   )
   
-  x <- model.matrix( mt, mf, contrasts )
-  
+  initial.param <- match.arg( initial.param )
+    
   ## check whether design matrix has full column rank
   
   rankdef.x <- FALSE
@@ -191,7 +194,7 @@ georob <-
       signif( condnum, 2 ), ")\ninitial values of fixed effects coefficients are computed by 'lm'\n\n"
     )
     control[["initial.method"]] <- "lm"
-    initial.param <- "mininimize"
+    if( identical( initial.param, "exclude" ) ) initial.param <- "minimize"
     warning( 
       "design matrix has not full column rank (condition number of X^T X: ", 
       signif( condnum, 2 ), ")\ninitial values of fixed effects coefficients are computed by 'lm'"
@@ -261,7 +264,7 @@ georob <-
       fit[["call"]] <- cl
       fit[["terms"]] <- mt
       if( control[["lmrob"]][["compute.rd"]] && !is.null(x) )
-      fit[["MD"]] <- robustbase:::robMD( x, attr( mt, "intercept" ) )
+      fit[["MD"]] <- robMD( x, attr( mt, "intercept" ) )
       if( !is.null( offset ) ) fit[["fitted.values"]] + offset
       fit
       
@@ -318,7 +321,6 @@ georob <-
   
   aniso.missing <- missing( aniso ) && missing( fit.aniso )
   
-  initial.param <- match.arg( initial.param )
   ## root.finding <- match.arg( root.finding )
   
   ## compute initial values of variogram and anisotropy parameters
@@ -564,7 +566,7 @@ georob <-
     r.georob[["initial.objects"]][["initial.param"]] <- initial.param
     
     if( control[["lmrob"]][["compute.rd"]] && !is.null( x ) )
-       r.georob[["MD"]] <- robustbase:::robMD( x, attr(mt, "intercept") )
+       r.georob[["MD"]] <- robMD( x, attr(mt, "intercept") )
     if( model ) r.georob[["model"]] <- mf
     if( ret.x ) r.georob[["x"]] <- x
     if( ret.y ) r.georob[["y"]] <- y

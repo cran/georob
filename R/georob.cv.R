@@ -4,6 +4,20 @@ cv <- function( object, ... ) UseMethod( "cv" )
 
 ##  ############################################################################
 
+# cv.default <- function( 
+#   object, 
+#   formula = NULL, subset = NULL,
+#   nset = 10, seed = NULL, sets = NULL,
+#   
+#   ... )
+# {
+#   
+#   
+#   
+# }
+
+##  ############################################################################
+
 cv.georob <-
   function(
     object,
@@ -16,48 +30,16 @@ cv.georob <-
     fit.aniso = object[["initial.objects"]][["fit.aniso"]],
     return.fit = FALSE, reduced.output = TRUE,
     lgn = FALSE,
+    mfl.action = c( "offset", "stop" ),
     ncores = min( nset, detectCores() ),
     verbose = 0,
     ...
   )
 {
   
-#  \$([[:alnum:]\.]+)([\^\r,$\[\] \(\)])          [["\1"]]\2
   ## Function computes nset-fold cross-validation predictions from a
   ## fitted georob object
   
-  ## Arguments:
-  
-  ## object        fitted georob object
-  ## formula       a formula passed by update to georob
-  ## nset          integer scalar for the number of cross-validation subsets
-  ## seed integer scalar passed to set.seed before selecting the 
-  ##               cross-valdation subsets by a call to runif()
-  ## sets          an integer vector with length nrow(data) defining the 
-  ##               cross-validation sets and over-riding the values provided 
-  ##               for nset and seed
-  ## duplicates.in.same.set   logical flag controlling whether replicated observations
-  ##               at a given location are assigned to the same cross-validation set
-  ## re.estimate   logical flag controlling whether the variogram parameters should 
-  ##               be re-estimated for each cross-validation subset
-  ## param         initial values of variogram parameters when the variogram is 
-  ##               re-estimated for each cross-validation subset
-  ## return.fit    logical flag to control whether the information about the fit are
-  ##               should be returned for each cross-valdiation subset when re-estimating the
-  ##               model
-  ## reduced.output    logical flag controlling whether for each cross-valdiation subset the
-  ##               the full fitted object or just a selection (information about convergence,
-  ##               variogram and fixed-effects parameter estimates) should be returned when 
-  ##               re-estimating the model
-  ## lgn   logical flag controlling whether lognormal kriging predictions should be computed 
-  ## ncores        integer scalar with the number of cores to used in parallel processing
-  ## verbose       integer scalar, controlling verbosity of the information sent to standard output
-  ## ...           further arguments passed by update to georob or to 
-  ##               mclapply on non-windows platforms
-  
-  ## ToDos:
-  
-  ## - Klasse und Methoden definieren fuer cv (kompatibel mit geoR)
   
   ## History:
   
@@ -78,6 +60,7 @@ cv.georob <-
   ## 2013-06-12 AP substituting [["x"]] for $x in all lists
   ## 2013-07-02 AP passing initial values of aniso and fit.aniso to georob via update
   ## 2013-07-05 AP return "variogram.model" as part of fit componnent
+  ## 2014-02-21 AP catching problem when factor are very unbalanced
     
   ## auxiliary function that fits the model and computes the predictions of
   ## a cross-validation set
@@ -180,11 +163,7 @@ cv.georob <-
     ## end cv function
   }
   
-  ## redefine na.action component of object
-  
-  if( identical( class( object[["na.action"]] ), "exclude" ) ){
-    class( object[["na.action"]] ) <- "omit"
-  }
+  mfl.action <- match.arg( mfl.action )
   
   ## update terms of object is formula is provided
   
@@ -197,11 +176,17 @@ cv.georob <-
     
   ## get data.frame with required variables (note that the data.frame passed
   ## as data argument to georob must exist in GlobalEnv)
-  
+
   data <- cbind(
-    get_all_vars( formula( object ), eval( getCall(object)[["data"]] ) ),
-    get_all_vars( object[["locations.objects"]][["locations"]], eval( getCall(object)[["data"]] ) )
+    get_all_vars( 
+      formula( object ), data = eval( getCall(object)[["data"]] )
+    ),
+    get_all_vars( 
+      object[["locations.objects"]][["locations"]], eval( getCall(object)[["data"]] )
+    )
   )
+  
+  if( identical( class( object[["na.action"]] ), "omit" ) ) data <- na.omit(data)
   
   ## select subset if appropriate
   
@@ -246,6 +231,74 @@ cv.georob <-
     sets,
     function( x ) x
   )
+  
+  ## check whether all levels of factors are present in all calibration sets
+  
+  isf <- sapply( data, is.factor )
+  
+  mfl <- sapply(
+    names( data )[isf],
+    function( v, data, sets ){
+      nolevel <- sapply( 
+        sets, 
+        function(s, x) any( table( x[-s] ) < 1 ),
+        x = data[, v]
+      )
+      if( any( nolevel ) ){
+        switch(
+          mfl.action,
+          "stop" = stop(
+            "for factor '", v, "' some levels are missing in some calibration set(s),\n",
+            "  try defining other cross-validation sets to avoid this problem"
+          ),
+          "offset" = {
+            warning(
+              "for factor '", v, "' some levels are missing in some calibration set(s),\n",
+              "  respective factors are treated as offset terms in model"
+            )
+            cat(
+              "  for factor '", v, "' some levels are missing in some calibration set(s),\n",
+              "  respective factors are treated as offset terms in model"
+            )
+          }
+        )
+        TRUE
+      } else {
+        FALSE
+      }
+    },
+    data = data, sets = sets
+  )
+  
+  if( any( mfl ) ){
+    v <- names( mfl )[mfl]
+    
+    ## construct offset and append to data
+    
+    offset <- apply( predict( object, type = "terms", terms = v )$fit, 1, sum )
+    
+    if( length( offset ) != nrow( data ) ) stop( "offset and data with incompatible dimensions" )
+    data[, "..offset.."] <- offset
+    
+    ## update formula
+    formula <- update( 
+      formula, 
+      as.formula(
+        paste( 
+          ". ~ . -", paste( v, collapse = " - " ) , "+ offset(..offset..)" )
+      ) 
+    )
+    
+  }
+  
+  
+  ## redefine na.action component of object
+  
+  if( identical( class( object[["na.action"]] ), "exclude" ) ){
+    class( object[["na.action"]] ) <- "omit"
+  }
+  
+
   
   ## check dimension of param and fit.param
   

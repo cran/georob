@@ -244,10 +244,6 @@ optim.control(optim.method = c("BFGS", "Nelder-Mead", "CG",
   \code{nleqslv.control} that generates such a list (see
   \code{\link[nleqslv]{nleqslv}} for allowed arguments).}
   
-%   \item{bbsolve}{a list of arguments passed to \code{BBsolve} or a function
-%   such as \code{bbsolve.control} that generates such a list (see
-%   \code{\link[BB]{BBsolve}} for allowed arguments).}
-    
   \item{optim}{a list of arguments passed to \code{optim} or a function
   such as \code{optim.control} that generates such a list (see
   \code{\link[stats]{optim}} for allowed arguments).}
@@ -278,14 +274,9 @@ optim.control(optim.method = c("BFGS", "Nelder-Mead", "CG",
   to related arguments of \code{\link[nleqslv]{nleqslv}}.  Note that
   \code{nleqslv.} is stripped from the argument names on passing.}
   
-%   \item{bbsolve.method, bbsolve.control}{arguments passed
-%   to related arguments of \code{\link[BB]{BBsolve}}.  Note that
-%   \code{bbsolve.} is stripped from the argument names on passing.}
-  
   \item{optim.method, lower, upper, hessian, optim.control}{arguments
   passed to related arguments of \code{\link[stats]{optim}}. Note that
   \code{optim.} is stripped from the argument names on passing.}
-  
   
 }
 %   \item{}

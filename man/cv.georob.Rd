@@ -1,4 +1,4 @@
-% 2013-07-10 A. Papritz
+% 2014-02-21 A. Papritz
 % R CMD Rdconv -t html -o bla.html cv.georob.Rd ; open bla.html; R CMD Rd2pdf --force cv.georob.Rd; 
 
 \encoding{macintosh}
@@ -28,6 +28,7 @@
     aniso = object[["aniso"]][["aniso"]], 
     fit.aniso = object[["initial.objects"]][["fit.aniso"]],
     return.fit = FALSE, reduced.output = TRUE, lgn = FALSE, 
+    mfl.action = c("offset", "stop"),
     ncores = min(nset, detectCores()), verbose = 0, ...)
 }
 
@@ -116,6 +117,11 @@
   log-transformed response should be transformed back to the original scale
   of the measurements (default \code{FALSE}).}
   
+  \item{mfl.action}{character controlling what is done when some levels of
+  factor(s) are not present in any of the subsets used to fit the model.
+  The function either stops (\code{"stop"}) or treats the factors as model
+  offset (\code{"offset"}, default).}
+  
   \item{ncores}{positive integer controlling how many cores are used for
   parallelized computations, see \emph{Details}.}
   
@@ -123,24 +129,27 @@
   messages to the console during model fitting.  Passed by
   \code{\link[stats]{update}} to \code{\link{georob}}, see \emph{Details}.}
     
-    
   \item{\dots}{additional arguments passed by \code{\link[stats]{update}}
   to \code{\link{georob}}, see \emph{Details}.}
 
 }
 
 \details{
-  \code{cv.georob} uses the package \pkg{parallel} for parallelized
-  cross-validation.  By default, the function uses \eqn{K} CPUs
-  but not more than are physically available (as returned by 
+  \bold{Note} that \emph{the dataframe passed as} \code{data}
+  \emph{argument to} \code{georob} \emph{must exist in the user workspace
+  when calling \code{cv.georob}}.  
+  
+  \code{cv.georob} then uses the package \pkg{parallel} for parallelized
+  cross-validation.  By default, the function uses \eqn{K} CPUs but not
+  more than are physically available (as returned by
   \code{\link[parallel]{detectCores}}).
   
   \code{cv.georob} uses the function \code{\link[stats]{update}} to
   re-estimated the model with the reduced data sets.  Therefore, any
-  argument accepted by \code{\link{georob}} can be changed when
-  re-fitting the model.  Some of them (e.g. \code{formula}, \code{subset},
-  etc.)  are explicit arguments of \code{cv.georob}, but
-  also the remaining ones can be passed  to the function.
+  argument accepted by \code{\link{georob}} can be changed when re-fitting
+  the model.  Some of them (e.g. \code{formula}, \code{subset}, etc.)  are
+  explicit arguments of \code{cv.georob}, but also the remaining ones can
+  be passed to the function.  
   
   Practitioners in geostatistics commonly cross-validate a fitted model
   without re-estimating the model parameters with the reduced data sets.

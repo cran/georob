@@ -134,5 +134,53 @@ processing col and pch arguments
 
 2013-09-06  Andreas Papritz  <papritz@env.ethz.ch>
 
-* georob.exported.functions.R (georob, georob.control, bbsolve.control): code for solving estimating equations by BBsolve{BB} commented out (released to CRAN as version 0.1-2)
-* georob.private.functions.R (compute.estimating.equations, compute.expanded.estimating.equations, estimating.eqations.xihat, estimate.xihat, georob.fit, gradient.negative.restricted.loglikelihood, negative.restr.loglikelihood, prepare.likelihood.calculations): code for solving estimating equations by BBsolve{BB} commented out (released to CRAN as version 0.1-2)
+* georob.exported.functions.R (georob, georob.control, bbsolve.control): code for solving estimating equations by BBsolve{BB} commented out (released to CRAN as version 0.1-1)
+* georob.private.functions.R (compute.estimating.equations, compute.expanded.estimating.equations, estimating.eqations.xihat, estimate.xihat, georob.fit, gradient.negative.restricted.loglikelihood, negative.restr.loglikelihood, prepare.likelihood.calculations): code for solving estimating equations by BBsolve{BB} commented out (released to CRAN as version 0.1-1)
+
+
+2014-01-23  Andreas Papritz  <papritz@env.ethz.ch>
+
+* georob.private.functions.R (prepare.likelihood.calculations): correct comparison of trial parameter values with safe.param
+
+
+2014-02-06  Andreas Papritz  <papritz@env.ethz.ch>
+
+* georob.exported.functions (georob): correcting error that occurred for rank-deficient design matrices
+* georob.private.functions.R (gerorob.fit): correcting error that occurred for rank-deficient design matrices
+
+
+2014-02-11  Andreas Papritz  <papritz@env.ethz.ch>
+
+* georob.predict.R (predict.georob): suppressing warnings caused by use of version 2 function of package RandomFields
+* georob.private.functions.R (gcr, compute.semivariance): suppressing warnings caused by use of version 2 function of package RandomFields
+
+
+2014-02-19  Andreas Papritz  <papritz@env.ethz.ch>
+
+* georob.exported.functions (georob): changes for now exported function robMD{robustbase}, correcting error when model contains offset
+* georob.private.functions.R (gerorob.fit): correcting error when model contains offset
+* georob.predict.R (predict.georob): correcting error when model contains offset
+* georob.S3methods.R (waldtest.georob): handling verbose output when re-fitting model
+
+
+2014-02-21  Andreas Papritz  <papritz@env.ethz.ch>
+
+* georob.cv.R (cv.georob): changes for dealing with problem when factor are very unbalanced
+
+
+2014-02-27  Andreas Papritz  <papritz@env.ethz.ch>
+
+* georob.S3methods.R (deviance.georob): computing 'pseudo' deviance for robustly fitted models
+
+
+2014-03-01  Andreas Papritz  <papritz@env.ethz.ch>
+
+* georob.S3methods.R (add1.georob, drop1.georob, extractAIC.georob, step, step.default, step.georob): functions for stepwise selection of fixed-effects terms
+
+
+2014-03-05  Andreas Papritz  <papritz@env.ethz.ch>
+
+* georob.private.functions.R (compute.semivariance, gar): changes for RandomFields version 3
+* georob.predict.R (predict.georobcd R.	): changes for RandomFields version 3
+
+
