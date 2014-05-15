@@ -4,17 +4,17 @@ georob <-
     model = TRUE, x = FALSE, y = FALSE, 
     contrasts = NULL, offset, 
     locations,
-    variogram.model = c( "exponential", "bessel", "cauchy", "cauchytbm",
-      "circular", "cubic", "dagum", "dampedcosine", "DeWijsian", "fractalB",
-      "gauss", "genB", "gencauchy", "gengneiting", "gneiting", "lgd1",
-      "matern", "penta", "power", "qexponential", "spherical", "stable",
-      "wave", "whittle"
+    variogram.model = c( "RMexp", "RMbessel", "RMcauchy", 
+      "RMcircular", "RMcubic", "RMdagum", "RMdampedcos", "RMdewijsian", "RMfbm",
+      "RMgauss", "RMgenfbm", "RMgencauchy", "RMgengneiting", "RMgneiting", "RMlgd",
+      "RMmatern", "RMpenta", "RMaskey", "RMqexp", "RMspheric", "RMstable",
+      "RMwave", "RMwhittle"
     ), 
     param,
     fit.param = c( 
       variance = TRUE, snugget = FALSE, nugget = TRUE, scale = TRUE, 
-      a = FALSE, alpha = FALSE, beta = FALSE, delta = FALSE, 
-      gamma = FALSE, lambda = FALSE, n = FALSE, nu = FALSE
+      alpha = FALSE, beta = FALSE, delta = FALSE, 
+      gamma = FALSE, kappa = FALSE, lambda = FALSE, mu = FALSE, nu = FALSE
     )[ names(param) ],
     aniso = c( f1 = 1., f2 = 1., omega = 90., phi = 90., zeta = 0. ),
     fit.aniso = c( f1 = FALSE, f2 = FALSE, omega = FALSE, phi = FALSE, zeta = FALSE ),
@@ -82,6 +82,7 @@ georob <-
   ## 2013-07-12 AP solving estimating equations by BBsolve{BB} (in addition to nleqlsv)
   ## 2013-09-06 AP exclusive use of nleqslv for solving estimating equations
   ## 2014-02-18 AP correcting error when fitting models with offset
+  ## 2014-05-15 AP changes for version 3 of RandomFields
   
   ## check whether input is complete
   
@@ -179,6 +180,7 @@ georob <-
   )
   
   initial.param <- match.arg( initial.param )
+  if( tuning.psi < control[["tuning.psi.nr"]] ) initial.param <- "no"
     
   ## check whether design matrix has full column rank
   
@@ -642,6 +644,7 @@ georob.control <-
   ## 2013-06-12 AP changes in stored items of Valpha object
   ## 2013-06-12 AP substituting [["x"]] for $x in all lists
   ## 2013-07-12 AP solving estimating equations by BBsolve{BB} (in addition to nleqlsv)
+  ## 2014-05-15 AP changes for version 3 of RandomFields
   
   if( 
     !( all( param.tf %in% names( fwd.tf ) ) &&
@@ -673,7 +676,7 @@ georob.control <-
     cov.ehat.p.bhat = cov.ehat.p.bhat, full.cov.ehat.p.bhat = full.cov.ehat.p.bhat,
     aux.cov.pred.target = aux.cov.pred.target,
     min.condnum = min.condnum,
-    irf.models = c( "DeWijsian", "fractalB", "genB" ),
+    irf.models = c( "RMdewijsian", "RMfbm", "RMgenfbm" ),
     rq = rq, lmrob = lmrob, nleqslv = nleqslv, 
     ## bbsolve = bbsolve, 
     optim = optim, 
@@ -686,8 +689,9 @@ georob.control <-
 param.transf <-
   function( 
     variance = "log", snugget = "log", nugget = "log", scale = "log", 
-    a = "identity", alpha = "identity", beta = "identity", delta = "identity", 
-    gamma = "identity", lambda = "identity", n = "identity", nu = "identity",
+    alpha = "identity", beta = "log", delta = "identity", 
+    gamma = "identity", kappa = "identity", lambda = "identity", 
+    mu = "log", nu = "log",
     f1 = "log", f2  ="log", omega = "rad", phi = "rad", zeta = "rad"
   )
 {
@@ -696,11 +700,12 @@ param.transf <-
   ## parameters
   
   ## 2013-07-02 A. Papritz
+  ## 2014-05-15 AP changes for version 3 of RandomFields
   
   c( 
     variance = variance, snugget = snugget, nugget = nugget, scale = scale,
-    a = a, alpha = alpha, beta = beta, delta = delta, gamma = gamma, 
-    lambda = lambda, n = n, nu = nu, 
+    alpha = alpha, beta = beta, delta = delta, gamma = gamma, 
+    kappa = kappa, lambda = lambda, mu = mu, nu = nu, 
     f1 = f1, f2 = f2, omega = omega, phi = phi, zeta = zeta
   )
   
@@ -976,33 +981,33 @@ param.names <-
   ## models (cf. Variogram{RandomFields})
   
   ## 2012-01-24 A. Papritz
+  ## 2014-05-15 AP changes for version 3 of RandomFields
   
   switch(
     model,
-    "bessel"        = "nu",
-    "cauchy"        = "beta",
-    "cauchytbm"     = c( "alpha", "beta", "gamma" ),
-    "circular"      = NULL,
-    "cubic"         = NULL,
-    "dagum"         = c( "beta", "gamma" ),
-    "dampedcosine"  = "lambda",
-    "DeWijsian"     = "alpha",
-    "exponential"   = NULL,
-    "fractalB"      = "alpha",
-    "gauss"         = NULL,
-    "genB"          = c( "alpha", "delta" ),
-    "gencauchy"     = c( "alpha", "beta" ),
-    "gengneiting"   = c( "n", "alpha" ),
-    "gneiting"      = NULL,
-    "lgd1"          =  c( "alpha", "beta" ),
-    "matern"        = "nu",
-    "penta"         = NULL,
-    "power"         = "a",
-    "qexponential"  = "alpha",
-    "spherical"     = NULL,
-    "stable"        = "alpha",
-    "wave"          = NULL,
-    "whittle"       = "nu",
+    "RMbessel"        = "nu",
+    "RMcauchy"        = "gamma",
+    "RMcircular"      = NULL,
+    "RMcubic"         = NULL,
+    "RMdagum"         = c( "beta", "gamma" ),
+    "RMdampedcos"     = "lambda",
+    "RMdewijsian"     = "alpha",
+    "RMexp"           = NULL,
+    "RMfbm"           = "alpha",
+    "RMgauss"         = NULL,
+    "RMgenfbm"        = c( "alpha", "delta" ),
+    "RMgencauchy"     = c( "alpha", "beta" ),
+    "RMgengneiting"   = c( "kappa", "mu" ),
+    "RMgneiting"      = NULL,
+    "RMlgd"           = c( "alpha", "beta" ),
+    "RMmatern"        = "nu",
+    "RMpenta"         = NULL,
+    "RMaskey"         = "alpha",
+    "RMqexp"          = "alpha",
+    "RMspheric"       = NULL,
+    "RMstable"        = "alpha",
+    "RMwave"          = NULL,
+    "RMwhittle"       = "nu",
     stop( model, " variogram not implemented" )
   )
 }
@@ -1010,46 +1015,46 @@ param.names <-
 ##  ##############################################################################
 
 param.bounds <- 
-  function( model, d, param )
+function( model, d )
 {
   
   ## function returns range of parameters for which variogram models are
   ## valid (cf.  Variogram{RandomFields})
   
   ## 2012-03-30 A. Papritz
+  ## 2014-05-15 AP changes for version 3 of RandomFields
   
   switch(
     model,
-    "bessel"        = list( nu = c( 0.5 * (d - 2.), Inf ) ),
-    "cauchy"        = list( beta = c( 1.e-18, Inf ) ),
-    "cauchytbm"     = list( alpha = c( 1.e-18, 2.), beta = c( 1.e-18, Inf), gamma = c( d, Inf) ),
-    "circular"      = NULL,
-    "cubic"         = NULL,
-    "dagum"         = list( beta = c( 1.e-18, 1.), gamma = c( 1.e-18, 1.-1.e-18) ),
-    "dampedcosine"  = list( lambda = c( if( d > 2 ) sqrt(3.) else 1., Inf ) ),
-    "DeWijsian"     = list( alpha = c( 1.e-18, 2 ) ),
-    "exponential"   = NULL,
-    "fractalB"      = list( alpha = c( 1.e-18, 2.) ),
-    "gauss"         = NULL,
-    "genB"          = list( alpha = c(1.e-18, 2.), delta = c(1.e-18, 1.-1.e-18) ),
-    "gencauchy"     = list( alpha = c(1.e-18, 2.), beta = c(1.e-18, Inf) ),
-    "gengneiting"   = list( n = c(1, 3), alpha = c( 0.5 * (d + 2 * unname(param["n"]) + 1), Inf ) ),
-    "gneiting"      = NULL,
-    "lgd1"          = list( 
-                       alpha = c( 
-                         1.e-18, 
-                         if( d <= 2 ) 0.5 * (3-d) else stop("dimension > 3 not allowed for lgd1 model" ) 
-                       ), 
-                       beta = c(1.e-18, Inf)
-                     ),
-    "matern"        = list( nu = c(1.e-18, Inf) ),
-    "penta"         = NULL,
-    "power"         = list( a = c( 0.5 * (d + 1), Inf ) ),
-    "qexponential"  = list( alpha = c(0., 1.) ),
-    "spherical"     = NULL,
-    "stable"        = list( alpha = c(1.e-18, 2.) ),
-    "wave"          = NULL,
-    "whittle"       = list( nu = c(1.e-18, Inf) ),
+    "RMbessel"        = list( nu = c( 0.5 * (d - 2.), Inf ) ),
+    "RMcauchy"        = list( gamma = c( 1.e-18, Inf ) ),
+    "RMcircular"      = NULL,
+    "RMcubic"         = NULL,
+    "RMdagum"         = list( beta = c( 1.e-18, 1.), gamma = c( 1.e-18, 1.-1.e-18) ),
+    "RMdampedcos"     = list( lambda = c( if( d > 2 ) sqrt(3.) else 1., Inf ) ),
+    "RMdewijsian"     = list( alpha = c( 1.e-18, 2 ) ),
+    "RMexp"           = NULL,
+    "RMfbm"           = list( alpha = c( 1.e-18, 2.) ),
+    "RMgauss"         = NULL,
+    "RMgenfbm"        = list( alpha = c(1.e-18, 2.), delta = c(1.e-18, 1.-1.e-18) ),
+    "RMgencauchy"     = list( alpha = c(1.e-18, 2.), beta = c(1.e-18, Inf) ),
+    "RMgengneiting"   = list( kappa = c(1, 3), mu = c( d/2, Inf ) ),
+    "RMgneiting"      = NULL,
+    "RMlgd"           = list( 
+                        alpha = c( 
+                          1.e-18, 
+                          if( d <= 3 ) 0.5 * (3-d) else stop("dimension > 3 not allowed for RMlgd model" ) 
+                        ), 
+                        beta = c(1.e-18, Inf)
+                      ),
+    "RMmatern"        = list( nu = c(1.e-18, Inf) ),
+    "RMpenta"         = NULL,
+    "RMaskey"         = list( alpha = c( 0.5 * (d + 1), Inf ) ),
+    "RMqexp"          = list( alpha = c(0., 1.) ),
+    "RMspheric"       = NULL,
+    "RMstable"        = list( alpha = c(1.e-18, 2.) ),
+    "RMwave"          = NULL,
+    "RMwhittle"       = list( nu = c(1.e-18, Inf) ),
     stop( model, " variogram not implemented" )
   )
 }

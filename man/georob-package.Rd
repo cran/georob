@@ -82,7 +82,7 @@
     \eqn{\mbox{\boldmath$V$\unboldmath}_\alpha}{V_\alpha} 
     to be the matrix with elements
     \deqn{(\mbox{\boldmath$V$\unboldmath}_\alpha)_{ij} =
-      m - \gamma(|\mbox{\boldmath$A$\unboldmath}\;(
+      \gamma_0 - \gamma(|\mbox{\boldmath$A$\unboldmath}\;(
       \mbox{\boldmath$s$\unboldmath}_i-\mbox{\boldmath$s$\unboldmath}_j) |),}{
       (V_\alpha)_ij = \gamma_0 - \gamma(|A (s_i - s_j )|),}
     where the constant \eqn{\gamma_0} is chosen large enough so that 
@@ -351,19 +351,19 @@
 \references{
   Nussbaum, M., Papritz, A., Baltensweiler, A. and Walthert, L. (2012)
   \emph{Organic Carbon  Stocks of Swiss Forest Soils},
-  Institute of Terrestrial Ecosystems, ETH ZŸrich and 
+  Institute of Terrestrial Ecosystems, ETH Zurich and 
   Swiss Federal Institute for Forest, Snow and Landscape Research
   (WSL), pp. 51. 
   \url{http://e-collection.library.ethz.ch/eserv/eth:6027/eth-6027-01.pdf}
 
-  \enc{KŸnsch}{Kuensch}, H. R., Papritz, A., Schwierz, C. and Stahel, W. A. (in
+  Kuensch, H. R., Papritz, A., Schwierz, C. and Stahel, W. A. (in
   preparation) Robust Geostatistics.
 
-  \enc{KŸnsch}{Kuensch}, H. R., Papritz, A., Schwierz, C. and Stahel, W. A. (2011) Robust
+  Kuensch, H. R., Papritz, A., Schwierz, C. and Stahel, W. A. (2011) Robust
   estimation of the external drift and the variogram of spatial data.
   Proceedings of the ISI 58th World Statistics Congress of the International
   Statistical Institute.
-  \url{http://isi2011.congressplanner.eu/pdfs/650268.pdf}
+  \url{http://e-collection.library.ethz.ch/eserv/eth:7080/eth-7080-01.pdf}
 }
 
 \seealso{

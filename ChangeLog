@@ -182,5 +182,37 @@ processing col and pch arguments
 
 * georob.private.functions.R (compute.semivariance, gar): changes for RandomFields version 3
 * georob.predict.R (predict.georobcd R.	): changes for RandomFields version 3
+* georob.S3methods.R (add1.georob, drop1.georob, step.georob): changes in functions for stepwise selection of fixed-effects terms
+* georob.cv.R (cv.georob): catching attempt to re-estimate variogram parameters when all parameters in object are fixed
+
+
+2014-03-12  Andreas Papritz  <papritz@env.ethz.ch>
+
+* georob.S3methods.R (add1.georob, deviance.georob, drop1.georob, extractAIC.georob, logLik.georob, step.georob): changes in functions for parallelized stepwise selection of fixed-effects terms
+
+
+2014-04-23  Andreas Papritz  <papritz@env.ethz.ch>
+
+* georob.predict.R (predict.georob): correcting error when newdata contains data locations
+
+
+2014-04-23  Andreas Papritz  <papritz@env.ethz.ch>
+
+* georob.S3methods.R (add1.georob, drop1.georob, step.georob): changes in functions for reducing memory demand
+
+
+2014-04-23  Andreas Papritz  <papritz@env.ethz.ch>
+
+* variogram.R (plot.georob,lines.georob): changes for plotting covariances and correlations
+
+
+2014-05-15  Andreas Papritz  <papritz@env.ethz.ch>
+
+* georob.cv.R (cv.georob): changes for version 3 of RandomFields
+* georob.exported.functions.R (georob, georob.control, param.transf, param.names, param.bounds): changes for version 3 of RandomFields
+* georob.private.functions.R (gcr, prepare.likelihood.calculations, dcorr.dparam, compute.semivariance): changes for version 3 of RandomFields
+* georob.S3methods.R (waldtest.georob, add1.georob, drop1.georob): changes for version 3 of RandomFields
+* variogram.R (fit.variogram.model): changes for version 3 of RandomFields
+
 
 

@@ -831,6 +831,7 @@ waldtest.georob <-
   ## 2012-02-08 AP change for anisotropic variograms
   ## 2013-06-12 AP substituting [["x"]] for $x in all lists
   ## 2013-02-19 AP correcting option for verbose output
+  ## 2014-05-15 AP changes for version 3 of RandomFields
 
   test <- match.arg( test )
   
@@ -846,8 +847,8 @@ waldtest.georob <-
       aniso = object[["aniso"]][["aniso"]],
       fit.param = c( 
         variance = FALSE, snugget = FALSE, nugget = FALSE, scale = FALSE, 
-        a = FALSE, alpha = FALSE, beta = FALSE, delta = FALSE, 
-        gamma = FALSE, lambda = FALSE, n = FALSE, nu = FALSE
+        alpha = FALSE, beta = FALSE, delta = FALSE, 
+        gamma = FALSE, kappa = FALSE, lambda = FALSE, mu = FALSE, nu = FALSE
       )[names( object[["param"]] )],
       fit.aniso = c(
         f1 = FALSE, f2 = FALSE, omega = FALSE, phi = FALSE, zeta = FALSE 
@@ -879,7 +880,7 @@ logLik.georob <-
   val <- if( REML ){
     val <- object[["loglik"]] 
   } else {
-    D <- deviance( object )
+    D <- deviance( object, ... )
     -0.5 * ( 
       D + attr( D, "log.det.covmat" ) + length( object[["residuals"]] ) * log( 2 * pi )
     ) 
@@ -900,7 +901,7 @@ logLik.georob <-
 
 deviance.georob <- 
 function( 
-  object, ...
+  object, warn = TRUE, ...
 )
 {
   ## deviance method for class georob
@@ -910,6 +911,7 @@ function(
   ## 2013-05-31 AP revised expansion of covariance matrices
   ## 2013-06-12 AP substituting [["x"]] for $x in all lists
   ## 2014-02-27 AP computing 'pseudo' deviance for robustly fitted models
+  ## 2014-03-12 AP option for suppressing warnings
   
   ## redefine na.action component of object
   
@@ -920,7 +922,7 @@ function(
   ## determine factor to compute heteroscedastic nugget
   
   if( object[["tuning.psi"]] < georob.control()[["tuning.psi.nr"]] ){
-    warning( 
+    if( warn ) warning( 
       "deviance for robustly fitted model approximated by deviance of\n",
       "  equivalent model with heteroscedastic nugget"
     )
@@ -967,7 +969,7 @@ extractAIC.georob <- function( fit, scale = 0, k = 2, ... )
   edf <- sum( !is.na( fit[["coefficients"]] ) ) + 
     sum( fit[["initial.objects"]][["fit.param"]] ) +
     sum( fit[["initial.objects"]][["fit.aniso"]] )
-  loglik <- logLik( fit )
+  loglik <- logLik( fit, ... )
   c(edf, -2 * loglik + k * edf)
 }
  
@@ -986,12 +988,89 @@ safe_pchisq <- function(q, df, ...)
 ## ##############################################################################
 
 add1.georob <- function( object, scope, scale = 0, test=c("none", "Chisq" ),
-  k = 2, trace = FALSE, fixed = TRUE, use.fitted.param = TRUE, verbose = 0, ... )
+  k = 2, trace = FALSE, data = NULL, fixed = TRUE, use.fitted.param = TRUE, verbose = 0, 
+  ncores = 1, ... )
 {
   
   ## add1 method for class georob based on add1.default{stats}
   
-  ## 2014-03-01 AP 
+  ## 2014-03-12 AP 
+  ## 2014-04-24 AP function returns only variogram parameters of best fitted object 
+  ## 2014-05-15 AP changes for version 3 of RandomFields
+  
+  ## auxiliary function for fitting model and extracting aic
+  
+  f.aux <- function( 
+    tt, scale, k, trace,
+    fixed, use.fitted.param, object, data, param, aniso, fit.param, fit.aniso, 
+    verbose, ...
+  ){
+    converged <- TRUE
+    if(trace > 1) {
+      cat("\ntrying +", tt, "\n", sep = "")
+      utils::flush.console()
+    }
+    if( fixed ){
+      if( is.null( data ) ){
+        nfit <- update( 
+          object, as.formula(paste("~ . +", tt)), 
+          param = param, aniso = aniso, fit.param = fit.param, fit.aniso = fit.aniso,
+          initial.param = "no", verbose = verbose
+        )
+      } else {
+        nfit <- update( 
+          object, as.formula(paste("~ . +", tt)), data = data,
+          param = param, aniso = aniso, fit.param = fit.param, fit.aniso = fit.aniso,
+          initial.param = "no", verbose = verbose
+        )
+      }
+    } else {
+      if( use.fitted.param ){
+        if( is.null( data ) ){
+          nfit <- update( 
+            object, as.formula(paste("~ . +", tt)), 
+            param = param, aniso = aniso, initial.param = "no", verbose = verbose
+          )
+        } else {
+          nfit <- update( 
+            object, as.formula(paste("~ . +", tt)), data = data,
+            param = param, aniso = aniso, initial.param = "no", verbose = verbose
+          )
+        }
+      }
+      else {
+        if( is.null( data ) ){
+          nfit <- update( object, as.formula(paste("~ . +", tt)), 
+            verbose = verbose 
+          )
+        } else {
+          nfit <- update( object, as.formula(paste("~ . +", tt)), data = data,
+            verbose = verbose 
+          )
+        }
+      }
+      if( !nfit$converged ){
+        converged <- FALSE
+        if( verbose > 0 ) cat( 
+          "lack of convergence when fitting model", paste("~ . +", tt), 
+          "\nconvergence code:", nfit$convergence.code, "\n"
+        )
+      }
+    }
+    nnew <- nobs( nfit, use.fallback = TRUE )
+    if( all(is.finite(c(n0, nnew))) && nnew != n0 ) stop(
+      "number of rows in use has changed: remove missing values?"
+    )
+    df.aic <-  c( extractAIC( nfit, scale, k = k, ... ), as.numeric(converged))
+    names( df.aic ) <- c("df", "AIC", "converged")
+    attr( df.aic, "nfit" ) <- list(
+      param = nfit[["param"]],
+      aniso = nfit[["aniso"]][["aniso"]],
+      initial.objects = nfit[["initial.objects"]],
+      call = nfit[["call"]]
+    )
+    df.aic
+  }
   
   ## check scope
   
@@ -1012,58 +1091,74 @@ add1.georob <- function( object, scope, scale = 0, test=c("none", "Chisq" ),
   n0 <- nobs( object, use.fallback = TRUE )
   env <- environment( formula(object) )
   
-  all.converged <- TRUE
+  param <- object[["param"]]
+  aniso <- object[["aniso"]][["aniso"]]
+  fit.param <- c( 
+    variance = FALSE, snugget = FALSE, nugget = FALSE, scale = FALSE, 
+    alpha = FALSE, beta = FALSE, delta = FALSE, 
+    gamma = FALSE, kappa = FALSE, lambda = FALSE, mu = FALSE, nu = FALSE
+  )[names( object[["param"]] )]
+  fit.aniso <- c( f1 = FALSE, f2 = FALSE, omega = FALSE, phi = FALSE, zeta = FALSE )
   
-  for( i in seq(ns) ) {
-    tt <- scope[i]
-    if(trace > 1) {
-      cat("trying +", tt, "\n", sep = "")
-      utils::flush.console()
-    }
-    ## was:
-    ##     nfit <- update( object, as.formula(paste("~ . +", tt)), evaluate = FALSE )
-    ##     nfit <- eval( nfit, envir=env ) # was  eval.parent(nfit)
-    if( fixed ){
-      nfit <- update( 
-        object, as.formula(paste("~ . +", tt)), 
-        param = object[["param"]],
-        aniso = object[["aniso"]][["aniso"]],
-        fit.param = c( 
-          variance = FALSE, snugget = FALSE, nugget = FALSE, scale = FALSE, 
-          a = FALSE, alpha = FALSE, beta = FALSE, delta = FALSE, 
-          gamma = FALSE, lambda = FALSE, n = FALSE, nu = FALSE
-        )[names( object[["param"]] )],
-        fit.aniso = c(
-          f1 = FALSE, f2 = FALSE, omega = FALSE, phi = FALSE, zeta = FALSE 
-        ),
-        verbose = verbose
-      )
-    } else {
-      if( use.fitted.param ){
-        nfit <- update( 
-          object, as.formula(paste("~ . +", tt)), 
-          param = object[["param"]], aniso = object[["aniso"]][["aniso"]],
-          initial.param = "no", verbose = verbose
-        )
-      } else {
-        nfit <- update( object, as.formula(paste("~ . +", tt)), verbose = verbose )
-      }
-      if( !nfit$converged ){
-        all.converged <- FALSE
-        if( verbose > 0 ) cat( 
-          "lack of convergence when fitting model", as.character(formula(nfit)), 
-          "\nconvergence code:", nfit$convergence.code, "\n"
-        )
-      }
-    }
-    ans[i+1L, ] <- extractAIC( nfit, scale, k = k, ... )
-    nnew <- nobs( nfit, use.fallback = TRUE )
-    if( all(is.finite(c(n0, nnew))) && nnew != n0 ) stop(
-      "number of rows in use has changed: remove missing values?"
-    )
+  ## prepare for parallel execution
+  
+  if( ncores > 1 ){
+    ncores <- min( ncores, ns, detectCores() )
+    trace <- 0
+    verbose <- 0
   }
   
-  if( !all.converged ) warning( "lack of convergence when fitting models" )
+  if( .Platform[["OS.type"]] == "windows" && ncores > 1 ){
+  
+    if( is.null( data ) ) stop( 
+      "argument 'data' required for parallel execution on windows OS"    
+    )
+    
+    ## create a SNOW cluster on windows OS
+    
+    cl <- makePSOCKcluster( ncores, outfile = "")
+    
+    ## export required items to workers
+    
+    junk <- clusterEvalQ( cl, require( georob, quietly = TRUE ) )
+    
+    result <- parLapply(
+      cl, 
+      scope, f.aux,
+      scale = scale, k= k, trace = trace, fixed = fixed, use.fitted.param = use.fitted.param,
+      object = object, data = data, param = param, aniso = aniso, 
+      fit.param = fit.param, fit.aniso = fit.aniso, verbose = verbose, ...
+    )
+    
+    stopCluster(cl)
+    
+  } else {
+        
+    ## fork child processes on non-windows OS
+    
+    result <- mclapply(
+      scope, f.aux, 
+      scale = scale, k= k, trace = trace, fixed = fixed, use.fitted.param = use.fitted.param,
+      object = object, data = data, param = param, aniso = aniso, 
+      fit.param = fit.param, fit.aniso = fit.aniso, verbose = verbose,
+      mc.cores = ncores, mc.allow.recursive = FALSE, ...
+    )
+    
+  }
+  
+  fits <- list( 
+    list( 
+      param = object[["param"]], aniso = object[["aniso"]][["aniso"]],
+      initial.objects = object[["initial.objects"]],
+      call = object[["call"]]
+    )
+  )
+  fits[2:nrow(ans)] <- lapply( result, function(x) attr( x, "nfit" ) )
+  result <- t( simplify2array( result ) )
+  ans[2:NROW(ans), ] <- result[, 1:2] 
+  if(!all( as.logical(result[, "converged"]) ) ) warning( 
+    "lack of convergence when fitting models" 
+  )
 
   ## store results
   
@@ -1091,20 +1186,98 @@ add1.georob <- function( object, scope, scale = 0, test=c("none", "Chisq" ),
   )
   class(aod) <- c("anova", "data.frame")
   attr( aod, "heading") <- head
+  attr( aod, "nfit" ) <- fits[[which.min( aod[, "AIC"])]]
+  
   aod
   
 }
 
-
 ## ##############################################################################
 
 drop1.georob <- function( object, scope, scale = 0, test=c( "none", "Chisq" ),
-  k = 2, trace = FALSE, fixed = TRUE, use.fitted.param = TRUE, verbose = 0, ... )
+  k = 2, trace = FALSE, data = NULL, fixed = TRUE, use.fitted.param = TRUE, verbose = 0, 
+  ncores = 1, ... )
 {
   
   ## drop1 method for class georob based on drop1.default{stats}
   
-  ## 2014-02-27 AP 
+  ## 2014-03-12 AP 
+  ## 2014-04-24 AP function returns only variogram parameters of best fitted object 
+  ## 2014-05-15 AP changes for version 3 of RandomFields
+  
+  ## auxiliary function for fitting model and extracting aic
+  
+  f.aux <- function( 
+    tt, scale, k, trace,
+    fixed, use.fitted.param, object, data, param, aniso, fit.param, fit.aniso, 
+    verbose, ...
+  ){
+    converged <- TRUE
+    if(trace > 1) {
+      cat("\ntrying -", tt, "\n", sep = "")
+      utils::flush.console()
+    }
+    if( fixed ){
+      if( is.null( data ) ){
+        nfit <- update( 
+          object, as.formula(paste("~ . -", tt)), 
+          param = param, aniso = aniso, fit.param = fit.param, fit.aniso = fit.aniso,
+          initial.param = "no", verbose = verbose
+        )
+      } else {
+        nfit <- update( 
+          object, as.formula(paste("~ . -", tt)), data = data,
+          param = param, aniso = aniso, fit.param = fit.param, fit.aniso = fit.aniso,
+          initial.param = "no", verbose = verbose
+        )
+      }
+    } else {
+      if( use.fitted.param ){
+        if( is.null( data ) ){
+          nfit <- update( 
+            object, as.formula(paste("~ . -", tt)), 
+            param = param, aniso = aniso, initial.param = "no", verbose = verbose
+          )
+        } else {
+          nfit <- update( 
+            object, as.formula(paste("~ . -", tt)), data = data,
+            param = param, aniso = aniso, initial.param = "no", verbose = verbose
+          )
+        }
+      }
+      else {
+        if( is.null( data ) ){
+          nfit <- update( object, as.formula(paste("~ . -", tt)), 
+            verbose = verbose 
+          )
+        } else {
+          nfit <- update( object, as.formula(paste("~ . -", tt)), data = data,
+            verbose = verbose 
+          )
+        }
+      }
+      if( !nfit$converged ){
+        converged <- FALSE
+        if( verbose > 0 ) cat( 
+          "lack of convergence when fitting model", paste("~ . -", tt), 
+          "\nconvergence code:", nfit$convergence.code, "\n"
+        )
+      }
+    }
+    nnew <- nobs( nfit, use.fallback = TRUE )
+    if( all(is.finite(c(n0, nnew))) && nnew != n0 ) stop(
+      "number of rows in use has changed: remove missing values?"
+    )
+    df.aic <-  c( extractAIC( nfit, scale, k = k, ... ), as.numeric(converged))
+    names( df.aic ) <- c("df", "AIC", "converged")
+    attr( df.aic, "nfit" ) <- list(
+      param = nfit[["param"]],
+      aniso = nfit[["aniso"]][["aniso"]],
+      initial.objects = nfit[["initial.objects"]],
+      call = nfit[["call"]]
+    )
+    df.aic
+  }
   
   ## check scope
   
@@ -1131,59 +1304,74 @@ drop1.georob <- function( object, scope, scale = 0, test=c( "none", "Chisq" ),
   n0 <- nobs( object, use.fallback = TRUE )
   env <- environment( formula(object) )
   
-  all.converged <- TRUE
+  param <- object[["param"]]
+  aniso <- object[["aniso"]][["aniso"]]
+  fit.param <- c( 
+    variance = FALSE, snugget = FALSE, nugget = FALSE, scale = FALSE, 
+    alpha = FALSE, beta = FALSE, delta = FALSE, 
+    gamma = FALSE, kappa = FALSE, lambda = FALSE, mu = FALSE, nu = FALSE
+  )[names( object[["param"]] )]
+  fit.aniso <- c( f1 = FALSE, f2 = FALSE, omega = FALSE, phi = FALSE, zeta = FALSE )
+
+  ## prepare for parallel execution
   
-  for( i in seq(ns) ) {
-    tt <- scope[i]
-    if(trace > 1) {
-      cat("trying -", tt, "\n", sep = "")
-      utils::flush.console()
-    }
-    ## was:
-    ##     nfit <- update( object, as.formula(paste("~ . -", tt)), evaluate = FALSE )
-    ##     nfit <- eval( nfit, envir=env ) # was  eval.parent(nfit)
-    if( fixed ){
-      nfit <- update( 
-        object, as.formula(paste("~ . -", tt)), 
-        param = object[["param"]],
-        aniso = object[["aniso"]][["aniso"]],
-        fit.param = c( 
-          variance = FALSE, snugget = FALSE, nugget = FALSE, scale = FALSE, 
-          a = FALSE, alpha = FALSE, beta = FALSE, delta = FALSE, 
-          gamma = FALSE, lambda = FALSE, n = FALSE, nu = FALSE
-        )[names( object[["param"]] )],
-        fit.aniso = c(
-          f1 = FALSE, f2 = FALSE, omega = FALSE, phi = FALSE, zeta = FALSE 
-        ),
-        verbose = verbose
-      )
-    } else {
-      if( use.fitted.param ){
-        nfit <- update( 
-          object, as.formula(paste("~ . -", tt)), 
-          param = object[["param"]], aniso = object[["aniso"]][["aniso"]],
-          initial.param = "no", verbose = verbose
-        )
-      }
-      else {
-        nfit <- update( object, as.formula(paste("~ . -", tt)), verbose = verbose )
-      }
-      if( !nfit$converged ){
-        all.converged <- FALSE
-        if( verbose > 0 ) cat( 
-          "lack of convergence when fitting model", as.character(formula(nfit)), 
-          "\nconvergence code:", nfit$convergence.code, "\n"
-        )
-      }
-    }
-    ans[i+1, ] <- extractAIC( nfit, scale, k = k, ... )
-    nnew <- nobs( nfit, use.fallback = TRUE )
-    if( all(is.finite(c(n0, nnew))) && nnew != n0 ) stop(
-      "number of rows in use has changed: remove missing values?"
-    )
+  if( ncores > 1 ){
+    ncores <- min( ncores, ns, detectCores() )
+    trace <- 0
+    verbose <- 0
   }
   
-  if( !all.converged ) warning( "lack of convergence when fitting models" )
+  if( .Platform[["OS.type"]] == "windows" && ncores > 1 ){
+  
+    if( is.null( data ) ) stop( 
+      "argument 'data' required for parallel execution on windows OS"    
+    )
+    
+    ## create a SNOW cluster on windows OS
+    
+    cl <- makePSOCKcluster( ncores, outfile = "")
+    
+    ## export required items to workers
+    
+    junk <- clusterEvalQ( cl, require( georob, quietly = TRUE ) )
+    
+    result <- parLapply(
+      cl, 
+      scope, f.aux,
+      scale = scale, k= k, trace = trace, fixed = fixed, use.fitted.param = use.fitted.param,
+      object = object, data = data, param = param, aniso = aniso, 
+      fit.param = fit.param, fit.aniso = fit.aniso, verbose = verbose, ...
+    )
+    
+    stopCluster(cl)
+    
+  } else {
+        
+    ## fork child processes on non-windows OS
+    
+    result <- mclapply(
+      scope, f.aux, 
+      scale = scale, k= k, trace = trace, fixed = fixed, use.fitted.param = use.fitted.param,
+      object = object, data = data, param = param, aniso = aniso, 
+      fit.param = fit.param, fit.aniso = fit.aniso, verbose = verbose,
+      mc.cores = ncores, mc.allow.recursive = FALSE, ...
+    )
+    
+  }
+  
+  fits <- list( 
+    list( 
+      param = object[["param"]], aniso = object[["aniso"]][["aniso"]],
+      initial.objects = object[["initial.objects"]],
+      call = object[["call"]]
+    )
+  )
+  fits[2:nrow(ans)] <- lapply( result, function(x) attr( x, "nfit" ) )
+  result <- t( simplify2array( result ) )
+  ans[2:NROW(ans), ] <- result[, 1:2]   
+  if(!all( as.logical(result[, "converged"]) ) ) warning( 
+    "lack of convergence when fitting models" 
+  )
 
   ## store results
   
@@ -1208,7 +1396,9 @@ drop1.georob <- function( object, scope, scale = 0, test=c( "none", "Chisq" ),
   head <- c("Single term deletions", "\nModel:", deparse(formula(object)),
     if(scale > 0) paste("\nscale: ", format(scale), "\n"))
   class(aod) <- c("anova", "data.frame")
-  attr(aod, "heading") <- head
+  attr( aod, "heading") <- head
+  attr( aod, "nfit" ) <- fits[[which.min( aod[, "AIC"])]]
+  
   aod
   
 }
@@ -1227,20 +1417,21 @@ step.default <- stats::step
 
 step.georob <- function( object, scope, scale = 0, 
   direction = c( "both", "backward", "forward" ), trace = 1, keep = NULL, steps = 1000, 
-  k = 2, fixed = TRUE, use.fitted.param =TRUE, verbose = 0, ... )
+  k = 2, data = NULL, fixed = TRUE, use.fitted.param =TRUE, verbose = 0, 
+  ncores = 1, ... )
 {
   
   ## step method for class georob
   
-  ## 2014-01-03 AP 
+  ## 2014-03-12 AP 
   
   ## code of step{stats} complemented by argument fixed to control whether
   ## variogram parameters should be kept fixed
   
   mydeviance <- function(x, ...)
   {
-    dev <- deviance(x)
-    if(!is.null(dev)) dev else extractAIC(x, k=0)[2L]
+    dev <- deviance(x, ...)
+    if(!is.null(dev)) dev else extractAIC(x, k=0, ...)[2L]
   }
   
   cut.string <- function(string)
@@ -1329,7 +1520,7 @@ step.georob <- function( object, scope, scale = 0,
   }
   
   ## FIXME think about df.residual() here
-  models[[nm]] <- list(deviance = mydeviance(fit), df.resid = n - edf,
+  models[[nm]] <- list(deviance = mydeviance(fit, ...), df.resid = n - edf,
     change = "", AIC = bAIC)
   if(!is.null(keep)) keep.list[[nm]] <- keep(fit, bAIC)
   usingCp <- FALSE
@@ -1341,8 +1532,12 @@ step.georob <- function( object, scope, scale = 0,
     aod <- NULL
     change <- NULL
     if(backward && length(scope$drop)) {
-      aod <- drop1.georob(fit, scope$drop, scale = scale,
-        trace = trace, k = k, fixed = fixed, verbose = verbose, ...)
+      aod <- drop1.georob(
+        fit, scope$drop, scale = scale,
+        k = k, trace = trace, data = data, fixed = fixed, 
+        use.fitted.param = use.fitted.param, verbose = verbose, 
+        ncores = ncores, ...
+      )
       rn <- row.names(aod)
       row.names(aod) <- c(rn[1L], paste("-", rn[-1L], sep=" "))
       ## drop zero df terms first: one at time since they
@@ -1354,8 +1549,12 @@ step.georob <- function( object, scope, scale = 0,
     }
     if(is.null(change)) {
       if(forward && length(scope$add)) {
-        aodf <- add1.georob(fit, scope$add, scale = scale,
-          trace = trace, k = k, fixed = fixed, verbose = verbose, ...)
+        aodf <- add1.georob(
+          fit, scope$add, scale = scale,
+          k = k, trace = trace, data = data, fixed = fixed, 
+          use.fitted.param = use.fitted.param, verbose = verbose, 
+          ncores = ncores, ...
+        )
         rn <- row.names(aodf)
         row.names(aodf) <- c(rn[1L], paste("+", rn[-1L], sep=" "))
         aod <-
@@ -1380,32 +1579,36 @@ step.georob <- function( object, scope, scale = 0,
     ## was:
     ##     fit <- update(fit, paste("~ .", change), evaluate = FALSE)
     ##     fit <- eval.parent(fit)
-    if( fixed ){
+    
+    nfit <- switch(
+      substr( change, 1, 1 ),
+      "-" = attr( aod, "nfit" ),
+      "+" = attr( aodf, "nfit" )
+    )
+    param <- nfit[["param"]]
+    aniso <- nfit[["aniso"]]
+    fit.param <- c( 
+      variance = FALSE, snugget = FALSE, nugget = FALSE, scale = FALSE, 
+      alpha = FALSE, beta = FALSE, delta = FALSE, 
+      gamma = FALSE, kappa = FALSE, lambda = FALSE, mu = FALSE, nu = FALSE
+    )[names( fit[["param"]] )]
+    fit.aniso <- c( f1 = FALSE, f2 = FALSE, omega = FALSE, phi = FALSE, zeta = FALSE )
+    if( is.null( data ) ){
       fit <- update(
         fit, paste("~ .", change), 
-        param = fit[["param"]],
-        aniso = fit[["aniso"]][["aniso"]],
-        fit.param = c( 
-          variance = FALSE, snugget = FALSE, nugget = FALSE, scale = FALSE, 
-          a = FALSE, alpha = FALSE, beta = FALSE, delta = FALSE, 
-          gamma = FALSE, lambda = FALSE, n = FALSE, nu = FALSE
-        )[names( fit[["param"]] )],
-        fit.aniso = c(
-          f1 = FALSE, f2 = FALSE, omega = FALSE, phi = FALSE, zeta = FALSE 
-        ),
-        verbose = verbose
+        param = param, aniso = aniso, fit.param = fit.param, fit.aniso = fit.aniso,
+        initial.param = "no", verbose = verbose
       )
     } else {
-      if( use.fitted.param ){
-        fit <- update( 
-          fit, paste("~ .", change), 
-          param = fit[["param"]], aniso = fit[["aniso"]][["aniso"]],
-          verbose = verbose 
-        )
-      } else {
-        fit <- update( fit, paste("~ .", change), verbose = verbose )
-      }
+      fit <- update(
+        fit, paste("~ .", change), data = data,
+        param = param, aniso = aniso, fit.param = fit.param, fit.aniso = fit.aniso,
+        initial.param = "no", verbose = verbose
+      )
     }
+    fit[["call"]] <- nfit[["call"]]
+    fit[["initial.objects"]] <- nfit[["initial.objects"]]
+    
     nnew <- nobs(fit, use.fallback = TRUE)
     if(all(is.finite(c(n, nnew))) && nnew != n)
     stop("number of rows in use has changed: remove missing values?")
@@ -1423,11 +1626,10 @@ step.georob <- function( object, scope, scale = 0,
     nm <- nm + 1
     ## FIXME: think about using df.residual() here.
     models[[nm]] <-
-    list(deviance = mydeviance(fit), df.resid = n - edf,
+    list(deviance = mydeviance(fit, ...), df.resid = n - edf,
       change = change, AIC = bAIC)
     if(!is.null(keep)) keep.list[[nm]] <- keep(fit, bAIC)
   }
   if(!is.null(keep)) fit$keep <- re.arrange(keep.list[seq(nm)])
   step.results(models = models[seq(nm)], fit, object, usingCp)
 }
-

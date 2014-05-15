@@ -43,11 +43,12 @@ georob.control(initial.method = c("lmrob", "rq", "lm"), bhat = NULL,
 %     bbsolve = bbsolve.control(), 
     optim = optim.control(), full.output = TRUE)
     
-param.transf(variance = "log", snugget = "log", nugget = "log", scale = "log", 
-    a = "identity", alpha = "identity", beta = "identity", delta = "identity", 
-    gamma = "identity", lambda = "identity", n = "identity", nu = "identity",
-    f1 = "log", f2  ="log", omega = "rad", phi = "rad",
-    zeta = "rad")
+param.transf( variance = "log", snugget = "log", nugget = "log", scale = "log", 
+    alpha = "identity", beta = "log", delta = "identity", 
+    gamma = "identity", kappa = "identity", lambda = "identity", 
+    mu = "log", nu = "log",
+    f1 = "log", f2  ="log", omega = "rad", phi = "rad", zeta = "rad"
+  )
   
 fwd.transf(...)
 
@@ -254,7 +255,7 @@ optim.control(optim.method = c("BFGS", "Nelder-Mead", "CG",
   \item{...}{named vectors of functions, extending the definition of
   transformations for variogram parameters (see \emph{Details}).}
   
-  \item{variance, snugget, nugget, scale, a, alpha, beta, delta, gamma, lambda, n, nu}{character
+  \item{variance, snugget, nugget, scale, alpha, beta, delta, gamma, kappa, lambda, mu, nu}{character
   strings with names of transformation functions of the variogram
   parameters.}
   

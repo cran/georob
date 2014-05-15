@@ -61,6 +61,7 @@ cv.georob <-
   ## 2013-07-02 AP passing initial values of aniso and fit.aniso to georob via update
   ## 2013-07-05 AP return "variogram.model" as part of fit componnent
   ## 2014-02-21 AP catching problem when factor are very unbalanced
+  ## 2014-05-15 AP changes for version 3 of RandomFields
     
   ## auxiliary function that fits the model and computes the predictions of
   ## a cross-validation set
@@ -77,8 +78,8 @@ cv.georob <-
     if( !re.estimate ){
       fit.param <- c( 
         variance = FALSE, snugget = FALSE, nugget = FALSE, scale = FALSE, 
-        a = FALSE, alpha = FALSE, beta = FALSE, delta = FALSE, 
-        gamma = FALSE, lambda = FALSE, n = FALSE, nu = FALSE,
+        alpha = FALSE, beta = FALSE, delta = FALSE, 
+        gamma = FALSE, kappa = FALSE, lambda = FALSE, mu = FALSE, nu = FALSE,
         f1 = FALSE, f2  =FALSE, omega = FALSE, phi = FALSE, zeta = FALSE      
       )[names( param )]
       fit.aniso <- c( f1 = FALSE, f2 = FALSE, omega = FALSE, phi = FALSE, zeta = FALSE )

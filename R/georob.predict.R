@@ -27,44 +27,7 @@ function(
   ## newdata or extracts the fitted trend, the trend terms, the signal or
   ## the observations for the support locations if newdata is not given.
   ## both point or block predictions are computed if newdata is specified.
-  
-  ## Arguments:
-  
-  ## object            object of class inheriting from "georob"
-  ## newdata           an optional data frame in which to look for variables 
-  ##                   for point kriging
-  ##                   or optionally an object of class SpatialPointsDataFrame{sp} 
-  ##                   for block kriging
-  ##                   with which to predict. If omitted, the fitted values are used
-  ## type              character string indicating what quantity should be predicted,
-  ##                   possible values are:
-  ##                   "trend"         trend, i.e., X %*% beta
-  ##                   "terms"         terms of trend, i.e. X[,terms] %*% beta[terms]
-  ##                   "signal"        trend plus autocorrelated component, 
-  ##                                   i.e., X %*% beta + Z
-  ##                   "response"   signal component plus independent error, 
-  ##                                   i.e. X %*% beta + Z + epsilon
-  ## terms             optional character vector, only used if type == "terms",
-  ##                   see predict.lm{stats}
-  ## se.fit            logical, only used if type == "terms", see predict.lm{stats}
-  ## signif             tolerance/confidence signif
-  ## mmax              maximum number of prediction items, computed in a single 
-  ##                   computation step, ceiling( m / mmax ) such step are executed if
-  ##                   m items are predicted
-  ## locations         a one-sided formula specifying what variables of newdata are the
-  ##                   coordinates of the prediction points (applies only if newdata is 
-  ##                   data frame)
-  ## full.covmat       logical, indicating whether the full covariance matrix of the
-  ##                   prediction errors should be computed
-  ## pwidth, pheight,  see preCKrige{constrainedKriging}
-  ## napp              see preCKrige{constrainedKriging}
-  ## extended.output   logical, flag controlling whether the covariance matrix of the
-  ##                   kriging predictions and the covariance matrix of the kriging predictions 
-  ##                   and the data should be computed
-  ## ncores            integer scalar with the number of cores to used in parallel processing
-   ##           
-  
-  
+    
   ## 2011-10-07 A. Papritz
   ## 2012-01-03 AP modified for replicated observations and for parallel processing
   ## 2012-01-05 AP modified for compress storage of matrices
@@ -83,6 +46,7 @@ function(
   ## 2013-05-06 AP changes for solving estimating equations for xi
   ## 2013-06-12 AP substituting [["x"]] for $x in all lists
   ## 2014-02-18 AP correcting error in computing predictions for model with offset
+  ## 2014-04-23 AP correcting error when computing predictions for data locations
 
   
   ##  ##############################################################################
@@ -93,7 +57,7 @@ function(
   f.robust.uk <-
     function(
       type, terms,
-      locations.coords, betahat, bhat,
+      locations.coords, betahat, bhat, response,
       pred.X, pred.coords, offset, newdata,
       variogram.model, param, aniso,
       cov.delta.bhat.betahat.l, cov.betahat.l, cov.bhat.betahat, cov.p.t, Valpha.objects,
@@ -461,6 +425,54 @@ function(
             t.cov.pred.target <- diag( t.cov.pred.target )
           }
           
+        }
+        
+        ## for type == "response" correct prediction results for locations
+        ## that coincide with data locations
+        
+        if( identical( type, "response" ) ){
+          
+          exx <- apply( 
+            pred.coords[!ex, , drop = FALSE ], 
+            1, 
+            function(x, lc){
+              tmp <- colSums( abs( t(lc) - x ) ) < sqrt(.Machine$double.eps)
+              if( sum( tmp ) ){
+                (1:length(tmp))[tmp][1]
+              } else NA_integer_
+            },
+            lc = locations.coords          
+          )
+          exx <- unname(exx)
+          
+          sel <- !is.na( exx )
+          
+          if( length( exx[sel] ) ){
+            
+            if( extended.output ){
+              tmp <- sum( param[c("variance", "snugget")] ) * Valpha.objects[["Valpha"]]
+              diag(tmp) <- diag(tmp) + param["nugget"]
+            }
+            
+            t.pred[sel] <- response[exx[sel]]
+            
+            if( full.covmat ){
+              t.mse.pred[sel, ] <- 0.
+              t.mse.pred[, sel] <- 0.
+              if( extended.output ){
+                t.var.pred[sel, ] <- t.cov.pred.target[sel, ]
+                t.var.pred[, sel] <- t.cov.pred.target[, sel]
+                t.var.pred[sel, sel] <- tmp[exx[sel], exx[sel]]
+                t.cov.pred.target[sel, sel] <- tmp[exx[sel], exx[sel]]            
+              } 
+            } else {
+              t.mse.pred[sel] <- 0.
+              if( extended.output ){
+                t.var.pred[sel] <- diag(tmp)[exx[sel]]
+                t.cov.pred.target[sel] <- t.var.pred[sel]              
+              }
+            }
+          }
         }
         
         ## end compute kriging predictions
@@ -921,6 +933,7 @@ function(
             aux <- cov.bhat.betahat[1:n, -(1:n), drop = FALSE] %*% t(X)
             var.pred <- cov.bhat.betahat[1:n, 1:n, drop = FALSE] + aux + t(aux) + 
               X %*% cov.bhat.betahat[-(1:n), -(1:n), drop = FALSE] %*% t(X)
+            var.pred <- var.pred[object[["Tmat"]], object[["Tmat"]]]
             var.target <- V[object[["Tmat"]], object[["Tmat"]]]
             cov.pred.target <- (cov.p.t[1:n,] + X %*% cov.p.t[-(1:n),]) %*% V
             cov.pred.target <- cov.pred.target[object[["Tmat"]], object[["Tmat"]]]
@@ -973,7 +986,8 @@ function(
         pred = pred,
         se = pred.se,
         lower = pred + qnorm( 0.5 * ( 1-signif[1] ) ) * pred.se,
-        upper = pred + qnorm( 0.5 * ( 1+signif[1] ) ) * pred.se
+        upper = pred + qnorm( 0.5 * ( 1+signif[1] ) ) * pred.se,
+        trend = fitted( object )
       )
       
       if( !is.null(t.result[["var.pred"]]) ){
@@ -983,18 +997,18 @@ function(
           t.result[["var.pred"]] 
         }
       }
-      if( !is.null(t.result[["var.target"]]) ){
-        result[["var.target"]]<- if( full.covmat ){
-          diag( t.result[["var.target"]] ) 
-        } else {
-          t.result[["var.target"]] 
-        }
-      }
       if( !is.null(t.result[["cov.pred.target"]]) ){
         result[["cov.pred.target"]]<- if( full.covmat ){
           diag( t.result[["cov.pred.target"]] ) 
         } else {
           t.result[["cov.pred.target"]] 
+        }
+      }
+      if( !is.null(t.result[["var.target"]]) ){
+        result[["var.target"]]<- if( full.covmat ){
+          diag( t.result[["var.target"]] ) 
+        } else {
+          t.result[["var.target"]] 
         }
       }
       
@@ -1004,20 +1018,32 @@ function(
         
         result <- c(
           list( pred = result, 
-            mse.pred = napredict( object[["na.action"]], t( napredict( object[["na.action"]], mse.pred ) ) ) 
+            mse.pred = napredict( 
+              object[["na.action"]], t( napredict( object[["na.action"]], mse.pred ) ) ) 
           ), 
-          if( !is.null(var.pred) ) list( 
-            var.pred = napredict( object[["na.action"]], t( napredict( object[["na.action"]], var.pred ) ) ) 
-          ),
-          if( !is.null(var.target) ) list( 
-            var.target = napredict( object[["na.action"]], t( napredict( object[["na.action"]], var.target ) ) )
-          ),
-          if( !is.null(cov.pred.target) ) list( 
+          if( !is.null(var.pred) ){
+            var.pred = napredict( 
+              object[["na.action"]], t( napredict( object[["na.action"]], t(var.pred) ) )
+            ) 
+            dimnames( var.pred ) <- NULL
+            list( var.pred = var.pred )
+          },
+          if( !is.null(cov.pred.target) ){
             cov.pred.target = napredict( 
-              object[["na.action"]], t( napredict( object[["na.action"]], cov.pred.target ) ) 
-            )
-          )
+              object[["na.action"]], t( napredict( object[["na.action"]], t(cov.pred.target) ) )
+            ) 
+            dimnames( cov.pred.target ) <- NULL
+            list( cov.pred.target = cov.pred.target )
+          },
+          if( !is.null(var.target) ){
+            var.target = napredict( 
+              object[["na.action"]], t( napredict( object[["na.action"]], t(var.target) ) )
+            ) 
+            dimnames( var.target ) <- NULL
+            list( var.target = var.target )
+          }
         )
+        dimnames( result[["mse.pred"]] ) <- NULL
       }
       
         
@@ -1151,7 +1177,7 @@ function(
       i, 
       rs, re, n.part,
       type,
-      locations.coords, betahat, bhat,
+      locations.coords, betahat, bhat, response,
       pred.X, pred.coords, offset, newdata, 
       variogram.model, param, aniso,
       cov.delta.bhat.betahat.l, cov.betahat.l, cov.bhat.betahat, cov.p.t, Valpha.objects,
@@ -1180,6 +1206,7 @@ function(
         locations.coords = locations.coords, 
         betahat = betahat,
         bhat = bhat,
+        response = response,
         pred.X = pred.X, pred.coords = pred.coords, offset = offset, newdata = newdata,
         variogram.model = variogram.model, param = param, aniso = aniso,
         cov.delta.bhat.betahat.l = cov.delta.bhat.betahat.l,
@@ -1219,6 +1246,7 @@ function(
           locations.coords = locations.coords,
           betahat = object[["coefficients"]],
           bhat = object[["bhat"]],
+          response = model.response( model.frame( object ) ),
           pred.X = pred.X, pred.coords = pred.coords, offset = offset, newdata = newdata,
           variogram.model = object[["variogram.model"]],
           param = object[["param"]],
@@ -1249,6 +1277,7 @@ function(
           locations.coords = locations.coords,
           betahat = object[["coefficients"]],
           bhat = object[["bhat"]],
+          response = model.response( model.frame( object ) ),
           pred.X = pred.X, pred.coords = pred.coords, offset = offset, newdata = newdata,
           variogram.model = object[["variogram.model"]],
           param = object[["param"]],
@@ -1278,6 +1307,7 @@ function(
         locations.coords = locations.coords,
         betahat = object[["coefficients"]],
         bhat = object[["bhat"]],
+        response = model.response( model.frame( object ) ),
         pred.X = pred.X, pred.coords = pred.coords, offset = offset, newdata = newdata,
         variogram.model = object[["variogram.model"]],
         param = object[["param"]],

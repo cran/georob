@@ -124,7 +124,7 @@ well as model terms for display by \code{\link[stats]{termplot}}.
     \eqn{\mathrm{Var}_{\hat{\theta}}[\widehat{Y}(\mbox{\boldmath$s$\unboldmath})]}{Var[hatY(s)]} or 
     \eqn{\mathrm{Var}_{\hat{\theta}}[\widehat{S}(\mbox{\boldmath$s$\unboldmath})]}{Var[hatS(s)]},
 
-    \item \code{aux.cov.pred.target}: the covariances between the predictions and the
+    \item \code{cov.pred.target}: the covariances between the predictions and the
     prediction targets,\cr
     \eqn{\mathrm{Cov}_{\hat{\theta}}[\widehat{Y}(\mbox{\boldmath$s$\unboldmath}),Y(\mbox{\boldmath$s$\unboldmath})]}{Cov[hatY(s),Y(s)]} or 
     \eqn{\mathrm{Cov}_{\hat{\theta}}[\widehat{S}(\mbox{\boldmath$s$\unboldmath}),S(\mbox{\boldmath$s$\unboldmath})]}{Cov[hatS(s),S(s)]},
@@ -173,7 +173,7 @@ well as model terms for display by \code{\link[stats]{termplot}}.
     \item \code{lower}, \code{upper}: the limits of tolerance/confidence
     intervals,
     
-    \item \code{trend}, \code{var.pred}, \code{aux.cov.pred.target},
+    \item \code{trend}, \code{var.pred}, \code{cov.pred.target},
     \code{var.target}: only present if \code{extend.output} is \code{TRUE},
     see \emph{Details}.
     
@@ -195,7 +195,7 @@ well as model terms for display by \code{\link[stats]{termplot}}.
     \item \code{var.pred}: the full covariance matrix of the
     kriging predictions, see \emph{Details}.
     
-    \item \code{aux.cov.pred.target}: the full covariance matrix of the
+    \item \code{cov.pred.target}: the full covariance matrix of the
     predictions and the prediction targets, see \emph{Details}.
     
     \item \code{var.target}: the full covariance matrix of the
@@ -211,16 +211,16 @@ well as model terms for display by \code{\link[stats]{termplot}}.
 \references{
   Nussbaum, M., Papritz, A., Baltensweiler, A. and Walthert, L. (2012)
   \emph{Organic Carbon  Stocks of Swiss Forest Soils},
-  Institute of Terrestrial Ecosystems, ETH Z?rich and 
+  Institute of Terrestrial Ecosystems, ETH Zurich and 
   Swiss Federal Institute for Forest, Snow and Landscape Research
   (WSL), pp. 51. 
   \url{http://e-collection.library.ethz.ch/eserv/eth:6027/eth-6027-01.pdf}
 
-  \enc{K?nsch}{Kuensch}, H. R., Papritz, A., Schwierz, C. and Stahel, W. A. (2011) Robust
+  Kuensch, H. R., Papritz, A., Schwierz, C. and Stahel, W. A. (2011) Robust
   estimation of the external drift and the variogram of spatial data.
   Proceedings of the ISI 58th World Statistics Congress of the International
   Statistical Institute.
-  \url{http://isi2011.congressplanner.eu/pdfs/650268.pdf}
+  \url{http://e-collection.library.ethz.ch/eserv/eth:7080/eth-7080-01.pdf}
 }
 
 \seealso{

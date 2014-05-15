@@ -441,17 +441,17 @@ plot.sample.variogram <-
 fit.variogram.model <-
   function(
     sv,
-    variogram.model = c( "exponential", "bessel", "cauchy", "cauchytbm",
-      "circular", "cubic", "dagum", "dampedcosine", "DeWijsian", "fractalB",
-      "gauss", "genB", "gencauchy", "gengneiting", "gneiting", "lgd1",
-      "matern", "penta", "power", "qexponential", "spherical", "stable",
-      "wave", "whittle"
+    variogram.model = c( "RMexp", "RMbessel", "RMcauchy", 
+      "RMcircular", "RMcubic", "RMdagum", "RMdampedcos", "RMdewijsian", "RMfbm",
+      "RMgauss", "RMgenfbm", "RMgencauchy", "RMgengneiting", "RMgneiting", "RMlgd",
+      "RMmatern", "RMpenta", "RMaskey", "RMqexp", "RMspheric", "RMstable",
+      "RMwave", "RMwhittle"
     ), 
     param,
     fit.param = c( 
       variance = TRUE, snugget = FALSE, nugget = TRUE, scale = TRUE, 
-      a = FALSE, alpha = FALSE, beta = FALSE, delta = FALSE, 
-      gamma = FALSE, lambda = FALSE, n = FALSE, nu = FALSE
+      alpha = FALSE, beta = FALSE, delta = FALSE, 
+      gamma = FALSE, kappa = FALSE, lambda = FALSE, mu = FALSE, nu = FALSE
     )[ names(param) ],
     aniso = c( f1 = 1., f2 = 1., omega = 90., phi = 90., zeta = 0. ),
     fit.aniso = c( f1 = FALSE, f2 = FALSE, omega = FALSE, phi = FALSE, zeta = FALSE ),
@@ -469,6 +469,7 @@ fit.variogram.model <-
   
   ## 2012-12-10 A. Papritz
   ## 2013-06-12 AP substituting [["x"]] for $x in all lists
+  ## 2014-05-15 AP changes for version 3 of RandomFields
   
   ## auxiliary function called by optim to compute objective function
   
@@ -505,7 +506,7 @@ fit.variogram.model <-
     ## return an error otherwise
     
     ep <- param.names( model = variogram.model )
-    param.bounds <- param.bounds( variogram.model, NROW( lag.vectors ), param )
+    param.bounds <- param.bounds( variogram.model, NCOL( lag.vectors ) )
     ep.param <- param[ep]
     
     if( !is.null( param.bounds ) ) t.bla <- sapply(
@@ -665,7 +666,7 @@ fit.variogram.model <-
   if( param["nugget"] < 0. ) stop("initial value of 'nugget' must be positive" )
   if( param["scale"] <= 0. ) stop("initial value of 'scale' must be positive" )
   
-  param.bounds <- param.bounds( variogram.model, attr( sv, "ndim" ), param )
+  param.bounds <- param.bounds( variogram.model, attr( sv, "ndim" ) )
   ep.param <- param[ep]
   
   if( !is.null( param.bounds ) ) t.bla <- sapply(
@@ -685,7 +686,7 @@ fit.variogram.model <-
   fit.param <- fit.param[param.name]
   
   if( 
-    variogram.model %in% (t.models <- c( "fractalB" ) ) && 
+    variogram.model %in% (t.models <- c( "RMfbm" ) ) && 
     ( 
       all( fit.param[c( "variance", "snugget", "scale" ) ] ) ||
       all( fit.param[c( "variance", "scale" ) ] ) 
@@ -1158,7 +1159,7 @@ print.summary.fitted.variogram <-
 ## ##############################################################################
 plot.georob <- 
   function(
-    x, type,
+    x, type, what = c("variogram", "covariance", "correlation"),
     plot.sv = TRUE, add = FALSE,
     lag.class.def, 
     xy.angle.def = c( 0., 180. ),
@@ -1175,10 +1176,13 @@ plot.georob <-
   ## 2012-12-11 A. Papritz
   ## 2012-12-21 AP correction for using col and pch 
   ## 2013-06-12 AP substituting [["x"]] for $x in all lists
+  ## 2014-05-08 AP changes for plotting covariances and correlations
   
   x[["na.action"]] <- NULL
   
   estimator <- match.arg( estimator )
+  what <- match.arg( what )
+  if( what != "variogram" ) plot.sv <- FALSE
   
   ## compute sample variogram
   
@@ -1214,12 +1218,29 @@ plot.georob <-
     "number of colors less than number of directions in x-z-plane for which semivariances are computed"
   )
   
-  plot( r.sv, add = add, type = type, col = col, pch = pch, ... )
-  
+  switch(
+    what,
+    variogram = plot( 
+      r.sv, add = add, type = type, col = col, pch = pch, ... 
+    ),
+    covariance = if( "ylab" %in% names(list(...)) ) plot( 
+      r.sv, add = add, type = type, col = col, pch = pch, ... 
+    ) else plot( 
+      r.sv, add = add, type = type, col = col, pch = pch, ylab = "covariance", ... 
+    ),
+    correlation = if( "ylab" %in% names(list(...)) ) plot(
+      r.sv, add = add, type = type, col = col, pch = pch, ylim = c(0, 1), ... 
+    ) else plot(
+      r.sv, add = add, type = type, col = col, pch = pch, ylim = c(0, 1),  
+      ylab = "correlation", ... 
+    )
+  )
+ 
   ## add graph of fitted variogram model
   
   lines( 
     x, 
+    what,
     to = max( r.sv[["lag.dist"]] ),
     xy.angle = attr( r.sv, "xy.angle.mid.class" ),
     xz.angle = attr( r.sv, "xz.angle.mid.class" ),
@@ -1235,6 +1256,7 @@ plot.georob <-
 lines.georob <- lines.fitted.variogram <- 
   function( 
     x, 
+    what = c("variogram", "covariance", "correlation"),
     from = 1.e-6, to, n = 501, 
     xy.angle = 90,
     xz.angle = 90,
@@ -1246,6 +1268,13 @@ lines.georob <- lines.fitted.variogram <-
   
   ## 2012-12-12 A. Papritz
   ## 2013-06-12 AP substituting [["x"]] for $x in all lists
+  ## 2014-05-08 AP changes for plotting covariances and correlations
+  
+  what <- match.arg( what )
+  
+  if( x$variogram.model == "RMfbm" && what != "variogram" ) stop(
+    "stationary covarinance and correlation does not exist for intrinsic variogram model 'RMfbm'"  
+  )
   
   ## generate grid of angle classes
   
@@ -1261,7 +1290,7 @@ lines.georob <- lines.fitted.variogram <-
     to <- (u[2] + 0.04/1.04*u[1]) / (1.04 - 0.04^2/1.04)
   }
   
-  lag.dist <- seq( from, to, length = n )
+  lag.class <- seq( from, to, length = n )
   
   ## determine number of dimensions
   
@@ -1276,28 +1305,28 @@ lines.georob <- lines.fitted.variogram <-
   t.bla <- lapply(
     1:NROW( angle ),
     function( 
-      i, angle, lag.dist, 
+      i, what, angle, lag.class, 
       variogram.model, param, aniso, 
       nxy, nxz, ndim, col, pch, lty 
     ){
       
       ## generate lag vectors
       
-      t.aux <- lag.dist * sin( angle[i, "xz"] )
-      lag.vectors <- cbind(
+      t.aux <- lag.class * sin( angle[i, "xz"] )
+      lag.vector <- cbind(
         t.aux * sin( angle[i, "xy"] ),
         t.aux * cos( angle[i, "xy"] ),
-        lag.dist * cos( angle[i, "xz"] )
+        lag.class * cos( angle[i, "xz"] )
       )
       
       ## drop unneeded components
       
-      lag.vectors <- lag.vectors[, 1:ndim, drop = FALSE ]
+      lag.vector <- lag.vector[, 1:ndim, drop = FALSE ]
       
       ## compute semivariance
       
       r.gamma <- compute.semivariance(
-        lag.vectors, variogram.model, param, aniso
+        lag.vector, variogram.model, param, aniso
       )
       
       ## plot semivariance
@@ -1306,13 +1335,22 @@ lines.georob <- lines.fitted.variogram <-
       sel.col <- i - (sel.pch-1) * nxy
       type <- if( nxz > 1 ) "o" else "l"
       
+      sill <- sum( param[c("variance", "snugget", "nugget")])
+      r.gamma <- switch(
+        what,
+        variogram = r.gamma,
+        covariance = sill - r.gamma,
+        correlation = (sill - r.gamma ) / sill
+      )
+
       lines( 
-        lag.dist, r.gamma, 
+        lag.class, r.gamma, 
         col = col[sel.col], pch = pch[sel.pch], 
         lty = lty, type = type )
     },
+    what = what,
     angle = angle,
-    lag.dist = lag.dist,
+    lag.class = lag.class,
     variogram.model = x[["variogram.model"]],
     param = x[["param"]],
     aniso = x[["aniso"]],

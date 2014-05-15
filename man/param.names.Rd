@@ -15,7 +15,7 @@
 \usage{
 param.names(model)
 
-param.bounds(model, d, param)
+param.bounds(model, d)
 }
 
 \arguments{
@@ -45,8 +45,8 @@ param.bounds(model, d, param)
 }
 
 \examples{
-param.names("gengneiting")
-param.bounds("gengneiting", d = 2, param = c(n = 2))
+param.names("RMgengneiting")
+param.bounds("RMgengneiting", d = 2)
 }
 
 \keyword{models}

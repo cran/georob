@@ -59,19 +59,19 @@ compute.covariances <-
   cov.betahat.e    <- FALSE
   
   if( any( c( cov.delta.bhat, aux.cov.pred.target )))                          cov.bhat.b <- TRUE
-  if( any( c( cov.ehat, aux.cov.pred.target )))                               cov.bhat.e <- TRUE
+  if( any( c( cov.ehat, aux.cov.pred.target )))                                cov.bhat.e <- TRUE
   if( any( c( cov.delta.bhat.betahat, cov.ehat.p.bhat, aux.cov.pred.target ))) cov.betahat.b <- TRUE
-  if( any( c( cov.ehat, cov.ehat.p.bhat, aux.cov.pred.target )))              cov.betahat.e <- TRUE
-  if( any( c( cov.ehat, cov.ehat.p.bhat ) ) )                             cov.betahat <- TRUE
+  if( any( c( cov.ehat, cov.ehat.p.bhat, aux.cov.pred.target )))               cov.betahat.e <- TRUE
+  if( any( c( cov.ehat, cov.ehat.p.bhat ) ) )                                  cov.betahat <- TRUE
   if( any( c( cov.delta.bhat, cov.delta.bhat.betahat ))){
-                                                                          cov.bhat <- TRUE
-    if( full.cov.delta.bhat )                                              full.cov.bhat <- TRUE
+    cov.bhat <- TRUE
+    if( full.cov.delta.bhat )                                                  full.cov.bhat <- TRUE
   }
-  if( cov.delta.bhat.betahat )                                             cov.bhat.betahat <- TRUE
+  if( cov.delta.bhat.betahat )                                                 cov.bhat.betahat <- TRUE
   if( cov.ehat ){
-                                                                          cov.delta.bhat.betahat <- TRUE
-                                                                          cov.delta.bhat <- TRUE
-    if( full.cov.ehat )                                                   full.cov.delta.bhat <- TRUE
+    cov.delta.bhat.betahat <- TRUE
+    cov.delta.bhat <- TRUE
+    if( full.cov.ehat )                                                        full.cov.delta.bhat <- TRUE
   }
   
   ## compute required auxiliary items 
@@ -1026,7 +1026,7 @@ gcr <-
   model.list <- list( variogram.model )
   model.list <- c( model.list, as.list( param[-(1:4)] ) )
   model.list <- list( "$", var = 1., A = A, model.list )
-  
+
   ##  negative semivariance matrix
   
   ## functions of version 3 of RandomFields
@@ -1039,7 +1039,7 @@ gcr <-
     ),
     silent = TRUE
   )
-
+  
   ## functions of version 2.xx of RandomFields
   
   ##   RFoldstyle()
@@ -1135,6 +1135,7 @@ prepare.likelihood.calculations <-
   ##  and its inverse lower cholesky factor; (3) computes betahat,
   ##  bhat and further associates items; and (4) computes the
   ##  matrices A and the cholesky factor of the matrix Q
+  ## 2014-05-15 AP changes for version 3 of RandomFields
   
   ##  transform variogram and anisotropy parameters back to original scale
   
@@ -1201,7 +1202,7 @@ prepare.likelihood.calculations <-
     ## return an error otherwise
     
     ep <- param.names( model = variogram.model )
-    param.bounds <- param.bounds( variogram.model, NROW( lag.vectors ), param )
+    param.bounds <- param.bounds( variogram.model, NCOL( lag.vectors ) )
     ep.param <- param[ep]
     
     if( !is.null( param.bounds ) ) t.bla <- sapply(
@@ -1448,10 +1449,11 @@ dcorr.dparam <-
   
   ##  06 Apr 2011  C.Schwierz
   ##  2011-07-17 ap
-  ##  2012-01-24 ap cauchytbm and lgd1 models added
+  ##  2012-01-24 ap RMcauchytbm and RMlgd models added
   ##  2012-01-25 ap extra model parameter with same names as in Variogram{RandomFields}
   ##  2012-02-07 AP modified for geometrically anisotropic variograms
   ## 2013-06-12 AP substituting [["x"]] for $x in all lists
+  ## 2014-05-15 AP changes for version 3 of RandomFields
   
   aniso.name <- names( aniso[["aniso"]] )
   alpha <- unname( param["scale"] )
@@ -1501,13 +1503,13 @@ dcorr.dparam <-
           c(     cp*so,     cp*co,    -sp ),
           c( -sz*sp*so, -co*sz*sp, -cp*sz ),
           c(  cz*sp*so,  cz*co*sp,  cz*cp )
-      )[ 1:n, 1:n, drop = FALSE ]
-    )
-    colSums( 
-      ( aniso[["sclmat"]] * drotmat %*% t(x) ) * ( aniso[["sclmat"]] * aux ) 
-    )
-  },
-  
+        )[ 1:n, 1:n, drop = FALSE ]
+      )
+      colSums( 
+        ( aniso[["sclmat"]] * drotmat %*% t(x) ) * ( aniso[["sclmat"]] * aux ) 
+      )
+    },
+    
     zeta = {
       drotmat <- with(
         aniso[["sincos"]],
@@ -1524,7 +1526,7 @@ dcorr.dparam <-
     
     NA
   ) / ( hs * alpha^2 )
-    
+  
   ##  partial derivative of scaled lag distance with respect to scale
   ##  parameter
   
@@ -1536,7 +1538,7 @@ dcorr.dparam <-
   result <- switch(
     variogram.model,
     
-    bessel = {
+    RMbessel = {
       
       A <- unname( param["nu"] )
       
@@ -1573,11 +1575,11 @@ dcorr.dparam <-
         },
         dgc.dhs * dhs.daniso
       )
-    }, ##  end case bessel
+    }, ##  end case RMbessel
     
-    cauchy = {
+    RMcauchy = {
       
-      A <- unname( param["beta"] )
+      A <- unname( param["gamma"] )
       
       ## derivative with of generalized covariance with respect to
       ## scaled lag distance
@@ -1587,76 +1589,76 @@ dcorr.dparam <-
       switch(
         d.param,
         scale = dgc.dhs * dhs.dscale,
-        beta = {
+        gamma = {
           -( 1 + hs^2 )^(-A) * log( 1 + hs^2 )
         },
         dgc.dhs * dhs.daniso
       )
-    }, ##  end case cauchy
+    }, ##  end case RMcauchy
     
-    cauchytbm = {
-      
-      A <- unname( param["alpha"] )
-      B <- unname( param["beta"] )
-      C <- unname( param["gamma"] )
-      
-      ## derivative with of generalized covariance with respect to
-      ## scaled lag distance
-      
-      dgc.dhs <- -( 
-        B * hs^(-1+A) * (1+hs^A)^(-2-B/A) * ( A + C - (-B + C) * hs^A ) 
-      ) / C
-      # dgc.dhs <- ifelse(
-      #   hs > 0.,
-      #   -( 
-      #     B * hs^(-1+A) * (1+hs^A)^(-2-B/A) * ( A + C - B * hs^A + C * hs^A) 
-      #   ) / C,
-      #   if( A > 1. ){
-      #     0.
-      #   } else if( identical( A, 1. ) ){
-      #     -B * (1+C) / C
-      #   } else {
-      #     -Inf
-      #   }
-      # )
-      
-      
-      switch(
-        d.param,
-        scale = dgc.dhs * dhs.dscale,
-        # scale = {
-        #   ( B * hs^A * (1+hs^A)^(-2-B/A) * (A + C + (-B+C) * hs^A ) ) / ( C * scale )
-        # },
-        alpha = {
-          ( B * (1+hs^A)^(-2 - B/A) * (
-              -( A * hs^A * ( A + C + (-B+C) * hs^A ) * log(hs) ) + 
-              ( 1 + hs^A) * (C + (-B+C) * hs^A ) * log( 1+hs^A ) 
-            ) 
-          ) / (A^2 * C )
-        },
-        # alpha = {
-        #   ifelse(
-        #     hs > 0.,
-        #     ( B * (1+hs^A)^(-2 - B/A) * (
-        #         -( A * hs^A * ( A + C + (-B+C) * hs^A ) * log(hs) ) + 
-        #         ( 1 + hs^A) * (C + (-B+C) * hs^A ) * log( 1+hs^A ) 
-        #       ) 
-        #     ) / (A^2 * C ),
-        #     0.
-        #   )
-        # },
-        beta = {
-          ( -( A * hs^A) - (C + (-B+C) * hs^A ) * log( 1+hs^A ) ) / 
-          ( A*C * (1+hs^A)^( (A+B)/A ) )
-        },
-        gamma = {
-          ( B * hs^A ) / ( C^2 * (1+hs^A)^( (A+B)/A) )
-        },
-        dgc.dhs * dhs.daniso
-      )
-    }, ##  end case cauchytbm
+#     RMcauchytbm = {
+#       
+#       A <- unname( param["alpha"] )
+#       B <- unname( param["beta"] )
+#       C <- unname( param["gamma"] )
+#       
+#       ## derivative with of generalized covariance with respect to
+#       ## scaled lag distance
+#       
+#       dgc.dhs <- -( 
+#         B * hs^(-1+A) * (1+hs^A)^(-2-B/A) * ( A + C - (-B + C) * hs^A ) 
+#       ) / C
+#       # dgc.dhs <- ifelse(
+#       #   hs > 0.,
+#       #   -( 
+#       #     B * hs^(-1+A) * (1+hs^A)^(-2-B/A) * ( A + C - B * hs^A + C * hs^A) 
+#       #   ) / C,
+#       #   if( A > 1. ){
+#       #     0.
+#       #   } else if( identical( A, 1. ) ){
+#       #     -B * (1+C) / C
+#       #   } else {
+#       #     -Inf
+#       #   }
+#       # )
+#       
+#       
+#       switch(
+#         d.param,
+#         scale = dgc.dhs * dhs.dscale,
+#         # scale = {
+#         #   ( B * hs^A * (1+hs^A)^(-2-B/A) * (A + C + (-B+C) * hs^A ) ) / ( C * scale )
+#         # },
+#         alpha = {
+#           ( B * (1+hs^A)^(-2 - B/A) * (
+#               -( A * hs^A * ( A + C + (-B+C) * hs^A ) * log(hs) ) + 
+#               ( 1 + hs^A) * (C + (-B+C) * hs^A ) * log( 1+hs^A ) 
+#             ) 
+#           ) / (A^2 * C )
+#         },
+#         # alpha = {
+#         #   ifelse(
+#         #     hs > 0.,
+#         #     ( B * (1+hs^A)^(-2 - B/A) * (
+#         #         -( A * hs^A * ( A + C + (-B+C) * hs^A ) * log(hs) ) + 
+#         #         ( 1 + hs^A) * (C + (-B+C) * hs^A ) * log( 1+hs^A ) 
+#         #       ) 
+#         #     ) / (A^2 * C ),
+#         #     0.
+#         #   )
+#         # },
+#         beta = {
+#           ( -( A * hs^A) - (C + (-B+C) * hs^A ) * log( 1+hs^A ) ) / 
+#           ( A*C * (1+hs^A)^( (A+B)/A ) )
+#         },
+#         gamma = {
+#           ( B * hs^A ) / ( C^2 * (1+hs^A)^( (A+B)/A) )
+#         },
+#         dgc.dhs * dhs.daniso
+#       )
+#     }, ##  end case RMcauchytbm
     
-    circular = {
+    RMcircular = {
       
       ## derivative with of generalized covariance with respect to
       ## scaled lag distance
@@ -1670,9 +1672,9 @@ dcorr.dparam <-
         scale = dgc.dhs * dhs.dscale,
         dgc.dhs * dhs.daniso
       )
-    }, ##  end case circular
+    }, ##  end case RMcircular
     
-    cubic = {
+    RMcubic = {
       
       ## derivative with of generalized covariance with respect to
       ## scaled lag distance
@@ -1686,9 +1688,9 @@ dcorr.dparam <-
         scale = dgc.dhs * dhs.dscale,
         dgc.dhs * dhs.daniso
       )
-    }, ##  end case cubic
+    }, ##  end case RMcubic
     
-    dagum = {
+    RMdagum = {
       
       A <- unname( param["beta"] )
       B <- unname( param["gamma"] )
@@ -1737,9 +1739,9 @@ dcorr.dparam <-
         # },
         dgc.dhs * dhs.daniso
       )
-    }, ##  end case dagum
+    }, ##  end case RMdagum
     
-    dampedcosine = {
+    RMdampedcos = {
       
       A <- unname( param["lambda"] )
       
@@ -1756,9 +1758,10 @@ dcorr.dparam <-
         },
         dgc.dhs * dhs.daniso
       )
-    }, ##  end case dampedcosine
+    }, ##  end case RMdampedcos
     
-    DeWijsian = {
+    RMdewijsian = {
+      
       
       A <- unname( param["alpha"] )
       
@@ -1796,10 +1799,10 @@ dcorr.dparam <-
         # },
         dgc.dhs * dhs.daniso
       )
-    }, ##  end case DeWijsian
+    }, ##  end case RMdewijsian
     
     
-    exponential = {
+    RMexp = {
       
       ## derivative with of generalized covariance with respect to
       ## scaled lag distance
@@ -1813,7 +1816,7 @@ dcorr.dparam <-
       )
     }, ##  end case exponential
     
-    fractalB = {
+    RMfbm = {
       
       A <- unname( param["alpha"] )
       
@@ -1851,9 +1854,9 @@ dcorr.dparam <-
         # },
         dgc.dhs * dhs.daniso
       )
-    }, ##  end case fractalB
+    }, ##  end case RMfbm
     
-    gauss = {
+    RMgauss = {
       
       ## derivative with of generalized covariance with respect to
       ## scaled lag distance
@@ -1865,9 +1868,9 @@ dcorr.dparam <-
         scale = dgc.dhs * dhs.dscale,
         dgc.dhs * dhs.daniso
       )
-    }, ##  end case gauss
+    }, ##  end case RMgauss
     
-    genB = {
+    RMgenfbm = {
       
       A <- unname( param["alpha"] )
       B <- unname( param["delta"] )
@@ -1909,9 +1912,9 @@ dcorr.dparam <-
         },
         dgc.dhs * dhs.daniso
       )
-    }, ##  end case genB
+    }, ##  end case RMgenfbm
     
-    gencauchy = {
+    RMgencauchy = {
       
       A <- unname( param["alpha"] )
       B <- unname( param["beta"] )
@@ -1959,13 +1962,69 @@ dcorr.dparam <-
         },
         dgc.dhs * dhs.daniso
       )
-    }, ##  end case gencauchy
+    }, ##  end case RMgencauchy
     
-    gengneiting = {
+    #     gengneiting = { Version 2 of package RandomFields
+    #       
+    #       
+    #       A <- unname( param["n"] )
+    #       B <- unname( param["alpha"] )
+    #       
+    #       ## derivative with of generalized covariance with respect to
+    #       ## scaled lag distance
+    #       
+    #       dgc.dhs <- rep( 0., length( hs ) )
+    #       sel <- hs < 1.
+    #       dgc.dhs[sel] <- if( identical( A, 1 ) ){
+    #         -( (1+B) * (2+B) * (1-hs[sel])^B * hs[sel] )
+    #       } else if( identical( A, 2 ) ){
+    #         -( (3+B) * (4+B) * (1-hs[sel])^(1+B) * hs[sel] * ( 1 + hs[sel] + B*hs[sel]) ) / 3.
+    #       } else if( identical( A, 3 ) ){
+    #         -( 
+    #           (5+B) * (6+B) * (1-hs[sel])^(2+B) * hs[sel] * ( 3 + 3 * (2+B) * hs[sel] + (1+B) * (3+B) * hs[sel]^2 ) 
+    #         ) / 15.
+    #       } else {
+    #         stop( "gengneiting model undefined for 'n' != 1:3" )
+    #       }
+    #       
+    #       result <- rep( 0., length( hs ) )
+    #       
+    #       switch(
+    #         d.param,
+    #         scale = dgc.dhs * dhs.dscale,
+    #         alpha = {
+    #           result[sel] <- if( identical( A, 1 ) ){
+    #             (1-hs[sel])^(1+B) * ( hs[sel] + (1 + hs[sel] + B*hs[sel]) * log( 1-hs[sel]) )
+    #             
+    #           } else if( identical( A, 2 ) ){
+    #             (
+    #               (1-hs[sel])^(2+B) * ( 
+    #                 hs[sel] * ( 3 + 2 * (2+B) *hs[sel] ) + 
+    #                 ( 3 + 3 * ( 2+B) * hs[sel] + ( 1+B) * (3+B) * hs[sel]^2 ) * log( 1-hs[sel] )
+    #               )
+    #             ) / 3.
+    #           } else if( identical( A, 3 ) ){
+    #             ( 
+    #               (1-hs[sel])^(3+B) * ( 
+    #                 hs[sel] * ( 15 + hs[sel] * ( 36 + 23*hs[sel] + 3 * B * ( 4 + (6+B)*hs[sel] ) ) ) + 
+    #                 ( 15 + 15 * (3+B) * hs[sel] + ( 45 + 6 * B * (6+B) ) * hs[sel]^2 + (1+B) * (3+B) * (5+B) * hs[sel]^3 ) * 
+    #                 log( 1-hs[sel]) 
+    #               ) 
+    #             ) / 15.
+    #           }
+    #           result
+    #         },
+    #         dgc.dhs * dhs.daniso
+    #       )
+    #       
+    #       
+    #     }, ##  end case Gengneiting
+    
+    RMgengneiting = {
       
       
-      A <- unname( param["n"] )
-      B <- unname( param["alpha"] )
+      A <- unname( param["kappa"] )
+      B <- unname( param["mu"] )
       
       ## derivative with of generalized covariance with respect to
       ## scaled lag distance
@@ -1973,15 +2032,20 @@ dcorr.dparam <-
       dgc.dhs <- rep( 0., length( hs ) )
       sel <- hs < 1.
       dgc.dhs[sel] <- if( identical( A, 1 ) ){
-        -( (1+B) * (2+B) * (1-hs[sel])^B * hs[sel] )
+        (2.5+B) * (1-hs[sel])^(2.5+B) - (2.5+B) * (1-hs[sel])^(1.5+B) * (1+(2.5+B) * hs[sel])
       } else if( identical( A, 2 ) ){
-        -( (3+B) * (4+B) * (1-hs[sel])^(1+B) * hs[sel] * ( 1 + hs[sel] + B*hs[sel]) ) / 3.
+        (1 - hs[sel])^(4.5+B) * (4.5+B + 2/3 * (3.5+B) * (5.5+B) * hs[sel] ) - 
+        (4.5+B) * (1 - hs[sel])^(3.5+B) * (
+          1 + hs[sel]*(4.5 + B + 6.416666666666666*hs[sel] + B/3. * (9.+B) * hs[sel] ) 
+        )
       } else if( identical( A, 3 ) ){
-        -( 
-          (5+B) * (6+B) * (1-hs[sel])^(2+B) * hs[sel] * ( 3 + 3 * (2+B) * hs[sel] + (1+B) * (3+B) * hs[sel]^2 ) 
-        ) / 15.
+        (1 - hs[sel])^(6.5+B) * (6.5 + B + 0.8 * (5.275255128608411+B) * (7.724744871391589+B) * hs[sel] + 
+          0.2 * (4.5+B) * (6.5+B) * (8.5+B) * hs[sel]^2) - 
+        (6.5+B) * (1 - hs[sel])^(5.5+B) * (1 + (6.5+B) * hs[sel] + 0.4 * (5.275255128608411+B) * 
+          (7.724744871391589+B) * hs[sel]^2 + 0.2/3 * (4.5+B) * (6.5+B) * (8.5+B) * hs[sel]^3
+        )
       } else {
-        stop( "gengneiting model undefined for 'n' != 1:3" )
+        stop( "RMgengneiting model undefined for 'n' != 1:3" )
       }
       
       result <- rep( 0., length( hs ) )
@@ -1989,25 +2053,25 @@ dcorr.dparam <-
       switch(
         d.param,
         scale = dgc.dhs * dhs.dscale,
-        alpha = {
+        mu = {
           result[sel] <- if( identical( A, 1 ) ){
-            (1-hs[sel])^(1+B) * ( hs[sel] + (1 + hs[sel] + B*hs[sel]) * log( 1-hs[sel]) )
-            
+            (1 - hs[sel])^(2.5+B) * (hs[sel] + (1 + (2.5+B) * hs[sel]) * log(1 - hs[sel]))
           } else if( identical( A, 2 ) ){
-            (
-              (1-hs[sel])^(2+B) * ( 
-                hs[sel] * ( 3 + 2 * (2+B) *hs[sel] ) + 
-                ( 3 + 3 * ( 2+B) * hs[sel] + ( 1+B) * (3+B) * hs[sel]^2 ) * log( 1-hs[sel] )
-              )
-            ) / 3.
+            (1 - hs[sel])^(4.5+B) * (hs[sel] + 2/3 * (4.5+B) * hs[sel]^2 + (1 + hs[sel] * (
+                  4.5 + B + 6.416666666666666*hs[sel] +  B/3. * (9.+B) * hs[sel]) ) * log(1 - hs[sel])
+            )
           } else if( identical( A, 3 ) ){
-            ( 
-              (1-hs[sel])^(3+B) * ( 
-                hs[sel] * ( 15 + hs[sel] * ( 36 + 23*hs[sel] + 3 * B * ( 4 + (6+B)*hs[sel] ) ) ) + 
-                ( 15 + 15 * (3+B) * hs[sel] + ( 45 + 6 * B * (6+B) ) * hs[sel]^2 + (1+B) * (3+B) * (5+B) * hs[sel]^3 ) * 
-                log( 1-hs[sel]) 
-              ) 
-            ) / 15.
+            (1 - hs[sel])^(6.5 + B)*
+            (hs[sel] + (5.2 + 0.8*B)*hs[sel]^2 + 
+              0.2*(5.345299461620754 + B)*
+              (7.654700538379246 + B)*hs[sel]^3 + 
+              (1 + hs[sel]*(6.5 + 1.*B + 
+                  0.4*(5.275255128608411 + B)*
+                  (7.724744871391589 + B)*hs[sel] + 
+                  0.06666666666666667*(4.5 + B)*
+
+                  (6.5 + B)*(8.5 + B)*hs[sel]^2))*
+              log(1 - hs[sel]))          
           }
           result
         },
@@ -2017,7 +2081,8 @@ dcorr.dparam <-
       
     }, ##  end case Gengneiting
     
-    gneiting = {
+
+    RMgneiting = {
       
       ## derivative with of generalized covariance with respect to
       ## scaled lag distance
@@ -2033,9 +2098,9 @@ dcorr.dparam <-
         scale = dgc.dhs * dhs.dscale,
         dgc.dhs * dhs.daniso
       )
-    }, ##  end case gneiting
+    }, ##  end case RMgneiting
     
-    lgd1 = {
+    RMlgd = {
       
       A <- unname( param["alpha"] )
       B <- unname( param["beta"] )
@@ -2111,9 +2176,9 @@ dcorr.dparam <-
         # },
         dgc.dhs * dhs.daniso
       )
-    }, ##  end case lgd1
+    }, ##  end case RMlgd
     
-    matern = {
+    RMmatern = {
       
       A <- unname( param["nu"] )
       
@@ -2170,9 +2235,9 @@ dcorr.dparam <-
         },
         dgc.dhs * dhs.daniso
       )
-    }, ##  end case matern
+    }, ##  end case RMmatern
     
-    penta = {
+    RMpenta = {
       
       ## derivative with of generalized covariance with respect to
       ## scaled lag distance
@@ -2186,11 +2251,11 @@ dcorr.dparam <-
         scale = dgc.dhs * dhs.dscale,
         dgc.dhs * dhs.daniso
       )
-    }, ##  end case penta
+    }, ##  end case RMpenta
     
-    power = {
+    RMaskey = {
       
-      A <- unname( param["a"] )
+      A <- unname( param["alpha"] )
       
       ## derivative with of generalized covariance with respect to
       ## scaled lag distance
@@ -2202,7 +2267,7 @@ dcorr.dparam <-
       switch(
         d.param,
         scale = dgc.dhs * dhs.dscale,
-        a = {
+        alpha = {
           result <- rep( 0., length( hs ) )
           sel <- hs < 1.
           result[sel] <- ( 1 - hs[sel] )^A * log( 1 - hs[sel] )
@@ -2210,9 +2275,9 @@ dcorr.dparam <-
         },
         dgc.dhs * dhs.daniso
       )
-    }, ##  end case power
+    }, ##  end case RMaskey
     
-    qexponential = {
+    RMqexp = {
       
       A <- unname( param["alpha"] )
       
@@ -2229,10 +2294,10 @@ dcorr.dparam <-
         },
         dgc.dhs * dhs.daniso
       )
-    }, ##  end case qexponential
+    }, ##  end case RMqexp
     
     
-    spherical = {
+    RMspheric = {
       
       ## derivative with of generalized covariance with respect to
       ## scaled lag distance
@@ -2246,9 +2311,9 @@ dcorr.dparam <-
         scale = dgc.dhs * dhs.dscale,
         dgc.dhs * dhs.daniso
       )
-    }, ##  end case spherical
+    }, ##  end case RMspheric
     
-    stable = {
+    RMstable = {
       
       A <- unname( param["alpha"] )
       
@@ -2286,9 +2351,9 @@ dcorr.dparam <-
         # },
         dgc.dhs * dhs.daniso
       )
-    }, ##  end case stable
+    }, ##  end case RMstable
     
-    wave = {
+    RMwave = {
       
       ## derivative with of generalized covariance with respect to
       ## scaled lag distance
@@ -2307,7 +2372,7 @@ dcorr.dparam <-
       )
     }, ##  end case wave
     
-    whittle = {
+    RMwhittle = {
       
       A <- unname( param["nu"] )
       
@@ -3742,7 +3807,7 @@ georob.fit <-
   if( param["nugget"] < 0. ) stop("initial value of 'nugget' must be positive" )
   if( param["scale"] <= 0. ) stop("initial value of 'scale' must be positive" )
   
-  param.bounds <- param.bounds( variogram.model, NCOL( coordinates ), param )
+  param.bounds <- param.bounds( variogram.model, NCOL( coordinates ) )
   ep.param <- param[ep]
   
   if( !is.null( param.bounds ) ) t.bla <- sapply(
@@ -3762,7 +3827,7 @@ georob.fit <-
   fit.param <- fit.param[param.name]
   
   if( 
-    variogram.model %in% (t.models <- c( "fractalB" ) ) && 
+    variogram.model %in% (t.models <- c( "RMfbm" ) ) && 
     ( 
       sum( duplicated( TT ) > 0 ) && all( 
         fit.param[c( "variance", "snugget", "scale" ) ] 

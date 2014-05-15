@@ -1,4 +1,4 @@
-% 2013-07-01 A. Papritz
+% 2014-05-08 A. Papritz
 % R CMD Rdconv -t html -o bla.html plot.georob.Rd ; open bla.html; R CMD Rd2pdf --force plot.georob.Rd; 
 
 \encoding{macintosh}
@@ -18,12 +18,14 @@ sample variogram of the (robust) regression residuals.
 
 
 \usage{
-\method{plot}{georob}(x, type, plot.sv = TRUE, add = FALSE, lag.class.def, 
+\method{plot}{georob}(x, type, what = c("variogram", "covariance", "correlation"),
+    plot.sv = TRUE, add = FALSE, lag.class.def, 
     xy.angle.def = c(0, 180), xz.angle.def = c(0, 180), 
     max.lag = Inf, estimator = c("mad", "qn", "ch", "matheron"), 
     mean.angle = TRUE, col, pch, lty, ...)
 
-\method{lines}{georob}(x, from = 1.e-6, to, n = 501, xy.angle = 90, xz.angle = 90, 
+\method{lines}{georob}(x, what = c("variogram", "covariance", "correlation"),
+    from = 1.e-6, to, n = 501, xy.angle = 90, xz.angle = 90, 
     col = 1:length(xy.angle), pch = 1:length(xz.angle), lty = "solid", ...)
 }
 
@@ -32,6 +34,10 @@ sample variogram of the (robust) regression residuals.
   
   \item{type}{the type of plot for display of the sample variogram,
   see \code{\link[graphics]{plot}}.}
+  
+  \item{what}{the quantity that should be displayed.  Note that
+  \code{plot.sv} will be set to \code{FALSE} unless \code{what ==
+  "variogram"} (default).}
   
   \item{plot.sv}{logical controlling if the sample variogram of the
   regression residuals, \eqn{\widehat{B}(\mbox{\boldmath$s$\unboldmath}) +

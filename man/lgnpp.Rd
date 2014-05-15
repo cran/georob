@@ -301,7 +301,7 @@ lgnpp(object, newdata, locations, is.block = FALSE, all.pred = NULL,
 
   Nussbaum, M., Papritz, A., Baltensweiler, A. and Walthert, L. (2012)
   \emph{Organic Carbon  Stocks of Swiss Forest Soils},
-  Institute of Terrestrial Ecosystems, ETH Z?rich and 
+  Institute of Terrestrial Ecosystems, ETH Zurich and 
   Swiss Federal Institute for Forest, Snow and Landscape Research
   (WSL), pp. 51. 
   \url{http://e-collection.library.ethz.ch/eserv/eth:6027/eth-6027-01.pdf}

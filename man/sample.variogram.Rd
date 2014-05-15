@@ -166,7 +166,7 @@ with the following components:
 
   Dowd, P. A. (1984) The variogram and kriging: Robust and resistant
   estimators.  In \emph{Geostatistics for Natural Resources
-  Characterization},  Verly, G., David, M., Journel, A. and Mar?chal, A. (Eds.)
+  Characterization},  Verly, G., David, M., Journel, A. and Marechal, A. (Eds.)
   Dordrecht: D. Reidel Publishing Company, Part I, 1, 91--106.
   
   Genton, M. (1998) Highly Robust Variogram Estimation.  \emph{Mathematical

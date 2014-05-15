@@ -1,4 +1,4 @@
-% 2013-06-12 A. Papritz
+% 2014-05-08 A. Papritz
 % R CMD Rdconv -t html -o bla.html fit.variogram.model.Rd ; open bla.html; R CMD Rd2pdf --force fit.variogram.model.Rd; 
 
 \encoding{macintosh}
@@ -20,15 +20,17 @@ models.}
 
 \usage{
 fit.variogram.model(sv, 
-    variogram.model = c("exponential", "bessel", "cauchy", "cauchytbm", 
-        "circular", "cubic", "dagum", "dampedcosine", "DeWijsian", "fractalB", 
-        "gauss", "genB", "gencauchy", "gengneiting", "gneiting", "lgd1",
-        "matern", "penta", "power", "qexponential", "spherical", "stable",
-        "wave", "whittle"), 
+    variogram.model = c( "RMexp", "RMbessel", "RMcauchy", 
+      "RMcircular", "RMcubic", "RMdagum", "RMdampedcos", "RMdewijsian", "RMfbm",
+      "RMgauss", "RMgenfbm", "RMgencauchy", "RMgengneiting", "RMgneiting", "RMlgd",
+      "RMmatern", "RMpenta", "RMaskey", "RMqexp", "RMspheric", "RMstable",
+      "RMwave", "RMwhittle"
+    ), 
     param, 
-    fit.param = c(variance = TRUE, snugget = FALSE, nugget = TRUE, 
-        scale = TRUE, a = FALSE, alpha = FALSE, beta = FALSE, delta = FALSE, 
-        gamma = FALSE, lambda = FALSE, n = FALSE, nu = FALSE)[names(param)], 
+    fit.param = c( variance = TRUE, snugget = FALSE, nugget = TRUE, scale = TRUE, 
+      alpha = FALSE, beta = FALSE, delta = FALSE, 
+      gamma = FALSE, kappa = FALSE, lambda = FALSE, mu = FALSE, nu = FALSE
+    )[names(param)], 
     aniso = c(f1 = 1, f2 = 1, omega = 90, phi = 90, zeta = 0), 
     fit.aniso = c(f1 = FALSE, f2 = FALSE, omega = FALSE, 
         phi = FALSE, zeta = FALSE),
@@ -40,7 +42,8 @@ fit.variogram.model(sv,
 
 \method{summary}{fitted.variogram}(object, correlation = FALSE, signif = 0.95, ...)
     
-\method{lines}{fitted.variogram}(x, from = 1.e-6, to, n = 501, xy.angle = 90, xz.angle = 90, 
+\method{lines}{fitted.variogram}(x, what = c("variogram", "covariance", "correlation"),
+    from = 1.e-6, to, n = 501, xy.angle = 90, xz.angle = 90, 
     col = 1:length(xy.angle), pch = 1:length(xz.angle), lty = "solid", ...)
     
 }
@@ -77,7 +80,7 @@ fit.variogram.model(sv,
     \item{\code{scale}: range parameter (\eqn{\alpha}) of the variogram.}
      
        \item{names of additional variogram parameters such as the
-       smoothness parameter \eqn{\nu} of the Whittle-Mat?rn model as passed
+       smoothness parameter \eqn{\nu} of the Whittle-Mat\'ern model as passed
        by the argument \code{param} to
        \code{\link[RandomFields]{Variogram}}, see \code{\link{param.names}}.} } }
   
@@ -154,6 +157,8 @@ fit.variogram.model(sv,
   
   \item{signif}{confidence level for computing confidence intervals for
   variogram parameters (default \code{0.95}).}
+  
+  \item{what}{the quantity that should be displayed (default \code{"variogram"}).}
   
   \item{from}{numeric, minimal lag distance used in plotting variogram models.}
 
@@ -286,7 +291,7 @@ data(wolfcamp, package = "geoR")
 r.sv.iso <- sample.variogram(wolfcamp[["data"]], locations = wolfcamp[[1]], 
     lag.class.def = seq(0, 200, by = 15))
 
-r.irf0.iso <- fit.variogram.model(r.sv.iso, variogram.model = "fractalB",
+r.irf0.iso <- fit.variogram.model(r.sv.iso, variogram.model = "RMfbm",
     param = c(variance = 100, nugget = 1000, scale = 1., alpha = 1.),
     fit.param = c( variance = TRUE, nugget = TRUE, scale = FALSE, alpha = TRUE),
     method = "Nelder-Mead", hessian = FALSE, control = list(maxit = 5000))  
@@ -303,7 +308,7 @@ r.sv.aniso <- sample.variogram(wolfcamp[["data"]],
 \dontrun{
 plot(r.sv.aniso, type = "l")}
 
-r.irf0.aniso <- fit.variogram.model(r.sv.aniso, variogram.model = "fractalB",
+r.irf0.aniso <- fit.variogram.model(r.sv.aniso, variogram.model = "RMfbm",
     param = c(variance = 100, nugget = 1000, scale = 1., alpha = 1.5),
     fit.param = c(variance = TRUE, nugget = TRUE, scale = FALSE, alpha = TRUE),
     aniso = c(f1 = 0.4, f2 = 1., omega = 135, phi = 90., zeta = 0.),

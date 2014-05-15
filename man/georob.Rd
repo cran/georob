@@ -16,15 +16,17 @@
 \usage{
 georob(formula, data, subset, weights, na.action, model = TRUE, 
     x = FALSE, y = FALSE, contrasts = NULL, offset, locations, 
-    variogram.model = c("exponential", "bessel", "cauchy", "cauchytbm", 
-        "circular", "cubic", "dagum", "dampedcosine", "DeWijsian", "fractalB", 
-        "gauss", "genB", "gencauchy", "gengneiting", "gneiting", "lgd1",
-        "matern", "penta", "power", "qexponential", "spherical", "stable",
-        "wave", "whittle"), 
+    variogram.model = c( "RMexp", "RMbessel", "RMcauchy", 
+      "RMcircular", "RMcubic", "RMdagum", "RMdampedcos", "RMdewijsian", "RMfbm",
+      "RMgauss", "RMgenfbm", "RMgencauchy", "RMgengneiting", "RMgneiting", "RMlgd",
+      "RMmatern", "RMpenta", "RMaskey", "RMqexp", "RMspheric", "RMstable",
+      "RMwave", "RMwhittle"
+    ), 
     param, 
-    fit.param = c(variance = TRUE, snugget = FALSE, nugget = TRUE, 
-        scale = TRUE, a = FALSE, alpha = FALSE, beta = FALSE, delta = FALSE, 
-        gamma = FALSE, lambda = FALSE, n = FALSE, nu = FALSE)[names(param)], 
+    fit.param = c( variance = TRUE, snugget = FALSE, nugget = TRUE, scale = TRUE, 
+      alpha = FALSE, beta = FALSE, delta = FALSE, 
+      gamma = FALSE, kappa = FALSE, lambda = FALSE, mu = FALSE, nu = FALSE
+    )[names(param)], 
     aniso = c(f1 = 1, f2 = 1, omega = 90, phi = 90, zeta = 0), 
     fit.aniso = c(f1 = FALSE, f2 = FALSE, omega = FALSE, 
         phi = FALSE, zeta = FALSE), 
@@ -201,7 +203,7 @@ georob(formula, data, subset, weights, na.action, model = TRUE,
 }
 
 \details{\code{georob} fits a spatial linear model by robust or Gaussian REML 
-  (K?nsch et al., 2011, K?nsch et al., in preparation). \code{\link{georobIntro}} 
+  (Kuensch et al., 2011, Kuensch et al., in preparation). \code{\link{georobIntro}} 
   describes the employed model and briefly sketches the robust REML estimation 
   and the robust external-drift kriging method. Here, we describe further details 
   of \code{georob}.
@@ -288,7 +290,7 @@ georob(formula, data, subset, weights, na.action, model = TRUE,
       
         \item \emph{Checking permissible ranges}: The additional parameters
         of the variogram models such as the smoothness parameter \eqn{\nu}
-        of the Whittle-Mat?rn model are forced to stay in the permissible
+        of the Whittle-Mat\'ern model are forced to stay in the permissible
         ranges by signalling an error to \code{nleqslv} or \code{optim} if
         the current trial values are invalid. These functions then
         graciously update the trial values of the parameters and carry
@@ -388,14 +390,14 @@ fit of a spatial linear model.  See
 
 }
 \references{
-  \enc{K?nsch}{Kuensch}, H. R., Papritz, A., Schwierz, C. and Stahel, W. A. (in
+  Kuensch, H. R., Papritz, A., Schwierz, C. and Stahel, W. A. (in
   preparation) Robust Geostatistics.
 
-  \enc{K?nsch}{Kuensch}, H. R., Papritz, A., Schwierz, C. and Stahel, W. A. (2011) Robust
+  Kuensch, H. R., Papritz, A., Schwierz, C. and Stahel, W. A. (2011) Robust
   estimation of the external drift and the variogram of spatial data.
   Proceedings of the ISI 58th World Statistics Congress of the International
   Statistical Institute.
-  \url{http://isi2011.congressplanner.eu/pdfs/650268.pdf}
+  \url{http://e-collection.library.ethz.ch/eserv/eth:7080/eth-7080-01.pdf}
 }
 
 \author{
