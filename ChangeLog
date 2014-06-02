@@ -201,7 +201,7 @@ processing col and pch arguments
 * georob.S3methods.R (add1.georob, drop1.georob, step.georob): changes in functions for reducing memory demand
 
 
-2014-04-23  Andreas Papritz  <papritz@env.ethz.ch>
+2014-05-08  Andreas Papritz  <papritz@env.ethz.ch>
 
 * variogram.R (plot.georob,lines.georob): changes for plotting covariances and correlations
 
@@ -214,5 +214,24 @@ processing col and pch arguments
 * georob.S3methods.R (waldtest.georob, add1.georob, drop1.georob): changes for version 3 of RandomFields
 * variogram.R (fit.variogram.model): changes for version 3 of RandomFields
 
+
+2014-05-15  Andreas Papritz  <papritz@env.ethz.ch>
+
+* georob.exported.functions.R (georob) changes for selecting intitial.param and initial.method
+
+
+2014-05-28  Andreas Papritz  <papritz@env.ethz.ch>
+
+* georob.cv.R (georob.cv) catching error when all variogram parameters are fixed
+* georob.exported.functions.R (georob, param.bounds, param.names) minor changes in arguments
+* georob.predict.R (predict.georob) further changes for version 3 of RandomFields
+* georob.private.functions.R (georob.fit) change in check for initial variogram parameter values
+* variogram.R (fit.variogram.model) minor changes in arguments
+
+
+2014-06-02  Andreas Papritz  <papritz@env.ethz.ch>
+
+* georob.exported.functions.R (georob) partial matching of names of variogram parameters
+* georob.exported.functions.R (georob.control) new default value for argument irwls.reltol
 
 

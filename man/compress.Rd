@@ -1,4 +1,4 @@
-% 2013-06-12 A. Papritz
+% 2014-05-28 A. Papritz
 % R CMD Rdconv -t html -o bla.html compress.Rd ; open bla.html; R CMD Rd2pdf --force compress.Rd; 
 \name{compress}
 \alias{compress}
@@ -65,9 +65,9 @@
 data(meuse)
 
 r.logzn.rob <- georob(log(zinc) ~ sqrt(dist) + ffreq, data = meuse, locations = ~ x + y,
-    variogram.model = "exponential",
+    variogram.model = "RMexp",
     param = c( variance = 0.15, nugget = 0.05, scale = 200 ),
-    tuning.psi = 1, initial.param = TRUE)
+    tuning.psi = 1, initial.param = "exclude")
   
 cov2cor( expand(r.logzn.rob[["cov"]][["cov.betahat"]]) )
 }

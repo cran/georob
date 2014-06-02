@@ -62,7 +62,8 @@ cv.georob <-
   ## 2013-07-05 AP return "variogram.model" as part of fit componnent
   ## 2014-02-21 AP catching problem when factor are very unbalanced
   ## 2014-05-15 AP changes for version 3 of RandomFields
-    
+  ## 2014-05-28 AP catching error when all variogram parameters are fixed
+  
   ## auxiliary function that fits the model and computes the predictions of
   ## a cross-validation set
   
@@ -162,6 +163,18 @@ cv.georob <-
     
     return( list( pred = t.predict, fit = t.georob ) )
     ## end cv function
+  }
+  
+  ## check consistency of arguments
+  
+  if( !any( c( fit.param, fit.aniso ) ) && re.estimate ){
+    re.estimate <- FALSE
+    cat(
+      "re.estimate set equal to FALSE because all variogram parameters are fixed\n\n"    
+    )
+    warnings(
+      "re.estimate set equal to FALSE because all variogram parameters are fixed"    
+    )
   }
   
   mfl.action <- match.arg( mfl.action )

@@ -1,4 +1,4 @@
-% 2014-03-12 A. Papritz
+% 2014-05-28 A. Papritz
 % R CMD Rdconv -t html -o bla.html georobModelBuilding.Rd ; open bla.html; R CMD Rd2pdf --force georobModelBuilding.Rd; 
 
 \encoding{macintosh}
@@ -185,7 +185,7 @@ data(meuse)
 
 ## Gaussian REML fit
 r.logzn.reml <- georob(log(zinc) ~ sqrt(dist), data = meuse, locations = ~ x + y,
-    variogram.model = "exponential",
+    variogram.model = "RMexp",
     param = c( variance = 0.15, nugget = 0.05, scale = 200 ),
     tuning.psi = 1000,
     control = georob.control(cov.bhat = TRUE, cov.ehat.p.bhat = TRUE))

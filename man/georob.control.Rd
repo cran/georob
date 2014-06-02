@@ -1,4 +1,4 @@
-% 2013-09-06 A. Papritz
+% 2014-06-02 A. Papritz
 % R CMD Rdconv -t html -o bla.html georob.control.Rd ; open bla.html; R CMD Rd2pdf --force georob.control.Rd; 
 \encoding{macintosh}
 \name{georob.control}
@@ -24,12 +24,12 @@
 
 \usage{
 georob.control(initial.method = c("lmrob", "rq", "lm"), bhat = NULL, 
-    param.tf = param.transf(),fwd.tf = fwd.transf(), 
+    param.tf = param.transf(), fwd.tf = fwd.transf(), 
     deriv.fwd.tf = dfwd.transf(), bwd.tf = bwd.transf(), 
     safe.param = 1.e12, psi.func = c("logistic", "t.dist", "huber"),
     tuning.psi.nr = 1000, min.rweight = 0.25,
     irwls.initial = TRUE, irwls.maxiter = 50, 
-    irwls.reltol = sqrt(.Machine[["double.eps"]]),
+    irwls.reltol = .Machine[["double.eps"]]^0.25,
     force.gradient = FALSE, zero.dist = sqrt(.Machine[["double.eps"]]),
     cov.bhat = FALSE, full.cov.bhat = FALSE, cov.betahat = TRUE, 
     cov.bhat.betahat = FALSE, 
@@ -43,12 +43,11 @@ georob.control(initial.method = c("lmrob", "rq", "lm"), bhat = NULL,
 %     bbsolve = bbsolve.control(), 
     optim = optim.control(), full.output = TRUE)
     
-param.transf( variance = "log", snugget = "log", nugget = "log", scale = "log", 
+param.transf(variance = "log", snugget = "log", nugget = "log", scale = "log", 
     alpha = "identity", beta = "log", delta = "identity", 
     gamma = "identity", kappa = "identity", lambda = "identity", 
     mu = "log", nu = "log",
-    f1 = "log", f2  ="log", omega = "rad", phi = "rad", zeta = "rad"
-  )
+    f1 = "log", f2  ="log", omega = "rad", phi = "rad", zeta = "rad")
   
 fwd.transf(...)
 
@@ -127,7 +126,7 @@ optim.control(optim.method = c("BFGS", "Nelder-Mead", "CG",
   \item{min.rweight}{positive numeric.  \dQuote{Robustness weight} of
   the initial \code{\link[robustbase]{lmrob}} fit that observations must
   exceed to be used for computing robust initial estimates of variogram
-  parameters by setting \code{initial.param = TRUE} (see
+  parameters by setting \code{initial.param = "exclude"} (see
   \code{\link{georob}}; default \code{0.25}).}
   
   \item{irwls.initial}{logical.  If \code{TRUE} (default) the estimating
@@ -255,9 +254,9 @@ optim.control(optim.method = c("BFGS", "Nelder-Mead", "CG",
   \item{...}{named vectors of functions, extending the definition of
   transformations for variogram parameters (see \emph{Details}).}
   
-  \item{variance, snugget, nugget, scale, alpha, beta, delta, gamma, kappa, lambda, mu, nu}{character
-  strings with names of transformation functions of the variogram
-  parameters.}
+  \item{variance, snugget, nugget, scale, alpha, beta, delta, gamma,
+  kappa, lambda, mu, nu}{character strings with names of transformation
+  functions of the variogram parameters.}
   
   \item{f1, f2, omega, phi, zeta}{character
   strings with names of transformation functions of the variogram
@@ -314,7 +313,7 @@ optim.control(optim.method = c("BFGS", "Nelder-Mead", "CG",
 data( meuse )
 
 r.logzn.rob <- georob(log(zinc) ~ sqrt(dist), data = meuse, locations = ~ x + y,
-    variogram.model = "exponential",
+    variogram.model = "RMexp",
     param = c( variance = 0.15, nugget = 0.05, scale = 200 ),
     tuning.psi = 1, initial.method = "rq", 
     control = georob.control(cov.bhat = TRUE, cov.ehat.p.bhat = TRUE), verbose = 2)

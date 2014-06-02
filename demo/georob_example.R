@@ -25,7 +25,7 @@ meuse2[1:nrow( meuse ), "zinc"] <- exp(
 
 ## Gaussian REML fit
 r.logzn.reml <- georob(log(zinc) ~ sqrt(dist), data = meuse, locations = ~ x + y,
-    variogram.model = "exponential",
+    variogram.model = "RMexp",
     param = c( variance = 0.15, nugget = 0.05, scale = 200 ),
     tuning.psi = 1000,
     control = georob.control(cov.bhat = TRUE, cov.ehat.p.bhat = TRUE))
@@ -33,8 +33,8 @@ summary(r.logzn.reml, correlation = TRUE)
 
 logLik(r.logzn.reml)
 
-waldtest(r.logzn.reml, .~. + ffreq, verbose = 2)
-waldtest(r.logzn.reml, .~. + ffreq, fixed = FALSE, verbose = 2)
+waldtest(r.logzn.reml, .~. + ffreq)
+waldtest(r.logzn.reml, .~. + ffreq, fixed = FALSE)
 
 ## robust REML fit 
 r.logzn.rob <- update(r.logzn.reml, tuning.psi = 1)
@@ -51,7 +51,7 @@ r.logzn.reml2 <- georob(
   formula = my.formula,
   data = meuse2, 
   locations = ~ x + y,
-  variogram.model = "exponential",
+  variogram.model = "RMexp",
   param = c( variance = 0.16, nugget = 0.03, scale = 208, snugget = 0.1 ),
   fit.param = c( variance = T, nugget = T, scale = T, snugget = T ),
   tuning.psi = 1000,
@@ -66,9 +66,9 @@ r.logzn.rob2 <- georob(
   formula = my.formula,
   data = meuse2, 
   locations = ~ x + y,
-  variogram.model = "exponential",
+  variogram.model = "RMexp",
   param = c( variance = 0.15, nugget = 0.02, scale = 208, snugget = 0.05 ),
-  initial.param = FALSE,
+  initial.param = "no",
   fit.param = c( variance = T, nugget = T, scale = T, snugget = T ),
   tuning.psi = 2,
   verbose = 2
@@ -194,7 +194,7 @@ levelplot(
         at = t.breaks, col = f.colors( length( t.breaks ) - 1 ),
         labels = list( at = t.breaks, labels = as.character( t.breaks ) )
     ),
-    main = "LUK-Vorhersage Zn-Gehalt",
+    main = "lognormal kriging prediction zn content",
     panel = function( x, y, z, ..., xp, yp, zp, colp ){
         panel.levelplot( x, y, z, ... )
         panel.points(xp, yp, cex = zp, col = colp, lwd = 0.7 )
@@ -216,7 +216,7 @@ levelplot(
         at = t.breaks, col = f.colors( length( t.breaks ) - 1 ),
         labels = list( at = t.breaks, labels = as.character( t.breaks ) )
     ),
-    main = "Obergrenze 95%-LUK-Vorhersageintervall Zn-Gehalt"
+    main = "upper limit 95% prediction interval zn content"
 )
 
 
@@ -229,7 +229,7 @@ levelplot(
         at = t.breaks, col = f.colors( length( t.breaks ) - 1 ),
         labels = list( at = t.breaks, labels = as.character( t.breaks ) )
     ),
-    main = "Untergrenze 95%-LUK-Vorhersageintervall Zn-Gehalt"
+    main = "lower limit 95% prediction interval zn content"
 )
 
 # standard error
@@ -243,7 +243,7 @@ levelplot(
         at = t.breaks, col = f.colors( length( t.breaks ) - 1 ),
         labels = list( at = t.breaks, labels = as.character( t.breaks.se ) )
     ),
-    main = "Standardfehler LUK-Vorhersage Zn-Gehalt Zn-Gehalt"
+    main = "prediction standard error zn content"
 )
 
 
@@ -251,12 +251,9 @@ levelplot(
 # block kriging
 library(constrainedKriging)
 
-r.luk.block <- predict( 
-    r.logzn.rob,
-    newdata = meuse.blocks,
-    type = "response",
-    extended.output = TRUE,
-    pwidth = 75, pheight = 75
+r.luk.block <- predict(
+  r.logzn.rob, newdata = meuse.blocks, extended.output = TRUE,
+  pwidth = 75, pheight = 75
 )
 str( r.luk.block, max = 2 )
 str( r.luk.block@data, max = 2 )
@@ -272,13 +269,13 @@ str( r.luk.block@data, max = 2 )
 # predictions
 spplot( 
     r.luk.block, zcol = "lgn.pred", col.regions = f.colors(100), 
-    at = t.breaks, main = "Block-LUK-Vorhersage Zn-Gehalt"
+    at = t.breaks, main = "lognormal block prediction zn content"
 )
 
 # standard error
 spplot( 
     r.luk.block, zcol = "lgn.se", col.regions = f.colors(100), 
-    at = t.breaks.se, main = "Standardfehler Block-LUK-Vorhersage Zn-Gehalt"
+    at = t.breaks.se, main = "standard error block prediction zn content"
 )
 
 
@@ -293,7 +290,7 @@ d.wolfcamp <- data.frame(x = wolfcamp[[1]][,1], y = wolfcamp[[1]][,2],
 
 # fitting an isotropic IRF(0) model
 r.irf0.iso <- georob(pressure ~ 1, data = d.wolfcamp, locations = ~ x + y, 
-    variogram.model = "fractalB",
+    variogram.model = "RMfbm",
     param = c( variance = 10, nugget = 1500, scale = 1, alpha = 1.5 ),
     fit.param = c( variance = TRUE, nugget = TRUE, scale = FALSE, alpha = TRUE),
     tuning.psi = 1000)
@@ -302,7 +299,7 @@ summary(r.irf0.iso)
 
 # fitting an isotropic IRF(0) model
 r.irf0.aniso <- georob(pressure ~ 1, data = d.wolfcamp, locations = ~ x + y, 
-    variogram.model = "fractalB",
+    variogram.model = "RMfbm",
     param = c( variance = 5.9, nugget = 1450, scale = 1, alpha = 1 ),
     fit.param = c( variance = TRUE, nugget = TRUE, scale = FALSE, alpha = TRUE),
     aniso = c( f1 = 0.51, f2 = 1, omega = 148, phi = 90, zeta = 0 ),
@@ -332,7 +329,7 @@ data(wolfcamp)
 r.sv.iso <- sample.variogram(wolfcamp$data,
     locations = wolfcamp[[1]], lag.class.def = seq(0, 200, by = 15))
 
-r.irf0.iso <- fit.variogram.model(r.sv.iso, variogram.model = "fractalB",
+r.irf0.iso <- fit.variogram.model(r.sv.iso, variogram.model = "RMfbm",
     param = c(variance = 100, nugget = 1000, scale = 1., alpha = 1),
     fit.param = c( variance = TRUE, nugget = TRUE, scale = FALSE, alpha = TRUE ),
     method = "Nelder-Mead", hessian = FALSE, 
@@ -348,7 +345,7 @@ r.sv.aniso <- sample.variogram(wolfcamp$data,
     xy.angle.def = c(0., 22.5, 67.5, 112.5, 157.5, 180.))
 summary(r.sv.aniso)
 
-r.irf0.aniso <- fit.variogram.model(r.sv.aniso, variogram.model = "fractalB",
+r.irf0.aniso <- fit.variogram.model(r.sv.aniso, variogram.model = "RMfbm",
     param = c(variance = 100, nugget = 1000, scale = 1., alpha = 1.5),
     fit.param = c(variance = TRUE, nugget = TRUE, scale = FALSE, alpha = TRUE ),
     aniso = c(f1 = 0.4, f2 = 1., omega = 135, phi = 90., zeta = 0.),

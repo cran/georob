@@ -284,10 +284,39 @@ function(
           
           ## block kriging
           
+          ## map names of variogram models of RandomFields version 3 to version 2
+          
+          variogram.model.v2 <- gsub("^RM", "", variogram.model)
+          variogram.model.v2 <- switch(
+            variogram.model.v2,
+            askey = stop(
+              "variogram model 'RMaskey' not implemented in package constrainedKriging"
+            ),
+            dagum = stop(
+              "variogram model 'RMdagum' not implemented in package constrainedKriging"
+            ),
+            dampedcos = "dampedcosine",
+            dewijsian = stop(
+              "variogram model 'RMdewijsian' not implemented in package constrainedKriging"
+            ),
+            exp = "exponential",
+            fbm = stop(
+              "variogram model 'RMdewijsian' not implemented in package constrainedKriging"
+            ),
+            genfbm = stop(
+              "variogram model 'RMdewijsian' not implemented in package constrainedKriging"
+            ),
+            lgd = "lgd1",
+            qexp = "qexponential",
+            spheric = "spherical"
+          )
+            
+          if( variogram.model.v2 == "gengneiting" ) param[6] <- sum( param[5:6] ) + 0.5 
+            
           ## setup covariance model list
           
           t.covmodel <- covmodel(
-            modelname = variogram.model,
+            modelname = variogram.model.v2,
             mev = switch(
               type,
               response = 0,

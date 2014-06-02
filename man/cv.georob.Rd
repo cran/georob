@@ -1,4 +1,4 @@
-% 2014-02-21 A. Papritz
+% 2014-05-28 A. Papritz
 % R CMD Rdconv -t html -o bla.html cv.georob.Rd ; open bla.html; R CMD Rd2pdf --force cv.georob.Rd; 
 
 \encoding{macintosh}
@@ -219,7 +219,7 @@ Springer-Verlag.
 data( meuse )
 
 r.logzn <- georob(log(zinc) ~ sqrt(dist), data = meuse, locations = ~ x + y,
-    variogram.model = "exponential",
+    variogram.model = "RMexp",
     param = c( variance = 0.15, nugget = 0.05, scale = 200 ),
     tuning.psi = 1)
 

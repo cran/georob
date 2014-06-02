@@ -1,4 +1,4 @@
-% 2014-05-08 A. Papritz
+% 2014-05-28 A. Papritz
 % R CMD Rdconv -t html -o bla.html fit.variogram.model.Rd ; open bla.html; R CMD Rd2pdf --force fit.variogram.model.Rd; 
 
 \encoding{macintosh}
@@ -20,17 +20,16 @@ models.}
 
 \usage{
 fit.variogram.model(sv, 
-    variogram.model = c( "RMexp", "RMbessel", "RMcauchy", 
-      "RMcircular", "RMcubic", "RMdagum", "RMdampedcos", "RMdewijsian", "RMfbm",
-      "RMgauss", "RMgenfbm", "RMgencauchy", "RMgengneiting", "RMgneiting", "RMlgd",
-      "RMmatern", "RMpenta", "RMaskey", "RMqexp", "RMspheric", "RMstable",
-      "RMwave", "RMwhittle"
-    ), 
+    variogram.model = c("RMexp", "RMaskey", "RMbessel", "RMcauchy", 
+        "RMcircular", "RMcubic", "RMdagum", "RMdampedcos", "RMdewijsian", 
+        "RMfbm", "RMgauss", "RMgencauchy", "RMgenfbm", "RMgengneiting", 
+        "RMgneiting", "RMlgd", "RMmatern", "RMpenta", "RMqexp", 
+        "RMspheric", "RMstable", "RMwave", "RMwhittle"), 
     param, 
-    fit.param = c( variance = TRUE, snugget = FALSE, nugget = TRUE, scale = TRUE, 
-      alpha = FALSE, beta = FALSE, delta = FALSE, 
-      gamma = FALSE, kappa = FALSE, lambda = FALSE, mu = FALSE, nu = FALSE
-    )[names(param)], 
+    fit.param = c(variance = TRUE, snugget = FALSE, nugget = TRUE, 
+        scale = TRUE, alpha = FALSE, beta = FALSE, delta = FALSE, 
+        gamma = FALSE, kappa = FALSE, lambda = FALSE, mu = FALSE, 
+        nu = FALSE)[names(param)], 
     aniso = c(f1 = 1, f2 = 1, omega = 90, phi = 90, zeta = 0), 
     fit.aniso = c(f1 = FALSE, f2 = FALSE, omega = FALSE, 
         phi = FALSE, zeta = FALSE),
@@ -55,7 +54,7 @@ fit.variogram.model(sv,
   \item{variogram.model}{a character keyword defining the variogram model to
   be fitted.  Currently, most basic variogram models provided by the
   package \pkg{RandomFields} can be fitted (see \emph{Details} of
-  \code{\link{georob}} and \code{\link[RandomFields]{Variogram}}).}
+  \code{\link{georob}} and \code{\link[RandomFields]{RMmodel}}).}
   
   \item{param}{a named numeric vector with initial values of the variogram
   parameters.  The following parameter names are allowed (see
@@ -80,9 +79,8 @@ fit.variogram.model(sv,
     \item{\code{scale}: range parameter (\eqn{\alpha}) of the variogram.}
      
        \item{names of additional variogram parameters such as the
-       smoothness parameter \eqn{\nu} of the Whittle-Mat\'ern model as passed
-       by the argument \code{param} to
-       \code{\link[RandomFields]{Variogram}}, see \code{\link{param.names}}.} } }
+       smoothness parameter \eqn{\nu} of the Whittle-Mat\'ern model (see
+       \code{\link[RandomFields]{RMmodel}} and \code{\link{param.names}}).} } }
   
   \item{fit.param}{a named logical vector with the same names as used for 
     \code{param}, defining which parameters are adjusted (\code{TRUE}) and which 

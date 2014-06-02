@@ -1,4 +1,4 @@
-% 2013-09-06 A. Papritz
+% 2014-06-02 A. Papritz
 % R CMD Rdconv -t html -o bla.html georob.Rd ; open bla.html; R CMD Rd2pdf --force georob.Rd; 
 
 \encoding{macintosh}
@@ -16,21 +16,20 @@
 \usage{
 georob(formula, data, subset, weights, na.action, model = TRUE, 
     x = FALSE, y = FALSE, contrasts = NULL, offset, locations, 
-    variogram.model = c( "RMexp", "RMbessel", "RMcauchy", 
-      "RMcircular", "RMcubic", "RMdagum", "RMdampedcos", "RMdewijsian", "RMfbm",
-      "RMgauss", "RMgenfbm", "RMgencauchy", "RMgengneiting", "RMgneiting", "RMlgd",
-      "RMmatern", "RMpenta", "RMaskey", "RMqexp", "RMspheric", "RMstable",
-      "RMwave", "RMwhittle"
-    ), 
+    variogram.model = c("RMexp", "RMaskey", "RMbessel", "RMcauchy", 
+        "RMcircular", "RMcubic", "RMdagum", "RMdampedcos", "RMdewijsian", 
+        "RMfbm", "RMgauss", "RMgencauchy", "RMgenfbm", "RMgengneiting", 
+        "RMgneiting", "RMlgd", "RMmatern", "RMpenta", "RMqexp", 
+        "RMspheric", "RMstable", "RMwave", "RMwhittle"), 
     param, 
-    fit.param = c( variance = TRUE, snugget = FALSE, nugget = TRUE, scale = TRUE, 
-      alpha = FALSE, beta = FALSE, delta = FALSE, 
-      gamma = FALSE, kappa = FALSE, lambda = FALSE, mu = FALSE, nu = FALSE
-    )[names(param)], 
+    fit.param = c(variance = TRUE, snugget = FALSE, nugget = TRUE, 
+        scale = TRUE, alpha = FALSE, beta = FALSE, delta = FALSE, 
+        gamma = FALSE, kappa = FALSE, lambda = FALSE, mu = FALSE, 
+        nu = FALSE)[names(param)], 
     aniso = c(f1 = 1, f2 = 1, omega = 90, phi = 90, zeta = 0), 
     fit.aniso = c(f1 = FALSE, f2 = FALSE, omega = FALSE, 
         phi = FALSE, zeta = FALSE), 
-    tuning.psi = 2, initial.param = c("exclude", "minimize", "no"), 
+    tuning.psi = 2, initial.param = c("exclude", "no"), 
 %     root.finding = c("nleqslv", "bbsolve"),
     control = georob.control(...),
     verbose = 0, ...)
@@ -79,12 +78,12 @@ georob(formula, data, subset, weights, na.action, model = TRUE,
   \item{variogram.model}{a character keyword defining the variogram model
     to be fitted.  Currently, most basic variogram models
     provided by the package \pkg{RandomFields} can be fitted (see \emph{Details} 
-    and \code{\link[RandomFields]{Variogram}}).}
+    and \code{\link[RandomFields]{RMmodel}}).}
   
-  \item{param}{a named numeric vector with initial values of the variogram
-    parameters. The following parameter names are allowed 
-    (see \emph{Details} and \code{\link{georobIntro}} for information about the 
-    parametrization of variogram models): 
+    \item{param}{a named numeric vector with initial values of the
+    variogram parameters.  The names of \code{param} are matched against
+    the following names (see \emph{Details} and \code{\link{georobIntro}}
+    for information about the parametrization of variogram models):
     
     \itemize{
       \item{\code{variance}: variance (sill \eqn{\sigma^2}) of the
@@ -104,9 +103,9 @@ georob(formula, data, subset, weights, na.action, model = TRUE,
       \item{\code{scale}: range parameter (\eqn{\alpha}) of the variogram.}
      
       \item{names of additional variogram parameters such as the smoothness
-      parameter \eqn{\nu} of the Whittle-MatŽrn model as passed by the
-      argument \code{param} to \code{\link[RandomFields]{Variogram}}, see
-      \code{\link{param.names}}.}
+      parameter \eqn{\nu} of the Whittle-MatŽrn model (see
+      \code{\link[RandomFields]{RMmodel}} and
+      \code{\link{param.names}}).}
        
     }
   }
@@ -114,10 +113,11 @@ georob(formula, data, subset, weights, na.action, model = TRUE,
     \code{param}, defining which parameters are adjusted (\code{TRUE}) and which 
     are kept fixed at their initial values (\code{FALSE}) when fitting the model.}
     
-  \item{aniso}{a named numeric vector with initial values for fitting
-    geometrically anisotropic variogram models. The following parameter names are allowed 
-    (see \emph{Details} and \code{\link{georobIntro}} for information about the 
-    parametrization of variogram models): 
+    \item{aniso}{a named numeric vector with initial values for fitting
+    geometrically anisotropic variogram models.  The names of \code{aniso}
+    are matched against the following names (see \emph{Details} and
+    \code{\link{georobIntro}} for information about the parametrization of
+    variogram models):
     
     \itemize{
     
@@ -153,9 +153,6 @@ georob(formula, data, subset, weights, na.action, model = TRUE,
   parameters are computed for solving the estimating equations of the
   variogram and anisotropy parameters.  
   
-  If \code{initial.param = "minimize"} (defaullt) robust initial values are
-  computed by minimizing the sum of the squared robustified estimating
-  equations using \code{\link[stats]{optim}} (see \emph{Details}).
   If \code{initial.param = "exclude"} robust initial values of parameters are
   computed by discarding outlying observations based on the
   \dQuote{robustness weights} of the initial fit of the regression model by
@@ -210,18 +207,17 @@ georob(formula, data, subset, weights, na.action, model = TRUE,
   
   \subsection{Implemented variogram models}{
   
-    Currently, all except one (model \code{hyperbolic}) basic variogram
-    models of the package \pkg{RandomFields}, valid in
-    \eqn{\mathrm{I}\!\mathrm{R}^d}{R^d}, \eqn{d > 1}, can be fitted by
+    Currently, most basic variogram models provided by the
+    package \pkg{RandomFields} can be fitted by
     \code{georob} (see argument \code{variogram.models} for a list of
     implemented models).  Some of these models have in addition to
     \code{variance}, \code{snugget}, \code{nugget} and \code{scale} further
     parameters.  Initial values of these parameters (\code{param}) and
     fitting flags (\code{fit.param}) must be passed to \code{georob} by the
-    \emph{same names as used for the argument} \code{param} of
-    \code{\link[RandomFields]{Variogram}}.  Use the function
-    \code{\link{param.names}} to list additional parameters of a given
-    variogram.model.
+    same names as used by the functions \code{RM...} of the package
+    \pkg{RandomFields} (see \code{\link[RandomFields]{RMmodel}}.  Use the
+    function \code{\link{param.names}} to list additional parameters of a
+    given variogram.model.
     
     }
     
@@ -241,7 +237,7 @@ georob(formula, data, subset, weights, na.action, model = TRUE,
     
   \subsection{Fitting intrinsic variogram models}{ 
   
-    The intrinsic variogram model \code{fractalB} is overparametrized when
+    The intrinsic variogram model \code{RMfbm} is overparametrized when
     both the \code{variance} (plus possibly \code{snugget}) and the
     \code{scale} are fitted.  Therefore, to estimate the parameters of this
     model \code{scale} must be kept fixed at an arbitray value by using
@@ -273,7 +269,7 @@ georob(formula, data, subset, weights, na.action, model = TRUE,
   \subsection{Constraining estimates of variogram parameters}{
   
     Parameters of variogram models can vary only within certain bounds (see
-    \code{\link{param.bounds}} and \code{\link[RandomFields]{Variogram}}
+    \code{\link{param.bounds}} and \code{\link[RandomFields]{RMmodel}}
     for allowed ranges).  \code{georob} uses three mechanisms to constrain
     parameter estimates to permissible ranges:
     
@@ -347,14 +343,7 @@ georob(formula, data, subset, weights, na.action, model = TRUE,
     with respect to the same parameters.  Two options are implemented to
     get good initial values that are often sufficiently close to the roots
     so that \code{\link[nleqslv]{nleqslv}} converges:
-    
-    Setting \code{initial.param = "minimize"} invokes
-    \code{\link[stats]{optim}} to minimize the \emph{sum of squared
-    estimating equations}.  The required accuracy of the initial estimates
-    are best controlled by the argument \code{abstol} of
-    \code{\link[stats]{optim}}, e.g. by using the argument
-    \code{control = georob.control(optim = optim.control(optim.control = list(abstol = 1.e-6)))}.
-    
+        
     Setting \code{initial.param = "exclude"} has the following effects:
     
     \enumerate{
@@ -426,7 +415,7 @@ data( meuse )
 
 ## Gaussian REML fit
 r.logzn.reml <- georob(log(zinc) ~ sqrt(dist), data = meuse, locations = ~ x + y,
-    variogram.model = "exponential",
+    variogram.model = "RMexp",
     param = c( variance = 0.15, nugget = 0.05, scale = 200 ),
     tuning.psi = 1000)
 summary(r.logzn.reml, correlation = TRUE)
@@ -450,7 +439,7 @@ d.wolfcamp <- data.frame(x = wolfcamp[[1]][,1], y = wolfcamp[[1]][,2],
 ## fitting isotropic IRF(0) model
   
 r.irf0.iso <- georob(pressure ~ 1, data = d.wolfcamp, locations = ~ x + y, 
-    variogram.model = "fractalB",
+    variogram.model = "RMfbm",
     param = c( variance = 10, nugget = 1500, scale = 1, alpha = 1.5 ),
     fit.param = c( variance = TRUE, nugget = TRUE, scale = FALSE, alpha = TRUE),
     tuning.psi = 1000)
@@ -460,7 +449,7 @@ summary(r.irf0.iso)
 ## fitting isotropic IRF(0) model
   
 r.irf0.aniso <- georob(pressure ~ 1, data = d.wolfcamp, locations = ~ x + y, 
-    variogram.model = "fractalB",
+    variogram.model = "RMfbm",
     param = c( variance = 5.9, nugget = 1450, scale = 1, alpha = 1 ),
     fit.param = c( variance = TRUE, nugget = TRUE, scale = FALSE, alpha = TRUE),
     aniso = c( f1 = 0.51, f2 = 1, omega = 148, phi = 90, zeta = 0 ),

@@ -1,4 +1,4 @@
-% 2012-12-13 A. Papritz
+% 2014-05-28 A. Papritz
 % R CMD Rdconv -t html -o bla.html lgnpp.Rd ; open bla.html; R CMD Rd2pdf --force lgnpp.Rd; 
 
 \encoding{macintosh}
@@ -329,7 +329,7 @@ library(constrainedKriging)
 data(meuse.blocks)
 
 r.logzn.rob <- georob(log(zinc) ~ sqrt(dist), data = meuse, locations = ~ x + y,
-    variogram.model = "exponential", param = c( variance = 0.15, nugget = 0.05, scale = 200 ),
+    variogram.model = "RMexp", param = c( variance = 0.15, nugget = 0.05, scale = 200 ),
     tuning.psi = 1., control = georob.control(cov.bhat = TRUE, full.cov.bhat = TRUE,
         cov.bhat.betahat = TRUE, aux.cov.pred.target = TRUE))
         

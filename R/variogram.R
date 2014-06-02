@@ -441,10 +441,10 @@ plot.sample.variogram <-
 fit.variogram.model <-
   function(
     sv,
-    variogram.model = c( "RMexp", "RMbessel", "RMcauchy", 
+    variogram.model = c( "RMexp", "RMaskey", "RMbessel", "RMcauchy", 
       "RMcircular", "RMcubic", "RMdagum", "RMdampedcos", "RMdewijsian", "RMfbm",
-      "RMgauss", "RMgenfbm", "RMgencauchy", "RMgengneiting", "RMgneiting", "RMlgd",
-      "RMmatern", "RMpenta", "RMaskey", "RMqexp", "RMspheric", "RMstable",
+      "RMgauss", "RMgencauchy", "RMgenfbm", "RMgengneiting", "RMgneiting", "RMlgd",
+      "RMmatern", "RMpenta", "RMqexp", "RMspheric", "RMstable",
       "RMwave", "RMwhittle"
     ), 
     param,
@@ -1244,7 +1244,7 @@ plot.georob <-
     to = max( r.sv[["lag.dist"]] ),
     xy.angle = attr( r.sv, "xy.angle.mid.class" ),
     xz.angle = attr( r.sv, "xz.angle.mid.class" ),
-    col = col, pch = pch, lty = lty
+    col = col, pch = pch, lty = lty, ...
   )
   
   invisible( r.sv )
@@ -1307,7 +1307,7 @@ lines.georob <- lines.fitted.variogram <-
     function( 
       i, what, angle, lag.class, 
       variogram.model, param, aniso, 
-      nxy, nxz, ndim, col, pch, lty 
+      nxy, nxz, ndim, col, pch, lty, ...
     ){
       
       ## generate lag vectors
@@ -1346,7 +1346,7 @@ lines.georob <- lines.fitted.variogram <-
       lines( 
         lag.class, r.gamma, 
         col = col[sel.col], pch = pch[sel.pch], 
-        lty = lty, type = type )
+        lty = lty, type = type, ... )
     },
     what = what,
     angle = angle,

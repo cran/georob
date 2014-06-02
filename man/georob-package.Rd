@@ -1,4 +1,4 @@
-% 2012-12-12 A. Papritz
+% 2014-05-28 A. Papritz
 % R CMD Rdconv -t html -o bla.html georob-package.Rd ; open bla.html; R CMD Rd2pdf --force georob-package.Rd; 
 
 \encoding{macintosh}
@@ -251,25 +251,24 @@
     maximizes the Gaussian restricted loglikelihood using 
     \code{\link[stats]{optim}}.
     
-    \pkg{georob} uses variogram models implemented in the \R package 
-    \pkg{RandomFields} (see \code{\link[RandomFields]{Variogram}}). Currently, 
-    estimation of the parameters of the following models is implemented: 
-    \code{"bessel"}, \code{"cauchy"}, \code{"cauchytbm"}, \code{"circular"},
-    \code{"cubic"}, \code{"dagum"}, \code{"dampedcosine"}, \code{"DeWijsian"},\cr
-    \code{"exponential"}, \code{"fractalB"}, \code{"gauss"}, \code{"genB"},
-    \code{"gencauchy"}, \code{"gengneiting"}, \code{"gneiting"}, \code{"lgd1"},
-    \code{"matern"}, \code{"penta"}, \code{"power"}, \code{"qexponential"},
-    \code{"spherical"}, \code{"stable"}, \code{"wave"}, \code{"whittle"}.
-    For most variogram parameters, closed-form expressions of 
-    \eqn{\partial \gamma/ \partial \theta_i}{d\gamma/d\theta_i}
-    are used  in the computations. 
-    However, for the parameter \eqn{\nu} of the models 
-    \code{"bessel"}, \code{"matern"} and \code{"whittle"}
-    \eqn{\partial \gamma/ \partial \theta_i}{d\gamma/d\theta_i} 
-    is evaluated numerically by the function 
-    \code{\link[stats]{numericDeriv}}, and this results in an 
-    increase in computing time when \eqn{\nu} is estimated.
-  }
+    \pkg{georob} uses variogram models implemented in the \R package
+    \pkg{RandomFields} (see \code{\link[RandomFields]{RMmodel}}).
+    Currently, estimation of the parameters of the following models is
+    implemented: \code{"RMaskey"}, \code{"RMbessel"}, \code{"RMcauchy"},
+    \code{"RMcircular"}, \code{"RMcubic"}, \code{"RMdagum"},
+    \code{"RMdampedcos"}, \cr \code{"RMdewijsian"}, \code{"RMexp"} (default),
+    \code{"RMfbm"}, \code{"RMgauss"}, \code{"RMgencauchy"},
+    \code{"RMgenfbm"}, \cr  \code{"RMgengneiting"}, \code{"RMgneiting"},
+    \code{"RMlgd"}, \code{"RMmatern"}, \code{"RMpenta"}, \code{"RMqexp"},
+    \code{"RMspheric"}, \code{"RMstable"}, \cr \code{"RMwave"},
+    \code{"RMwhittle"}.  For most variogram parameters, closed-form
+    expressions of \eqn{\partial \gamma/ \partial
+    \theta_i}{d\gamma/d\theta_i} are used in the computations.  However,
+    for the parameter \eqn{\nu} of the models \code{"RMbessel"},
+    \code{"RMmatern"} and \code{"RMwhittle"} \eqn{\partial \gamma/ \partial
+    \theta_i}{d\gamma/d\theta_i} is evaluated numerically by the function
+    \code{\link[stats]{numericDeriv}}, and this results in an increase in
+    computing time when \eqn{\nu} is estimated.  }
   
   %     prediction
   

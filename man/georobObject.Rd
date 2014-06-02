@@ -220,21 +220,21 @@
       \eqn{\mbox{\boldmath$B$\unboldmath}}{B}.
       
       \item \code{param}: numeric vector with initial estimates of the
-      variogram parameters, either computed (\code{initial.param = TRUE})
-      or as passed to \code{georob} (\code{initial.param = FALSE}).
+      variogram parameters, either computed (\code{initial.param = "exclude"})
+      or as passed to \code{georob} (\code{initial.param = "no"}).
       
       \item \code{fit.param}: logical vector indicating which variogram
       parameters were fitted.
       
       \item \code{aniso}: numeric vector with initial estimates of the
-      anisotropy parameters, either either computed (\code{initial.param = TRUE})
-      or as passed to \code{georob} (\code{initial.param = FALSE}).
+      anisotropy parameters, either either computed (\code{initial.param = "exclude"})
+      or as passed to \code{georob} (\code{initial.param = "no"}).
       
       \item \code{fit.aniso}: logical vector indicating which anisotropy
       parameters were fitted.
       
-      \item \code{initial.param}: logical flag indicating whether robust
-      initial variogram parameter estimates were computed (see
+      \item \code{initial.param}: character string indicating whether
+      robust initial variogram parameter estimates were computed (see
       \code{\link{georob}}, \emph{Details}).
             
     }

@@ -3608,6 +3608,7 @@ georob.fit <-
   ##               variograms with default anisotropy parameters
   ## 2013-07-12 AP solving estimating equations by BBsolve{BB} (in addition to nleqlsv)
   ## 2014-02-18 AP correcting error when fitting models with offset
+  ## 2014-05-28 AP change in check for initial variogram parameter values
   
   ##  ToDos:
   
@@ -3776,7 +3777,7 @@ georob.fit <-
   
   if( !all( param.name  %in% names( param ) ) ) stop( 
     "no initial values provided for parameter(s) '", 
-    param.name[ !param.name %in% names( param ) ], "'"
+    paste( param.name[ !param.name %in% names( param ) ], collapse= ", "), "'"
   )
   
   if( !all( names( fit.param ) %in% param.name ) ) stop( 

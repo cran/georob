@@ -1,4 +1,4 @@
-% 2012-12-13 A. Papritz
+% 2014-05-28 A. Papritz
 % R CMD Rdconv -t html -o bla.html param.names.Rd ; open bla.html; R CMD Rd2pdf --force param.names.Rd; 
 
 \encoding{macintosh}
@@ -23,9 +23,6 @@ param.bounds(model, d)
   see \code{\link{georob}} and \code{\link{georobIntro}}.} 
   
   \item{d}{integer equal number of dimensions of the survey domain.}
-  
-  \item{param}{named numeric vector with variogram parameters, see
-  \code{\link{georob}}.} 
 }
 
 \value{
