@@ -104,7 +104,7 @@
   
   \item{terms}{If \code{type = "terms"}, which terms (default is all terms).}
   
-  \item{\ldots}{additional arguments passed to methods.}
+  \item{...}{additional arguments passed to methods.}
   
 }
 \details{

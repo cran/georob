@@ -1,4 +1,4 @@
-% 2014-06-02 A. Papritz
+% 2014-07-29 A. Papritz
 % R CMD Rdconv -t html -o bla.html georob.control.Rd ; open bla.html; R CMD Rd2pdf --force georob.control.Rd; 
 \encoding{macintosh}
 \name{georob.control}
@@ -23,7 +23,8 @@
   \code{\link{georob}}.}
 
 \usage{
-georob.control(initial.method = c("lmrob", "rq", "lm"), bhat = NULL, 
+georob.control(ml.method = c( "REML", "ML" ), 
+    initial.method = c("lmrob", "rq", "lm"), bhat = NULL, 
     param.tf = param.transf(), fwd.tf = fwd.transf(), 
     deriv.fwd.tf = dfwd.transf(), bwd.tf = bwd.transf(), 
     safe.param = 1.e12, psi.func = c("logistic", "t.dist", "huber"),
@@ -40,8 +41,8 @@ georob.control(initial.method = c("lmrob", "rq", "lm"), bhat = NULL,
     aux.cov.pred.target = FALSE, min.condnum = 1.e-12,
     rq = rq.control(), lmrob = lmrob.control(),
     nleqslv = nleqslv.control(), 
-%     bbsolve = bbsolve.control(), 
-    optim = optim.control(), full.output = TRUE)
+    optim = optim.control(), parallel = parallel.control(), 
+    full.output = TRUE, ...)
     
 param.transf(variance = "log", snugget = "log", nugget = "log", scale = "log", 
     alpha = "identity", beta = "log", delta = "identity", 
@@ -57,22 +58,25 @@ bwd.transf(...)
 
 rq.control(tau = 0.5, rq.method = "br", rq.alpha = 0.1, ci = FALSE, iid = TRUE, 
     interp = TRUE, tcrit = TRUE, rq.beta = 0.99995, eps = 1e-06, 
-    Mm.factor = 0.8, max.bad.fixup = 3)
+    Mm.factor = 0.8, max.bad.fixup = 3, ...)
                
 nleqslv.control(nleqslv.method = c("Broyden", "Newton"), 
     global = c( "dbldog", "pwldog", "qline", "gline", "none" ),
-    xscalm = c( "fixed", "auto" ), nleqslv.control = NULL)
+    xscalm = c( "fixed", "auto" ), nleqslv.control = NULL, ...)
     
 % bbsolve.control(bbsolve.method = c("2", "3", "1"), bbsolve.control = NULL)
     
 optim.control(optim.method = c("BFGS", "Nelder-Mead", "CG", 
         "L-BFGS-B", "SANN", "Brent"), lower = -Inf, upper = Inf, 
-    optim.control = NULL, hessian = TRUE)
+    optim.control = NULL, hessian = TRUE, ...)
+    
  
-
 }
 
 \arguments{
+  \item{ml.method}{character keyword defining whether non-robust maximum
+  likelihood (\code{ML}) or restricted maximum likelihood (\code{REML}
+  default) estimates will be computed.}
 
   \item{initial.method}{character keyword defining whether the function
   \code{\link[robustbase]{lmrob}} or \code{\link[quantreg]{rq}} is used to
@@ -248,11 +252,17 @@ optim.control(optim.method = c("BFGS", "Nelder-Mead", "CG",
   such as \code{optim.control} that generates such a list (see
   \code{\link[stats]{optim}} for allowed arguments).}
   
+  \item{parallel}{a list of arguments, e.g.\ passed to \code{\link{pmm}} or a
+  function such as \code{\link{parallel.control}} that generates such a list
+  (see \code{\link{parallel.control}} for allowed arguments).}
+  
   \item{full.output}{logical controlling how much output is returned in
   \code{georob} object.  Proper functioning requires default (\code{TRUE})}.
   
-  \item{...}{named vectors of functions, extending the definition of
-  transformations for variogram parameters (see \emph{Details}).}
+  \item{...}{for \code{fwd.transf}, \code{dfwd.transf} and
+  \code{bwd.transf} a named vectors of functions, extending the definition
+  of transformations for variogram parameters (see \emph{Details}) or
+  further of the other documented functions.}
   
   \item{variance, snugget, nugget, scale, alpha, beta, delta, gamma,
   kappa, lambda, mu, nu}{character strings with names of transformation
@@ -263,11 +273,11 @@ optim.control(optim.method = c("BFGS", "Nelder-Mead", "CG",
   parameters.}
 
   \item{tau, rq.method, rq.alpha, ci, iid, interp, tcrit}{arguments passed
-  as \code{\ldots} to \code{\link[quantreg]{rq}}.  Note that \code{rq.} is
+  as \code{...} to \code{\link[quantreg]{rq}}.  Note that \code{rq.} is
   stripped on passing from the argument names on passing.}
   
   \item{rq.beta, eps, Mm.factor, max.bad.fixup}{arguments passed as
-  \code{\ldots} to \code{\link[quantreg]{rq}}.  Note that \code{rq.} is
+  \code{...} to \code{\link[quantreg]{rq}}.   Note that \code{rq.} is
   stripped on passing from the argument names on passing.}
   
   \item{nleqslv.method, global, xscalm, nleqslv.control}{arguments passed
@@ -278,6 +288,7 @@ optim.control(optim.method = c("BFGS", "Nelder-Mead", "CG",
   passed to related arguments of \code{\link[stats]{optim}}. Note that
   \code{optim.} is stripped from the argument names on passing.}
   
+    
 }
 %   \item{}
 

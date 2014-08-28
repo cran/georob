@@ -121,7 +121,7 @@ sample.variogram(response, locations, lag.class.def,
   \item{legend.pos}{a character keyword defining where to place the
   legend, see \code{\link[graphics]{legend}} for possible values.}
   
-  \item{\ldots}{additional arguments passed to
+  \item{...}{additional arguments passed to
   \code{\link{plot.sample.variogram}} and \code{\link{lines.georob}}.}
 }
 

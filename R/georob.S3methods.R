@@ -220,6 +220,7 @@ ranef.georob <- random.effects.georob <-
         cov.ehat = FALSE, full.cov.ehat = FALSE,
         cov.ehat.p.bhat = FALSE, full.cov.ehat.p.bhat = FALSE,
         aux.cov.pred.target = FALSE,
+        control.parallel = parallel.control(),
         verbose = 0
       )
       
@@ -362,6 +363,7 @@ rstandard.georob <-
   ## 2013-05-31 AP revised expansion of covariance matrices
   ## 2013-05-06 AP changes for solving estimating equations for xi
   ## 2013-06-12 AP substituting [["x"]] for $x in all lists
+  ## 2104-08-19 AP correcting error when computing covariances of residuals
   
   ## temporarily redefine na.action component of model
   
@@ -404,6 +406,7 @@ rstandard.georob <-
       cov.ehat = level == 1, full.cov.ehat = FALSE,
       cov.ehat.p.bhat = level == 0, full.cov.ehat.p.bhat = FALSE,
       aux.cov.pred.target = FALSE,
+      control.parallel = parallel.control(),
       verbose = 0
     )
     
@@ -493,13 +496,14 @@ summary.georob <-
   ## 2013-05-31 AP revised expansion of covariance matrices
   ## 2013-06-12 AP substituting [["x"]] for $x in all lists
   ## 2013-07-03 AP new transformation of rotation angles
+  ## 2014-08-26 AP changes to print ml.method
   
   covmat       <- expand( object[["cov"]] )
   
   ans <- object[c(
     "call", "residuals", "bhat", "rweights", "converged", "convergence.code", 
     "iter", "loglik", "variogram.model", "gradient",
-    "tuning.psi", "df.residual"
+    "tuning.psi", "df.residual", "control"
   )]
   ans <- c( ans, object[["initial.objects"]]["fit.param"] )
   
@@ -679,6 +683,7 @@ print.summary.georob <-
   ## 2013-04-23 AP new names for robustness weights
   ## 2013-06-12 AP substituting [["x"]] for $x in all lists
   ## 2014-01-23 AP prints maximized loglik even if all parameters fixed
+  ## 2014-08-26 AP changes to print ml.method
   
   cat("\nCall:")
   cat( paste( deparse(x[["call"]]), sep = "\n", collapse = "\n"),  "\n", sep = "" )
@@ -711,12 +716,14 @@ print.summary.georob <-
     
   }
   
-  if( x[["tuning.psi"]] >= 
-    georob.control()[["tuning.psi.nr"]] ) cat(
-    "\nMaximized restricted log-likelihood:", 
-    x[["loglik"]], "\n"
-  )
-  
+  if( x[["tuning.psi"]] >= x[["control"]][["tuning.psi.nr"]] ){
+    switch(
+      x[["control"]][["ml.method"]],
+      ML = cat( "\nMaximized log-likelihood:", x[["loglik"]], "\n" ),
+      REML = cat( "\nMaximized restricted log-likelihood:", x[["loglik"]], "\n" )
+    )
+  }
+    
   df <- x[["df.residual"]]
   
   bhat <- x[["bhat"]]
@@ -749,6 +756,19 @@ print.summary.georob <-
   }
   
   cat( "\nVariogram: ", x[["variogram.model"]], "\n" )
+  
+  cat(
+    if( x[["tuning.psi"]] >= x[["control"]][["tuning.psi.nr"]] ){
+      switch(
+        x[["control"]][["ml.method"]],
+        ML = "\nGaussian ML estimates\n\n",
+        REML ="\nGaussian REML estimates\n\n"
+      )
+    } else {
+      "\nRobust REML estimates\n\n"
+    }
+  )
+  
   rownames( x[["param"]] ) <- ifelse(
     x[["fit.param"]],
     rownames( x[["param"]] ),
@@ -853,7 +873,8 @@ waldtest.georob <-
       fit.aniso = c(
         f1 = FALSE, f2 = FALSE, omega = FALSE, phi = FALSE, zeta = FALSE 
       ),
-      verbose = 0            
+      verbose = 0,
+      object. = object
     )
     
   }
@@ -921,7 +942,7 @@ function(
   
   ## determine factor to compute heteroscedastic nugget
   
-  if( object[["tuning.psi"]] < georob.control()[["tuning.psi.nr"]] ){
+  if( object[["tuning.psi"]] < object[["control"]][["tuning.psi.nr"]] ){
     if( warn ) warning( 
       "deviance for robustly fitted model approximated by deviance of\n",
       "  equivalent model with heteroscedastic nugget"
@@ -1015,13 +1036,13 @@ add1.georob <- function( object, scope, scale = 0, test=c("none", "Chisq" ),
         nfit <- update( 
           object, as.formula(paste("~ . +", tt)), 
           param = param, aniso = aniso, fit.param = fit.param, fit.aniso = fit.aniso,
-          initial.param = "no", verbose = verbose
+          initial.param = "no", verbose = verbose, object. = object
         )
       } else {
         nfit <- update( 
           object, as.formula(paste("~ . +", tt)), data = data,
           param = param, aniso = aniso, fit.param = fit.param, fit.aniso = fit.aniso,
-          initial.param = "no", verbose = verbose
+          initial.param = "no", verbose = verbose, object. = object
         )
       }
     } else {
@@ -1029,23 +1050,25 @@ add1.georob <- function( object, scope, scale = 0, test=c("none", "Chisq" ),
         if( is.null( data ) ){
           nfit <- update( 
             object, as.formula(paste("~ . +", tt)), 
-            param = param, aniso = aniso, initial.param = "no", verbose = verbose
+            param = param, aniso = aniso, initial.param = "no", verbose = verbose, 
+            object. = object
           )
         } else {
           nfit <- update( 
             object, as.formula(paste("~ . +", tt)), data = data,
-            param = param, aniso = aniso, initial.param = "no", verbose = verbose
+            param = param, aniso = aniso, initial.param = "no", verbose = verbose, 
+            object. = object
           )
         }
       }
       else {
         if( is.null( data ) ){
           nfit <- update( object, as.formula(paste("~ . +", tt)), 
-            verbose = verbose 
+            verbose = verbose, object. = object 
           )
         } else {
           nfit <- update( object, as.formula(paste("~ . +", tt)), data = data,
-            verbose = verbose 
+            verbose = verbose, object. = object
           )
         }
       }
@@ -1141,7 +1164,7 @@ add1.georob <- function( object, scope, scale = 0, test=c("none", "Chisq" ),
       scale = scale, k= k, trace = trace, fixed = fixed, use.fitted.param = use.fitted.param,
       object = object, data = data, param = param, aniso = aniso, 
       fit.param = fit.param, fit.aniso = fit.aniso, verbose = verbose,
-      mc.cores = ncores, mc.allow.recursive = FALSE, ...
+      mc.cores = ncores, ...
     )
     
   }
@@ -1222,13 +1245,13 @@ drop1.georob <- function( object, scope, scale = 0, test=c( "none", "Chisq" ),
         nfit <- update( 
           object, as.formula(paste("~ . -", tt)), 
           param = param, aniso = aniso, fit.param = fit.param, fit.aniso = fit.aniso,
-          initial.param = "no", verbose = verbose
+          initial.param = "no", verbose = verbose, object. = object
         )
       } else {
         nfit <- update( 
           object, as.formula(paste("~ . -", tt)), data = data,
           param = param, aniso = aniso, fit.param = fit.param, fit.aniso = fit.aniso,
-          initial.param = "no", verbose = verbose
+          initial.param = "no", verbose = verbose, object. = object
         )
       }
     } else {
@@ -1236,23 +1259,25 @@ drop1.georob <- function( object, scope, scale = 0, test=c( "none", "Chisq" ),
         if( is.null( data ) ){
           nfit <- update( 
             object, as.formula(paste("~ . -", tt)), 
-            param = param, aniso = aniso, initial.param = "no", verbose = verbose
+            param = param, aniso = aniso, initial.param = "no", verbose = verbose, 
+            object. = object
           )
         } else {
           nfit <- update( 
             object, as.formula(paste("~ . -", tt)), data = data,
-            param = param, aniso = aniso, initial.param = "no", verbose = verbose
+            param = param, aniso = aniso, initial.param = "no", verbose = verbose, 
+            object. = object
           )
         }
       }
       else {
         if( is.null( data ) ){
           nfit <- update( object, as.formula(paste("~ . -", tt)), 
-            verbose = verbose 
+            verbose = verbose, object. = object
           )
         } else {
           nfit <- update( object, as.formula(paste("~ . -", tt)), data = data,
-            verbose = verbose 
+            verbose = verbose, object. = object
           )
         }
       }
@@ -1354,7 +1379,7 @@ drop1.georob <- function( object, scope, scale = 0, test=c( "none", "Chisq" ),
       scale = scale, k= k, trace = trace, fixed = fixed, use.fitted.param = use.fitted.param,
       object = object, data = data, param = param, aniso = aniso, 
       fit.param = fit.param, fit.aniso = fit.aniso, verbose = verbose,
-      mc.cores = ncores, mc.allow.recursive = FALSE, ...
+      mc.cores = ncores, ...
     )
     
   }
@@ -1423,7 +1448,7 @@ step.georob <- function( object, scope, scale = 0,
   
   ## step method for class georob
   
-  ## 2014-03-12 AP 
+  ## 2014-06-05 AP 
   
   ## code of step{stats} complemented by argument fixed to control whether
   ## variogram parameters should be kept fixed
@@ -1593,20 +1618,53 @@ step.georob <- function( object, scope, scale = 0,
       gamma = FALSE, kappa = FALSE, lambda = FALSE, mu = FALSE, nu = FALSE
     )[names( fit[["param"]] )]
     fit.aniso <- c( f1 = FALSE, f2 = FALSE, omega = FALSE, phi = FALSE, zeta = FALSE )
-    if( is.null( data ) ){
-      fit <- update(
-        fit, paste("~ .", change), 
-        param = param, aniso = aniso, fit.param = fit.param, fit.aniso = fit.aniso,
-        initial.param = "no", verbose = verbose
-      )
+    if( fixed ){
+      if( is.null( data ) ){
+        fit <- update(
+          fit, paste("~ .", change), 
+          param = param, aniso = aniso, fit.param = fit.param, fit.aniso = fit.aniso,
+          initial.param = "no", verbose = verbose, object. = fit
+        )
+      } else {
+        fit <- update(
+          fit, paste("~ .", change), data = data,
+          param = param, aniso = aniso, fit.param = fit.param, fit.aniso = fit.aniso,
+          initial.param = "no", verbose = verbose, object. = fit
+        )
+      }
     } else {
-      fit <- update(
-        fit, paste("~ .", change), data = data,
-        param = param, aniso = aniso, fit.param = fit.param, fit.aniso = fit.aniso,
-        initial.param = "no", verbose = verbose
-      )
+      if( use.fitted.param ){
+        if( is.null( data ) ){
+          fit <- update(
+            fit, paste("~ .", change), 
+            param = param, aniso = aniso, 
+            initial.param = "no", verbose = verbose, object. = fit
+          )
+        } else {
+          fit <- update(
+            fit, paste("~ .", change), data = data,
+            param = param, aniso = aniso, 
+            initial.param = "no", verbose = verbose, object. = fit
+          )
+        }
+      } else {
+        if( is.null( data ) ){
+          fit <- update(
+            fit, paste("~ .", change), 
+            initial.param = "no", verbose = verbose, object. = fit
+          )
+        } else {
+          fit <- update(
+            fit, paste("~ .", change), data = data,
+            initial.param = "no", verbose = verbose, object. = fit
+          )
+        }
+      }
+    
     }
-    fit[["call"]] <- nfit[["call"]]
+    cl <- object[["call"]]
+    cl["formula"] <- fit[["call"]]["formula"]
+    fit[["call"]] <- cl
     fit[["initial.objects"]] <- nfit[["initial.objects"]]
     
     nnew <- nobs(fit, use.fallback = TRUE)

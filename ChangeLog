@@ -99,7 +99,13 @@ processing col and pch arguments
 
 2013-06-12  Andreas Papritz  <papritz@env.ethz.ch>
 
-* georob.cv.R (all functions): substituting [["x"]] for $x in all lists* georob.exported.functions.R (all functions): substituting [["x"]] for $x in all lists* georob.lgnpp.R (all functions): substituting [["x"]] for $x in all lists* georob.predict.R (all functions): substituting [["x"]] for $x in all lists* georob.private.functions.R (all functions): substituting [["x"]] for $x in all lists* georob.S3methods.R (all functions): substituting [["x"]] for $x in all lists* variogram.R (all functions): substituting [["x"]] for $x in all lists
+* georob.cv.R (all functions): substituting [["x"]] for $x in all lists
+* georob.exported.functions.R (all functions): substituting [["x"]] for $x in all lists
+* georob.lgnpp.R (all functions): substituting [["x"]] for $x in all lists
+* georob.predict.R (all functions): substituting [["x"]] for $x in all lists
+* georob.private.functions.R (all functions): substituting [["x"]] for $x in all lists
+* georob.S3methods.R (all functions): substituting [["x"]] for $x in all lists
+* variogram.R (all functions): substituting [["x"]] for $x in all lists
 
 
 2013-07-02  Andreas Papritz  <papritz@env.ethz.ch>
@@ -233,5 +239,28 @@ processing col and pch arguments
 
 * georob.exported.functions.R (georob) partial matching of names of variogram parameters
 * georob.exported.functions.R (georob.control) new default value for argument irwls.reltol
+
+
+2014-08-18  Andreas Papritz  <papritz@env.ethz.ch>
+
+* georob.cv.R (georob) parallelized matrix multiplication
+* georob.exported.functions.R (georob, georob.control, nleqslv.control, optim.control, parallel.control, pmm, rq.control) parallelized matrix multiplication, ML estimation
+* georob.private.functions.R (compute.covariances, compute.estimating.equations, estimating.eqations.xihat, estimate.xihat, f.aux.eeq, f.aux.gradient.nll, f.aux.Q, f.aux.Valpha, f.stop.cluster, gcr, gradient.negative.restricted.loglikelihood, negative.restr.loglikelihood, prepare.likelihood.calculations, georob.fit) parallelized matrix multiplication, ML estimation
+* georob.predict.R (predict.georob, predict.georob.control, cv.georob)  parallelized matrix multiplication, renamed and restructured arguments
+* georob.S3methods.R (waldtest.georob, add1.georob, drop1.georob. step.georob) improved computational performance
+
+
+2014-08-19  Andreas Papritz  <papritz@env.ethz.ch>
+
+* georob.private.functions.R (compute.covariances) correcting error in computation of covariance of regression residuals
+* georob.S3methods.R (rstandard.georob) correcting error when computing covariance of residuals
+
+
+2014-08-26  Andreas Papritz  <papritz@env.ethz.ch>
+
+* georob.exported.functions.R (georob) changes for returning and printing ml.method
+* georob.S3methods.R (summary.georob, print.summary.georob) changes for returning and printing ml.method
+* georob.S3methods.R (step.georob) correcting error for stepwise covariate selection with non-fixed variogram parameters
+
 
 

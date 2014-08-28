@@ -63,6 +63,7 @@ cv.georob <-
   ## 2014-02-21 AP catching problem when factor are very unbalanced
   ## 2014-05-15 AP changes for version 3 of RandomFields
   ## 2014-05-28 AP catching error when all variogram parameters are fixed
+  ## 2014-08-18 AP changes for parallelized computations
   
   ## auxiliary function that fits the model and computes the predictions of
   ## a cross-validation set
@@ -106,6 +107,7 @@ cv.georob <-
       param = param, fit.param = fit.param,
       aniso = aniso, fit.aniso = fit.aniso,
       verbose = verbose,
+      object. = NULL,
       ...
     )
     
@@ -119,8 +121,7 @@ cv.georob <-
     t.predict <- predict( 
       t.georob, newdata = data[sets[[..i..]], ], type = "response",
       mmax = length( sets[[..i..]] ),
-      extended.output = lgn,
-      ncores = 1
+      control = control.predict.georob( ncores = 1, extended.output = lgn ) 
     )
     
     ## backtransformation for log-normal kriging
@@ -164,7 +165,7 @@ cv.georob <-
     return( list( pred = t.predict, fit = t.georob ) )
     ## end cv function
   }
-  
+    
   ## check consistency of arguments
   
   if( !any( c( fit.param, fit.aniso ) ) && re.estimate ){

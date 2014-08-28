@@ -127,7 +127,7 @@ step(object, ...)
   suppressed.}
     
   
-  \item{\ldots}{additional arguments passed to methods (see in particular
+  \item{...}{additional arguments passed to methods (see in particular
     \code{waldtest.default}).}
   
 }
@@ -157,9 +157,9 @@ step(object, ...)
   fixed-effects model in \code{object}.  For \code{fixed==FALSE} the
   variogram parameters are fitted for each model tested by \code{add1} and
   \code{drop1}.  Then either the variogram parameters in
-  \code{object$initial.objects} (\code{use.fitted.param==FALSE} or the
-  fitted parameters of \code{object} (use.fitted.param==TRUE) are used
-  as initial values.
+  \code{object$initial.objects} (\code{use.fitted.param==FALSE}) or the
+  fitted parameters of \code{object} (\code{use.fitted.param==TRUE}) are
+  used as initial values.
   
   In addition, the functions of the \R package \pkg{multcomp} can be used
   to test general linear hypotheses about the fixed effects of the model.

@@ -1,4 +1,4 @@
-% 2014-05-28 A. Papritz
+% 2014-07-29 A. Papritz
 % R CMD Rdconv -t html -o bla.html lgnpp.Rd ; open bla.html; R CMD Rd2pdf --force lgnpp.Rd; 
 
 \encoding{macintosh}
@@ -322,8 +322,9 @@ lgnpp(object, newdata, locations, is.block = FALSE, all.pred = NULL,
 data(meuse )
 
 data(meuse.grid)
-meuse.grid.pixdf <- SpatialPixelsDataFrame(points = meuse.grid[, 1:2],
-    data = meuse.grid[, -(1:2)])
+coordinates(meuse.grid) <- ~x+y
+meuse.grid.pixdf <- meuse.grid
+gridded(meuse.grid.pixdf) <- TRUE
 
 library(constrainedKriging)
 data(meuse.blocks)
@@ -334,13 +335,13 @@ r.logzn.rob <- georob(log(zinc) ~ sqrt(dist), data = meuse, locations = ~ x + y,
         cov.bhat.betahat = TRUE, aux.cov.pred.target = TRUE))
         
 ## point predictions of log(Zn)
-r.pred.points <- predict(r.logzn.rob, newdata = meuse.grid.pixdf, extended.output = TRUE,
-    full.covmat = TRUE)
+r.pred.points <- predict(r.logzn.rob, newdata = meuse.grid.pixdf, 
+    control = control.predict.georob(extended.output = TRUE, full.covmat = TRUE))
 str(r.pred.points$pred@data)
 
 ## back-transformation of point predictions
 r.backtf.pred.points <- lgnpp(r.pred.points)
-str(r.backtf.pred.points$pred@data)
+str(r.pred.points$pred@data)
 
 spplot(r.backtf.pred.points[["pred"]], zcol = "lgn.pred", main = "Zn content")
 
@@ -349,8 +350,9 @@ r.block <- lgnpp(r.pred.points, is.block = TRUE, all.pred = r.backtf.pred.points
 r.block
 
 ## block predictions of log(Zn)
-r.pred.block <- predict(r.logzn.rob, newdata = meuse.blocks, extended.output = TRUE,
-    pwidth = 75, pheight = 75)
+r.pred.block <- predict(r.logzn.rob, newdata = meuse.blocks, 
+    control = control.predict.georob( extended.output = TRUE,
+        pwidth = 75, pheight = 75))
 r.backtf.pred.block <- lgnpp(r.pred.block, newdata = meuse.grid)
 
 spplot(r.backtf.pred.block, zcol = "lgn.pred", main = "block means Zn content")}

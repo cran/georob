@@ -1,9 +1,11 @@
-% 2014-05-28 A. Papritz
+% 2014-07-29 A. Papritz
 % R CMD Rdconv -t html -o bla.html predict.georob.Rd ; open bla.html; R CMD Rd2pdf --force predict.georob.Rd; 
 
 \encoding{macintosh}
 \name{predict.georob}
 \alias{predict.georob}
+\alias{control.predict.georob}
+
 \title{Predict Method for Robustly Fitted Spatial Linear Models}
 
 \description{Robust and customary external drift kriging prediction 
@@ -15,10 +17,15 @@ well as model terms for display by \code{\link[stats]{termplot}}.
 
 \usage{
 \method{predict}{georob}(object, newdata, type =  c("signal", "response", "trend", "terms"), 
-    terms = NULL, se.fit = TRUE, signif = 0.95, mmax = 10000, locations, 
-    full.covmat = FALSE, pwidth = NULL, pheight = NULL, napp = 1, 
-    extended.output = FALSE, ncores = detectCores(), verbose = 0, ...)
+    terms = NULL, se.fit = TRUE, signif = 0.95, locations, 
+    control = control.predict.georob(), verbose = 0, ...)
+    
+control.predict.georob(full.covmat = FALSE, extended.output = FALSE, 
+    mmax = 10000, ncores = parallel[["max.ncores"]], pwidth = NULL, pheight = NULL, 
+    napp = 1, parallel = parallel.control())
+
 }
+
 
 \arguments{
   \item{object}{an object of class \code{"georob"}, see \code{\link{georobObject}}.}
@@ -67,34 +74,43 @@ well as model terms for display by \code{\link[stats]{termplot}}.
   \item{signif}{positive numeric equal to the tolerance or confidence level
   for computing respective intervals.}
   
-  \item{mmax}{integer equal to the maximum number (default \code{10000}) of
-  prediction items, computed in a sub-task, see \emph{Details}.}
-  
   \item{locations}{an optional one-sided formula specifying what variables
   of \code{newdata} are the coordinates of the prediction points\cr
   (default: \code{object[["locatons.objects"]]$locations}).}
+  
+  \item{control}{a list with the arguments \code{full.covmat},
+  \code{extended.output}, \code{mmax}, \code{ncores}, \code{pwidth},
+  \code{pheight}, \code{napp} and \code{parallel} or a function such as
+  \code{control.predict.georob} that generates such a list.}
   
   \item{full.covmat}{logical controlling whether the full covariance matrix
   of the prediction errors is returned (\code{TRUE}) or only the vector
   with its diagonal elements (\code{FALSE}, default), see \emph{Value} for
   an explanation of the effect of \code{full.covmat}.}
   
-  \item{pwidth, pheight, napp}{numeric scalars, used to tune numeric
-  integration of semivariances for block kriging, see
-  \code{\link[constrainedKriging]{preCKrige}}.}
-  
   \item{extended.output}{logical controlling whether the covariance
   matrices of the kriging predictions and of the data should be computed, see
   \emph{Details} (default \code{FALSE}).}
   
+  \item{mmax}{integer equal to the maximum number (default \code{10000}) of
+  prediction items, computed in a sub-task, see \emph{Details}.}
+  
   \item{ncores}{positive integer controlling how many cores are used for
   parallelized computations, see \emph{Details}.}
 
+  \item{pwidth, pheight, napp}{numeric scalars, used to tune numeric
+  integration of semivariances for block kriging, see
+  \code{\link[constrainedKriging]{preCKrige}}.}
+  
+  \item{parallel}{a list of arguments passed to \code{\link{pmm}} or a
+  function such as \code{\link{parallel.control}} that generates such a list
+  (see \code{\link{parallel.control}} for allowed arguments).}
+  
   \item{verbose}{positive integer controlling logging of diagnostic
   messages to the console.\cr  \code{verbose = 0} (default) largely suppresses
   such messages.}
   
-  \item{\ldots}{additional arguments passed to method, currently not used.}
+  \item{...}{arguments passed to \code{control.predict.georob}.}
   
 }
 
@@ -234,8 +250,9 @@ well as model terms for display by \code{\link[stats]{termplot}}.
 data(meuse )
 
 data(meuse.grid)
-meuse.grid.pixdf <- SpatialPixelsDataFrame(points = meuse.grid[, 1:2],
-    data = meuse.grid[, -(1:2)])
+coordinates(meuse.grid) <- ~x+y
+meuse.grid.pixdf <- meuse.grid
+gridded(meuse.grid.pixdf) <- TRUE
   
 library(constrainedKriging)
 data(meuse.blocks)
@@ -246,13 +263,13 @@ r.logzn.rob <- georob(log(zinc) ~ sqrt(dist), data = meuse, locations = ~ x + y,
         cov.bhat.betahat = TRUE, aux.cov.pred.target = TRUE))
         
 ## point predictions of log(Zn)
-r.pred.points <- predict(r.logzn.rob, newdata = meuse.grid.pixdf, extended.output = TRUE,
-    full.covmat = TRUE)
+r.pred.points <- predict(r.logzn.rob, newdata = meuse.grid.pixdf, 
+    control = control.predict.georob(extended.output = TRUE, full.covmat = TRUE))
 str(r.pred.points$pred@data)
 
 ## back-transformation of point predictions
 r.backtf.pred.points <- lgnpp(r.pred.points)
-str(r.backtf.pred.points$pred@data)
+str(r.pred.points$pred@data)
 
 spplot(r.backtf.pred.points[["pred"]], zcol = "lgn.pred", main = "Zn content")
 
@@ -261,8 +278,9 @@ r.block <- lgnpp(r.pred.points, is.block = TRUE, all.pred = r.backtf.pred.points
 r.block
 
 ## block predictions of log(Zn)
-r.pred.block <- predict(r.logzn.rob, newdata = meuse.blocks, extended.output = TRUE,
-    pwidth = 75, pheight = 75)
+r.pred.block <- predict(r.logzn.rob, newdata = meuse.blocks, 
+    control = control.predict.georob( extended.output = TRUE,
+        pwidth = 75, pheight = 75))
 r.backtf.pred.block <- lgnpp(r.pred.block, newdata = meuse.grid)
 
 spplot(r.backtf.pred.block, zcol = "lgn.pred", main = "block means Zn content")}

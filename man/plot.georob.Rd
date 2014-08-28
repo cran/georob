@@ -6,7 +6,7 @@
 \alias{plot.georob}
 \alias{lines.georob}
 
-\title{Plot Methods for class \code{georob}}
+\title{Plot Methods for Class \code{georob}}
 
 \description{The \code{plot} and \code{lines} methods for class
 \code{georob} plot the variogram model, estimated by (robust) restricted
@@ -118,7 +118,7 @@ sample variogram of the (robust) regression residuals.
 
   \item{lty}{line type for plotting variogram models.}
 
-  \item{\ldots}{additional arguments passed to
+  \item{...}{additional arguments passed to
   \code{\link{plot.sample.variogram}} and methods.} 
   
 }

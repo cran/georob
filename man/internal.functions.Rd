@@ -1,4 +1,4 @@
-% 2013-09-06 A. Papritz
+% 2014-07-31 A. Papritz
 % R CMD Rdconv -t html -o bla.html internal.functions.Rd ; open bla.html; R CMD Rd2pdf --force internal.functions.Rd 
 \name{internal.functions}
 \alias{compute.covariances}
@@ -6,11 +6,18 @@
 \alias{compute.semivariance}
 \alias{dcorr.dparam}
 \alias{estimate.xihat}
+\alias{estimating.eqations.xihat}
+\alias{f.aux.eeq}
+\alias{f.aux.gradient.nll}
+\alias{f.aux.Q}
+\alias{f.aux.Valpha}
+\alias{f.stop.cluster}
 \alias{gcr}
 \alias{georob.fit}
 \alias{getCall.georob}
 \alias{gradient.negative.restricted.loglikelihood}
 \alias{K}
+\alias{lmrob.control}
 \alias{negative.restr.loglikelihood}
 \alias{prepare.likelihood.calculations}
 \alias{update.xihat}
@@ -25,6 +32,12 @@ The internal unexported functions
   \item\code{compute.semivariance},
   \item\code{dcorr.dparam},
   \item\code{estimate.xihat},
+  \item\code{estimating.eqations.xihat},
+  \item\code{f.aux.eeq},
+  \item\code{f.aux.gradient.nll},
+  \item\code{f.aux.Q},
+  \item\code{f.aux.Valpha},
+  \item\code{f.stop.cluster},
   \item\code{gcr},
   \item\code{georob.fit},
   \item\code{getCall.georob},
@@ -35,14 +48,15 @@ The internal unexported functions
   \item\code{update.xihat}
 }
 are not intended for direct use.  However, as any unexported function they
-can be accessed by typing
-\code{georob:::\var{function-name}}.  
+can be accessed by typing \code{georob:::\var{function-name}}.  
 
-In addition, the (exported) function \code{K} is required for computing
-block kriging predictions by the (unexported) function
-\code{f.point.block.cov} of the package
-\pkg{constrainedKriging}.
-}
+In addition, the function \code{K}, which is re-exported by the package
+\pkg{georob} is required for computing block kriging predictions by the
+function \code{f.point.block.cov} of the package \pkg{constrainedKriging}.
+
+Furthermore, the (re-exported) function
+\code{\link[robustbase]{lmrob.control}} allows to pass tuning parameters to
+the function \code{\link[robustbase]{lmrob}} of the package \pkg{robustbase}.}
 
 \author{
   Andreas Papritz \email{andreas.papritz@env.ethz.ch}\cr

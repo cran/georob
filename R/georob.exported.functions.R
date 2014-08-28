@@ -20,7 +20,7 @@ georob <-
     fit.aniso = c( f1 = FALSE, f2 = FALSE, omega = FALSE, phi = FALSE, zeta = FALSE ),
     tuning.psi = 2, initial.param  = c( "exclude", "no" ),
     ## root.finding = c( "nleqslv", "bbsolve" ),
-    control = georob.control( ... ), verbose = 0,
+    control = georob.control(), verbose = 0,
     ...
   )
 {
@@ -85,6 +85,9 @@ georob <-
   ## 2014-05-15 AP changes for version 3 of RandomFields
   ## 2014-05-22 AP correcting error when selecting initial.param
   ## 2014-06-02 AP partial matching of names of variogram parameters
+  ## 2014-08-18 AP changes for parallelized computations
+  ## 2014-08-18 AP changes for Gaussian ML estimation
+  ## 2014-08-26 AP changes to return ml.method if fitted object
   
   ## check whether input is complete
   
@@ -203,7 +206,7 @@ georob <-
   ## intrinsic variogram model is used
   
   if( identical( attr( mt, "intercept" ), 0L ) && 
-    variogram.model %in% georob.control()[["irf.model"]] )
+    variogram.model %in% control[["irf.model"]] )
   stop(
     "the fixed effects model must include an intercept ",
     "if an unbounded variogram model is used"
@@ -282,9 +285,8 @@ georob <-
       process <- (tau < 0 || tau > 1)
       
       f.rq.fit <- rq.fit
-      formals( f.rq.fit ) <- c( alist( x=, y= ), control[["rq"]], alist( ...= ) )
-      
-      fit <- f.rq.fit( x = x, y = yy, ... ) 
+      formals( f.rq.fit ) <- c( alist( x=, y= ), control[["rq"]] )
+      fit <- f.rq.fit( x = x, y = yy ) 
       
       if( process ) {
         rho <- list(x = fit[["sol"]][1, ], y = fit[["sol"]][3, ])
@@ -333,9 +335,9 @@ georob <-
     lm = {
       
       fit <- if( is.null(w) ){
-        lm.fit(x, y, offset = offset, singular.ok = TRUE, ...)
+        lm.fit(x, y, offset = offset, singular.ok = TRUE )
       } else {
-        lm.wfit(x, y, w, offset = offset, singular.ok = TRUE, ...)
+        lm.wfit(x, y, w, offset = offset, singular.ok = TRUE )
       }
       class(fit) <- c(if (is.matrix(y)) "mlm", "lm")
       fit[["na.action"]] <- attr(mf, "na.action")
@@ -370,13 +372,30 @@ georob <-
 
   names( yy ) <- rownames( mf )
   
-  ##  create environment to store items required to compute likelihood and
-  ##  estimating equations that are provided by
-  ##  prepare.likelihood.calculations
+  ##  check whether argument "object."  has been provided in call (e.g. by
+  ##  update ) and extract'locations' and ' Valpha' component if object
+  ##  exists in workspace
   
-  envir <- new.env()
-  lik.item <- list()
-  assign( "lik.item", lik.item, pos = as.environment( envir ) )
+  extras <- match.call( expand.dots = FALSE )$...
+  georob.object <- extras[names(extras) %in% "object."]
+  if( length( georob.object ) && exists( as.character( georob.object ), envir = parent.frame() ) ){
+    if( verbose > 4 ) cat(
+      "\n    georob: using some components of 'object.'\n"    
+    )
+    georob.object <- eval( 
+      georob.object[[1]], parent.frame() 
+    )[c( "locations.objects", "Valpha.objects" )]
+  } else {
+    georob.object <- NULL
+  }
+  
+  #   ##  create environment to store items required to compute likelihood and
+  #   ##  estimating equations that are provided by
+  #   ##  prepare.likelihood.calculations
+  #   
+  #   envir <- new.env()
+  #   lik.item <- list()
+  #   assign( "lik.item", lik.item, pos = as.environment( envir ) )
   
   ## root.finding <- match.arg( root.finding )
   
@@ -418,8 +437,8 @@ georob <-
       
       t.georob <- georob.fit(
         ## root.finding = root.finding,
-        slv = TRUE,
-        envir = envir,
+        #         slv = TRUE,
+        #         envir = envir,
         initial.objects = initial.objects,
         variogram.model = variogram.model, param = param, fit.param = fit.param,
         aniso = aniso, fit.aniso = fit.aniso,
@@ -427,6 +446,7 @@ georob <-
         fwd.tf = control[["fwd.tf"]], 
         deriv.fwd.tf = control[["deriv.fwd.tf"]],
         bwd.tf = control[["bwd.tf"]], 
+        georob.object = georob.object,
         safe.param = control[["safe.param"]],
         tuning.psi = control[["tuning.psi.nr"]],
         cov.bhat = control[["cov.bhat"]], full.cov.bhat = control[["full.cov.bhat"]],
@@ -442,20 +462,18 @@ georob <-
         rankdef.x = rankdef.x,
         psi.func = control[["psi.func"]],
         tuning.psi.nr = tuning.psi,
+        ml.method = control[["ml.method"]],
         irwls.initial = control[["irwls.initial"]],
         irwls.maxiter = control[["irwls.maxiter"]],
         irwls.reltol = control[["irwls.reltol"]],
         force.gradient = control[["force.gradient"]],
         zero.dist = control[["zero.dist"]],
-        nleqslv.method =  control[["nleqslv"]][["method"]],
-        nleqslv.control = control[["nleqslv"]][["control"]],
+        control.nleqslv =  control[["nleqslv"]],
         ## bbsolve.method =  control[["bbsolve"]][["method"]],
         ## bbsolve.control = control[["bbsolve"]][["control"]],
-        optim.method =  control[["optim"]][["method"]],
-        optim.lower = control[["optim"]][["lower"]],
-        optim.upper = control[["optim"]][["upper"]],
+        control.optim = control[["optim"]],
         hessian = FALSE,
-        optim.control = control[["optim"]][["control"]],
+        control.parallel = control[["parallel"]],
         full.output = control[["full.output"]],
         verbose = verbose
       )
@@ -490,7 +508,7 @@ georob <-
     #       t.georob <- georob.fit(
     #         ## root.finding = root.finding,
     #         slv = FALSE,
-    #         envir = envir,
+    #     #         envir = envir,
     #         initial.objects = initial.objects,
     #         variogram.model = variogram.model, param = param, fit.param = fit.param,
     #         aniso = aniso, fit.aniso = fit.aniso,
@@ -518,15 +536,12 @@ georob <-
     #         irwls.reltol = control[["irwls.reltol"]],
     #         force.gradient = control[["force.gradient"]],
     #         zero.dist = control[["zero.dist"]],
-    #         nleqslv.method =  control[["nleqslv"]][["method"]],
-    #         nleqslv.control = control[["nleqslv"]][["control"]],
+    #         control.nleqslv =  control[["nleqslv"]],
     #         ## bbsolve.method =  control[["bbsolve"]][["method"]],
     #         ## bbsolve.control = control[["bbsolve"]][["control"]],
-    #         optim.method =  control[["optim"]][["method"]],
-    #         optim.lower = control[["optim"]][["lower"]],
-    #         optim.upper = control[["optim"]][["upper"]],
-    #         hessian =       control[["optim"]][["hessian"]],
-    #         optim.control = control[["optim"]][["control"]],
+    #         control.optim = control[["optim"]],
+    #         hessian = FALSE,
+    #         control.parallel = control[["parallel"]],
     #         full.output = control[["full.output"]],
     #         verbose = verbose
     #       )
@@ -563,8 +578,8 @@ georob <-
 
   r.georob <- georob.fit(
     ## root.finding = root.finding,
-    slv = TRUE,
-    envir = envir,
+    #     slv = TRUE,
+    #     envir = envir,
     initial.objects = initial.objects,
     variogram.model = variogram.model, param = param, fit.param = fit.param,
     aniso = aniso, fit.aniso = fit.aniso,
@@ -572,6 +587,7 @@ georob <-
     fwd.tf = control[["fwd.tf"]], 
     deriv.fwd.tf = control[["deriv.fwd.tf"]],
     bwd.tf = control[["bwd.tf"]], 
+    georob.object = georob.object,
     safe.param = control[["safe.param"]],
     tuning.psi = tuning.psi,
     cov.bhat = control[["cov.bhat"]], full.cov.bhat = control[["full.cov.bhat"]],
@@ -587,20 +603,18 @@ georob <-
     rankdef.x = rankdef.x,
     psi.func = control[["psi.func"]],
     tuning.psi.nr = control[["tuning.psi.nr"]],
+    ml.method = control[["ml.method"]],
     irwls.initial = control[["irwls.initial"]],
     irwls.maxiter = control[["irwls.maxiter"]],
     irwls.reltol = control[["irwls.reltol"]],
     force.gradient = control[["force.gradient"]],
     zero.dist = control[["zero.dist"]],
-    nleqslv.method =  control[["nleqslv"]][["method"]],
-    nleqslv.control = control[["nleqslv"]][["control"]],
+    control.nleqslv =  control[["nleqslv"]],
     ## bbsolve.method =  control[["bbsolve"]][["method"]],
     ## bbsolve.control = control[["bbsolve"]][["control"]],
-    optim.method =  control[["optim"]][["method"]],
-    optim.lower = control[["optim"]][["lower"]],
-    optim.upper = control[["optim"]][["upper"]],
-    hessian =       control[["optim"]][["hessian"]],
-    optim.control = control[["optim"]][["control"]],
+    control.optim = control[["optim"]],
+    hessian = control[["optim"]][["hessian"]],
+    control.parallel = control[["parallel"]],
     full.output = control[["full.output"]],
     verbose = verbose
   )
@@ -609,6 +623,10 @@ georob <-
   
   if( !is.null( offset ) )
     r.georob[["fitted.values"]] <- r.georob[["fitted.values"]] + offset
+    
+  ##
+    
+  r.georob[["control"]] <- control
   
   ## add remaining items to output
   
@@ -646,10 +664,72 @@ georob <-
   
 }
 
+
+##  ##############################################################################
+
+pmm <- 
+  function( 
+    A, B, control = parallel.control() 
+  )
+{
+  
+  ## function for parallelized matrix multiplication inspired by function
+  ## parMM{snow}
+  
+  ## 2014-06-25 A. Papritz
+  
+  ## auxiliary function 
+  
+  f.aux <- function(i, s, e, A, B ) A %*% B[ , s[i]:e[i]]
+  
+  ## determine columns indices of matrix blocks
+  
+  k <- control[["f"]] * control[["pmm.ncores"]]
+  n <- NCOL(B)
+  dn <- floor( n / k )
+  s <- ( (0:(k-1)) * dn ) + 1
+  e <- (1:k) * dn
+  e[k] <- n
+  
+  ##
+  
+  if( control[["pmm.ncores"]] > 1L ){
+    
+    if( identical( .Platform[["OS.type"]], "windows") ){
+      
+      ## create a SNOW cluster on windows OS
+      
+      if( !sfIsRunning() ){
+        options( error = f.stop.cluster )
+        junk <- sfInit( parallel = TRUE, cpus = control[["pmm.ncores"]] )
+      }
+      
+      res <- sfLapply( 1:k, f.aux, s = s, e = e, A = A, B = B )
+      
+      if( control[["sfstop"]] ){
+        junk <- sfStop()
+        options( error = NULL )
+      }
+      
+    } else {
+      
+      res <- mclapply( 
+        1:k, f.aux,s = s, e = e, A = A, B = B,  mc.cores = control[["pmm.ncores"]] 
+      )
+      
+    }
+    
+    matrix( unlist(res), nrow = nrow( A ) )
+    
+  } else A %*% B    
+  
+}
+
 #  ##############################################################################
 
 georob.control <- 
   function(
+    ml.method = c( "REML", "ML" ),
     initial.method = c("lmrob", "rq", "lm"),
     bhat = NULL,
     param.tf = param.transf(),
@@ -678,11 +758,13 @@ georob.control <-
     nleqslv = nleqslv.control(),
     ## bbsolve = bbsolve.control(),
     optim = optim.control(),
-    full.output = TRUE
+    parallel = parallel.control(),
+    full.output = TRUE,
+    ...
   )
 {
   
-  ## auxiliary function to set meaningful default values for the
+  ## auxiliary function to set meaningful default values for georob
 
   ## Arguments: 
   
@@ -694,6 +776,8 @@ georob.control <-
   ## 2013-06-12 AP substituting [["x"]] for $x in all lists
   ## 2013-07-12 AP solving estimating equations by BBsolve{BB} (in addition to nleqlsv)
   ## 2014-05-15 AP changes for version 3 of RandomFields
+  ## 2014-08-18 AP changes for parallelized computations
+  ## 2014-08-18 AP changes for Gaussian ML estimation
   
   if( 
     !( all( param.tf %in% names( fwd.tf ) ) &&
@@ -705,6 +789,7 @@ georob.control <-
   )
   
   list(
+    ml.method = match.arg( ml.method ),
     initial.method = match.arg( initial.method ),
     bhat = bhat,
     param.tf = param.tf, fwd.tf = fwd.tf, deriv.fwd.tf = deriv.fwd.tf, bwd.tf = bwd.tf,
@@ -729,6 +814,7 @@ georob.control <-
     rq = rq, lmrob = lmrob, nleqslv = nleqslv, 
     ## bbsolve = bbsolve, 
     optim = optim, 
+    parallel = parallel, 
     full.output = full.output
   )
   
@@ -810,7 +896,6 @@ bwd.transf <-
   
 }
 
-
 ## ======================================================================
 rq.control <-
   function(
@@ -821,7 +906,8 @@ rq.control <-
     ## arguments for rq.fit.fnb
     rq.beta = 0.99995, eps = 1e-06,
     ## arguments for rq.fit.pfn
-    Mm.factor = 0.8, max.bad.fixup = 3
+    Mm.factor = 0.8, max.bad.fixup = 3,
+    ...
   )
 {
   
@@ -829,6 +915,7 @@ rq.control <-
   ## rq{quantreg}
   
   ## 2012-12-14 A. Papritz
+  ## 2014-07-29 AP
   
   list( 
     tau = tau,  method = rq.method,
@@ -845,7 +932,8 @@ nleqslv.control <-
     nleqslv.method = c( "Broyden", "Newton"), 
     global = c( "dbldog", "pwldog", "qline", "gline", "none" ),
     xscalm = c( "fixed", "auto" ),
-    nleqslv.control = NULL
+    nleqslv.control = NULL, 
+    ...
   )
 {
   
@@ -853,6 +941,7 @@ nleqslv.control <-
   ## nleqslv{nleqslv} 
   
   ## 2013-07-12 A. Papritz
+  ## 2014-07-29 AP
   
   list( 
     method = match.arg( nleqslv.method ),
@@ -887,14 +976,14 @@ optim.control <-
     optim.method = c( "BFGS", "Nelder-Mead", "CG", "L-BFGS-B", "SANN", "Brent" ),
     lower = -Inf, upper = Inf,
     optim.control = NULL,
-    hessian = TRUE
+    hessian = TRUE,
+    ...
   )
 {
   
   ## function sets meaningful defaults for selected arguments of function optim
   ## 2012-12-14 A. Papritz
-  
-  aux <- function( trace = 0, maxit = 500, ... ) list( trace = trace, maxit = maxit, ... )
+  ## 2014-07-29 AP
   
   list( 
     method = match.arg( optim.method ),
@@ -904,6 +993,29 @@ optim.control <-
   )
 }
 
+## ======================================================================
+parallel.control <-
+  function( 
+    pmm.ncores = 1, gradient.ncores = 1, max.ncores = detectCores(), 
+    f = 2, sfstop = FALSE, allow.recursive = TRUE, 
+    ... 
+  )
+{
+  
+  ## function sets meaningful defaults for parallelized computations
+  
+  ## 2014-07-29 AP
+  
+  pmm.ncores <- min( pmm.ncores, max.ncores )
+  gradient.ncores <- min( gradient.ncores, max.ncores )
+  
+  list( 
+    pmm.ncores = pmm.ncores, gradient.ncores = gradient.ncores, 
+    max.ncores = max.ncores, f = f, sfstop = sfstop, 
+    allow.recursive = allow.recursive
+  )
+
+}
 
 ## ======================================================================
 
@@ -1107,4 +1219,3 @@ function( model, d )
     stop( model, " variogram not implemented" )
   )
 }
-

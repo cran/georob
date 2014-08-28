@@ -53,7 +53,7 @@ r.logzn.reml2 <- georob(
   locations = ~ x + y,
   variogram.model = "RMexp",
   param = c( variance = 0.16, nugget = 0.03, scale = 208, snugget = 0.1 ),
-  fit.param = c( variance = T, nugget = T, scale = T, snugget = T ),
+  fit.param = c( variance = TRUE, nugget = TRUE, scale = TRUE, snugget = TRUE ),
   tuning.psi = 1000,
   verbose = 4
 )
@@ -69,7 +69,7 @@ r.logzn.rob2 <- georob(
   variogram.model = "RMexp",
   param = c( variance = 0.15, nugget = 0.02, scale = 208, snugget = 0.05 ),
   initial.param = "no",
-  fit.param = c( variance = T, nugget = T, scale = T, snugget = T ),
+  fit.param = c( variance = TRUE, nugget = TRUE, scale = TRUE, snugget = TRUE ),
   tuning.psi = 2,
   verbose = 2
 )
@@ -167,7 +167,7 @@ r.luk.punkt <- predict(
     r.logzn.rob,
     type = "response",
     newdata = meuse.grid,
-    extended.output = TRUE,
+    control = control.predict.georob( extended.output = TRUE ),
     mmax = 1000,
     verbose = 1
 )
@@ -252,8 +252,8 @@ levelplot(
 library(constrainedKriging)
 
 r.luk.block <- predict(
-  r.logzn.rob, newdata = meuse.blocks, extended.output = TRUE,
-  pwidth = 75, pheight = 75
+  r.logzn.rob, newdata = meuse.blocks, 
+  control = control.predict.georob( extended.output = TRUE, pwidth = 75, pheight = 75 )
 )
 str( r.luk.block, max = 2 )
 str( r.luk.block@data, max = 2 )
@@ -320,8 +320,6 @@ pchisq( 2*(r.irf0.aniso$loglik - r.irf0.iso$loglik), 2, lower = FALSE )
  # 6.  Computing sample variogram and fitting variogram model to it,
  #     "wolfcamp" data
  ##
-
-library(geoR)
 
 data(wolfcamp)
 

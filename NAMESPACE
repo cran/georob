@@ -6,6 +6,7 @@ importFrom( lmtest, waldtest, waldtest.default )
 importFrom( nlme, fixef, fixed.effects, ranef, random.effects )
 importFrom( nleqslv, nleqslv )
 importFrom( quantreg, rq.fit )
+importFrom( snowfall, sfCpus, sfInit, sfLibrary, sfIsRunning, sfLapply, sfStop )
 importFrom( RandomFields, RFvariogram, RFoldstyle, RFoptions)
 importFrom( robustbase, lmrob.control, lmrob.fit, Qn, robMD, summarizeRobWeights )
 
@@ -21,16 +22,20 @@ export(
   fixed.effects,                    # ok export of generic fixed.effects{nlme}
   fixef,                            # ok export of generic fixef{nlme}
   fwd.transf,                       # ok
-  param.bounds,                     # ok  
-  param.names,                      # ok
   fit.variogram.model,              # ok
   georob.control,                   # ok
   georob,                           # ok 
   K,                                # ok export of K{constrainedKriging}, which is (indirectly) needed by f.point.block.cov{constrainedKriging}
   lgnpp,                            # ok
+  lmrob.control,                    # ok export of lmrob.control{robustbase}
   nleqslv.control,                  # ok
   optim.control,                    # ok
+  parallel.control,                 # ok
+  param.bounds,                     # ok  
+  param.names,                      # ok
   param.transf,                     # ok
+  pmm,                              # ok
+  control.predict.georob,           # ok
   random.effects,                   # ok export of generic random.effects{nlme}
   ranef,                            # ok export of generic ranef{nlme}
   rq.control,                       # ok
@@ -89,15 +94,16 @@ export(
 ##
 ##   compute.covariances,
 ##   compute.estimating.equations,
-##   compute.expanded.estimating.equations,
 ##   compute.semivariance,
 ##   dcorr.dparam,
 ##   estimating.eqations.xihat,
 ##   estimate.xihat,
-##   gcr,
+##   estimating.eqations.xihat,
+##   f.aux.eeq##   f.aux.gradient.nll##   f.aux.Q##   f.aux.Valpha##   f.stop.cluster##   gcr,
 ##   georob.fit,
 ##   getCall.georob,
 ##   gradient.negative.restricted.loglikelihood,
+##   f.stop.cluster
 ##   negative.restr.loglikelihood,
 ##   prepare.likelihood.calculations,
 ##   safe_pchisq,

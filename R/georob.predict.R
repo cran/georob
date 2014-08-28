@@ -1,19 +1,40 @@
 ##  ###########################################################################
 
+control.predict.georob <-
+function( 
+  full.covmat = FALSE, extended.output = FALSE,
+  mmax = 10000,  ncores = parallel[["max.ncores"]],
+  pwidth = NULL, pheight = NULL, napp = 1,
+  parallel = parallel.control()
+){
+
+  ## auxiliary function to set meaningful default values for predict.georob
+  
+  ## 2014-07-29 A. Papritz
+  
+  list(
+    full.covmat = full.covmat, 
+    extended.output = extended.output,
+    mmax = mmax, ncores = ncores,
+    pwidth = pwidth, pheight = pheight, napp = napp,
+    parallel = parallel
+  
+  )
+
+}
+
+
+##  ###########################################################################
+
 predict.georob <-
 function( 
   object, newdata, 
   type = c( "signal", "response", "trend", "terms" ),
   terms = NULL, se.fit = TRUE,
   signif = 0.95,
-  mmax = 10000,
   locations,
-  full.covmat = FALSE,
-  pwidth = NULL, pheight = NULL, napp = 1,
-  extended.output = FALSE,
-  ncores = detectCores(),
-  verbose = 0, 
-  ...
+  control = control.predict.georob(),
+  verbose = 0, ...
 )
 {
   
@@ -47,6 +68,8 @@ function(
   ## 2013-06-12 AP substituting [["x"]] for $x in all lists
   ## 2014-02-18 AP correcting error in computing predictions for model with offset
   ## 2014-04-23 AP correcting error when computing predictions for data locations
+  ## 2014-08-18 AP new argument control for passing tuning parameters to function
+  ## 2014-08-18 AP changes for parallelized computations
 
   
   ##  ##############################################################################
@@ -63,7 +86,8 @@ function(
       cov.delta.bhat.betahat.l, cov.betahat.l, cov.bhat.betahat, cov.p.t, Valpha.objects,
       pwidth, pheight, napp,
       signif,
-      extended.output, full.covmat
+      extended.output, full.covmat,
+      control.pmm
     )
   { ## f.robust.uk
     
@@ -412,18 +436,31 @@ function(
         
         ## compute uk predictions
         
-        gammaValphai <- gamma %*% Valpha.objects[["Valpha.inverse"]] / sum( param[c("variance", "snugget")] )
+        # gammaValphai <- gamma %*% Valpha.objects[["Valpha.inverse"]] / sum( param[c("variance", "snugget")] )
+        gammaValphai <- pmm( gamma, Valpha.objects[["Valpha.inverse"]], control = control.pmm ) / 
+          sum( param[c("variance", "snugget")] )
         t.pred <- t.pred + drop( gammaValphai %*% bhat )
         
         ## compute uk variance (= (co-)variance of prediction errors)
         
+        #         aux <- cbind(
+        #           gammaValphai %*% cov.delta.bhat.betahat.l[1:n, 1:n] - pred.X[!ex, , drop = FALSE ] %*% cov.delta.bhat.betahat.l[-(1:n), 1:n],
+        #           - pred.X[!ex, , drop = FALSE ] %*% cov.delta.bhat.betahat.l[-(1:n), -(1:n)]
+        #         )
         aux <- cbind(
-          gammaValphai %*% cov.delta.bhat.betahat.l[1:n, 1:n] - pred.X[!ex, , drop = FALSE ] %*% cov.delta.bhat.betahat.l[-(1:n), 1:n],
+          pmm( gammaValphai, cov.delta.bhat.betahat.l[1:n, 1:n], control = control.pmm ) - 
+            pmm( 
+              pred.X[!ex, , drop = FALSE ], cov.delta.bhat.betahat.l[-(1:n), 1:n], 
+              control = control.pmm 
+            ),
           - pred.X[!ex, , drop = FALSE ] %*% cov.delta.bhat.betahat.l[-(1:n), -(1:n)]
         )
         
         if( full.covmat ){
-          t.mse.pred <- tcrossprod( aux ) + t.var.target - gammaValphai %*% t( gamma )
+          #           t.mse.pred <- tcrossprod( aux ) + t.var.target - gammaValphai %*% t( gamma )
+          t.mse.pred <- tcrossprod( aux ) + t.var.target - pmm( 
+            gammaValphai, t( gamma ), control = control.pmm
+          )
         } else {
           t.mse.pred <- rowSums( aux^2 ) + t.var.target - rowSums( gammaValphai * gamma )
         }
@@ -447,8 +484,19 @@ function(
           ## (needed for lognormal kriging)
           
           aux <- cbind( gammaValphai, pred.X[!ex, , drop = FALSE ] )
-          t.var.pred <- aux %*% cov.bhat.betahat %*% t( aux )
-          t.cov.pred.target <- aux %*% cov.p.t %*% t( gamma )
+          #           t.var.pred <- aux %*% cov.bhat.betahat %*% t( aux )
+          #           t.cov.pred.target <- aux %*% cov.p.t %*% t( gamma )
+          t.var.pred <- pmm( 
+            aux, 
+            pmm( cov.bhat.betahat, t( aux ), control = control.pmm ), 
+            control = control.pmm
+          )
+          t.cov.pred.target <- pmm(
+            aux,
+            pmm( cov.p.t, t( gamma ), control = control.pmm ),
+            control = control.pmm 
+          )
+          
           if( !full.covmat ){
             t.var.pred <- diag( t.var.pred )
             t.cov.pred.target <- diag( t.cov.pred.target )
@@ -650,7 +698,7 @@ function(
   
   if( !missing( newdata ) && class( newdata ) == "SpatialPolygonsDataFrame" ){
     
-    if( is.null( pwidth ) || is.null( pheight ) )
+    if( is.null( control[["pwidth"]] ) || is.null( control[["pheight"]] ) )
     stop( 
       "'pwidth' and 'pheight' must be provided for block kriging"
     )
@@ -667,7 +715,7 @@ function(
     
   }
   
-  if( full.covmat ){
+  if( control[["full.covmat"]] ){
     if( verbose > 0 ){
       cat(
         "\ncomputing full covariance matrix of prediction errors\n" 
@@ -714,14 +762,14 @@ function(
   cov.delta.bhat   <- is.null( object[["cov"]][["cov.delta.bhat"]] ) ||
     !is.matrix( object[["cov"]][["cov.delta.bhat"]] )
   cov.delta.bhat.betahat <- is.null( object[["cov"]][["cov.delta.bhat.betahat"]] )
-  cov.bhat    <- extended.output & (
+  cov.bhat    <- control[["extended.output"]] & (
     is.null( object[["cov"]][["cov.bhat"]] ) || !is.matrix( object[["cov"]][["cov.bhat"]] )
   )
-  cov.bhat.betahat  <-  extended.output & is.null( object[["cov"]][["cov.bhat.betahat"]] )
-  cov.p.t  <-  extended.output & is.null( object[["cov"]][["cov.pred.target"]] )
+  cov.bhat.betahat  <-  control[["extended.output"]] & is.null( object[["cov"]][["cov.bhat.betahat"]] )
+  cov.p.t  <-  control[["extended.output"]] & is.null( object[["cov"]][["cov.pred.target"]] )
   
   if( any( c( cov.betahat, cov.delta.bhat, cov.delta.bhat.betahat, 
-        extended.output & ( cov.bhat || cov.bhat.betahat || cov.p.t )
+        control[["extended.output"]] & ( cov.bhat || cov.bhat.betahat || cov.p.t )
       )
     )
   ){ ## cov
@@ -742,6 +790,7 @@ function(
       cov.ehat = FALSE, full.cov.ehat = FALSE,
       cov.ehat.p.bhat = FALSE, full.cov.ehat.p.bhat = FALSE,
       aux.cov.pred.target = cov.p.t,
+      control.parallel = control[["parallel"]],
       verbose = verbose
     )
     
@@ -755,10 +804,10 @@ function(
     if( cov.delta.bhat )   object[["cov"]][["cov.delta.bhat"]] <- r.cov[["cov.delta.bhat"]]
     if( cov.delta.bhat.betahat ) object[["cov"]][["cov.delta.bhat.betahat"]] <- 
       r.cov[["cov.delta.bhat.betahat"]]
-    if( extended.output && cov.bhat )   object[["cov"]][["cov.bhat"]] <- r.cov[["cov.bhat"]]
-    if( extended.output && cov.bhat.betahat ) object[["cov"]][["cov.bhat.betahat"]] <- 
+    if( control[["extended.output"]] && cov.bhat )   object[["cov"]][["cov.bhat"]] <- r.cov[["cov.bhat"]]
+    if( control[["extended.output"]] && cov.bhat.betahat ) object[["cov"]][["cov.bhat.betahat"]] <- 
       r.cov[["cov.bhat.betahat"]]
-    if( extended.output && cov.p.t ) object[["cov"]][["cov.pred.target"]] <- 
+    if( control[["extended.output"]] && cov.p.t ) object[["cov"]][["cov.pred.target"]] <- 
       r.cov[["cov.pred.target"]]
     
   } ## end cov
@@ -792,7 +841,7 @@ function(
     "covariance matrix of 'betahat' not positive definite"  
   )
   
-  if( extended.output ){
+  if( control[["extended.output"]] ){
     
     ## compute covariance matrix of bhat and betahat
     
@@ -920,7 +969,7 @@ function(
       var.target <- NULL
       cov.pred.target <- NULL
       
-      if( extended.output ){
+      if( control[["extended.output"]] ){
         V <- sum( object[["param"]][c("variance", "snugget")] ) * object[["Valpha.objects"]][["Valpha"]]
       }
       
@@ -928,13 +977,13 @@ function(
         type,
         response = {  ## response
           mse.pred <- rep( 0., length( object[["Tmat"]] ) )
-          if( extended.output ) var.pred <- var.target <- cov.pred.target <- rep( 
+          if( control[["extended.output"]] ) var.pred <- var.target <- cov.pred.target <- rep( 
             sum( object[["param"]][c("variance", "nugget", "snugget")] ), 
             length( object[["Tmat"]] ) 
           )
-          if( full.covmat ){
+          if( control[["full.covmat"]] ){
             mse.pred <- diag( mse.pred )
-            if( extended.output ){
+            if( control[["extended.output"]] ){
               var.pred <- V
               diag( var.pred ) <- diag( var.pred ) + object[["param"]][c("nugget")]
               var.pred <- var.target <- cov.pred.target <- var.pred[object[["Tmat"]], object[["Tmat"]]]
@@ -942,7 +991,7 @@ function(
           }
           c( 
             list( mse.pred = mse.pred ),
-            if( extended.output ) list( 
+            if( control[["extended.output"]] ) list( 
               var.pred = var.pred, var.target = var.target, cov.pred.target = cov.pred.target
             )
           )
@@ -953,12 +1002,12 @@ function(
             - X  %*% cov.delta.bhat.betahat.l[-(1:n),-(1:n)]
           )
           aux <- aux[object[["Tmat"]], , drop = FALSE]
-          if( full.covmat ){
+          if( control[["full.covmat"]] ){
             mse.pred <- tcrossprod( aux )
           } else {
             mse.pred <- rowSums( aux^2 )
           }
-          if( extended.output ){
+          if( control[["extended.output"]] ){
             aux <- cov.bhat.betahat[1:n, -(1:n), drop = FALSE] %*% t(X)
             var.pred <- cov.bhat.betahat[1:n, 1:n, drop = FALSE] + aux + t(aux) + 
               X %*% cov.bhat.betahat[-(1:n), -(1:n), drop = FALSE] %*% t(X)
@@ -966,7 +1015,7 @@ function(
             var.target <- V[object[["Tmat"]], object[["Tmat"]]]
             cov.pred.target <- (cov.p.t[1:n,] + X %*% cov.p.t[-(1:n),]) %*% V
             cov.pred.target <- cov.pred.target[object[["Tmat"]], object[["Tmat"]]]
-            if( !full.covmat ){
+            if( !control[["full.covmat"]] ){
               var.pred <- diag( var.pred )
               var.target <- diag( var.target )
               cov.pred.target <- diag( cov.pred.target )
@@ -974,7 +1023,7 @@ function(
           }
           c( 
             list( mse.pred = mse.pred ),
-            if( extended.output ) list( 
+            if( control[["extended.output"]] ) list( 
               var.pred = var.pred, var.target = var.target, cov.pred.target = cov.pred.target
             )
           )
@@ -982,17 +1031,17 @@ function(
         trend = {     ## trend
           aux <- X %*% cov.betahat.l
           aux <- aux[object[["Tmat"]], , drop = FALSE]
-          if( full.covmat ){
+          if( control[["full.covmat"]] ){
             mse.pred <- matrix( NA_real_, length( object[["Tmat"]] ), length( object[["Tmat"]] ) )
             var.pred <- tcrossprod( aux )
-            if( extended.output ){
+            if( control[["extended.output"]] ){
               var.target <- matrix( 0., length( object[["Tmat"]] ), length( object[["Tmat"]] ) )
               cov.pred.target <- matrix( 0., length( object[["Tmat"]] ), length( object[["Tmat"]] ) )
             }
           } else {
             mse.pred <- rep( NA_real_, length( object[["Tmat"]] ) )
             var.pred <- rowSums( aux^2 )
-            if( extended.output ){
+            if( control[["extended.output"]] ){
               var.target <- rep( 0., length( object[["Tmat"]] ) )
               cov.pred.target <- rep( 0., length( object[["Tmat"]] ) )
             }
@@ -1004,7 +1053,7 @@ function(
       ## collect results
       
       pred.se <-  sqrt( 
-        if( full.covmat ){ 
+        if( control[["full.covmat"]] ){ 
           diag( t.result[["mse.pred"]] )
         } else {
           t.result[["mse.pred"]]
@@ -1020,21 +1069,21 @@ function(
       )
       
       if( !is.null(t.result[["var.pred"]]) ){
-        result[["var.pred"]] <- if( full.covmat ){
+        result[["var.pred"]] <- if( control[["full.covmat"]] ){
           diag( t.result[["var.pred"]] ) 
         } else {
           t.result[["var.pred"]] 
         }
       }
       if( !is.null(t.result[["cov.pred.target"]]) ){
-        result[["cov.pred.target"]]<- if( full.covmat ){
+        result[["cov.pred.target"]]<- if( control[["full.covmat"]] ){
           diag( t.result[["cov.pred.target"]] ) 
         } else {
           t.result[["cov.pred.target"]] 
         }
       }
       if( !is.null(t.result[["var.target"]]) ){
-        result[["var.target"]]<- if( full.covmat ){
+        result[["var.target"]]<- if( control[["full.covmat"]] ){
           diag( t.result[["var.target"]] ) 
         } else {
           t.result[["var.target"]] 
@@ -1043,7 +1092,7 @@ function(
       
       result <- as.data.frame( napredict( object[["na.action"]], as.matrix( result ) ) )
             
-      if( full.covmat ){
+      if( control[["full.covmat"]] ){
         
         result <- c(
           list( pred = result, 
@@ -1184,19 +1233,31 @@ function(
     
     ## determine number of prediction parts
     
-    n.part <- ceiling( m / mmax )
-    rs <- ( 0:(n.part-1)) * mmax + 1
-    re <- ( 1:(n.part  )) * mmax; re[n.part] <- m 
+    n.part <- ceiling( m / control[["mmax"]] )
+    rs <- ( 0:(n.part-1)) * control[["mmax"]] + 1
+    re <- ( 1:(n.part  )) * control[["mmax"]]; re[n.part] <- m 
     
-    ncores <- min( n.part, ncores )
+    ncores <- min( n.part, control[["ncores"]] )
     
     parallel <- ncores > 1
     
-    if( full.covmat && n.part > 1 ) stop(
+    ncores.available <- control[["parallel"]][["max.ncores"]]
+    if( sfIsRunning() ) sfStop()
+    
+    control.pmm <- control[["parallel"]]
+    control.pmm[["pmm.ncores"]] <- min(
+      control.pmm[["pmm.ncores"]],
+      max( 1L, floor( (ncores.available - ncores) / ncores ) )
+    )
+    if( parallel && !control.pmm[["allow.recursive"]] ) control.pmm[["pmm.ncores"]] <- 1L
+
+    if( control[["full.covmat"]] && n.part > 1 ) stop(
       "full covariance matrix of prediction errors cannot ",
       "be computed\n  if prediction problem is split into several parts\n",
       "-> increase 'mmax' to avoid splitting"
     )
+    
+
     
     ## handle parallel processing
     
@@ -1212,7 +1273,8 @@ function(
       cov.delta.bhat.betahat.l, cov.betahat.l, cov.bhat.betahat, cov.p.t, Valpha.objects,
       pwidth, pheight, napp,
       signif,
-      extended.output, full.covmat,
+      extended.output, full.covmat, 
+      control.pmm,
       verbose
     ){
       
@@ -1246,7 +1308,8 @@ function(
         pwidth = pwidth, pheight = pheight, napp = napp,
         signif = signif,
         extended.output = extended.output,
-        full.covmat = full.covmat
+        full.covmat = full.covmat,
+        control.pmm = control.pmm
       )
       
       return( result )              
@@ -1264,7 +1327,15 @@ function(
         
         ## export required items to workers
         
+#         junk <- clusterExport( 
+#           cl, 
+#           c( "pmm", "RFoptions", "RFvariogram", "f.stop.cluster" ) 
+#         )
+#         junk <- clusterEvalQ( cl, require( snowfall, quietly = TRUE ) )
         junk <- clusterEvalQ( cl, require( georob, quietly = TRUE ) )
+        
+        save( cl, file = "SOCKcluster.RData" )
+        options( error = f.stop.cluster )
         
         t.result <- parLapply(
           cl,
@@ -1285,14 +1356,22 @@ function(
           cov.bhat.betahat = cov.bhat.betahat,
           cov.p.t = cov.p.t,
           Valpha.objects = object[["Valpha.objects"]],
-          pwidth = pwidth, pheight = pheight, napp = napp,
+          pwidth = control[["pwidth"]], pheight = control[["pheight"]], napp = control[["napp"]],
           signif = signif,
-          extended.output = extended.output, 
-          full.covmat = full.covmat,
+          extended.output = control[["extended.output"]], 
+          full.covmat = control[["full.covmat"]],
+          control.pmm = control.pmm,
           verbose = verbose
         )
         
-        stopCluster(cl)
+        f.stop.cluster( cl )
+        
+        #         junk <- parLapply( cl, 1:length(cl), function( i ) sfStop() )
+        #         junk <- stopCluster( cl )
+        #         if( file.exists( "SOCKcluster.RData" ) ){
+        #           file.remove( "SOCKcluster.RData" )
+        #         } 
+        #         options( error = NULL )
         
       } else {
         
@@ -1316,12 +1395,13 @@ function(
           cov.bhat.betahat = cov.bhat.betahat,
           cov.p.t = cov.p.t,
           Valpha.objects = object[["Valpha.objects"]],
-          pwidth = pwidth, pheight = pheight, napp = napp,
+          pwidth = control[["pwidth"]], pheight = control[["pheight"]], napp = control[["napp"]],
           signif = signif,
-          extended.output = extended.output, 
-          full.covmat = full.covmat,
+          extended.output = control[["extended.output"]], 
+          full.covmat = control[["full.covmat"]],
+          control.pmm = control.pmm,
           verbose = verbose,
-          mc.cores = ncores
+          mc.cores = ncores 
         )
         
       }
@@ -1346,10 +1426,11 @@ function(
         cov.bhat.betahat = cov.bhat.betahat,
         cov.p.t = cov.p.t,
         Valpha.objects = object[["Valpha.objects"]],
-        pwidth = pwidth, pheight = pheight, napp = napp,
+        pwidth = control[["pwidth"]], pheight = control[["pheight"]], napp = control[["napp"]],
         signif = signif,
-        extended.output = extended.output, 
-        full.covmat = full.covmat,
+        extended.output = control[["extended.output"]], 
+        full.covmat = control[["full.covmat"]],
+        control.pmm = control.pmm,
         verbose = verbose
       )
       
@@ -1375,7 +1456,7 @@ function(
     coords <- napredict( object[["na.action"]], object[["locations.objects"]][["coordinates"]] )
     
     if( !identical( type, "terms" ) ){
-      if( full.covmat ){
+      if( control[["full.covmat"]] ){
         result[["pred"]] <- data.frame( coords, result[["pred"]] )
       } else {
         result <- data.frame( coords, result )
@@ -1387,7 +1468,7 @@ function(
     result <- switch(
       class( newdata ),
       data.frame = {
-        if( full.covmat ){
+        if( control[["full.covmat"]] ){
           result[["pred"]] <- data.frame( pred.coords, result[["pred"]] )
         } else {
           result <- data.frame( pred.coords, result )
@@ -1395,7 +1476,7 @@ function(
         result
       },
       SpatialPointsDataFrame = {
-        if( full.covmat ){
+        if( control[["full.covmat"]] ){
           result[["pred"]] <- SpatialPointsDataFrame( 
             coords = coordinates( newdata ), 
             data = result[["pred"]] 
@@ -1410,7 +1491,7 @@ function(
         result
       },
       SpatialPixelsDataFrame = {
-        if( full.covmat ){
+        if( control[["full.covmat"]] ){
           result[["pred"]] <- SpatialPixelsDataFrame( 
             points = coordinates( newdata ), 
             data = result[["pred"]]
@@ -1425,7 +1506,7 @@ function(
       },
       SpatialGridDataFrame = {
         aux <- newdata
-        if( full.covmat ){
+        if( control[["full.covmat"]] ){
           aux@data <- result[["pred"]]
           result[["pred"]] <- aux
         } else {
@@ -1435,7 +1516,7 @@ function(
         result
       },
       SpatialPolygonsDataFrame = {
-        if( full.covmat ){
+        if( control[["full.covmat"]] ){
           result[["pred"]] <- SpatialPolygonsDataFrame( 
             Sr = SpatialPolygons( newdata@polygons ), 
             data = result[["pred"]]
@@ -1454,7 +1535,7 @@ function(
   ## set attributes required for back-transformation by lgnpp
   
   if( !identical( type, "terms" ) ){
-    if( full.covmat ){
+    if( control[["full.covmat"]] ){
       if( is.data.frame( result[["pred"]] ) ){
         attr( result[["pred"]], "variogram.model" )      <- object[["variogram.model"]]
         attr( result[["pred"]], "param" )                <- object[["param"]]
