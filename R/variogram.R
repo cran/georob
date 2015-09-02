@@ -4,7 +4,7 @@ sample.variogram <-
   function(
     response,
     locations,
-    lag.class.def,
+    lag.dist.def,
     xy.angle.def = c( 0., 180. ),
     xz.angle.def = c( 0., 180. ),
     max.lag = Inf,
@@ -19,7 +19,10 @@ sample.variogram <-
   # author:           A. Papritz
   # date:             2012-04-13
   ## 2013-06-12 AP substituting [["x"]] for $x in all lists
+  ## 2015-04-07 AP correcting error when computing directional variograms
   
+  d2r <- pi / 180.
+
   estimator <- match.arg( estimator )
     
   # pad missing coordinates
@@ -55,15 +58,15 @@ sample.variogram <-
   
   # compute angles in xy- and xz-planes
   
-  xy.angle <- -( atan2( lag.vectors[,2], lag.vectors[,1] ) - pi/2. ) / pi * 180.
-  xz.angle <- -( atan2( lag.vectors[,3], lag.vectors[,1] ) - pi/2. ) / pi * 180.
+  xy.angle <- -( atan2( lag.vectors[,2], lag.vectors[,1] ) - pi/2. ) / d2r
+  xz.angle <- -( atan2( lag.vectors[,3], lag.vectors[,1] ) - pi/2. ) / d2r
 
   # define lag class upper limits
   
-  if( length( lag.class.def ) == 1 ) {
-    t.lag.limits <- seq( 0, max( c( t.dist ) ) + lag.class.def, by = lag.class.def )
+  if( length( lag.dist.def ) == 1 ) {
+    t.lag.limits <- seq( 0, max( c( t.dist ) ) + lag.dist.def, by = lag.dist.def )
   } else {
-    t.lag.limits <- lag.class.def
+    t.lag.limits <- lag.dist.def
   }
   
   # group the lag vectors into classes
@@ -119,8 +122,10 @@ sample.variogram <-
       }
       
     }
+    sel <- as.integer( xy.angle.class ) == nlevels( xy.angle.class )
+    xy.angle[sel] <- xy.angle[sel] - 180.
     levels( xy.angle.class )[c( 1, nlevels( xy.angle.class )) ] <- labels
-    xy.angle.mid.class[1] <- xy.angle.mid.class[1] - (180 - xy.angle.mid.class[n-1])
+    xy.angle.mid.class[1] <- xy.angle.mid.class[1] - (180. - xy.angle.mid.class[n-1])
     xy.angle.mid.class <- xy.angle.mid.class[-(n-1)]
   }
   
@@ -167,8 +172,10 @@ sample.variogram <-
       }
       
     }
+    sel <- as.integer( xz.angle.class ) == nlevels( xz.angle.class )
+    xz.angle[sel] <- xz.angle[sel] - 180.
     levels( xz.angle.class )[c( 1, nlevels( xz.angle.class )) ] <- labels
-    xz.angle.mid.class[1] <- xz.angle.mid.class[1] - (180 - xz.angle.mid.class[n-1])
+    xz.angle.mid.class[1] <- xz.angle.mid.class[1] - (180. - xz.angle.mid.class[n-1])
     xz.angle.mid.class <- xz.angle.mid.class[-(n-1)]
   }
   
@@ -271,25 +278,25 @@ sample.variogram <-
     
     # mean angle of lag pairs
     
-    t.aux <- r.result[["lag.dist"]] * sin( xz.angle.mean[t.sel] / 180. * pi )
-    r.result[["lag.x"]] <- t.aux * sin( xy.angle.mean[t.sel] / 180. * pi )
-    r.result[["lag.y"]] <- t.aux * cos( xy.angle.mean[t.sel] / 180. * pi )
-    r.result[["lag.z"]] <- r.result[["lag.dist"]] * cos( xz.angle.mean[t.sel] / 180. * pi )
+    t.aux <- r.result[["lag.dist"]] * sin( xz.angle.mean[t.sel] * d2r )
+    r.result[["lag.x"]] <- t.aux * sin( xy.angle.mean[t.sel] * d2r )
+    r.result[["lag.y"]] <- t.aux * cos( xy.angle.mean[t.sel] * d2r )
+    r.result[["lag.z"]] <- r.result[["lag.dist"]] * cos( xz.angle.mean[t.sel] * d2r )
     
   } else {
     
-    t.aux <- r.result[["lag.dist"]] * sin( xz.angle.mid.class[ as.integer( r.result[["xz.angle"]] ) ] / 180. * pi )
-    r.result[["lag.x"]] <- t.aux * sin( xy.angle.mid.class[ as.integer( r.result[["xy.angle"]] ) ] / 180. * pi )
-    r.result[["lag.y"]] <- t.aux * cos( xy.angle.mid.class[ as.integer( r.result[["xy.angle"]] ) ] / 180. * pi )
+    t.aux <- r.result[["lag.dist"]] * sin( xz.angle.mid.class[ as.integer( r.result[["xz.angle"]] ) ] * d2r )
+    r.result[["lag.x"]] <- t.aux * sin( xy.angle.mid.class[ as.integer( r.result[["xy.angle"]] ) ] * d2r )
+    r.result[["lag.y"]] <- t.aux * cos( xy.angle.mid.class[ as.integer( r.result[["xy.angle"]] ) ] * d2r )
     r.result[["lag.z"]] <- r.result[["lag.dist"]] * 
-      cos( xz.angle.mid.class[ as.integer( r.result[["xz.angle"]] ) ] / 180. * pi )
+      cos( xz.angle.mid.class[ as.integer( r.result[["xz.angle"]] ) ] * d2r )
     
   }
   
   class( r.result) <-  c( "sample.variogram", "data.frame" )
   
   attr( r.result, "ndim")                <- ndim
-  attr( r.result, "lag.class.def")       <- lag.class.def
+  attr( r.result, "lag.dist.def")       <- lag.dist.def
   attr( r.result, "xy.angle.mid.class")  <- xy.angle.mid.class
   attr( r.result, "xz.angle.mid.class")  <- xz.angle.mid.class
   attr( r.result, "estimator" )          <- estimator
@@ -457,7 +464,7 @@ fit.variogram.model <-
     fit.aniso = c( f1 = FALSE, f2 = FALSE, omega = FALSE, phi = FALSE, zeta = FALSE ),
     max.lag = max( sv[["lag.dist"]] ),
     min.npairs = 30,
-    weighting.method = c(  "cressie", "equal", "npairs"),
+    weighting.method = c( "cressie", "equal", "npairs" ),
     hessian = TRUE,
     verbose = 0,
     ...
@@ -470,6 +477,7 @@ fit.variogram.model <-
   ## 2012-12-10 A. Papritz
   ## 2013-06-12 AP substituting [["x"]] for $x in all lists
   ## 2014-05-15 AP changes for version 3 of RandomFields
+  ## 2015-04-07 AP changes for fitting anisotropic variograms
   
   ## auxiliary function called by optim to compute objective function
   
@@ -477,16 +485,18 @@ fit.variogram.model <-
     function( 
       adjustable.param, envir, variogram.model, fixed.param, param.name, aniso.name,
       isotropic, param.tf, bwd.tf, lag.vectors, gamma, npairs, 
-      weighting.method, verbose
+      weighting.method, d2r, verbose
     )
   {
+    
     ## transform variogram and anisotropy parameters back to original scale
     
     param <- c( adjustable.param, fixed.param )[param.name]
     
     param <- sapply(
       param.name,
-      function( x, param.tf, param ) bwd.tf[[param.tf[x]]]( param[x] ),
+      function( x, bwd.tf, param.tf, param ) bwd.tf[[param.tf[x]]]( param[x] ),
+      bwd.tf = bwd.tf,
       param.tf = param.tf,
       param = param
     )
@@ -496,7 +506,8 @@ fit.variogram.model <-
     
     aniso <- sapply(
       aniso.name,
-      function( x, param.tf, param ) bwd.tf[[param.tf[x]]]( param[x] ),
+      function( x, bwd.tf, param.tf, param ) bwd.tf[[param.tf[x]]]( param[x] ),
+      bwd.tf = bwd.tf,
       param.tf = param.tf,
       param = aniso
     )
@@ -551,7 +562,9 @@ fit.variogram.model <-
     ## output parameters
     
     t.param <- param
-    if( !isotropic ) t.param <- c( t.param, param.aniso.item[["aniso"]][["aniso"]] )
+    if( !isotropic ) t.param <- c( 
+      t.param, param.aniso.item[["aniso"]][["aniso"]] / c( rep( 1., 2 ), rep( d2r, 3 ) )
+    )
     if( verbose > 0 ) {
       cat(
         format(
@@ -563,7 +576,7 @@ fit.variogram.model <-
     
     ## compute the semivariance
         
-    t.model <- compute.semivariance(
+    t.model <- f.aux.gamma(
       lag.vectors, 
       variogram.model, param, param.aniso.item[["aniso"]] 
     )
@@ -605,6 +618,8 @@ fit.variogram.model <-
     
   }
   
+  d2r <- pi / 180.
+      
   ## match arguments
   
   cl <- match.call()
@@ -709,12 +724,18 @@ fit.variogram.model <-
   } else {
     param.tf <- all.param.tf[t.sel]
   }
-    
+  param.tf <- sapply(
+    param.tf,
+    function( x ) if( length(x) > 1L ) x[variogram.model] else x
+  )
+  names( param.tf ) <- param.name 
+  
   ##  transform initial variogram parameters
   
   transformed.param <- sapply(
     param.name,
-    function( x, param.tf, param ) fwd.tf[[param.tf[x]]]( param[x] ),
+    function( x, fwd.tf, param.tf, param ) fwd.tf[[param.tf[x]]]( param[x] ),
+    fwd.tf = fwd.tf,
     param.tf = param.tf,
     param = param
   )
@@ -777,6 +798,16 @@ fit.variogram.model <-
     "initial value of parameter 'zeta' must be in [-90, 90]" 
   )
 
+  ## adjust default initial values of anisotropy parameters if these are
+  ## fitted
+  
+  if( fit.aniso["omega"] && identical( aniso["f1"], 1. ) ) aniso["f1"] <- aniso["f1"] - sqrt( .Machine$double.eps )
+  if( fit.aniso["phi"] ){
+    if( identical( aniso["f1"], 1. ) ) aniso["f1"] <- aniso["f1"] - 0.0001
+    if( identical( aniso["f2"], 1. ) ) aniso["f2"] <- aniso["f2"] - 0.0001
+  }
+  if( fit.aniso["zeta"] && identical( aniso["f2"], 1. ) ) aniso["f2"] <- aniso["f2"] - 0.0001
+
   ##  rearrange and check flags controlling anisotropy parameter fitting 
   
   fit.aniso <- fit.aniso[aniso.name]
@@ -790,18 +821,24 @@ fit.variogram.model <-
   } else {
     aniso.tf <- all.param.tf[t.sel]
   }
-    
-  ##  convert angles to radian
+  aniso.tf <- sapply(
+    aniso.tf,
+    function( x ) if( length(x) > 1L ) x[variogram.model] else x
+  )
+  names( aniso.tf ) <- aniso.name 
   
-  aniso[c("omega", "phi", "zeta" )] <- aniso[c("omega", "phi", "zeta" )] / 180 * pi
+  ##  convert angles from degrees to radian
+  
+  aniso[c("omega", "phi", "zeta" )] <- aniso[c("omega", "phi", "zeta" )] * d2r
   
   ##  transform initial anisotropy parameters
   
   transformed.aniso <- sapply(
     aniso.name,
-    function( x, param.tf, param ){
+    function( x, fwd.tf, param.tf, param ){
       fwd.tf[[param.tf[x]]]( param[x] )
     },
+    fwd.tf = fwd.tf,
     param.tf = aniso.tf,
     param = aniso
   )
@@ -824,7 +861,7 @@ fit.variogram.model <-
   
   ##  create environment to store items required to compute likelihood and
   ##  estimating equations that are provided by
-  ##  prepare.likelihood.calculations
+  ##  likelihood.calculations
   
   envir <- new.env()
   
@@ -867,14 +904,15 @@ fit.variogram.model <-
     gamma = sv[["gamma"]][t.lag.select],
     npairs = sv[["npairs"]][t.lag.select],
     weighting.method = weighting.method,
+    d2r = d2r,
     verbose = verbose
   )
   
   ## get param.aniso.item
   
   param.aniso.item <- get( "param.aniso.item", pos = as.environment( envir ) )
-  param <- param.aniso.item[["param"]]
-  aniso <- param.aniso.item[["aniso"]][["aniso"]]
+  param.aniso.item[["aniso"]][["aniso"]] <- 
+    param.aniso.item[["aniso"]][["aniso"]] / c( rep( 1., 2 ), rep( d2r, 3 ) )
   
   ## collect results
   
@@ -902,7 +940,7 @@ fit.variogram.model <-
   
   class( r.result ) <- "fitted.variogram"
   
-  attr( r.result, "lag.class.def" )      <- attr( sv, "lag.class.def" )
+  attr( r.result, "lag.dist.def" )      <- attr( sv, "lag.dist.def" )
   attr( r.result, "xy.angle.mid.class" ) <- attr( sv, "xy.angle.mid.class" )
   attr( r.result, "xz.angle.mid.class" ) <- attr( sv, "xz.angle.mid.class" )
   
@@ -942,7 +980,8 @@ print.fitted.variogram <-
     
     cat("\n")
     cat( "Anisotropy parameters: ", "\n" )
-    aniso <- x[["aniso"]][["aniso"]] * c( rep(1, 2), rep( 180/pi, 3 ) )
+#     aniso <- x[["aniso"]][["aniso"]] * c( rep(1, 2), rep( 180./pi, 3 ) )
+    aniso <- x[["aniso"]][["aniso"]]
     names( aniso ) <- ifelse(
       x[["aniso"]][["fit.aniso"]],
       names( aniso ),
@@ -973,6 +1012,7 @@ summary.fitted.variogram <-
   
   ## 2012-12-10 A. Papritz
   ## 2013-06-12 AP substituting [["x"]] for $x in all lists
+  ## 2015-04-07 AP changes for fitting anisotropic variograms
 
   ans <- object[c(
     "call", "residuals", "weights", "converged", "convergence.code", 
@@ -987,7 +1027,7 @@ summary.fitted.variogram <-
   
   if( !object[["aniso"]][["isotropic"]] ) ans[["param"]] <- rbind( 
     ans[["param"]],
-    as.matrix( object[["aniso"]][["aniso"]], ncol = 1 ) * c( rep( 1, 2 ), rep( 180/pi, 3 ) )
+    as.matrix( object[["aniso"]][["aniso"]], ncol = 1 )
   )
   
   colnames( ans[["param"]] ) <- "Estimate"
@@ -1041,28 +1081,22 @@ summary.fitted.variogram <-
         )
         sel.names <- sel.names[sr]
         
-        ff <- c( rep( 1, length( object[["param"]] ) + 2 ), rep( 180/pi, 3 ) )
-        names( ff ) <- names( c( object[["param"]], object[["aniso"]][["aniso"]] ) )
-        
         ci[sel.names, ] <- t( 
           sapply(
             sel.names,
-            function( x, param, f, se, param.tf, trafo.fct, inv.trafo.fct ){
+            function( x, param, se, param.tf, trafo.fct, inv.trafo.fct ){
               inv.trafo.fct[[param.tf[x]]]( 
                 trafo.fct[[param.tf[x]]]( param[x] ) + 
-                c(-1, 1) * se[x] * qnorm( (1-signif)/2, lower.tail = FALSE ) 
+                c(-1, 1) * se[x] * qnorm( (1-signif)/2., lower.tail = FALSE ) 
               )
             },
             param         = c( object[["param"]], object[["aniso"]][["aniso"]] ),
-            f             = ff,
             se            = se,
             param.tf      = object[["param.tf"]],
             trafo.fct     = object[["fwd.tf"]],
             inv.trafo.fct = object[["bwd.tf"]]
           )
         )
-        is.angle <- rownames( ci ) %in% c( "omega", "phi", "zeta" )
-        if( sum(is.angle) > 0 ) ci[is.angle, ] <- ci[is.angle, ] * 180/pi
         ans[["param"]] <- cbind( ans[["param"]], ci )
         if( correlation ) ans[["cor.tf.param"]] <- cor.tf.param
         
@@ -1095,6 +1129,7 @@ print.summary.fitted.variogram <-
   ## 2012-04-13 A. Papritz
   ## 2012-12-18 AP invisible(x)
   ## 2013-06-12 AP substituting [["x"]] for $x in all lists
+  ## 2015-04-07 AP changes for fitting anisotropic variograms
   
   cat("\nCall:")
   cat( paste( deparse(x[["call"]]), sep = "\n", collapse = "\n"),  "\n", sep = "" )
@@ -1161,7 +1196,7 @@ plot.georob <-
   function(
     x, type, what = c("variogram", "covariance", "correlation"),
     plot.sv = TRUE, add = FALSE,
-    lag.class.def, 
+    lag.dist.def, 
     xy.angle.def = c( 0., 180. ),
     xz.angle.def = c( 0., 180. ),
     max.lag = Inf,
@@ -1189,7 +1224,7 @@ plot.georob <-
   r.sv <- sample.variogram(
     response = residuals( x, level = 0 ), 
     locations = x[["locations.objects"]][["coordinates"]],
-    lag.class.def = lag.class.def,
+    lag.dist.def = lag.dist.def,
     xy.angle.def = xy.angle.def, 
     xz.angle.def = xz.angle.def,
     max.lag = max.lag,
@@ -1270,6 +1305,8 @@ lines.georob <- lines.fitted.variogram <-
   ## 2013-06-12 AP substituting [["x"]] for $x in all lists
   ## 2014-05-08 AP changes for plotting covariances and correlations
   
+  d2r <- pi / 180.
+  
   what <- match.arg( what )
   
   if( x$variogram.model == "RMfbm" && what != "variogram" ) stop(
@@ -1279,8 +1316,8 @@ lines.georob <- lines.fitted.variogram <-
   ## generate grid of angle classes
   
   angle <- expand.grid(
-    xy = xy.angle / 180 * pi,
-    xz = xz.angle / 180 * pi
+    xy = xy.angle * d2r,
+    xz = xz.angle * d2r
   )
   
   ## set up lag distances
@@ -1325,7 +1362,7 @@ lines.georob <- lines.fitted.variogram <-
       
       ## compute semivariance
       
-      r.gamma <- compute.semivariance(
+      r.gamma <- f.aux.gamma(
         lag.vector, variogram.model, param, aniso
       )
       

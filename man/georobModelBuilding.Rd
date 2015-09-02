@@ -1,4 +1,4 @@
-% 2014-05-28 A. Papritz
+% 2015-06-30 A. Papritz
 % R CMD Rdconv -t html -o bla.html georobModelBuilding.Rd ; open bla.html; R CMD Rd2pdf --force georobModelBuilding.Rd; 
 
 \encoding{macintosh}
@@ -25,9 +25,9 @@
 
 \usage{
 
-\method{deviance}{georob}(object, warn = TRUE, ...)
+\method{deviance}{georob}(object, warn = TRUE, REML = FALSE, ...)
 
-\method{logLik}{georob}(object, REML = FALSE, ...)
+\method{logLik}{georob}(object, warn = TRUE, REML = FALSE, ...)
 
 \method{extractAIC}{georob}(fit, scale = 0, k = 2, ...)
 
@@ -50,8 +50,8 @@ step(object, ...)
     keep = NULL, steps = 1000, k = 2, data = NULL, fixed = TRUE, 
     use.fitted.param = TRUE, verbose = 0, ncores = 1, ...)
 
-\method{waldtest}{georob}(object, ..., vcov = NULL, test = c("Chisq", "F"), 
-    name = NULL, fixed = TRUE)
+\method{waldtest}{georob}(object, ..., vcov = NULL, test = c("F", "Chisq"), 
+    name = NULL)
 
 }
 
@@ -65,10 +65,9 @@ step(object, ...)
   \item{direction}{the mode of stepwise search, see
     \code{\link[stats]{step}}.  }
   
-  \item{fixed}{logical controlling whether the variogram parameters are
-    \emph{not} adjusted when fitting alternative regression models for Wald
-    test and for \code{add}ing or \code{drop}ping model terms (default
-    \code{TRUE}).}
+    \item{fixed}{logical controlling whether the variogram parameters are
+    \emph{not} adjusted when fitting alternative regression models for
+    \code{add}ing or \code{drop}ping model terms (default \code{TRUE}).}
   
   \item{k}{numeric specifying the 'weight' of the equivalent degrees of
     freedom (=: edf) part in the AIC formula, see
@@ -148,8 +147,8 @@ step(object, ...)
 
   \code{logLik} returns the the maximized (restricted) loglikelihood.  For
   a robust fit, the loglikelihood is not defined.  The function then
-  returns \code{NA} if \code{REML==TRUE} or computes the likelihood of an
-  equivalent Gaussian model with heteroscedastic nugget (see above).
+  computes the (restricted) loglikelihood of an equivalent Gaussian model with
+  heteroscedastic nugget (see above).
   
   The methods \code{extractAIC}, \code{add1}, \code{drop1} and \code{step}
   are used for stepwise model building.  If \code{fixed==TRUE} (default)
@@ -188,14 +187,13 @@ r.logzn.reml <- georob(log(zinc) ~ sqrt(dist), data = meuse, locations = ~ x + y
     variogram.model = "RMexp",
     param = c( variance = 0.15, nugget = 0.05, scale = 200 ),
     tuning.psi = 1000,
-    control = georob.control(cov.bhat = TRUE, cov.ehat.p.bhat = TRUE))
+    control = control.georob(cov.bhat = TRUE, cov.ehat.p.bhat = TRUE))
 summary(r.logzn.reml, correlation = TRUE)
 
 deviance(r.logzn.reml)
 logLik(r.logzn.reml)
 
 waldtest(r.logzn.reml, .~. + ffreq)
-waldtest(r.logzn.reml, .~. + ffreq, fixed = FALSE)
 
 step(r.logzn.reml, ~ sqrt(dist) + ffreq + soil)
 

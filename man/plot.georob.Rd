@@ -19,7 +19,7 @@ sample variogram of the (robust) regression residuals.
 
 \usage{
 \method{plot}{georob}(x, type, what = c("variogram", "covariance", "correlation"),
-    plot.sv = TRUE, add = FALSE, lag.class.def, 
+    plot.sv = TRUE, add = FALSE, lag.dist.def, 
     xy.angle.def = c(0, 180), xz.angle.def = c(0, 180), 
     max.lag = Inf, estimator = c("mad", "qn", "ch", "matheron"), 
     mean.angle = TRUE, col, pch, lty, ...)
@@ -48,7 +48,7 @@ sample variogram of the (robust) regression residuals.
   generated (\code{FALSE}, default) or whether the information should be
   added to the current plot (\code{TRUE}).}
 
-  \item{lag.class.def}{a numeric scalar defining a constant bin width for
+  \item{lag.dist.def}{a numeric scalar defining a constant bin width for
   grouping the lag distances or a numeric vector with the upper bounds of a
   set of contiguous bins.}
   
@@ -153,7 +153,7 @@ r.logzn.rob <- update(r.logzn.reml, tuning.psi = 1)
     
 summary(r.logzn.rob, correlation = TRUE)
 
-plot(r.logzn.reml, lag.class.def = seq( 0, 2000, by = 100 ))
+plot(r.logzn.reml, lag.dist.def = seq( 0, 2000, by = 100 ))
 lines(r.logzn.rob, col = "red")}
 }
 

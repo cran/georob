@@ -1,4 +1,4 @@
-% 2014-05-28 A. Papritz
+% 2015-06-30 A. Papritz
 % R CMD Rdconv -t html -o bla.html validate.predictions.Rd ; open bla.html; R CMD Rd2pdf --force validate.predictions.Rd; 
 
 \encoding{macintosh}
@@ -18,11 +18,16 @@
   Gneiting et al.  (2007) for assessing probabilistic forecasts.}
 
 \usage{
+% validate.predictions(data, pred, se.pred, 
+%     statistic = c( "crps", "pit", "mc", "bs", "st" ), 
+%     robust = FALSE, ncutoff = NULL, se.signal = NULL, scld.res = NULL)
 validate.predictions(data, pred, se.pred, 
-    statistic = c("pit", "mc", "bs", "st"), ncutoff = NULL)
+    statistic = c( "crps", "pit", "mc", "bs", "st" ), ncutoff = NULL)
     
-\method{plot}{cv.georob}(x, type = c("sc", "lgn.sc", "ta", "qq", "pit", "mc", "bs"), 
-    ncutoff = NULL, add = FALSE, col, pch, lty, main, xlab, ylab, ...)
+\method{plot}{cv.georob}(x, 
+    type = c( "sc", "lgn.sc", "ta", "qq", "hist.pit", "ecdf.pit", "mc", "bs" ), 
+    smooth = TRUE, span = 2/3, ncutoff = NULL, add = FALSE, 
+    col, pch, lty, main, xlab, ylab, ...)
  
 \method{print}{cv.georob}(x, digits = max(3, getOption("digits") - 3), ...)   
  
@@ -44,7 +49,9 @@ validate.predictions(data, pred, se.pred,
   
     \itemize{
     
-      \item \code{"pit"}: probability integral transform (default),
+      \item \code{"crps"}: continuous ranked probability score (default),
+      
+      \item \code{"pit"}: probability integral transform,
       
       \item \code{"mc"}: average predictive distribution (marginal
       calibration),
@@ -61,6 +68,22 @@ validate.predictions(data, pred, se.pred,
   for which CDFs are evaluated (\code{type = "mc"}), or the number of
   thresholds for which the Brier score is computed (\code{type = "bs"}),
   see \emph{Details} (default: \code{min(500, length(data))}).}
+  
+  %   \item{robust}{logical scalar controlling whether robust predictive
+  %   distribution of response \eqn{Y(\mbox{\boldmath$s$\unboldmath})}{Y(s)}
+  %   should be used for computing \code{pit}, \code{mc}, \code{bs} and
+  %   \code{crps}, see \emph{Details}.}
+  %   
+  %   \item{se.signal}{numeric vector with standard error of predicted signal
+  %   \eqn{Z(\mbox{\boldmath$s$\unboldmath}) =
+  %   \mbox{\boldmath$x$\unboldmath}(\mbox{\boldmath$s$\unboldmath})^\mathrm{T}
+  %   \mbox{\boldmath$\beta$\unboldmath} +
+  %   B(\mbox{\boldmath$s$\unboldmath})}{Y(s) = x(s)^T \beta + B(s)}, see
+  %   \emph{Details}.}
+  %   
+  %   \item{scld.res}{numeric vector with scaled residuals of fitted
+  %   \code{georob} object used to compute the predictions, see
+  %   \emph{Details}.}
   
   \item{x, model, object}{objects of class \code{cv.georob}.}
   
@@ -82,8 +105,11 @@ validate.predictions(data, pred, se.pred,
       
       \item \code{"qq"}: normal QQ plot of standardized prediction errors.
       
-      \item \code{"pit"}: histogram of probability integral transform, see
+      \item \code{"hist.pit"}: histogram of probability integral transform, see
       \emph{Details}.
+      
+      \item \code{"ecdf.pit"}: empirical cdf of probability integral
+      transform, see \emph{Details}.
       
       \item \code{"mc"}: a marginal calibration plot, see \emph{Details},
       
@@ -94,12 +120,11 @@ validate.predictions(data, pred, se.pred,
   
   }
   
-  \item{se}{logical controlling if the standard errors of the averaged
-  continuous ranked probability score and of the mean and dispersion
-  statistics of the prediction errors (see \emph{Details}) are computed
-  from the respective values computed for the \eqn{K} cross-validation
-  subsets (default: \code{FALSE}).}
-  
+  \item{smooth}{control whether scatter plots of data vs. predictions
+  should be smoothed by \code{\link[stats]{loess.smooth}}.}
+
+  \item{span}{smoothness parameter for loess (see \code{\link[stats]{loess.smooth}}).}
+
   \item{add}{logical controlling wether the current high-level plot is
   added to an existing graphics without cleaning the frame before (default:
   \code{FALSE}).}
@@ -107,6 +132,12 @@ validate.predictions(data, pred, se.pred,
   \item{main, xlab, ylab}{title and axes labels of plot.}
   
   \item{col, pch, lty}{color, symbol and line type.}
+  
+  \item{se}{logical controlling if the standard errors of the averaged
+  continuous ranked probability score and of the mean and dispersion
+  statistics of the prediction errors (see \emph{Details}) are computed
+  from the respective values computed for the \eqn{K} cross-validation
+  subsets (default: \code{FALSE}).}
   
   \item{...}{additional arguments passed to the methods.}
   

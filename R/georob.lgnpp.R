@@ -75,11 +75,12 @@ lgnpp <-
   ## 2012-05-07 AP backtransformation of block predictions under permanence 
   ## of lognormality assumption
   ## 2013-06-12 AP substituting [["x"]] for $x in all lists
+  ## 2015-06-23 AP modifications for missing compontents 'lower' and 'upper'
   
   ## auxiliary function to backtransform the point predictions and 
   ## optionally the mean squared errors and the prediction intervals
   
-  f.backtrf <- function( object, btMb = 0., pred.only ){
+ f.backtrf <- function( object, btMb = 0., pred.only ){
     
     ## object: dataframe with the prediction results of the 
     ##         log-transformed predictions computed with extended.output = TRUE 
@@ -90,6 +91,7 @@ lgnpp <-
     t.result <- exp( 
       object[, "pred"] + 0.5 * ( object[, "var.target"] + btMb - object[, "var.pred"] )
     )
+    
     if( !pred.only ){
       t.mu <- exp( object[, "trend"] + 0.5 * object[, "var.target"] )
       t.result <- data.frame(
@@ -97,10 +99,17 @@ lgnpp <-
         lgn.se = t.mu * sqrt( 
           exp( object[, "var.target"] ) + exp( object[, "var.pred"] ) - 
           2 * exp( object[, "cov.pred.target"] )                       
-        ),
-        lgn.lower = exp( object[, "lower"] ),
-        lgn.upper = exp( object[, "upper"] )
+        )
       )
+      if( all( c( "lower", "upper" ) %in% names( object ) ) ){
+        t.result <- cbind( t.result,
+          data.frame(
+            lgn.lower = exp( object[, "lower"] ),
+            lgn.upper = exp( object[, "upper"] )
+          )
+        )
+        
+      }
     }
     
     return( t.result )
@@ -109,7 +118,7 @@ lgnpp <-
   
   ## check whether back-transformation for object has been already done
   
-  if( all( c( "lgn.pred", "lgn.se", "lgn.lower", "lgn.upper" ) %in% names( object ) ) ){
+  if( all( c( "lgn.pred", "lgn.se" ) %in% names( object ) ) ){
     return( object )  
   }
   
@@ -167,14 +176,13 @@ lgnpp <-
     "attributes 'variogram.model', 'param' or 'type' missing in 'object'"  
   )
   
-  if( variogram.model %in% georob.control()[["irf.models"]] ) stop(
+  if( variogram.model %in% control.georob()[["irf.models"]] ) stop(
     "lognormal kriging requires a weakly stationary variogram model"
   )
   
   ## check whether object is complete
   
-  if( is.null( t.object[["pred"]]) || is.null( t.object[["lower"]] ) ||
-    is.null( t.object[["upper"]] ) || is.null( t.object[["trend"]] ) || 
+  if( is.null( t.object[["pred"]]) || is.null( t.object[["trend"]] ) || 
     is.null( t.object[["var.pred"]] ) || is.null( t.object[["cov.pred.target"]] ) ||
     is.null( t.object[["var.target"]] )
   ) stop( "some required items are missing, ", 

@@ -22,7 +22,7 @@ cv.georob <-
   function(
     object,
     formula = NULL, subset = NULL,
-    nset = 10, seed = NULL, sets = NULL,
+    method = c( "block", "random" ), nset = 10, seed = NULL, sets = NULL,
     duplicates.in.same.set = TRUE,
     re.estimate = TRUE, param = object[["param"]], 
     fit.param = object[["initial.objects"]][["fit.param"]],
@@ -64,13 +64,22 @@ cv.georob <-
   ## 2014-05-15 AP changes for version 3 of RandomFields
   ## 2014-05-28 AP catching error when all variogram parameters are fixed
   ## 2014-08-18 AP changes for parallelized computations
+  ## 2015-03-13 AP minor changes if models are not re-estimated
+  ## 2015-03-16 AP items to compute huberized prediction error
+  ## 2015-06-23 AP modifications for robust prediction of response
+  ## 2015-07-17 AP excluding blocks of observations
+  ## 2015-07-20 AP inactivation of modifications for robust prediction of response 
+  ##               (variables: robust, se.signal, scld.res, resscl)
+  ## 2015-08-28 AP computation of hessian suppressed
+  
   
   ## auxiliary function that fits the model and computes the predictions of
   ## a cross-validation set
   
   f.aux <- function( 
     ..i.., object, formula, data, sets, re.estimate, 
-    param, fit.param, aniso, fit.aniso, lgn, verbose, ...
+    param, fit.param, aniso, fit.aniso, lgn, 
+    verbose, ...
   ){  ## cv function
     
     if (verbose) cat( "\n\n  processing cross-validation set", ..i.., "\n" ) 
@@ -80,9 +89,8 @@ cv.georob <-
     if( !re.estimate ){
       fit.param <- c( 
         variance = FALSE, snugget = FALSE, nugget = FALSE, scale = FALSE, 
-        alpha = FALSE, beta = FALSE, delta = FALSE, 
-        gamma = FALSE, kappa = FALSE, lambda = FALSE, mu = FALSE, nu = FALSE,
-        f1 = FALSE, f2  =FALSE, omega = FALSE, phi = FALSE, zeta = FALSE      
+        alpha = FALSE, beta = FALSE, delta = FALSE, gamma = FALSE, 
+        kappa = FALSE, lambda = FALSE, mu = FALSE, nu = FALSE
       )[names( param )]
       fit.aniso <- c( f1 = FALSE, f2 = FALSE, omega = FALSE, phi = FALSE, zeta = FALSE )
     }
@@ -118,12 +126,17 @@ cv.georob <-
     
     ## compute predictions for current set
     
+    ## note that the signal is predicted here; the predictive distribution
+    ## of the response is then modelled from the pooled cross-validation
+    ## predictions of th signal and the residuals of the object fitted to
+    ## the full data set (cf.  main part of the function)
+    
     t.predict <- predict( 
-      t.georob, newdata = data[sets[[..i..]], ], type = "response",
+      t.georob, newdata = data[sets[[..i..]], ], type = "signal", signif = NULL,
       mmax = length( sets[[..i..]] ),
       control = control.predict.georob( ncores = 1, extended.output = lgn ) 
     )
-    
+        
     ## backtransformation for log-normal kriging
     
     if( lgn ){
@@ -134,14 +147,7 @@ cv.georob <-
     }
     
     t.predict <- data.frame( i = sets[[..i..]], t.predict )
-    
-    t.ex <- c( 
-      grep( "lower", colnames( t.predict ), fixed = TRUE ),
-      grep( "upper", colnames( t.predict ), fixed = TRUE )
-    )
-    
-    t.predict <- t.predict[, -t.ex]
-    
+        
     if( reduced.output ){
       
       if( !is.null( t.georob[["cov"]][["cov.betahat"]] ) ){
@@ -165,6 +171,10 @@ cv.georob <-
     return( list( pred = t.predict, fit = t.georob ) )
     ## end cv function
   }
+  
+  ## begin of main body of function
+  
+  method <- match.arg( method )
     
   ## check consistency of arguments
   
@@ -219,13 +229,24 @@ cv.georob <-
   if( is.null( sets ) ){
     
     if( !is.null( seed ) ) set.seed( seed )
-    sets <- runif( NROW( data ) )
-    sets <- cut( 
-      sets, 
-      breaks = c( -0.1, quantile( sets, probs = ( 1:(nset-1)/nset ) ), 1.1 )
+    
+    sets <- switch(
+      method,
+      random = {
+        sets <- runif( NROW( data ) )
+        sets <- cut( 
+          sets, 
+          breaks = c( -0.1, quantile( sets, probs = ( 1:(nset-1)/nset ) ), 1.1 )
+        )
+        factor( as.integer( sets ) )
+      },
+      block = {
+        sets <- kmeans( object[["locations.objects"]][["coordinates"]], centers = nset )[["cluster"]]
+        if( !is.null( subset ) ) sets <- sets[subset]
+        sets
+      }
     )
-    sets <- factor( as.integer( sets ) )
-
+    
   } else {
     
     nset <- length( unique( sets ) )
@@ -332,7 +353,37 @@ cv.georob <-
   if( ( is.matrix( fit.aniso ) || is.data.frame( fit.aniso ) ) && nrow( aniso )!= nset ) stop(
     "'fit.aniso' must have 'nset' rows if it is a matrix or data frame"  
   )
+  
+  ## set hessian equal to FALSE in control argument of georob call and update
+  ## call
+  
+  if( reduced.output || !return.fit ){
     
+    cl <- object[["call"]]
+    
+    if( "control" %in% names(cl) ){
+      
+      ## georob called with control argument
+      
+      cl.control <- as.list( cl[["control"]] )
+      cl <- cl[ -match( "control", names(cl) ) ]
+      if( "hessian" %in% names(cl.control) ){
+        cl.control["hessian"] <- list( hessian = FALSE )
+      } else {
+        cl.control <- c( cl.control, hessian = FALSE )
+      }
+      
+    } else {
+      
+      ## georob called without control argument
+      
+      cl.control <- list( as.symbol("control.georob"), hessian = FALSE )
+      
+    }
+    
+    object[["call"]] <- as.call(  c( as.list(cl), control = as.call(cl.control) ) )
+  }
+  
   ## loop over all cross-validation sets
   
   if( .Platform[["OS.type"]] == "windows" ){
@@ -356,7 +407,7 @@ cv.georob <-
       re.estimate = re.estimate,
       param = param, fit.param = fit.param,
       aniso = aniso, fit.aniso = fit.aniso,
-      lgn = lgn,
+      lgn = lgn, 
       verbose = verbose,
       ...
     )
@@ -377,7 +428,7 @@ cv.georob <-
       re.estimate = re.estimate,
       param = param, fit.param = fit.param,
       aniso = aniso, fit.aniso = fit.aniso,
-      lgn = lgn,
+      lgn = lgn, 
       verbose = verbose,
       mc.cores = ncores,
       mc.allow.recursive = FALSE,
@@ -385,7 +436,7 @@ cv.georob <-
     )
     
   }
-    
+  
   ## create single data frame with cross-validation results 
   
   result <- t.result[[1]][["pred"]]
@@ -421,6 +472,31 @@ cv.georob <-
     result[,  c(isubset, idata, ipred, ise)]
   )
   
+  ## compute prediction standard errors of response 
+  
+  #   if( object[["tuning.psi"]] < object[["control"]][["tuning.psi.nr"]] ){
+  #     
+  #     ## robust
+  #     
+  #     resscl <- 1.
+  #     warning( "scale factor for computing empirical distribution of residuals equals 1" )
+  #     scld.res <- object[["residuals"]] / resscl
+  #     se.signal <- result[, "se"]
+  #     result[, "se"] <- sqrt( 
+  #       result[, "se"]^2 + var(scld.res) * (length(scld.res) - 1) / length(scld.res) 
+  #     )
+  #   } else {
+  
+    ## Gaussian 
+    
+  #     scld.res <- NULL
+  #     se.signal <- NULL
+  result[, "se"] <- sqrt( result[, "se"]^2 + object[["param"]]["nugget"] )
+    
+  #   }
+  
+  ## prepare model fits for return
+  
   t.fit <- lapply( t.result, function( x ) return( x[["fit"]] ) )
   
   if( re.estimate && !all( sapply( t.fit, function(x) x[["converged"]] ) ) ) warning(
@@ -433,6 +509,13 @@ cv.georob <-
     fit = if( return.fit ) t.fit else NULL
   )
   
+  #   attr( result[["pred"]], "nugget" )     <- sapply( t.fit, function(x) x[["param"]]["nugget"] )
+  #   attr( result[["pred"]], "psi.func" )   <- object[["control"]][["psi.func"]]
+  attr( result[["pred"]], "tuning.psi" ) <- object[["tuning.psi"]]
+  #   attr( result[["pred"]], "exp.gauss.dpsi" )       <- object[["expectations"]][["exp.gauss.dpsi"]]
+  #   attr( result[["pred"]], "se.signal" )  <- se.signal
+  #   attr( result[["pred"]], "scaled.residuals" )   <- scld.res
+  
   class( result ) <- "cv.georob"
   
   invisible( result )
@@ -443,7 +526,8 @@ cv.georob <-
 
 plot.cv.georob <-
   function( 
-    x, type = c( "sc", "lgn.sc", "ta", "qq", "pit", "mc", "bs" ), 
+    x, type = c( "sc", "lgn.sc", "ta", "qq", "hist.pit", "ecdf.pit", "mc", "bs" ), 
+    smooth = TRUE, span = 2/3,
     ncutoff = NULL, 
     add = FALSE, 
     col, pch, lty,
@@ -456,6 +540,8 @@ plot.cv.georob <-
   
   ## 2011-12-21 A. Papritz
   ## 2013-06-12 AP substituting [["x"]] for $x in all lists
+  ## 2015-03-12 AP adding smooth curve of types sc and lgn.sc
+  ## 2015-06-25 AP new method to compute pit, mc, bs and crps (Gaussian and robust)
   
   x <- x[["pred"]]
   
@@ -465,15 +551,27 @@ plot.cv.georob <-
     "lognormal kriging results missing, use 'lgn = TRUE' for cross-validation"
   )
   
-  if( type %in% c( "pit", "mc", "bs" ) ){
+  ## extract scaled residuals and predictions standard error of signal for
+  ## a robust fit
+  
+  #   robust    <- attr( x, "tuning.psi" ) < control.georob()[["tuning.psi.nr"]]  
+  #   scld.res  <- attr( x, "scaled.residuals" )
+  #   se.signal <- attr( x, "se.signal" )
+  
+  ## compute validation statistics
+
+  if( type %in% c( "hist.pit", "ecdf.pit", "mc", "bs" ) ){
     
     result <- validate.predictions( 
       data = x[["data"]],
       pred = x[["pred"]],
       se.pred = x[["se"]],
-      statistic = type, ncutoff = ncutoff
-    )
-    
+      statistic = gsub( "ecdf.", "", gsub( "hist.", "", type ) ), 
+    #       robust = robust,
+    ncutoff = ncutoff#,
+    #       se.signal = se.signal,
+    #       scld.res <- scld.res
+  )
   }
   
   if( missing( col ) ) col <- 1
@@ -501,6 +599,10 @@ plot.cv.georob <-
         )
       }
       
+      if( smooth ){
+        lines( loess.smooth( x[["pred"]], x[["data"]], span = span ) )
+      }
+      
       
     },        
     lgn.sc = {
@@ -521,6 +623,9 @@ plot.cv.georob <-
         )
       }
       
+      if( smooth ){
+        lines( loess.smooth( x[["lgn.pred"]], x[["lgn.data"]], span = span ) )
+      }
       
       
     }, 
@@ -558,7 +663,7 @@ plot.cv.georob <-
         plot( r.qq, col = col, pch = pch, main = main, xlab = xlab, ylab = ylab, ... )
       }
     },
-    pit = {
+    hist.pit = {
       
       ##  histogramm of probability-integral-transformation
       
@@ -570,6 +675,20 @@ plot.cv.georob <-
         result, 
         col = col, lty = lty, 
         main = main, xlab = xlab, ylab = ylab, freq = FALSE, ... )
+    },
+    ecdf.pit = {
+      
+      ##  ecdf of probability-integral-transformation
+      
+      if( missing( main ) ) main <- "ecdf PIT-values"
+      if( missing( xlab ) ) xlab <- "PIT"
+      if( missing( ylab ) ) ylab <- "probability"
+      
+      r.hist <- plot(
+        ecdf(result), 
+        col = col, lty = lty, 
+        main = main, xlab = xlab, ylab = ylab, ... 
+      )
     },
     mc = {
       
@@ -638,6 +757,7 @@ print.cv.georob <-
   ## 2011-10-13 A. Papritz
   ## 2012-12-18 AP invisible(x)
   ## 2013-06-12 AP substituting [["x"]] for $x in all lists
+  ## 2015-06-25 AP new method to compute pit, mc, bs and crps (Gaussian and robust)
   
   x <- x[["pred"]]
   
@@ -671,20 +791,27 @@ summary.cv.georob <-
   ## 2011-10-13 A. Papritz
   ## 2012-05-21 ap
   ## 2013-06-12 AP substituting [["x"]] for $x in all lists
-  
+  ## 2015-06-25 AP new method to compute pit, mc, bs and crps (Gaussian and robust)
   
   object <- object[["pred"]]
   
-  bs <- validate.predictions( 
+  ## extract scaled residuals and predictions standard error of signal for
+  ## a robust fit
+  
+  #   robust    <- attr( object, "tuning.psi" ) < control.georob()[["tuning.psi.nr"]]  
+  #   scld.res  <- attr( object, "scaled.residuals" )
+  #   se.signal <- attr( object, "se.signal" )
+  
+  crps <- validate.predictions( 
     data = object[["data"]],
     pred = object[["pred"]],
     se.pred = object[["se"]],
-    ncutoff = length( object[["data"]] ),
-    statistic = "bs"
+    statistic = "crps",
+    #     robust = robust,
+    ncutoff = length( object[["data"]] )#,
+    #     se.signal = se.signal,
+    #     scld.res = scld.res
   )
-  
-  t.d <- diff( bs[["y"]] )
-  crps <- sum( bs[["bs"]] * 0.5 * ( c( 0., t.d ) + c( t.d, 0. ) ) )
   
   st <- validate.predictions( 
     data = object[["data"]],
@@ -710,24 +837,30 @@ summary.cv.georob <-
 
   ## compute standard errors of criteria across cross-validation sets
   
+  criteria <- NULL
+  
   if( se && !is.null( object[["subset"]] ) ){
     
     criteria <- t( sapply(
         tapply(
           1:nrow( object ),
           factor( object[["subset"]] ),
-          function( i, data, pred, se.pred, lgn.data, lgn.pred, lgn.se.pred ){
+          function( 
+            i, data, pred, se.pred,
+            #              robust, se.signal, scld.res, 
+            lgn.data, lgn.pred, lgn.se.pred 
+          ){
             
-            bs <- validate.predictions( 
+            crps <- validate.predictions( 
               data = data[i],
               pred = pred[i],
               se.pred = se.pred[i],
-              ncutoff = length( data[i] ),
-              statistic = "bs"
+              statistic = "crps",
+              #               robust = robust,
+              ncutoff = length( data[i] )#,
+              #               se.signal = se.signal[i],
+              #               scld.res = scld.res
             )
-            
-            t.d <- diff( bs[["y"]] )
-            crps <- c( crps = sum( bs[["bs"]] * 0.5 * ( c( 0., t.d ) + c( t.d, 0. ) ) ) )
             
             st <- validate.predictions( 
               data = data[i],
@@ -748,13 +881,15 @@ summary.cv.georob <-
               st.lgn <- NULL
             }
             
-            
-            return( c( st, st.lgn, crps ) )
+            return( c( st, st.lgn, crps = crps ) )
             
           },
           data = object[["data"]],
           pred = object[["pred"]],
           se.pred = object[["se"]],
+          #           robust = robust,
+          #           se.signal = se.signal,
+          #           scld.res = scld.res,
           lgn.data = object[["lgn.data"]],
           lgn.pred = object[["lgn.pred"]],
           lgn.se.pred = object[["lgn.se"]]
@@ -779,6 +914,8 @@ summary.cv.georob <-
   }
   
   class( result ) <- "summary.cv.georob"
+  
+  if( !is.null( criteria ) ) attr( result, "statistics" ) <- criteria
  
   
   return( result )
@@ -918,38 +1055,37 @@ rstudent.cv.georob <-
 # }
 
 ## ======================================================================
+
 validate.predictions <- 
   function( 
     data,
     pred,
     se.pred,
-    statistic = c( "pit", "mc", "bs", "st" ),	
-    ncutoff = NULL
+    statistic = c( "crps", "pit", "mc", "bs", "st" ),	
+    #     robust = FALSE,
+    ncutoff = NULL#,
+    #     se.signal = NULL,
+    #     scld.res = NULL
   )
 {
   
   ## function computes several statistics to validate probabilistic
   ## predictions, cf.  Gneiting et al., 2007, JRSSB
   
-  # 2011-20-21 A. Papritz
-  # 2012-05-04 AP coping with NAs
+  ## 2011-20-21 A. Papritz
+  ## 2012-05-04 AP coping with NAs
   ## 2013-06-12 AP substituting [["x"]] for $x in all lists
+  ## 2015-06-25 AP new method to compute pit, mc, bs and crps (Gaussian and robust)
   
   statistic = match.arg( statistic )
   
   ## exclude item with NAs
   
-  t.sel <- complete.cases( data, pred, se.pred )
+  param <- na.exclude( cbind( data, pred, se.pred ) )
+  #   param <- na.exclude( cbind( data, pred, se.pred, se.signal ) )
+  #   if( robust ) scld.res <- scld.res[!is.na(scld.res)]
   
-  if( sum( t.sel ) < length( t.sel ) ) warnings(
-    "missing values encountered when validating predictions"
-  )
-  
-  data    <- data[t.sel]
-  pred    <- pred[t.sel]
-  se.pred <- se.pred[t.sel]
-  
-  if( missing( ncutoff ) || is.null( ncutoff ) ) ncutoff <- min( 500, length( data ) )
+  if( missing( ncutoff ) || is.null( ncutoff ) ) ncutoff <- min( 500, NROW( param ) )
   
   result <- switch(
     statistic,
@@ -957,7 +1093,17 @@ validate.predictions <-
       
       ## probability integral transformation
       
-      pnorm( data, mean = pred, sd = se.pred )
+      #       if( !robust ){
+      pnorm( param[, "data"], mean = param[, "pred"], sd = param[, "se.pred"] )
+      #       } else {
+      #         apply( 
+      #           param, 1,
+      #           function( x, r ){
+      #             pnorMix( x["data"], norMix( x["pred"] + r, sigma = x["se.signal"] ) )
+      #           }, r = scld.res
+      #         )
+      #       }
+      
     },
     mc = ,
     bs = {
@@ -965,9 +1111,12 @@ validate.predictions <-
       ## marginal calibration and brier score
       
       margin.calib <- data.frame(
-        y = t.x <- unique( t.y <- sort( c( data ) ) ),
-        ghat = cumsum( tabulate( match( t.y, t.x ) ) ) / length(t.y)
+        y = t.x <- unique( t.y <- sort( c( param[, "data"] ) ) ),    # y: cutoff
+        ghat = cumsum( tabulate( match( t.y, t.x ) ) ) / length(t.y) # Ghat(y)
       )
+      
+      ## 'dilute' margin.calib
+      
       t.sel <- trunc( 
         seq( 
           from = as.integer(1), 
@@ -977,31 +1126,58 @@ validate.predictions <-
       )
       margin.calib <- margin.calib[t.sel,]
       
+      ## compute mean of predictive distriutions Fhat_i(y) and Brier score 
+      
       t.bla <- t(
         sapply(
-          margin.calib[["y"]],
-          function( q, m, s, y ){
-            t.p <- pnorm( q, mean = m, sd = s )
+          margin.calib[, "y"],
+          function( cutoff, param ){
+            #           function( cutoff, param, scld.res ){
+            
+            ## compute Fhat_i(y)
+            
+            #             if( !robust ){
+            t.p <- pnorm( cutoff, mean = param[, "pred"], sd = param[, "se.pred"] )
+            #             } else {
+            #               t.p <- ppd.resp.rob( cutoff, m = param[, "pred"], s = param[, "se.signal"], r = scld.res )
+            #             }
+            
+            ## compute barFhat(y) and BS(y)
+            
             c( 
               fbar = mean( t.p ), 
-              bs = mean( ( t.p - as.numeric( y <= q ) )^2 )
+              bs = mean( ( t.p - as.numeric( param[, "data"] <= cutoff ) )^2 )
             )
           },
-          m = pred,
-          s = se.pred,
-          y = data
+          param = param#,
+          #           scld.res = scld.res
         )
       )
       cbind(
         margin.calib, as.data.frame( t.bla ) 
       )
     },
+    crps = {
+      
+      ## continuous ranked probability score
+      
+      #       if( !robust ){
+      mean( crpsnorm(
+          y = param[, "data"], m = param[, "pred"], s = param[, "se.pred"] 
+        ))  
+      #       } else {
+      #         mean( crpspd.resp.rob( 
+      #           y = param[, "data"], m = param[, "pred"], s = param[, "se.signal"], r = scld.res
+      #         ))
+      #       }
+      
+    },
     st = {
       
       ## statistics of (standardized) prediction errors
       
-      error <- data - pred
-      std.error <- error / se.pred
+      error <- param[, "data"] - param[, "pred"]
+      std.error <- error / param[, "se.pred"]
       
       statistics <- c( 
         me = mean( error ),

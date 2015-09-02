@@ -1,5 +1,5 @@
-% 2014-05-28 A. Papritz
-% R CMD Rdconv -t html -o bla.html georob-package.Rd ; open bla.html; R CMD Rd2pdf --force georob-package.Rd; 
+% 2015-07-24 A. Papritz
+% R CMD Rd2pdf --force georob-package.Rd;  R CMD Rdconv -t html -o bla.html georob-package.Rd ; open bla.html; 
 
 \encoding{macintosh}
 \name{georob-package}
@@ -9,8 +9,8 @@
 %
 \title{The georob Package}
 %
-\description{This is a summary of the features of \pkg{georob}, 
-  a package in \R for robust geostatistical analyses.}
+\description{This is a summary of the features and functionality of
+  \pkg{georob}, a package in \R for robust geostatistical analyses.}
 %
 \details{
 
@@ -30,17 +30,17 @@
   \subsection{Model}{
     We use the following model for the data
     \deqn{Y(\mbox{\boldmath$s$\unboldmath}) = 
-      S(\mbox{\boldmath$s$\unboldmath}) + 
+      Z(\mbox{\boldmath$s$\unboldmath}) + 
       \varepsilon(\mbox{\boldmath$s$\unboldmath}) =
       \mbox{\boldmath $x$\unboldmath}(\mbox{\boldmath$s$\unboldmath})^\mathrm{T}
          \mbox{\boldmath$\beta$\unboldmath} +
       B(\mbox{\boldmath$s$\unboldmath}) +
       \varepsilon(\mbox{\boldmath$s$\unboldmath}),}{%
-      Y(s) = S(s) + \epsilon(s) = x(s)^T \beta + B(s) + \epsilon(s),} 
+      Y(s) = Z(s) + \epsilon(s) = x(s)^T \beta + B(s) + \epsilon(s),} 
     where 
-    \eqn{S(\mbox{\boldmath$s$\unboldmath})=\mbox{\boldmath $x$\unboldmath}(\mbox{\boldmath$s$\unboldmath})^\mathrm{T}
+    \eqn{Z(\mbox{\boldmath$s$\unboldmath})=\mbox{\boldmath $x$\unboldmath}(\mbox{\boldmath$s$\unboldmath})^\mathrm{T}
          \mbox{\boldmath$\beta$\unboldmath} +
-      B(\mbox{\boldmath$s$\unboldmath})}{S(s) = x(s)^T \beta + B(s)} is the so-called signal, 
+      B(\mbox{\boldmath$s$\unboldmath})}{Z(s) = x(s)^T \beta + B(s)} is the so-called signal, 
     \eqn{\mbox{\boldmath $x$\unboldmath}(\mbox{\boldmath$s$\unboldmath})^\mathrm{T}
       \mbox{\boldmath$\beta$\unboldmath}}{x^T\beta} 
     is the external drift, 
@@ -66,29 +66,41 @@
       \mbox{\boldmath$B$\unboldmath}^\mathrm{T}] =
       \mbox{\boldmath$\Gamma$\unboldmath}_\theta =
       \sigma_{\mathrm{n}}^2\mbox{\boldmath$I$\unboldmath} +
-      \sigma^2\mbox{\boldmath$V$\unboldmath}_\alpha,}{%
-      E[B B^T] = \sigma_n^2 I+\sigma^2 V_\alpha,}
-    where \eqn{\sigma_{\mathrm{n}}^2}{\sigma_n^2} is the variance of seemingly 
-    uncorrelated micro-scale variation in 
+      \sigma^2\mbox{\boldmath$V$\unboldmath}_\alpha = 
+      \sigma^2_Z\mbox{\boldmath$V$\unboldmath}_{\alpha,\xi} = 
+      \sigma^2_Z (\xi \mbox{\boldmath$I$\unboldmath} + 
+      (1-\xi)\mbox{\boldmath$V$\unboldmath}_\alpha )
+      ,}{%
+      E[B B^T] = \Gamma_\theta = \sigma_n^2 I+\sigma^2 V_\alpha =
+      \sigma_Z^2 V_{\alpha,\xi} = \sigma_Z^2 (\xi I - (1-\xi) V_\alpha)
+      ,}
+    where 
+    \eqn{\sigma_{\mathrm{n}}^2}{\sigma_n^2} 
+    is the variance of seemingly uncorrelated micro-scale variation in 
     \eqn{B(\mbox{\boldmath$s$\unboldmath})}{B(s)} 
-    that cannot be resolved with the chosen sampling design, and 
+    that cannot be resolved with the chosen sampling design,  
     \eqn{\sigma^2} is the variance of the captured auto-correlated variation in 
-    \eqn{B(\mbox{\boldmath$s$\unboldmath})}{B(s)}. To estimate both 
-    \eqn{\sigma_n^2} and \eqn{\tau^2} (and not only their sum), one needs
+    \eqn{B(\mbox{\boldmath$s$\unboldmath})}{B(s)},  
+    \eqn{\sigma_Z^2=\sigma_{\mathrm{n}}^2+\sigma^2}{\sigma_Z^2=\sigma_n^2+\sigma^2} 
+    is the signal variance, and 
+    \eqn{\xi=\sigma_{\mathrm{n}}^2/\sigma_Z^2}{\xi=\sigma_n^2/\sigma^_Z^2}. 
+    To estimate both 
+    \eqn{\sigma_{\mathrm{n}}^2}{\sigma_n^2} and \eqn{\tau^2} (and not only their sum), one needs
     replicated measurements for some of the 
     \eqn{\mbox{\boldmath$s$\unboldmath}_i}{s_i}.
     
     We define 
-    \eqn{\mbox{\boldmath$V$\unboldmath}_\alpha}{V_\alpha} 
+    \eqn{\mbox{\boldmath$V$\unboldmath}_{\alpha,\xi}}{V_{\alpha,\xi}} 
     to be the matrix with elements
-    \deqn{(\mbox{\boldmath$V$\unboldmath}_\alpha)_{ij} =
+    \deqn{(\mbox{\boldmath$V$\unboldmath}_{\alpha,\xi})_{ij} =
       \gamma_0 - \gamma(|\mbox{\boldmath$A$\unboldmath}\;(
-      \mbox{\boldmath$s$\unboldmath}_i-\mbox{\boldmath$s$\unboldmath}_j) |),}{
-      (V_\alpha)_ij = \gamma_0 - \gamma(|A (s_i - s_j )|),}
+      \mbox{\boldmath$s$\unboldmath}_i-\mbox{\boldmath$s$\unboldmath}_j) |,\xi),}{
+      (V_{\alpha,\xi})_ij = \gamma_0 - \gamma(|A (s_i - s_j )|,\xi),}
     where the constant \eqn{\gamma_0} is chosen large enough so that 
-    \eqn{\mbox{\boldmath$V$\unboldmath}_\alpha}{V_\alpha}
+    \eqn{\mbox{\boldmath$V$\unboldmath}_{\alpha,\xi}}{V_{\alpha,\xi}}
     is positive definite,
-    \eqn{\gamma(\cdot)}{v()} is a valid stationary or intrinsic variogram, and
+    \eqn{\gamma(\cdot)}{v()} is (the sum of) a valid stationary or intrinsic variogram 
+    (and possibly a pure nugget variogram), and
     \eqn{\mbox{\boldmath$A$\unboldmath} = 
       \mbox{\boldmath$A$\unboldmath}(\alpha, f_1, f_2; \omega, \phi, \zeta)}{
       A = A(\alpha, f_1, f_2; \omega, \phi, \zeta)} 
@@ -98,13 +110,13 @@
     maps an arbitrary point on an ellipsoidal surface with constant semivariance in 
     \eqn{ \mathrm{I}\!\mathrm{R}^d}{R^d},
     centred on the origin, and having lengths of semi-principal axes, 
-    \eqn{\mbox{\boldmath$P$\unboldmath}_1}{P_1}, 
-      \eqn{\mbox{\boldmath$P$\unboldmath}_2}{P_2}, 
-      \eqn{\mbox{\boldmath$P$\unboldmath}_3}{P_3}, 
+    \eqn{\mbox{\boldmath$p$\unboldmath}_1}{p_1}, 
+      \eqn{\mbox{\boldmath$p$\unboldmath}_2}{p_2}, 
+      \eqn{\mbox{\boldmath$p$\unboldmath}_3}{p_3}, 
     equal to 
-    \eqn{|\mbox{\boldmath$P$\unboldmath}_1|=\alpha}{|P_1|=\alpha}, 
-      \eqn{|\mbox{\boldmath$P$\unboldmath}_2|=f_1\,\alpha}{|P_2|=f_1 \alpha} and 
-      \eqn{|\mbox{\boldmath$P$\unboldmath}_3|=f_2\,\alpha}{|P_3|=f_2 \alpha},
+    \eqn{|\mbox{\boldmath$p$\unboldmath}_1|=\alpha}{|p_1|=\alpha}, 
+      \eqn{|\mbox{\boldmath$p$\unboldmath}_2|=f_1\,\alpha}{|p_2|=f_1 \alpha} and 
+      \eqn{|\mbox{\boldmath$p$\unboldmath}_3|=f_2\,\alpha}{|p_3|=f_2 \alpha},
       \eqn{0 < f_2 \leq f_1 \leq 1}{0 < f_2 <= f_1 <= 1},
     respectively, onto the surface of the unit ball centred on the origin.
     
@@ -112,27 +124,27 @@
     \eqn{\omega}, \eqn{\phi} and \eqn{\zeta}: 
     \describe{
     
-      \item{\eqn{\omega}}{is the azimuth of \eqn{\mbox{\boldmath$P$\unboldmath}_1}{P_1}
+      \item{\eqn{\omega}}{is the azimuth of \eqn{\mbox{\boldmath$p$\unboldmath}_1}{p_1}
         (= angle between north and the projection  
         of
-        \eqn{\mbox{\boldmath$P$\unboldmath}_1}{P_1}
+        \eqn{\mbox{\boldmath$p$\unboldmath}_1}{p_1}
         onto the \eqn{x}-\eqn{y}-plane, 
         measured from north to south positive clockwise in degrees),
       }
       
       \item{\eqn{\phi}}{is 90 degrees minus the altitude of 
-        \eqn{\mbox{\boldmath$P$\unboldmath}_1}{P_1}
+        \eqn{\mbox{\boldmath$p$\unboldmath}_1}{p_1}
         (= angle between the zenith and
-        \eqn{\mbox{\boldmath$P$\unboldmath}_1}{P_1},
+        \eqn{\mbox{\boldmath$p$\unboldmath}_1}{p_1},
         measured from zenith to nadir positive clockwise in degrees), and
       }
       
       \item{\eqn{\zeta}}{is the angle between 
-        \eqn{\mbox{\boldmath$P$\unboldmath}_2}{P_2}
+        \eqn{\mbox{\boldmath$p$\unboldmath}_2}{p_2}
         and the direction of the line, say \eqn{y^\prime}{y'}, 
         defined by the intersection between the
         \eqn{x}-\eqn{y}-plane and the plane orthogonal to 
-        \eqn{\mbox{\boldmath$P$\unboldmath}_1}{P_1} running through the origin
+        \eqn{\mbox{\boldmath$p$\unboldmath}_1}{p_1} running through the origin
         (\eqn{\zeta} is measured from \eqn{y^\prime}{y'} positive counterclockwise in degrees).
       }
     }
@@ -191,12 +203,13 @@
       (\sigma^2, \sigma^2_n, \tau^2, \alpha, f_1, f_2, 
         \omega, \phi, \zeta, \ldots)
     } 
-    are estimated by robust Restricted Maximum Likelihood (REML). Here \var{\ldots} 
+    are estimated by Gaussian or robust restricted maximum likelihood (REML) or 
+    Gaussian maximum likelihood (ML). Here \var{\ldots} 
     denote further parameters of the variogram such as the smoothness parameter
     of the Whittle-MatŽrn model.
     In brief, the robust REML method is based on the insight that 
     the kriging predictions of \eqn{\mbox{\boldmath$B$\unboldmath}}{B} 
-    and the Gaussian Maximum Likelihood estimates of 
+    and the Gaussian maximum likelihood estimates of 
     \eqn{\mbox{\boldmath$\beta$\unboldmath}}{\beta} and
     \eqn{\mbox{\boldmath$\theta$\unboldmath}}{\theta} can be obtained 
     simultaneously by maximizing 
@@ -246,9 +259,9 @@
     to get \eqn{\mbox{\boldmath$\theta$\unboldmath}}{\theta}.
     The robustness of the procedure is controlled by the tuning parameter \eqn{c}
     of the \eqn{\psi_c}-function. For \eqn{c \ge 1000}{c>=1000} the algorithm computes
-    Gaussian REML estimates and customary plug-in kriging predictions. 
-    Instead of solving the Gaussian REML estimating equations, our software then
-    maximizes the Gaussian restricted loglikelihood using 
+    Gaussian (RE)ML estimates and customary plug-in kriging predictions. 
+    Instead of solving the Gaussian (RE)ML estimating equations, our software then
+    maximizes the Gaussian (restricted) loglikelihood using  \code{\link[stats]{nlminb}} or
     \code{\link[stats]{optim}}.
     
     \pkg{georob} uses variogram models implemented in the \R package
@@ -260,7 +273,7 @@
     \code{"RMfbm"}, \code{"RMgauss"}, \code{"RMgencauchy"},
     \code{"RMgenfbm"}, \cr  \code{"RMgengneiting"}, \code{"RMgneiting"},
     \code{"RMlgd"}, \code{"RMmatern"}, \code{"RMpenta"}, \code{"RMqexp"},
-    \code{"RMspheric"}, \code{"RMstable"}, \cr \code{"RMwave"},
+    \code{"RMspheric"}, \code{"RMstable"}, \code{"RMwave"},
     \code{"RMwhittle"}.  For most variogram parameters, closed-form
     expressions of \eqn{\partial \gamma/ \partial
     \theta_i}{d\gamma/d\theta_i} are used in the computations.  However,
@@ -286,14 +299,14 @@
     \eqn{\widehat{\mbox{\boldmath$B$\unboldmath}}}{hatB}
     by
     \deqn{
-      \widehat{Y}{\mbox{\boldmath$s$\unboldmath}_0} = 
+      \widehat{Y}(\mbox{\boldmath$s$\unboldmath}_0) = \widehat{Z}(\mbox{\boldmath$s$\unboldmath}_0) = 
       \mbox{\boldmath$x$\unboldmath}(\mbox{\boldmath$s$\unboldmath}_0)^\mathrm{T}
       \widehat{\mbox{\boldmath$\beta$\unboldmath}} + 
       \mbox{\boldmath$\gamma$\unboldmath}^\mathrm{T}_{\widehat{\theta}}(\mbox{\boldmath$s$\unboldmath}_0)
       \mbox{\boldmath$\Gamma$\unboldmath}^{-1}_{\widehat{\theta}}
       \widehat{\mbox{\boldmath$B$\unboldmath}},
     }{
-      hatY(s_0) = x^T(s_0) hat\beta + \gamma_^That\theta(s_0) \Gamma_hat\theta^-1 hatB,
+      hatY(s_0) = hatZ(s_0) = x^T(s_0) hat\beta + \gamma^T_hat\theta(s_0) \Gamma_hat\theta^-1 hatB,
     }
     
     where
@@ -301,7 +314,7 @@
     is the estimated (generalized) covariance matrix of
     \eqn{\mbox{\boldmath$B$\unboldmath}}{B} and
     \eqn{\mbox{\boldmath$\gamma$\unboldmath}_{\widehat{\theta}}(\mbox{\boldmath$s$\unboldmath}_0)}{
-    gamma_hat\theta(s_0)}
+    \gamma^T_hat\theta(s_0)}
     is the vector with the estimated (generalized) covariances between 
     \eqn{\mbox{\boldmath$B$\unboldmath}}{B} and
     \eqn{B(\mbox{\boldmath$s$\unboldmath}_0)}{B(s_0)}.
@@ -327,17 +340,31 @@
       \item Robustly fitting a spatial linear model to data that are 
       possibly contaminated by independent errors from a long-tailed
       distribution by robust REML (see \code{\link{georob}}, which also
-      fits such  models efficiently by Gaussian REML).
-      \item Assessing the goodness-of-fit of the model by 
-      \var{K}-fold cross-validation (see \code{\link{cv.georob}}).
+      fits such  models efficiently by Gaussian (RE)ML, \code{\link{profilelogLik}} and 
+      \code{\link{control.georob}}).
+      \item Extracting estimated model components (see \code{\link{residuals.georob}}, 
+      \code{\link{rstandard.georob}}, \cr \code{\link{rstudent.georob}}, 
+      \code{\link{ranef.georob}}).
+      \item Robustly estimating sample variograms and for fitting 
+      variogram model functions to them (see 
+      \code{\link{sample.variogram}} and \code{\link{fit.variogram.model}}).
+      \item Model building by forward and backward selection of 
+      covariates for the external drift 
+      (see \code{\link{waldtest.georob}}, \code{\link{step.georob}}, 
+      \code{\link{add1.georob}}, \code{\link{drop1.georob}}, 
+      \code{\link{extractAIC.georob}}, \cr \code{\link{logLik.georob}}, 
+      \code{\link{deviance.georob}}). 
+      For  a robust fit, the loglikelihood is not defined.  The function then
+      computes the (restricted) loglikelihood of an equivalent Gaussian model with
+      heteroscedastic nugget (see \code{\link{deviance.georob}} for details).
+      \item Assessing the goodness-of-fit and predictive power of the model by 
+      \var{K}-fold cross-validation (see \code{\link{cv.georob}} and 
+      \code{\link{validate.predictions}}).
       \item Computing robust external drift point and block kriging 
       predictions (see \code{\link{predict.georob}}).
       \item Unbiased back-transformation of both point and block
       kriging predictions of log-transformed data to the original scale of
       the measurements (see \code{\link{lgnpp}}).
-      \item Robustly estimating sample variograms and for fitting 
-      variogram model functions to them (see 
-      \code{\link{sample.variogram}} and \code{\link{fit.variogram.model}}).
     }
   }
 }
@@ -368,8 +395,8 @@
 \seealso{
   \code{\link{georob}} for (robust) fitting of spatial linear models;
   \code{\link{georobObject}} for a description of the class \code{georob};
-  \code{\link{plot.georob}} for display of REML variogram estimates;
-  \code{\link{georob.control}} for controlling the behaviour of \code{georob};
+  \code{\link{plot.georob}} for display of RE(ML) variogram estimates;
+  \code{\link{control.georob}} for controlling the behaviour of \code{georob};
   \code{\link{cv.georob}} for assessing the goodness of a fit by \code{georob}; 
   \code{\link{predict.georob}} for computing robust kriging predictions; and finally
   \code{\link{georobModelBuilding}} for stepwise building models of class \code{georob};
@@ -379,6 +406,7 @@
 }
 
 %
+\keyword{models}
 \keyword{spatial}
 \keyword{robust}
 \keyword{package}

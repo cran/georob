@@ -28,20 +28,19 @@ r.logzn.reml <- georob(log(zinc) ~ sqrt(dist), data = meuse, locations = ~ x + y
     variogram.model = "RMexp",
     param = c( variance = 0.15, nugget = 0.05, scale = 200 ),
     tuning.psi = 1000,
-    control = georob.control(cov.bhat = TRUE, cov.ehat.p.bhat = TRUE))
+    control = control.georob(cov.bhat = TRUE, cov.ehat.p.bhat = TRUE))
 summary(r.logzn.reml, correlation = TRUE)
 
 logLik(r.logzn.reml)
 
 waldtest(r.logzn.reml, .~. + ffreq)
-waldtest(r.logzn.reml, .~. + ffreq, fixed = FALSE)
 
 ## robust REML fit 
 r.logzn.rob <- update(r.logzn.reml, tuning.psi = 1)
     
 summary(r.logzn.rob, correlation = TRUE)
 
-plot(r.logzn.reml, lag.class.def = seq( 0, 2000, by = 100 ))
+plot(r.logzn.reml, lag.dist.def = seq( 0, 2000, by = 100 ))
 lines(r.logzn.rob, col = "red")
 
 
@@ -58,7 +57,7 @@ r.logzn.reml2 <- georob(
   verbose = 4
 )
 summary( r.logzn.reml2 )
-plot( r.logzn.reml2, lag.class.def = seq( 0, 2000, by = 100 ) )
+plot( r.logzn.reml2, lag.dist.def = seq( 0, 2000, by = 100 ) )
 
 
 # robust REML Fit, data set with replicated observations
@@ -68,9 +67,9 @@ r.logzn.rob2 <- georob(
   locations = ~ x + y,
   variogram.model = "RMexp",
   param = c( variance = 0.15, nugget = 0.02, scale = 208, snugget = 0.05 ),
-  initial.param = "no",
   fit.param = c( variance = TRUE, nugget = TRUE, scale = TRUE, snugget = TRUE ),
   tuning.psi = 2,
+  control = control.georob( initial.param = FALSE ),
   verbose = 2
 )
 summary( r.logzn.rob2 )
@@ -307,8 +306,8 @@ r.irf0.aniso <- georob(pressure ~ 1, data = d.wolfcamp, locations = ~ x + y,
     tuning.psi = 1000)
 summary(r.irf0.aniso)
 
-plot(r.irf0.iso, lag.class.def = seq(0, 200, by = 7.5))
-plot(r.irf0.aniso, lag.class.def = seq(0, 200, by = 7.5), 
+plot(r.irf0.iso, lag.dist.def = seq(0, 200, by = 7.5))
+plot(r.irf0.aniso, lag.dist.def = seq(0, 200, by = 7.5), 
     xy.angle.def = c(0, 22.5, 67.5, 112.5, 157.5, 180.), 
     add = TRUE, col = 2:5)
     
@@ -325,7 +324,7 @@ data(wolfcamp)
 
 # fitting an isotropic IRF(0) model
 r.sv.iso <- sample.variogram(wolfcamp$data,
-    locations = wolfcamp[[1]], lag.class.def = seq(0, 200, by = 15))
+    locations = wolfcamp[[1]], lag.dist.def = seq(0, 200, by = 15))
 
 r.irf0.iso <- fit.variogram.model(r.sv.iso, variogram.model = "RMfbm",
     param = c(variance = 100, nugget = 1000, scale = 1., alpha = 1),
@@ -339,7 +338,7 @@ lines( r.irf0.iso, line.col = "red")
 
 # fitting an anisotropic IRF(0) model
 r.sv.aniso <- sample.variogram(wolfcamp$data,
-    locations = wolfcamp[[1]], lag.class.def = seq(0, 200, by = 15),
+    locations = wolfcamp[[1]], lag.dist.def = seq(0, 200, by = 15),
     xy.angle.def = c(0., 22.5, 67.5, 112.5, 157.5, 180.))
 summary(r.sv.aniso)
 
@@ -353,10 +352,3 @@ summary(r.irf0.aniso, correlation = TRUE)
 
 plot(r.sv.aniso, type = "l")
 lines(r.irf0.aniso, xy.angle = seq( 0, 135, by = 45))
-
-
-
-
-
-
-

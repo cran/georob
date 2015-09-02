@@ -1,4 +1,4 @@
-% 2012-12-13 A. Papritz
+% 2015-07-24 A. Papritz
 % R CMD Rdconv -t html -o bla.html georobObject.Rd ; open bla.html; R CMD Rd2pdf --force georobObject.Rd; 
 
 \encoding{macintosh}
@@ -10,18 +10,19 @@
 \description{
   An object of class \code{georob} as returned by \code{\link{georob}} and
   representing a (robustly) fitted spatial linear model.  Objects of this
-  class have methods for cross-validation (see
-  \code{\link{cv.georob}}), for computing (robust) kriging predictions
-  (see \code{\link{predict.georob}}), for plotting (see
+  class have methods for model building (see
+  \code{\link{georobModelBuilding}}) and cross-validation (see
+  \code{\link{cv.georob}}), for computing (robust) kriging predictions (see
+  \code{\link{predict.georob}}), for plotting (see
   \code{\link{plot.georob}}) and for common generic functions (see
   \code{\link{georobMethods}}).  }
 
 \value{
-  The following components are included in a \code{georob} object:
+  A \code{georob} object is a list with following components:
    
   \item{loglik}{the maximized (restricted) Gaussian loglikelihood of a
-  non-robust ML or REML fit or \code{NA} for a robust fit if 
-  \code{tuning.psi} is less than \code{1000}.}
+  non-robust (RE)ML fit or \code{NA} for a robust fit if 
+  \code{tuning.psi} is less than \code{tuning.psi.nr}.}
    
   \item{variogram.model}{the name of the fitted parametric variogram
   model.}
@@ -56,11 +57,8 @@
   }
   
   \item{gradient}{a named numeric vector with the estimating equations
-  (robust REML) evaluated at the solution or the gradient of the maximized
-  restricted loglikelihood (Gaussian REML).}
-
-  \item{psi.func}{the name of the parametric \code{psi.function} used for the
-  robust model fit (see \code{\link{georob.control}}).}
+  (robust REML) or the gradient of the maximized (restricted) loglikelihood
+  (Gaussian (RE)ML) evaluated at the solution .}
 
   \item{tuning.psi}{the value of the tuning constant \eqn{c} of the
   \eqn{\psi_c}-function.}
@@ -86,22 +84,25 @@
     \psi(hat\epsilon_i/hat\tau) / (hat\epsilon_i/hat\tau)}.}
     
   \item{converged}{logical indicating whether numerical maximization of
-    the restricted loglikelihood by \code{optim} or root finding by
-    \code{nleqslv} converged.}
-
-  \item{convergence.code}{a diagnostic integer issued by \code{\link{optim}}
-    (component \code{convergence}) or \code{\link{nleqslv}} (component
-    \code{termcd}) about convergence.}
+  the (restricted) loglikelihood by \code{nlminb} or \code{optim} or root
+  finding by \code{nleqslv} converged.}
+    
+  \item{convergence.code}{a diagnostic integer issued by
+  \code{\link[stats]{nlminb}}, \code{\link[stats]{optim}} (component
+  \code{convergence}) or \code{\link[nleqslv]{nleqslv}} (component
+  \code{termcd}) about convergence.}
 
   \item{iter}{a named integer vector of length two, indicating either
 
     \itemize{
 
       \item the number of function and gradient evaluations when maximizing
-      the restricted Gaussian loglikelihood by \code{\link{optim}}, or
+      the (restricted) Gaussian loglikelihood by \code{\link[stats]{nlminb}}
+      or \code{\link[stats]{optim}}, or
       
       \item the number of function and Jacobian evaluations when solving
-      the robustified estimating equations by \code{\link{nleqslv}}.
+      the robustified estimating equations by
+      \code{\link[nleqslv]{nleqslv}}.
       
     }
   }
@@ -115,7 +116,7 @@
   \code{\link{compress}}) and can be expanded to square matrices by
   \code{\link{expand}}.  What \code{cov} actually contains depends on the
   flags passed to \code{georob} for computing covariances (see
-  \code{\link{georob.control}}).  Possible components are:
+  \code{\link{control.georob}}).  Possible components are:
   
   \itemize{
   
@@ -155,67 +156,58 @@
   
   }
      
-  \item{param.tf}{a character vector indicating the transformations of the
-  variogram parameters for model fitting.}
-    
-  \item{fwd.tf}{a list of functions for variogram parameter transformations.}
-  
-  \item{bwd.tf}{a list of inverse functions for \emph{inverse} variogram
-  parameter transformations.}
-    
-  \item{hessian}{a symmetric matrix giving an estimate of the Hessian at
-  the solution if the model was fitted non-robustly with the argument
-  \code{hessian = TRUE} (see \code{\link{georob.control}}).  Missing
-  otherwise.}
-    
   \item{expectations}{a named numeric vector with the expectations of
   \eqn{\partial \psi_c(x)/\partial x}{d\psi_c'(x)/dx} (\code{dpsi}) and
   \eqn{\psi_c^2(x)} (\code{psi2}) with respect to a standard normal
   distribution.}
      
-  \item{Valpha.objects}{a list of matrices in \emph{compressed form} with
+  \item{Valphaxi.objects}{a list of matrices in \emph{compressed form} with
   (among others) the following components:
  
     \itemize{
     
       \item \code{gcr.constant}: the constant \eqn{\gamma_0} (see
-        expression for \eqn{\mbox{\boldmath$V$\unboldmath}_\alpha}{Valpha} in
-        section \bold{Model} of \code{\link{georobIntro}}.
+      expression for \eqn{\mbox{\boldmath$V$\unboldmath}_{\alpha,\xi}}{V_{\alpha,\xi}} in
+      section \bold{Model} of \code{\link{georobIntro})}.
       
-      \item \code{Valpha}: the correlation matrix
-        \eqn{\mbox{\boldmath$V$\unboldmath}_\alpha}{V_\alpha} that includes the
-        spatial nugget effect.
-
-      \item \code{Valpha0}: the correlation matrix
-        \eqn{\mbox{\boldmath$V$\unboldmath}_\alpha0}{V_\alpha0} that does
-        not include the spatial nugget effect.
-
-      \item \code{Valpha.ucf}: the upper triangular Cholesky factor
-        \eqn{\mbox{\boldmath$L$\unboldmath}\mathrm{^T}}{L^T}.
-        
-      \item \code{Valpha.ilcf}: the inverse of the lower triangular factor
-        \eqn{\mbox{\boldmath$L$\unboldmath}}{L} of the Cholesky
-        decomposition \eqn{\mbox{\boldmath$V$\unboldmath}_\alpha =
-        \mbox{\boldmath$L$\unboldmath}
-        \mbox{\boldmath$L$\unboldmath}\mathrm{^T}}{V_\alpha=L L^T}.
-        
-      \item \code{Valpha.inverse}: the inverse of 
-        \eqn{\mbox{\boldmath$V$\unboldmath}_\alpha}{V_\alpha}.
+      \item \code{Valphaxi}: the correlation matrix
+      \eqn{\mbox{\boldmath$V$\unboldmath}_{\alpha,\xi} =
+      \mbox{\boldmath$\Gamma$\unboldmath}_{\alpha,\xi} /
+      (\sigma_{\mathrm{n}}^2+\sigma^2 )}{V_{\alpha, \xi} = \Gamma_\theta /
+      (\sigma_n^2+\sigma^2)} that includes the spatial nugget effect.
+      
+      \item \code{Valphaxi.inverse}: the inverse of 
+      \eqn{\mbox{\boldmath$V$\unboldmath}_{\alpha,\xi}}{V_{\alpha, \xi}}.
+    
+      \item \code{log.det.Valphaxi}: 
+      \eqn{\log(\det(\mbox{\boldmath$V$\unboldmath}_{\alpha,\xi}))}{log(det(V_{\alpha, \xi}))}.
     
     }
   }
 
-  \item{Aalpha}{the matrix 
-  \eqn{(\mbox{\boldmath$X$\unboldmath}^T
-  \mbox{\boldmath$V$\unboldmath}_\alpha^{-1}\mbox{\boldmath$X$\unboldmath})^{-1}
-  \mbox{\boldmath$X$\unboldmath}^T\mbox{\boldmath$V$\unboldmath}_\alpha^{-1}  
-  }{(X^T V_alpha^-1 X)^-1 X^T V_alpha^-1 }.}
+  \item{zhat.objects}{a list of matrices in (partly) \emph{compressed form} with
+  the following components:
  
-  \item{Palpha}{the matrix 
-  \eqn{\mbox{\boldmath$I$\unboldmath}-
-  \mbox{\boldmath$X$\unboldmath} \mbox{\boldmath$A$\unboldmath}_\alpha  
-  }{I - X A_alpha}.}
-  
+    \itemize{
+    
+      \item \code{Aalphaxi}: the matrix 
+      \eqn{(\mbox{\boldmath$X$\unboldmath}^T
+      \mbox{\boldmath$V$\unboldmath}_{\alpha,\xi}^{-1}\mbox{\boldmath$X$\unboldmath})^{-1}
+      \mbox{\boldmath$X$\unboldmath}^T\mbox{\boldmath$V$\unboldmath}_{\alpha,\xi}^{-1}  
+      }{(X^T V_{\alpha, \xi}^-1 X)^-1 X^T V_{\alpha, \xi}^-1 }.
+      
+      \item \code{Palphaxi}: the matrix 
+      \eqn{\mbox{\boldmath$I$\unboldmath}-
+      \mbox{\boldmath$X$\unboldmath} \mbox{\boldmath$A$\unboldmath}_{\alpha,\xi}  
+      }{I - X A_{\alpha, \xi}}.
+      
+      \item \code{Valphaxi.inverse.Palphaxi}: the matrix
+      \eqn{\mbox{\boldmath$V$\unboldmath}^{-1}_{\alpha,\xi}
+      \mbox{\boldmath$P$\unboldmath}_{\alpha,\xi} }{V^-1_{\alpha, \xi}
+      P_{\alpha, \xi}}.
+      
+    }
+  }  
   \item{locations.object}{a list with 3 components:
  
     \itemize{
@@ -245,34 +237,35 @@
       \eqn{\mbox{\boldmath$B$\unboldmath}}{B}.
       
       \item \code{param}: numeric vector with initial estimates of the
-      variogram parameters, either computed (\code{initial.param = "exclude"})
-      or as passed to \code{georob} (\code{initial.param = "no"}).
+      variogram parameters, either computed (\code{initial.param = TRUE})
+      or as passed to \code{georob} (\code{initial.param = FALSE}).
       
       \item \code{fit.param}: logical vector indicating which variogram
       parameters were fitted.
       
       \item \code{aniso}: numeric vector with initial estimates of the
-      anisotropy parameters, either either computed (\code{initial.param = "exclude"})
-      or as passed to \code{georob} (\code{initial.param = "no"}).
+      anisotropy parameters, either either computed (\code{initial.param = TRUE})
+      or as passed to \code{georob} (\code{initial.param = FALSE}).
       
       \item \code{fit.aniso}: logical vector indicating which anisotropy
       parameters were fitted.
       
-      \item \code{initial.param}: character string indicating whether
-      robust initial variogram parameter estimates were computed (see
-      \code{\link{georob}}, \emph{Details}).
-            
     }
  
   }
   
+  \item{hessian}{a symmetric matrix giving an estimate of the Hessian at
+  the solution if the model was fitted non-robustly with the argument
+  \code{hessian = TRUE} (see \code{\link{control.georob}}).  Missing
+  otherwise.}
+    
   \item{control}{a list with control parameters generated by
-  \code{\link{georob.control}}.}
+  \code{\link{control.georob}}.}
 
   \item{MD}{optionally a matrix of robust distances in the space spanned by
   \eqn{\mbox{\boldmath$X$\unboldmath}}{X} (see argument \code{compute.rd}
   of \code{\link[robustbase]{lmrob.control}} and
-  \code{\link{georob.control}}).}
+  \code{\link{control.georob}}).}
   
   \item{model, x, y}{if requested the model frame, the model matrix and the
   response, respectively.}  
@@ -291,8 +284,8 @@
 \seealso{
   \code{\link{georobIntro}} for a description of the model and a brief summary of the algorithms; 
   \code{\link{georob}} for (robust) fitting of spatial linear models;
-  \code{\link{georob.control}} for controlling the behaviour of \code{georob};
-  \code{\link{plot.georob}} for display of REML variogram estimates;
+  \code{\link{control.georob}} for controlling the behaviour of \code{georob};
+  \code{\link{plot.georob}} for display of (RE)ML variogram estimates;
   \code{\link{cv.georob}} for assessing the goodness of a fit by \code{georob}; 
   \code{\link{predict.georob}} for computing robust kriging predictions; and finally
   \code{\link{georobModelBuilding}} for stepwise building models of class \code{georob};

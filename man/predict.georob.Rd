@@ -1,4 +1,4 @@
-% 2014-07-29 A. Papritz
+% 2015-08-27 A. Papritz
 % R CMD Rdconv -t html -o bla.html predict.georob.Rd ; open bla.html; R CMD Rd2pdf --force predict.georob.Rd; 
 
 \encoding{macintosh}
@@ -21,8 +21,8 @@ well as model terms for display by \code{\link[stats]{termplot}}.
     control = control.predict.georob(), verbose = 0, ...)
     
 control.predict.georob(full.covmat = FALSE, extended.output = FALSE, 
-    mmax = 10000, ncores = parallel[["max.ncores"]], pwidth = NULL, pheight = NULL, 
-    napp = 1, parallel = parallel.control())
+    mmax = 10000, ncores = pmm[["max.ncores"]], pwidth = NULL, pheight = NULL, 
+    napp = 1, pmm = control.pmm())
 
 }
 
@@ -46,7 +46,7 @@ control.predict.georob(full.covmat = FALSE, extended.output = FALSE,
     \itemize{
     
       \item \code{"signal"}: the \dQuote{signal}
-      \eqn{S(\mbox{\boldmath$s$\unboldmath}) =
+      \eqn{Z(\mbox{\boldmath$s$\unboldmath}) =
       \mbox{\boldmath$x$\unboldmath}(\mbox{\boldmath$s$\unboldmath})^\mathrm{T}
       \mbox{\boldmath$\beta$\unboldmath} +
       B(\mbox{\boldmath$s$\unboldmath})}{Y(s) = x(s)^T \beta + B(s)} of
@@ -54,8 +54,8 @@ control.predict.georob(full.covmat = FALSE, extended.output = FALSE,
       
       \item \code{"response"}: the observations
       \eqn{Y(\mbox{\boldmath$s$\unboldmath}) =
-      S(\mbox{\boldmath$s$\unboldmath}) +
-      \varepsilon(\mbox{\boldmath$s$\unboldmath}),}{Y(s)=S(s) + \epsilon(s),}
+      Z(\mbox{\boldmath$s$\unboldmath}) +
+      \varepsilon(\mbox{\boldmath$s$\unboldmath}),}{Y(s)=Z(s) + \epsilon(s),}
       
       \item \code{"trend"}: the external drift
       \eqn{\mbox{\boldmath$x$\unboldmath}(\mbox{\boldmath$s$\unboldmath})^\mathrm{T}
@@ -72,7 +72,8 @@ control.predict.georob(full.covmat = FALSE, extended.output = FALSE,
   
   
   \item{signif}{positive numeric equal to the tolerance or confidence level
-  for computing respective intervals.}
+  for computing respective intervals.  If \code{NULL} no intervals are
+  computed.}
   
   \item{locations}{an optional one-sided formula specifying what variables
   of \code{newdata} are the coordinates of the prediction points\cr
@@ -80,7 +81,7 @@ control.predict.georob(full.covmat = FALSE, extended.output = FALSE,
   
   \item{control}{a list with the arguments \code{full.covmat},
   \code{extended.output}, \code{mmax}, \code{ncores}, \code{pwidth},
-  \code{pheight}, \code{napp} and \code{parallel} or a function such as
+  \code{pheight}, \code{napp} and \code{pmm} or a function such as
   \code{control.predict.georob} that generates such a list.}
   
   \item{full.covmat}{logical controlling whether the full covariance matrix
@@ -102,9 +103,9 @@ control.predict.georob(full.covmat = FALSE, extended.output = FALSE,
   integration of semivariances for block kriging, see
   \code{\link[constrainedKriging]{preCKrige}}.}
   
-  \item{parallel}{a list of arguments passed to \code{\link{pmm}} or a
-  function such as \code{\link{parallel.control}} that generates such a list
-  (see \code{\link{parallel.control}} for allowed arguments).}
+  \item{pmm}{a list of arguments passed to \code{\link{pmm}} or a
+  function such as \code{\link{control.pmm}} that generates such a list
+  (see \code{\link{control.pmm}} for allowed arguments).}
   
   \item{verbose}{positive integer controlling logging of diagnostic
   messages to the console.\cr  \code{verbose = 0} (default) largely suppresses
@@ -138,17 +139,17 @@ control.predict.georob(full.covmat = FALSE, extended.output = FALSE,
     
     \item \code{var.pred}: the variances of the kriging predictions, 
     \eqn{\mathrm{Var}_{\hat{\theta}}[\widehat{Y}(\mbox{\boldmath$s$\unboldmath})]}{Var[hatY(s)]} or 
-    \eqn{\mathrm{Var}_{\hat{\theta}}[\widehat{S}(\mbox{\boldmath$s$\unboldmath})]}{Var[hatS(s)]},
+    \eqn{\mathrm{Var}_{\hat{\theta}}[\widehat{Z}(\mbox{\boldmath$s$\unboldmath})]}{Var[hatS(s)]},
 
     \item \code{cov.pred.target}: the covariances between the predictions and the
     prediction targets,\cr
     \eqn{\mathrm{Cov}_{\hat{\theta}}[\widehat{Y}(\mbox{\boldmath$s$\unboldmath}),Y(\mbox{\boldmath$s$\unboldmath})]}{Cov[hatY(s),Y(s)]} or 
-    \eqn{\mathrm{Cov}_{\hat{\theta}}[\widehat{S}(\mbox{\boldmath$s$\unboldmath}),S(\mbox{\boldmath$s$\unboldmath})]}{Cov[hatS(s),S(s)]},
+    \eqn{\mathrm{Cov}_{\hat{\theta}}[\widehat{Z}(\mbox{\boldmath$s$\unboldmath}),Z(\mbox{\boldmath$s$\unboldmath})]}{Cov[hatS(s),Z(s)]},
     
     
     \item \code{var.target}: the variances of the prediction targets
     \eqn{\mathrm{Var}_{\hat{\theta}}[Y(\mbox{\boldmath$s$\unboldmath})]}{Var[Y(s)]} or 
-    \eqn{\mathrm{Var}_{\hat{\theta}}[S(\mbox{\boldmath$s$\unboldmath})]}{Var[S(s)]}.
+    \eqn{\mathrm{Var}_{\hat{\theta}}[Z(\mbox{\boldmath$s$\unboldmath})]}{Var[Z(s)]}.
     
   }
   
@@ -205,7 +206,7 @@ control.predict.georob(full.covmat = FALSE, extended.output = FALSE,
     
     \item \code{mse.pred}: the full covariance matrix of the prediction errors, 
     \eqn{Y(\mbox{\boldmath$s$\unboldmath})-\widehat{Y}(\mbox{\boldmath$s$\unboldmath})}{Y(s)-hatY(s)} or 
-    \eqn{S(\mbox{\boldmath$s$\unboldmath})-\widehat{S}(\mbox{\boldmath$s$\unboldmath})}{s(s)-hatS(s)} 
+    \eqn{Z(\mbox{\boldmath$s$\unboldmath})-\widehat{Z}(\mbox{\boldmath$s$\unboldmath})}{s(s)-hatS(s)} 
     see \emph{Details}.
     
     \item \code{var.pred}: the full covariance matrix of the
@@ -259,7 +260,7 @@ data(meuse.blocks)
 
 r.logzn.rob <- georob(log(zinc) ~ sqrt(dist), data = meuse, locations = ~ x + y,
     variogram.model = "RMexp", param = c( variance = 0.15, nugget = 0.05, scale = 200 ),
-    tuning.psi = 1., control = georob.control(cov.bhat = TRUE, full.cov.bhat = TRUE,
+    tuning.psi = 1., control = control.georob(cov.bhat = TRUE, full.cov.bhat = TRUE,
         cov.bhat.betahat = TRUE, aux.cov.pred.target = TRUE))
         
 ## point predictions of log(Zn)

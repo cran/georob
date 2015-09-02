@@ -263,4 +263,109 @@ processing col and pch arguments
 * georob.S3methods.R (step.georob) correcting error for stepwise covariate selection with non-fixed variogram parameters
 
 
+2015-04-03  Andreas Papritz  <papritz@env.ethz.ch>
+
+* georob.private.functions.R (compute.covariances) correcting error in computing result.new[["cov.bhat"]] for full.cov.bhat == FALSE
+* georob.private.functions.R (f.aux.eeq) changes to optimize computing effort
+* georob.predict.R (predict.georob) changes to optimize computing effort
+
+
+2015-04-13  Andreas Papritz  <papritz@env.ethz.ch>
+
+* georob.cv.R (cv.georob) minor changes if models are not re-estimated; scatterplot smoothing in plots
+* georob.cv.R (plot.cv.georob) smoothing of scatter plots
+* georob.exported.functions.R (georob.control, param.transf, fwd.transf, dfwd.transf, bwd.transf) extended variogram parameter transformations
+* georob.exported.functions.R (pmm) small changes in f.aux
+* georob.private.functions.R (compute.estimating.equations) renamed to estimating.equations.thetahat
+* georob.private.functions.R (prepare.likelihood.calculations,georob.fit) extended variogram parameter transformations
+
+
+2015-03-16  Andreas Papritz  <papritz@env.ethz.ch>
+
+* georob.S3methods.R (profile, proflik.georob, profile.likfit) function for computing profile likelihood
+* georob.S3methods.R (residuals.georob, rstandard.georob, ) residuals of huberized observations
+* georob.S3methods.R (logLik, deviance) computing 'pseudo' likelihood for REML case
+* georob.exported.functions.R (georob) own function for psi
+* georob.private.functions.R (estimating.equations.thetahat, georob.fit, gradient.negative.restricted.loglikelihood, negative.restr.loglikelihood, prepare.likelihood.calculations) elimination of unused variables
+* georob.private.functions.R (f.psi.function) own function for psi
+
+
+2015-04-07  Andreas Papritz  <papritz@env.ethz.ch>
+
+* georob.exported.functions.R (param.transf, fwd.transf, dfwd.transf, bwd.transf) changes in transformation of anisotropy parameters
+* georob.private.functions.R (georob.fit, prepare.likelihood.calculations) changes in transformation of anisotropy parameters
+* georob.S3methods.R (summary.georob,) changes in transformation of anisotropy parameters
+* georob.S3methods.R (waldtest.georob) change of default for test statistic
+* variogram.R (sample.variogram, fit.variogram.model, summary.fitted.variogram, print.summary.fitted.variogram) correcting error when computing directional variograms
+
+
+2015-06-30  Andreas Papritz  <papritz@env.ethz.ch>
+
+* georob.exported.functions.R (georob, control.georob, control.nleqslv, control.optim, control.pmm, control.rq) functions and arguments renamed
+* georob.private.functions.R (compute.covariances) changes for improving efficiency
+* georob.private.functions.R (update.xihat) solving linear system of equation by cholesky decomposition
+* georob.private.functions.R (estimate.xihat) new method to determine convergence
+* predict.georob.R (crpsnorm, crpspd.resp.rob, ppd.resp.rob, predict.georob, qpd.resp.rob, var.pd.resp.rob) new functions and modifications for robust prediction of response
+* predict.georob.R (control.predict.georob) function renamed
+* georob.lgnpp.R (lgnpp) modifications for missing components 'lower' and 'upper'
+* georob.cv.R (cv.georob, plot.cv.georob, summary.cv.georob, validate.predictions) modifications for robust prediction of response
+
+
+2015-07-17  Andreas Papritz  <papritz@env.ethz.ch>
+
+* georob.cv.R (cv.georob) excluding blocks of observations
+* georob.exported.functions.R (georob, control.georob) change of control of computation of hessian for Gaussian (RE)ML, changes for singular design matrices, nlminb optimizer added (new function control.nlminb)
+* georob.private.functions.R (covariances.fixed.random.effects, estimate.zhat, update.zhat, estimating.equations.zhat, f.aux.gcr, f.aux.gamma, likelihood.calculations, f.aux.Qstar, negative.loglikelihood, gradient.negative.loglikelihood, f.aux.gradient.nll, f.aux.gradient.npll, f.reparam.fwd, f.reparam.bkw, partial.derivatives.variogram, f.aux.RSS, georob.fit) functions renamed, Gaussian (RE)ML estimation for reparametrized variogram, new functions (f.aux.gradient.npll, f.reparam.fwd, f.reparam.bkw, f.aux.RSS)
+* georob.private.functions.R (estimating.equantions.thetahat, f.aux.eeq) new function interface, improved efficiency
+
+
+2015-07-22  Andreas Papritz  <papritz@env.ethz.ch>
+* georob.cv.R (cv.georob) inactivation of modifications for robust prediction of response
+* predict.georob.R (predict.georob) inactivation of modifications for robust prediction of response
+
+
+2015-07-22  Andreas Papritz  <papritz@env.ethz.ch>
+
+* georob.S3methods.R (print.summary.georob) change in number of printed digits
+
+
+2015-07-23  Andreas Papritz  <papritz@env.ethz.ch>
+
+* georob.S3methods.R (add1.georob, drop1.georob, step.georob) changes for dropping terms from model with fixed variogram parameters
+* georob.private.functions.R (f.aux.gcr, likelihood.calculations, estimating.equations.thetahat, gradient.negative.loglikelihood, georob.fit, f.aux.Valphaxi) Valpha (correlation matrix without spatial nugget) no longer stored but computed from Valphaxi when needed
+
+
+2015-07-27  Andreas Papritz  <papritz@env.ethz.ch>
+
+* georob.private.functions.R (estimating.equations.thetahat, gradient.negative.loglikelihood, negative.loglikelihood, f.aux.eeq, f.aux.gradient.nll, f.aux.gradient.npll)
+* georob.exported.functions.R (control.georob, profilelogLik) new argument reparam for controlling variance estimation for Gaussian (RE)ML
+
+
+2015-07-27  Andreas Papritz  <papritz@env.ethz.ch>
+
+* georob.private.functions.R (estimating.equations.thetahat, gradient.negative.loglikelihood) changes for elimination of parallelized computation of gradient or estimating equations
+* georob.exported.functions.R (control.parallel) changes for elimination of parallelized computation of gradient or estimating equations
+
+
+2015-08-19  Andreas Papritz  <papritz@env.ethz.ch>
+
+* georob.private.functions.R (covariances.fixed.random.effects, estimating.equations.thetahat, georob.fit, f.psi.function) changes for computing covariances under long-tailed distribution of epsilon
+* georob.exported.functions.R (georob, control.georob) changes for computing covariances under long-tailed distribution of epsilon
+* georob.private.functions.R (rstandard.georob) correcting error when computing covariances of residuals
+
+
+2015-08-27  Andreas Papritz  <papritz@env.ethz.ch>
+
+* georob.predict.R (predict.georob) correcting error in processing output
+
+
+2015-08-28  Andreas Papritz  <papritz@env.ethz.ch>
+
+* georob.cv.R (cv.georob)  computation of hessian suppressed
+* georob.S3methods.R (add1.georob, drop1.georob, waldtest.georob) computation of hessian suppressed; elimination of argument "fixed" from wildest.georob
+* georob.exported.functions.R (georob, control.georob) control arguments newly organized
+* georob.private.functions.R (georob.fit) correcting error when using georob.object
+
+ 
+
 

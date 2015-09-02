@@ -1,4 +1,4 @@
-% 2014-05-28 A. Papritz
+% 2015-07-16 A. Papritz
 % R CMD Rdconv -t html -o bla.html fit.variogram.model.Rd ; open bla.html; R CMD Rd2pdf --force fit.variogram.model.Rd; 
 
 \encoding{macintosh}
@@ -13,7 +13,7 @@
 
 \description{
 The function \code{fit.variogram.model} fits a variogram model to a sample
-variogram by weighted non-linear least squares.  There are \code{print},
+variogram by (weighted) non-linear least squares.  There are \code{print},
 \code{summary} and
 \code{lines} methods for summarizing and displaying fitted variogram
 models.}
@@ -60,32 +60,32 @@ fit.variogram.model(sv,
   parameters.  The following parameter names are allowed (see
   \emph{Details} of \code{\link{georob}} and \code{\link{georobIntro}} for
   information about the parametrization of variogram models):
-    
-    \itemize{
-      \item{\code{variance}: variance (sill \eqn{\sigma^2}) of the
-      auto-correlated component of the Gaussian random field 
-      \eqn{B(\mbox{\boldmath$s$\unboldmath})}{B(s)}.}
-      
-    \item{\code{snugget}: variance 
-      (spatial nugget \eqn{\sigma^2_{\mathrm{n}}}{\sigma^2_n})
-      of the seemingly spatially uncorrelated component of 
-      \eqn{B(\mbox{\boldmath$s$\unboldmath})}{B(s)} 
-      (micro-scale spatial variation; default value\cr  \code{snugget = 0}).}
-      
-       \item{\code{nugget}: variance (nugget \eqn{\tau^2}) of the
-       independent errors
-       \eqn{\varepsilon(\mbox{\boldmath$s$\unboldmath})}{\epsilon(s)}.}
-     
-    \item{\code{scale}: range parameter (\eqn{\alpha}) of the variogram.}
-     
-       \item{names of additional variogram parameters such as the
-       smoothness parameter \eqn{\nu} of the Whittle-Mat\'ern model (see
-       \code{\link[RandomFields]{RMmodel}} and \code{\link{param.names}}).} } }
+  
+  \itemize{
+  \item{\code{variance}: variance (sill \eqn{\sigma^2}) of the
+  auto-correlated component of the Gaussian random field 
+  \eqn{B(\mbox{\boldmath$s$\unboldmath})}{B(s)}.}
+  
+  \item{\code{snugget}: variance 
+  (spatial nugget \eqn{\sigma^2_{\mathrm{n}}}{\sigma^2_n})
+  of the seemingly spatially uncorrelated component of 
+  \eqn{B(\mbox{\boldmath$s$\unboldmath})}{B(s)} 
+  (micro-scale spatial variation; default value\cr  \code{snugget = 0}).}
+  
+  \item{\code{nugget}: variance (nugget \eqn{\tau^2}) of the
+  independent errors
+  \eqn{\varepsilon(\mbox{\boldmath$s$\unboldmath})}{\epsilon(s)}.}
+  
+  \item{\code{scale}: range parameter (\eqn{\alpha}) of the variogram.}
+  
+  \item{names of additional variogram parameters such as the
+  smoothness parameter \eqn{\nu} of the Whittle-Mat\'ern model (see
+  \code{\link[RandomFields]{RMmodel}} and \code{\link{param.names}}).} } }
   
   \item{fit.param}{a named logical vector with the same names as used for 
-    \code{param}, defining which parameters are adjusted (\code{TRUE}) and which 
-    are kept fixed at their initial values (\code{FALSE}) when fitting the model.}
-    
+  \code{param}, defining which parameters are adjusted (\code{TRUE}) and which 
+  are kept fixed at their initial values (\code{FALSE}) when fitting the model.}
+  
   \item{aniso}{a named numeric vector with initial values for fitting
     geometrically anisotropic variogram models. The following parameter names are allowed 
     (see \emph{Details} of \code{\link{georob}} and \code{\link{georobIntro}} for information about the 
@@ -210,6 +210,9 @@ mechanisms are used in \code{fit.variogram.model}.
   \item{param}{a named vector with the (estimated) variogram parameters of
   the fitted model.}
 
+  \item{fit.param}{logical vector indicating which variogram
+  parameters were fitted.}
+  
   \item{aniso}{a list with the following components: 
    
     \itemize{
@@ -220,6 +223,9 @@ mechanisms are used in \code{fit.variogram.model}.
       \item{\code{aniso}: a named numeric vector with the (estimated)
       anisotropy parameters of the fitted model.}
        
+      \item \code{fit.aniso}: logical vector indicating which anisotropy
+      parameters were fitted.
+      
       \item{\code{sincos}: a list with \code{sin} and \code{cos} of the
       angles \eqn{\omega}, \eqn{\phi} and \eqn{\zeta} that define the
       orientation of the anisotropy ellipsoid.}
@@ -247,9 +253,9 @@ mechanisms are used in \code{fit.variogram.model}.
   \item{converged}{logical indicating whether numerical maximization by
   \code{optim} converged.}
 
-    \item{convergence.code}{a diagnostic integer issued by
-    \code{\link{optim}} (component \code{convergence}) about convergence.}
-
+  \item{convergence.code}{a diagnostic integer issued by
+  \code{\link[stats]{optim}} (component \code{convergence}) about convergence.}
+  
   \item{call}{the matched call.}  
   
   
@@ -287,7 +293,7 @@ data(wolfcamp, package = "geoR")
 
 ## fitting an isotropic IRF(0) model
 r.sv.iso <- sample.variogram(wolfcamp[["data"]], locations = wolfcamp[[1]], 
-    lag.class.def = seq(0, 200, by = 15))
+    lag.dist.def = seq(0, 200, by = 15))
 
 r.irf0.iso <- fit.variogram.model(r.sv.iso, variogram.model = "RMfbm",
     param = c(variance = 100, nugget = 1000, scale = 1., alpha = 1.),
@@ -301,7 +307,7 @@ lines( r.irf0.iso, line.col = "red")}
 
 ## fitting an anisotropic IRF(0) model
 r.sv.aniso <- sample.variogram(wolfcamp[["data"]],
-    locations = wolfcamp[[1]], lag.class.def = seq(0, 200, by = 15),
+    locations = wolfcamp[[1]], lag.dist.def = seq(0, 200, by = 15),
     xy.angle.def = c(0., 22.5, 67.5, 112.5, 157.5, 180.))
 \dontrun{
 plot(r.sv.aniso, type = "l")}

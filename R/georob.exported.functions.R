@@ -13,14 +13,12 @@ georob <-
     param,
     fit.param = c( 
       variance = TRUE, snugget = FALSE, nugget = TRUE, scale = TRUE, 
-      alpha = FALSE, beta = FALSE, delta = FALSE, 
-      gamma = FALSE, kappa = FALSE, lambda = FALSE, mu = FALSE, nu = FALSE
+      alpha = FALSE, beta = FALSE, delta = FALSE, gamma = FALSE, 
+      kappa = FALSE, lambda = FALSE, mu = FALSE, nu = FALSE
     )[ names(param) ],
     aniso = c( f1 = 1., f2 = 1., omega = 90., phi = 90., zeta = 0. ),
     fit.aniso = c( f1 = FALSE, f2 = FALSE, omega = FALSE, phi = FALSE, zeta = FALSE ),
-    tuning.psi = 2, initial.param  = c( "exclude", "no" ),
-    ## root.finding = c( "nleqslv", "bbsolve" ),
-    control = georob.control(), verbose = 0,
+    tuning.psi = 2, control = control.georob(), verbose = 0,
     ...
   )
 {
@@ -44,13 +42,13 @@ georob <-
   ## - Implementierung von Schaetzung von Nugget und Varianz von mikroskaliger Variation (snugget )
   ## - Implementierung der Schaetzungen fuer replizierte Messungen an gleicher Messtelle    
   ## - neue Varianten um Startwerte von betahat zu rechnen (Ersatz von use.lm durch 
-  ##   Argument initial.method = c( "rq", "lmrob", "rlm" ), vgl. georob.control)
+  ##   Argument initial.fixef = c( "rq", "lmrob", "rlm" ), vgl. control.georob)
   ## - Kontrolle, ob Designmatrix vollen Spaltenrang hat
   ## - Modifikation fuer Fall, dass alle Variogrammparameter fixiert sind
   ## - IRWLS Berechung von betahat und bhat entweder von Werten im initial.object 
   ##   oder von Schaetzwerten aus vorangehender Iteration
   ## - Berechung der Kovarianzen zwischen betahat und (z - bhat)
-  ## - Steuerung der Berechnung der verschiedenen Kovarianzen via georob.control
+  ## - Steuerung der Berechnung der verschiedenen Kovarianzen via control.georob
   ## - vollstaendige Implementierung von Standard Interfaces fuer Input und
   ##   Output fuer statistische Modellierung (analog lm, lmrob)
   ## - korrekte Behandlung von NAs und Implementierung von subset
@@ -88,7 +86,18 @@ georob <-
   ## 2014-08-18 AP changes for parallelized computations
   ## 2014-08-18 AP changes for Gaussian ML estimation
   ## 2014-08-26 AP changes to return ml.method if fitted object
+  ## 2015-06-30 AP function and arguments renamed
+  ## 2015-07-17 AP change of control of computation of hessian for Gaussian (RE)ML, 
+  ##               changes for singular design matrices, nlminb optimizer added
+  ## 2015-08-19 AP control about error families for computing covariances added
+  ## 2015-08-28 AP computation of hessian suppressed; correction of error when using georob.object;
+  ##               control arguments hessian, initial.param, initial.fixef newly organized
   
+  ## check validity of tuning.psi
+  
+  if( identical( control[["psi.func"]], "t.dist" ) && tuning.psi <= 1. ) 
+    stop( "'tuning.psi' must be greater than 1 for t-dist psi-function" )
+    
   ## check whether input is complete
   
   if( any( missing( formula ) || missing( locations ) || missing( param ) ) )
@@ -104,11 +113,7 @@ georob <-
   tmp <- sapply(tmp, function(x, choices){
       match.arg(x, choices)
     },
-    choices = c( 
-      "variance", "snugget", "nugget", "scale", 
-      "alpha", "beta", "delta", 
-      "gamma", "kappa", "lambda", "mu", "nu"
-    )
+    choices = names( param.transf() )
   )
   names( param ) <- tmp
   
@@ -117,11 +122,7 @@ georob <-
     tmp <- sapply(tmp, function(x, choices){
         match.arg(x, choices)
       },
-      choices = c( 
-        "variance", "snugget", "nugget", "scale", 
-        "alpha", "beta", "delta", 
-        "gamma", "kappa", "lambda", "mu", "nu"
-      )
+      choices = names( param.transf() )
     )
     names( fit.param ) <- tmp
   }
@@ -131,7 +132,7 @@ georob <-
     tmp <- sapply(tmp, function(x, choices){
         match.arg(x, choices)
       },
-      choices = c( "f1", "f2", "omega", "phi", "zeta" )
+      choices = names( param.transf() )
     )
     names( aniso ) <- tmp
   }
@@ -141,7 +142,7 @@ georob <-
     tmp <- sapply(tmp, function(x, choices){
         match.arg(x, choices)
       },
-      choices =c( "f1", "f2", "omega", "phi", "zeta" )
+      choices = names( param.transf() )
     )
     names( fit.aniso ) <- tmp
   }
@@ -182,14 +183,14 @@ georob <-
   
   mf <- eval( mf, parent.frame() )
   
-  ## eliminate intercept from locations
-  
-  locations <- as.formula( paste( deparse( locations ), "-1" ), env = parent.frame() )
-  
   ## setting-up terms objects
   
   mt     <- terms( formula )
   mt.loc <- terms( locations )
+  
+  ## eliminate intercept from mt.loc
+  
+  attr( mt.loc, "intercept" ) <- 0
     
 #   ## ... and assign fixed effects terms object as attribute to model.frame
 #   
@@ -236,33 +237,35 @@ georob <-
     "lengths of response vector and 'bhat' do not match"    
   )
   
-  initial.param <- match.arg( initial.param )
-  
   ## adjust initial.param if all variogram parameters are fixed
   
-  if( !any( c( fit.param, fit.aniso ) ) ) initial.param = "no"
+  if( !any( c( fit.param, fit.aniso ) ) ) control[["initial.param"]] <- FALSE
     
-  ## adjust choice for initial.method to compute regression coefficients
+  ## adjust choice for initial.fixef to compute regression coefficients
   
-  if( identical( initial.param, "exclude" ) && tuning.psi < control[["tuning.psi.nr"]] ){
-    control[["initial.method"]] <- "lmrob"
+  if( tuning.psi < control[["tuning.psi.nr"]] ){
+    if( control[["initial.param"]] ) control[["initial.fixef"]] <- "lmrob"
+  } else {
+    control[["initial.param"]] <- FALSE
   }
   
   ## check whether design matrix has full column rank
   
-  rankdef.x <- FALSE
+  col.rank.XX <- list( deficient = FALSE, rank = NCOL( x ) )
   
-  min.max.sv <- range( svd( crossprod( x ) )[["d"]] )
+  sv <- svd( crossprod( x ) )[["d"]]
+  min.max.sv <- range( sv )
   condnum <- min.max.sv[1] / min.max.sv[2] 
   
   if( condnum <= control[["min.condnum"]] ){
-    rankdef.x <- TRUE
+    col.rank.XX[["deficient"]] <- TRUE
+    col.rank.XX[["col.rank"]] <- sum( sv / min.max.sv[2] > control[["min.condnum"]] )
     cat( 
       "design matrix has not full column rank (condition number of X^T X: ", 
       signif( condnum, 2 ), ")\ninitial values of fixed effects coefficients are computed by 'lm'\n\n"
     )
-    control[["initial.method"]] <- "lm"
-    if( identical( initial.param, "exclude" ) ) initial.param <- "no"
+    control[["initial.fixef"]] <- "lm"
+    control[["initial.param"]]  <- FALSE
     warning( 
       "design matrix has not full column rank (condition number of X^T X: ", 
       signif( condnum, 2 ), ")\ninitial values of fixed effects coefficients are computed by 'lm'"
@@ -277,7 +280,7 @@ georob <-
   ## compute initial guess of fixed effects parameters (betahat)
   
   r.initial.fit <- switch(
-    control[["initial.method"]],
+    control[["initial.fixef"]],
     rq = {
       
       Rho <- function( u, tau) u * (tau - (u < 0))
@@ -373,25 +376,28 @@ georob <-
   names( yy ) <- rownames( mf )
   
   ##  check whether argument "object."  has been provided in call (e.g. by
-  ##  update ) and extract'locations' and ' Valpha' component if object
-  ##  exists in workspace
+  ##  update ) and extract'locations' exists in workspace
   
   extras <- match.call( expand.dots = FALSE )$...
   georob.object <- extras[names(extras) %in% "object."]
-  if( length( georob.object ) && exists( as.character( georob.object ), envir = parent.frame() ) ){
+  if( 
+    length( georob.object ) && 
+    exists( as.character( georob.object ), envir = parent.frame() ) #&&
+#     !control[["initial.param"]]
+  ){
     if( verbose > 4 ) cat(
       "\n    georob: using some components of 'object.'\n"    
     )
     georob.object <- eval( 
       georob.object[[1]], parent.frame() 
-    )[c( "locations.objects", "Valpha.objects" )]
+    )[c( "param", "aniso", "locations.objects", "Valphaxi.objects" )]
   } else {
     georob.object <- NULL
   }
   
   #   ##  create environment to store items required to compute likelihood and
   #   ##  estimating equations that are provided by
-  #   ##  prepare.likelihood.calculations
+  #   ##  likelihood.calculations
   #   
   #   envir <- new.env()
   #   lik.item <- list()
@@ -403,7 +409,7 @@ georob <-
   
   if( tuning.psi < control[["tuning.psi.nr"]] ){
         
-    if( identical( initial.param, "exclude" ) ){
+    if( control[["initial.param"]] ){
       
       if( verbose > 0 ) cat( "\ncomputing robust initial parameter estimates ...\n" )
       
@@ -432,7 +438,7 @@ georob <-
         ),
         isotropic = aniso.missing
       )
-      
+            
       ## estimate model parameters with pruned data set
       
       t.georob <- georob.fit(
@@ -449,6 +455,9 @@ georob <-
         georob.object = georob.object,
         safe.param = control[["safe.param"]],
         tuning.psi = control[["tuning.psi.nr"]],
+        error.family.estimation = control[["error.family.estimation"]],
+        error.family.cov.effects = control[["error.family.cov.effects"]],
+        error.family.cov.residuals = control[["error.family.cov.residuals"]],
         cov.bhat = control[["cov.bhat"]], full.cov.bhat = control[["full.cov.bhat"]],
         cov.betahat = control[["cov.betahat"]], 
         cov.bhat.betahat = control[["cov.bhat.betahat"]],
@@ -459,22 +468,22 @@ georob <-
         cov.ehat.p.bhat = control[["cov.ehat.p.bhat"]], full.cov.ehat.p.bhat = control[["full.cov.ehat.p.bhat"]],
         aux.cov.pred.target = control[["aux.cov.pred.target"]],
         min.condnum = control[["min.condnum"]],
-        rankdef.x = rankdef.x,
+        col.rank.XX = col.rank.XX,
         psi.func = control[["psi.func"]],
         tuning.psi.nr = tuning.psi,
         ml.method = control[["ml.method"]],
+        maximizer = control[["maximizer"]],
+        reparam = control[["reparam"]],
         irwls.initial = control[["irwls.initial"]],
         irwls.maxiter = control[["irwls.maxiter"]],
-        irwls.reltol = control[["irwls.reltol"]],
+        irwls.ftol = control[["irwls.ftol"]],
         force.gradient = control[["force.gradient"]],
         zero.dist = control[["zero.dist"]],
         control.nleqslv =  control[["nleqslv"]],
-        ## bbsolve.method =  control[["bbsolve"]][["method"]],
-        ## bbsolve.control = control[["bbsolve"]][["control"]],
         control.optim = control[["optim"]],
+        control.nlminb = control[["nlminb"]],
         hessian = FALSE,
-        control.parallel = control[["parallel"]],
-        full.output = control[["full.output"]],
+        control.pmm = control[["pmm"]],
         verbose = verbose
       )
       
@@ -482,74 +491,6 @@ georob <-
       aniso = t.georob[["aniso"]][["aniso"]][names(fit.aniso)]
       
     } 
-    #     else if( identical( initial.param, "minimize" ) ){
-    #       
-    #       if( verbose > 0 ) cat( "\ncomputing robust initial parameter estimates ...\n" )
-    #       
-    #       initial.objects <- list(
-    #         x = as.matrix( x ),
-    #         y = yy,
-    #         betahat = coef( r.initial.fit ),
-    #         bhat = if( is.null( control[["bhat"]] ) ){
-    #           rep( 0., length( yy ) )
-    #         } else {
-    #           control[["bhat"]]
-    #         },
-    #         initial.fit = r.initial.fit,
-    #         locations.objects = list(
-    #           locations = locations,
-    #           coordinates = locations.coords
-    #         ),
-    #         isotropic = aniso.missing
-    #       )
-    #       
-    #       ## estimate model parameters by minimizing sum( gradient^2)
-    #       
-    #       t.georob <- georob.fit(
-    #         ## root.finding = root.finding,
-    #         slv = FALSE,
-    #     #         envir = envir,
-    #         initial.objects = initial.objects,
-    #         variogram.model = variogram.model, param = param, fit.param = fit.param,
-    #         aniso = aniso, fit.aniso = fit.aniso,
-    #         param.tf = control[["param.tf"]],
-    #         fwd.tf = control[["fwd.tf"]], 
-    #         deriv.fwd.tf = control[["deriv.fwd.tf"]],
-    #         bwd.tf = control[["bwd.tf"]], 
-    #         safe.param = control[["safe.param"]],
-    #         tuning.psi = tuning.psi,
-    #         cov.bhat = control[["cov.bhat"]], full.cov.bhat = control[["full.cov.bhat"]],
-    #         cov.betahat = control[["cov.betahat"]], 
-    #         cov.bhat.betahat = control[["cov.bhat.betahat"]],
-    #         cov.delta.bhat = control[["cov.delta.bhat"]],
-    #         full.cov.delta.bhat = control[["full.cov.delta.bhat"]],
-    #         cov.delta.bhat.betahat = control[["cov.delta.bhat.betahat"]],
-    #         cov.ehat = control[["cov.ehat"]], full.cov.ehat = control[["full.cov.ehat"]],
-    #         cov.ehat.p.bhat = control[["cov.ehat.p.bhat"]], full.cov.ehat.p.bhat = control[["full.cov.ehat.p.bhat"]],
-    #         aux.cov.pred.target = control[["aux.cov.pred.target"]],
-    #         min.condnum = control[["min.condnum"]],
-    #         rankdef.x = rankdef.x,
-    #         psi.func = control[["psi.func"]],
-    #         tuning.psi.nr = control[["tuning.psi.nr"]],
-    #         irwls.initial = control[["irwls.initial"]],
-    #         irwls.maxiter = control[["irwls.maxiter"]],
-    #         irwls.reltol = control[["irwls.reltol"]],
-    #         force.gradient = control[["force.gradient"]],
-    #         zero.dist = control[["zero.dist"]],
-    #         control.nleqslv =  control[["nleqslv"]],
-    #         ## bbsolve.method =  control[["bbsolve"]][["method"]],
-    #         ## bbsolve.control = control[["bbsolve"]][["control"]],
-    #         control.optim = control[["optim"]],
-    #         hessian = FALSE,
-    #         control.parallel = control[["parallel"]],
-    #         full.output = control[["full.output"]],
-    #         verbose = verbose
-    #       )
-    #       
-    #       param = t.georob[["param"]][names(fit.param)]
-    #       aniso = t.georob[["aniso"]][["aniso"]][names(fit.aniso)]
-    #       
-    #     }
     
   }
   
@@ -590,6 +531,9 @@ georob <-
     georob.object = georob.object,
     safe.param = control[["safe.param"]],
     tuning.psi = tuning.psi,
+    error.family.estimation = control[["error.family.estimation"]],
+    error.family.cov.effects = control[["error.family.cov.effects"]],
+    error.family.cov.residuals = control[["error.family.cov.residuals"]],
     cov.bhat = control[["cov.bhat"]], full.cov.bhat = control[["full.cov.bhat"]],
     cov.betahat = control[["cov.betahat"]], 
     cov.bhat.betahat = control[["cov.bhat.betahat"]],
@@ -600,22 +544,22 @@ georob <-
     cov.ehat.p.bhat = control[["cov.ehat.p.bhat"]], full.cov.ehat.p.bhat = control[["full.cov.ehat.p.bhat"]],
     aux.cov.pred.target = control[["aux.cov.pred.target"]],
     min.condnum = control[["min.condnum"]],
-    rankdef.x = rankdef.x,
+    col.rank.XX = col.rank.XX,
     psi.func = control[["psi.func"]],
     tuning.psi.nr = control[["tuning.psi.nr"]],
     ml.method = control[["ml.method"]],
+    maximizer = control[["maximizer"]],
+    reparam = control[["reparam"]],
     irwls.initial = control[["irwls.initial"]],
     irwls.maxiter = control[["irwls.maxiter"]],
-    irwls.reltol = control[["irwls.reltol"]],
+    irwls.ftol = control[["irwls.ftol"]],
     force.gradient = control[["force.gradient"]],
     zero.dist = control[["zero.dist"]],
     control.nleqslv =  control[["nleqslv"]],
-    ## bbsolve.method =  control[["bbsolve"]][["method"]],
-    ## bbsolve.control = control[["bbsolve"]][["control"]],
     control.optim = control[["optim"]],
-    hessian = control[["optim"]][["hessian"]],
-    control.parallel = control[["parallel"]],
-    full.output = control[["full.output"]],
+    control.nlminb = control[["nlminb"]],
+    hessian = control[["hessian"]],
+    control.pmm = control[["pmm"]],
     verbose = verbose
   )
   
@@ -630,26 +574,21 @@ georob <-
   
   ## add remaining items to output
   
-  if( control[["full.output"]] ){
-    
-    r.georob[["initial.objects"]][["initial.param"]] <- initial.param
-    
-    if( control[["lmrob"]][["compute.rd"]] && !is.null( x ) )
-       r.georob[["MD"]] <- robMD( x, attr(mt, "intercept") )
-    if( model ) r.georob[["model"]] <- mf
-    if( ret.x ) r.georob[["x"]] <- x
-    if( ret.y ) r.georob[["y"]] <- y
-    r.georob[["df.residual"]] <- -diff( dim( initial.objects[["x"]] ) )
-    
-    r.georob[["na.action"]] <- attr(mf, "na.action")
-    r.georob[["offset"]] <- offset
-    r.georob[["contrasts"]] <- attr(x, "contrasts")
-    r.georob[["xlevels"]] <- .getXlevels(mt, mf)
-    r.georob[["rank"]] <- ncol( initial.objects[["x"]] )
-    r.georob[["call"]] <- cl
-    r.georob[["terms"]] <- mt
-    
-  }
+  if( control[["lmrob"]][["compute.rd"]] && !is.null( x ) )
+    r.georob[["MD"]] <- robMD( x, attr(mt, "intercept") )
+
+  if( model ) r.georob[["model"]] <- mf
+  if( ret.x ) r.georob[["x"]] <- x
+  if( ret.y ) r.georob[["y"]] <- y
+
+  r.georob[["df.residual"]] <- length(yy) - col.rank.XX[["rank"]]
+  r.georob[["na.action"]] <- attr(mf, "na.action")
+  r.georob[["offset"]] <- offset
+  r.georob[["contrasts"]] <- attr(x, "contrasts")
+  r.georob[["xlevels"]] <- .getXlevels(mt, mf)
+  r.georob[["rank"]] <- col.rank.XX[["rank"]]
+  r.georob[["call"]] <- cl
+  r.georob[["terms"]] <- mt
   
   ## set missing names of coefficients (bug of update)
   
@@ -669,7 +608,7 @@ georob <-
 
 pmm <- 
   function( 
-    A, B, control = parallel.control() 
+    A, B, control = control.pmm() 
   )
 {
   
@@ -677,14 +616,15 @@ pmm <-
   ## parMM{snow}
   
   ## 2014-06-25 A. Papritz
+  ## 2015-03-13 AP small changes in f.aux
   
   ## auxiliary function 
   
-  f.aux <- function(i, s, e, A, B ) A %*% B[ , s[i]:e[i]]
+  f.aux <- function(i, s, e, A, B ) A %*% B[ , s[i]:e[i], drop = FALSE]
   
   ## determine columns indices of matrix blocks
   
-  k <- control[["f"]] * control[["pmm.ncores"]]
+  k <- control[["f"]] * control[["ncores"]]
   n <- NCOL(B)
   dn <- floor( n / k )
   s <- ( (0:(k-1)) * dn ) + 1
@@ -693,7 +633,7 @@ pmm <-
   
   ##
   
-  if( control[["pmm.ncores"]] > 1L ){
+  if( control[["ncores"]] > 1L ){
     
     if( identical( .Platform[["OS.type"]], "windows") ){
       
@@ -701,7 +641,7 @@ pmm <-
       
       if( !sfIsRunning() ){
         options( error = f.stop.cluster )
-        junk <- sfInit( parallel = TRUE, cpus = control[["pmm.ncores"]] )
+        junk <- sfInit( parallel = TRUE, cpus = control[["ncores"]] )
       }
       
       res <- sfLapply( 1:k, f.aux, s = s, e = e, A = A, B = B )
@@ -714,7 +654,7 @@ pmm <-
     } else {
       
       res <- mclapply( 
-        1:k, f.aux,s = s, e = e, A = A, B = B,  mc.cores = control[["pmm.ncores"]] 
+        1:k, f.aux,s = s, e = e, A = A, B = B,  mc.cores = control[["ncores"]] 
       )
       
     }
@@ -727,11 +667,15 @@ pmm <-
 
 #  ##############################################################################
 
-georob.control <- 
+control.georob <- 
   function(
     ml.method = c( "REML", "ML" ),
-    initial.method = c("lmrob", "rq", "lm"),
+    reparam = TRUE,
+    maximizer = c( "nlminb", "optim" ),
+    initial.param = TRUE,
+    initial.fixef = c("lmrob", "rq", "lm"),
     bhat = NULL,
+    min.rweight = 0.25,
     param.tf = param.transf(),
     fwd.tf = fwd.transf(), 
     deriv.fwd.tf = dfwd.transf(), 
@@ -739,11 +683,14 @@ georob.control <-
     safe.param = 1.e12,
     psi.func = c( "logistic", "t.dist", "huber" ),
     tuning.psi.nr = 1000,
-    min.rweight = 0.25,
     irwls.initial = TRUE,
-    irwls.maxiter = 50, irwls.reltol = .Machine[["double.eps"]]^0.25,
+    irwls.maxiter = 50, irwls.ftol = 1.e-5,
     force.gradient = FALSE,
+    min.condnum = 1.e-12,
     zero.dist = sqrt( .Machine[["double.eps"]] ),
+    error.family.estimation    = c( "gaussian", "long.tailed" ),
+    error.family.cov.effects   = c( "gaussian", "long.tailed" ),
+    error.family.cov.residuals = c( "long.tailed", "gaussian" ),
     cov.bhat = FALSE, full.cov.bhat = FALSE,
     cov.betahat = TRUE, 
     cov.bhat.betahat = FALSE,
@@ -752,14 +699,13 @@ georob.control <-
     cov.ehat = TRUE, full.cov.ehat = FALSE,
     cov.ehat.p.bhat = FALSE, full.cov.ehat.p.bhat = FALSE,
     aux.cov.pred.target = FALSE,
-    min.condnum = 1.e-12,
-    rq = rq.control(),
+    hessian = TRUE,
+    rq = control.rq(),
     lmrob = lmrob.control(),
-    nleqslv = nleqslv.control(),
-    ## bbsolve = bbsolve.control(),
-    optim = optim.control(),
-    parallel = parallel.control(),
-    full.output = TRUE,
+    nleqslv = control.nleqslv(),
+    optim = control.optim(),
+    nlminb = control.nlminb(),
+    pmm = control.pmm(),
     ...
   )
 {
@@ -772,35 +718,49 @@ georob.control <-
   ## 2012-05-03 AP bounds for safe parameter values
   ## 2012-05-04 AP modifications for lognormal block kriging
   ## 2013-04-23 AP new names for robustness weights
-  ## 2013-06-12 AP changes in stored items of Valpha object
+  ## 2013-06-12 AP changes in stored items of Valphaxi object
   ## 2013-06-12 AP substituting [["x"]] for $x in all lists
   ## 2013-07-12 AP solving estimating equations by BBsolve{BB} (in addition to nleqlsv)
   ## 2014-05-15 AP changes for version 3 of RandomFields
   ## 2014-08-18 AP changes for parallelized computations
   ## 2014-08-18 AP changes for Gaussian ML estimation
+  ## 2015-03-10 AP extended variogram parameter transformations
+  ## 2015-06-30 AP function and arguments renamed
+  ## 2015-07-17 AP nlminb optimizer added
+  ## 2015-08-19 AP control about error families for computing covariances added
+  ## 2015-08-28 AP control arguments hessian, initial.param, initial.fixef newly organized
   
   if( 
-    !( all( param.tf %in% names( fwd.tf ) ) &&
-       all( param.tf %in% names( deriv.fwd.tf ) ) &&
-       all( param.tf %in% names( bwd.tf ) )
+    !( all( unlist( param.tf ) %in% names( fwd.tf ) ) &&
+       all( unlist( param.tf ) %in% names( deriv.fwd.tf ) ) &&
+       all( unlist( param.tf ) %in% names( bwd.tf ) )
     )
   ) stop( 
     "undefined transformation of variogram parameters; extend respective function definitions" 
   )
   
+  if( !irwls.initial && irwls.ftol >= 1.e-6 ) warning( 
+    "'irwls.initial == FALSE' and large 'ftol' may create problems for root finding"
+  )
+  
   list(
-    ml.method = match.arg( ml.method ),
-    initial.method = match.arg( initial.method ),
+    ml.method = match.arg( ml.method ), reparam = reparam,
+    maximizer = match.arg( maximizer ),
+    initial.param = initial.param,
+    initial.fixef = match.arg( initial.fixef ),
     bhat = bhat,
+    min.rweight = min.rweight,
     param.tf = param.tf, fwd.tf = fwd.tf, deriv.fwd.tf = deriv.fwd.tf, bwd.tf = bwd.tf,
     safe.param = safe.param,
     psi.func = match.arg( psi.func ), 
     tuning.psi.nr = tuning.psi.nr,
-    min.rweight = min.rweight,
-    irwls.initial = irwls.initial,
-    irwls.maxiter = irwls.maxiter, irwls.reltol = irwls.reltol,
+    irwls.initial = irwls.initial, irwls.maxiter = irwls.maxiter, irwls.ftol = irwls.ftol,
     force.gradient = force.gradient,
+    min.condnum = min.condnum,
     zero.dist = zero.dist,
+    error.family.estimation = match.arg( error.family.estimation ),
+    error.family.cov.effects = match.arg( error.family.cov.effects ),
+    error.family.cov.residuals = match.arg( error.family.cov.residuals ),    
     cov.bhat = cov.bhat, full.cov.bhat = full.cov.bhat,
     cov.betahat = cov.betahat, 
     cov.bhat.betahat = cov.bhat.betahat,
@@ -809,13 +769,12 @@ georob.control <-
     cov.ehat = cov.ehat, full.cov.ehat = full.cov.ehat,
     cov.ehat.p.bhat = cov.ehat.p.bhat, full.cov.ehat.p.bhat = full.cov.ehat.p.bhat,
     aux.cov.pred.target = aux.cov.pred.target,
-    min.condnum = min.condnum,
+    hessian = hessian,
     irf.models = c( "RMdewijsian", "RMfbm", "RMgenfbm" ),
     rq = rq, lmrob = lmrob, nleqslv = nleqslv, 
-    ## bbsolve = bbsolve, 
     optim = optim, 
-    parallel = parallel, 
-    full.output = full.output
+    nlminb = nlminb,
+    pmm = pmm
   )
   
 }
@@ -824,10 +783,17 @@ georob.control <-
 param.transf <-
   function( 
     variance = "log", snugget = "log", nugget = "log", scale = "log", 
-    alpha = "identity", beta = "log", delta = "identity", 
-    gamma = "identity", kappa = "identity", lambda = "identity", 
-    mu = "log", nu = "log",
-    f1 = "log", f2  ="log", omega = "rad", phi = "rad", zeta = "rad"
+    alpha = c( 
+      RMaskey = "log", RMdewijsian = "logit2", RMfbm = "logit2", RMgencauchy = "logit2", 
+      RMgenfbm = "logit2", RMlgd = "identity", RMqexp = "logit1", RMstable = "logit2"
+    ), 
+    beta = c( RMdagum = "logit1", RMgencauchy = "log", RMlgd = "log" ), 
+    delta = "logit1", 
+    gamma = c( RMcauchy = "log", RMdagum = "logit1" ), 
+    kappa = "logit3", lambda = "log", 
+    mu = "log", 
+    nu = "log",
+    f1 = "log", f2  ="log", omega = "identity", phi = "identity", zeta = "identity"
   )
 {
   
@@ -836,11 +802,19 @@ param.transf <-
   
   ## 2013-07-02 A. Papritz
   ## 2014-05-15 AP changes for version 3 of RandomFields
+  ## 2015-03-10 AP extended transformation
+  ## 2015-04-07 AP changes for fitting anisotropic variograms
   
-  c( 
+  list( 
     variance = variance, snugget = snugget, nugget = nugget, scale = scale,
-    alpha = alpha, beta = beta, delta = delta, gamma = gamma, 
-    kappa = kappa, lambda = lambda, mu = mu, nu = nu, 
+    alpha = alpha, 
+    beta = beta, 
+    delta = delta, 
+    gamma = gamma, 
+    kappa = kappa, 
+    lambda = lambda, 
+    mu = mu, 
+    nu = nu, 
     f1 = f1, f2 = f2, omega = omega, phi = phi, zeta = zeta
   )
   
@@ -856,8 +830,16 @@ fwd.transf <-
   ## definition of forward transformation of variogram parameters
   
   ## 2013-07-02 A. Papritz
+  ## 2015-03-10 AP extended variogram parameter transformations
+  ## 2015-04-07 AP changes for fitting anisotropic variograms
   
-  list( log = function(x) log(x),  identity = function(x) x, rad = function(x) x/180*pi, ... )
+  list( 
+    log = function(x) log(x), 
+    logit1 = function(x) log( x / (1. - x) ), 
+    logit2 = function(x) log( x / (2. - x) ), 
+    logit3 = function(x) log( (x - 1.) / (3. - x) ), 
+    identity = function(x) x, ...
+  )
 }
 
 ## ======================================================================
@@ -869,14 +851,17 @@ dfwd.transf<-
   
   ## definition of first derivative of forward transformation of variogram
   ## parameters
-  ## NOTE: dfwd.transf[["rad"]] must be equal to one since sine and cosine 
-  ## are evaluated for transformed angles
   
   ## 2013-07-02 A. Papritz
+  ## 2015-03-10 AP extended variogram parameter transformations
+  ## 2015-04-07 AP changes for fitting anisotropic variograms
   
   list( 
-    log = function(x) 1/x, identity = function(x) rep(1, length(x)), 
-    rad = function(x) rep(1., length(x)), ... 
+    log = function(x) 1/x, 
+    logit1 = function(x) 1. / (x - x^2),
+    logit2 = function(x) 2. / (2.*x - x^2),
+    logit3 = function(x) 2. / (4.*x - 3. - x^2),
+    identity = function(x) rep(1., length(x)), ... 
   )  
   
 }
@@ -891,13 +876,21 @@ bwd.transf <-
   ## definition of backward transformation of variogram parameters
   
   ## 2013-07-02 A. Papritz
+  ## 2015-03-10 AP extended variogram parameter transformations
+  ## 2015-04-07 AP changes for fitting anisotropic variograms
   
-  list( log = function(x) exp(x), identity = function(x) x, rad = function(x) x/pi*180, ... )
+  list( 
+    log = function(x) exp(x), 
+    logit1 = function(x) exp(x) / (1. + exp(x)),
+    logit2 = function(x) 2. * exp(x) / (1. + exp(x)),
+    logit3 = function(x) (3. * exp(x) + 1.) / (1. + exp(x)),
+    identity = function(x) x, ...
+  )
   
 }
 
 ## ======================================================================
-rq.control <-
+control.rq <-
   function(
     ## arguments for rq
     tau = 0.5, rq.method = "br",
@@ -916,6 +909,7 @@ rq.control <-
   
   ## 2012-12-14 A. Papritz
   ## 2014-07-29 AP
+  ## 2015-06-30 AP function and arguments renamed
   
   list( 
     tau = tau,  method = rq.method,
@@ -927,12 +921,12 @@ rq.control <-
 
 
 ## ======================================================================
-nleqslv.control <-
+control.nleqslv <-
   function( 
-    nleqslv.method = c( "Broyden", "Newton"), 
+    method = c( "Broyden", "Newton"), 
     global = c( "dbldog", "pwldog", "qline", "gline", "none" ),
     xscalm = c( "fixed", "auto" ),
-    nleqslv.control = NULL, 
+    control = list( ftol = 1.e-4 ), 
     ...
   )
 {
@@ -942,41 +936,22 @@ nleqslv.control <-
   
   ## 2013-07-12 A. Papritz
   ## 2014-07-29 AP
+  ## 2015-06-30 AP function and arguments renamed
   
   list( 
-    method = match.arg( nleqslv.method ),
+    method = match.arg( method ),
     global = match.arg( global ),
     xscalm = match.arg( xscalm ),
-    control = nleqslv.control
+    control = control
   )
 }
 
 ## ======================================================================
-## bbsolve.control <-
-##   function( 
-##     bbsolve.method = c( "2", "3", "1" ), 
-##     bbsolve.control = NULL
-##   )
-## {
-##   
-##   ## function sets meaningful defaults for selected arguments of function
-##   ## BBSolve{BB} 
-##   
-##   ## 2013-07-12 A. Papritz
-##   
-##   list( 
-##     method = as.integer( match.arg( bbsolve.method ) ),
-##     control = bbsolve.control
-##   )
-## }
-
-## ======================================================================
-optim.control <-
+control.optim <-
   function( 
-    optim.method = c( "BFGS", "Nelder-Mead", "CG", "L-BFGS-B", "SANN", "Brent" ),
+    method = c( "BFGS", "Nelder-Mead", "CG", "L-BFGS-B", "SANN", "Brent" ),
     lower = -Inf, upper = Inf,
-    optim.control = NULL,
-    hessian = TRUE,
+    control = list(reltol = 1.e-5),
     ...
   )
 {
@@ -984,19 +959,37 @@ optim.control <-
   ## function sets meaningful defaults for selected arguments of function optim
   ## 2012-12-14 A. Papritz
   ## 2014-07-29 AP
+  ## 2015-06-30 AP function and arguments renamed
   
   list( 
-    method = match.arg( optim.method ),
+    method = match.arg( method ),
     lower = lower, upper = upper,
-    hessian = hessian,
-    control = optim.control
+    control = control
   )
 }
 
 ## ======================================================================
-parallel.control <-
+control.nlminb <-
   function( 
-    pmm.ncores = 1, gradient.ncores = 1, max.ncores = detectCores(), 
+    control = list( rel.tol = 1.e-5 ),
+    lower = -Inf, upper = Inf,
+    ...
+  )
+{
+  
+  ## function sets meaningful defaults for selected arguments of function nlminb
+  ## 2015-07-17 A. Papritz
+  
+  list( 
+    control = control,
+    lower = lower, upper = upper
+  )
+}
+
+## ======================================================================
+control.pmm <-
+  function( 
+    ncores = 1, max.ncores = detectCores(), 
     f = 2, sfstop = FALSE, allow.recursive = TRUE, 
     ... 
   )
@@ -1005,13 +998,14 @@ parallel.control <-
   ## function sets meaningful defaults for parallelized computations
   
   ## 2014-07-29 AP
+  ## 2015-06-30 AP function and arguments renamed
+  ## 2015-07-29 AP changes for elimination of parallelized computation of gradient or estimating equations
   
-  pmm.ncores <- min( pmm.ncores, max.ncores )
-  gradient.ncores <- min( gradient.ncores, max.ncores )
+  ncores <- min( ncores, max.ncores )
   
   list( 
-    pmm.ncores = pmm.ncores, gradient.ncores = gradient.ncores, 
-    max.ncores = max.ncores, f = f, sfstop = sfstop, 
+    ncores = ncores,  max.ncores = max.ncores, 
+    f = f, sfstop = sfstop, 
     allow.recursive = allow.recursive
   )
 
@@ -1188,13 +1182,13 @@ function( model, d )
   switch(
     model,
     "RMaskey"         = list( alpha = c( 0.5 * (d + 1), Inf ) ),
-    "RMbessel"        = list( nu = c( 0.5 * (d - 2.), Inf ) ),
+    "RMbessel"        = list( nu = c( 0.5 * (d - 2), Inf ) ),
     "RMcauchy"        = list( gamma = c( 1.e-18, Inf ) ),
     "RMcircular"      = NULL,
     "RMcubic"         = NULL,
     "RMdagum"         = list( beta = c( 1.e-18, 1.), gamma = c( 1.e-18, 1.-1.e-18) ),
     "RMdampedcos"     = list( lambda = c( if( d > 2 ) sqrt(3.) else 1., Inf ) ),
-    "RMdewijsian"     = list( alpha = c( 1.e-18, 2 ) ),
+    "RMdewijsian"     = list( alpha = c( 1.e-18, 2. ) ),
     "RMexp"           = NULL,
     "RMfbm"           = list( alpha = c( 1.e-18, 2.) ),
     "RMgauss"         = NULL,
@@ -1219,3 +1213,244 @@ function( model, d )
     stop( model, " variogram not implemented" )
   )
 }
+
+ 
+##  ##############################################################################
+
+profilelogLik <- 
+function( object, values, use.fitted = TRUE, verbose = 0, 
+  ncores = min( detectCores(), NROW(values) ) ){
+  
+  ## function to compute (restricted) likelihood profile for a georob fit
+  
+  ## arguments:
+  
+  ## object             a fitted georob object
+  ## values             a matrix or dataframe with the fixed variogram parameter 
+  ## use.fitted         control whether fitted variogram parameters should be used as initial values
+  ##                    values for which remaining parameters are estimated
+  ## ncores             number of cores for parallelized computations
+  
+  ## 2015-03-18 A. Papritz
+  ## 2015-04-08 AP changes in returned results
+  
+  ## auxiliary function to fit model and return maximized (pseudo) log-likelihood
+  
+  f.aux <- function( 
+    i, values, object, data, 
+    fixed.param, param, fit.param, 
+    fixed.aniso, aniso, fit.aniso,
+    reparam, verbose
+  ){
+    
+    values <- values[i, ]
+    if( length( fixed.param ) ) param[fixed.param] <- values[fixed.param]
+    if( length( fixed.aniso ) ) aniso[fixed.aniso] <- values[fixed.aniso]
+    
+    ## set hessian equal to FALSE in control argument of georob call and update
+    ## call
+    
+    cl <- object[["call"]]
+    
+    if( "control" %in% names(cl) ){
+      
+      ## georob called with control argument
+    
+      cl.control <- as.list( cl[["control"]] )
+      cl <- cl[ -match( "control", names(cl) ) ]
+      if( "hessian" %in% names(cl.control) ){
+        cl.control["hessian"] <- list( hessian = FALSE )
+      } else {
+        cl.control <- c( cl.control, hessian = FALSE )
+      }
+      
+    } else {
+      
+      ## georob called without control argument
+      
+      cl.control <- list( as.symbol("control.georob"), hessian = FALSE )
+      
+    }
+    
+    object[["call"]] <- as.call(  c( as.list(cl), control = as.call(cl.control) ) )
+    object <- update( object )
+    
+    fit <- update( 
+      object, data = data, param = param, fit.param = fit.param,
+      aniso = aniso, fit.aniso = fit.aniso, verbose = verbose
+    )
+    
+    c( 
+      loglik = logLik( 
+        fit, warn = FALSE, REML = identical( object[["control"]][["ml.method"]], "REML" ) 
+      ), 
+      fit[["param"]][fit.param],
+      fit[["aniso"]][["aniso"]][fit.aniso],      
+      coef( fit ),
+      converged = fit[["converged"]]
+    )
+    
+  }
+  
+  ## warning for robust fits
+  
+  if( object[["tuning.psi"]] < object[["control"]][["tuning.psi.nr"]] ){
+    warning( 
+      "likelihood approximated for robustly fitted model by likelihood of\n",
+      "  equivalent Gaussian model with heteroscedastic nugget"
+    )
+  }
+  
+  if( !(is.matrix(values) || is.data.frame( values )) ) stop( 
+    "'values' must be a dataframe or a matrix" 
+  )
+  
+  ## get data.frame with required variables (note that the data.frame passed
+  ## as data argument to georob must exist in GlobalEnv)
+  
+  data <- cbind(
+    get_all_vars( 
+      formula( object ), data = eval( getCall(object)[["data"]] )
+    ),
+    get_all_vars( 
+      object[["locations.objects"]][["locations"]], eval( getCall(object)[["data"]] )
+    )
+  )
+  
+  if( identical( class( object[["na.action"]] ), "omit" ) ) data <- na.omit(data)
+  
+  ## select subset if appropriate
+  
+  if( !is.null( getCall(object)[["subset"]] ) ){
+   data <- data[eval( getCall(object)[["subset"]] ), ]
+  }
+  
+  ## check names of fixed variogram parameters
+  
+  fixed.param.aniso <- colnames( values )
+  if( any( 
+      !fixed.param.aniso %in% gsub( 
+        "(fixed)", "", 
+        c( names( object[["param"]] ), names( object[["aniso"]][["aniso"]] ) ),
+        fixed = TRUE
+      )
+    ) 
+  ) stop( "column names of 'values' do not match names of variogram parameters" )
+  
+  ## determine variogram parameters that should be kept fixed at specified
+  ## values and update call of object
+  
+  fixed.param <- fixed.param.aniso[fixed.param.aniso %in% names( object[["param"]] )]
+  if( use.fitted ){
+    param <- object[["param"]]
+  } else {
+    param <- object[["initial.objects"]][["param"]]
+  }
+  fit.param <- object[["initial.objects"]][["fit.param"]]
+  if( length( fixed.param ) ) fit.param[fixed.param] <- FALSE
+  
+  fixed.aniso <- fixed.param.aniso[fixed.param.aniso %in% names( object[["aniso"]][["aniso"]] )]
+  if( use.fitted ){
+    aniso <- object[["aniso"]][["aniso"]]
+  } else {
+    aniso <- object[["initial.objects"]][["aniso"]]
+  }
+  fit.aniso <- object[["initial.objects"]][["fit.aniso"]]
+  if( length( fixed.aniso ) ) fit.aniso[fixed.aniso] <- FALSE
+  
+  ## update object call to avoid computation of covariance matrices
+  ## and to set reparam = FALSE if variance parameters are fitted
+  
+  reparam <- !any( colnames( values ) %in% c( "variance", "snugget", "nugget" ) )
+  
+  cl <- object[["call"]]
+
+  if( "control" %in% names( cl ) ){
+    
+    ## georob called with control argument
+    
+    cl.control <- as.list( cl[["control"]] )
+    cl <- cl[ -match( "control", names(cl) ) ]
+    cl.control <- cl.control[ !names( cl.control ) %in% c( 
+      "force.gradient", "cov.bhat", "cov.betahat", "cov.bhat.betahat", 
+      "cov.delta.bhat", "cov.delta.bhat.betahat", "cov.ehat", "cov.ehat.p.bhat",
+      "aux.cov.pred.target", "reparam"
+    )]
+    cl.control <- c(
+      cl.control,
+      "force.gradient" = FALSE, 
+      "cov.bhat" = FALSE, "cov.betahat" = FALSE, "cov.bhat.betahat" = FALSE, 
+      "cov.delta.bhat" = FALSE, "cov.delta.bhat.betahat" = FALSE,
+      "cov.ehat" = FALSE,  "cov.ehat.p.bhat" = FALSE, 
+      "aux.cov.pred.target" = FALSE,
+      reparam = reparam
+    )
+    object[["call"]] <- as.call( c( as.list(cl), control = as.call(cl.control) ) )
+    
+  } else {
+    
+    ## georob called without control argument
+    
+    cl.control <- list( 
+      as.symbol("control.georob"),
+      force.gradient = FALSE, cov.bhat = FALSE, 
+      cov.betahat = FALSE, cov.bhat.betahat = FALSE, 
+      cov.delta.bhat = FALSE, cov.delta.bhat.betahat = FALSE,
+      cov.ehat = FALSE,  cov.ehat.p.bhat = FALSE, 
+      aux.cov.pred.target = FALSE,
+      reparam = reparam
+    )
+  
+  }
+  
+  object[["call"]] <- as.call( c( as.list(cl), control = as.call(cl.control) ) )
+
+  ## loop over all elements of values
+  
+  values <- as.matrix( values )
+  
+  if( ncores > 1 && .Platform[["OS.type"]] == "windows" ){
+    
+    ## create a SNOW cluster on windows OS
+    
+    cl <- makePSOCKcluster( ncores, outfile = "")
+    
+    ## export required items to workers
+    
+    junk <- clusterEvalQ( cl, require( georob, quietly = TRUE ) )
+    
+    result <- parLapply(
+      cl, 
+      1:NROW(values),
+      f.aux, 
+      values = values, object = object, data = data,
+      fixed.param = fixed.param, param = param, fit.param = fit.param,
+      fixed.aniso = fixed.aniso, aniso = aniso, fit.aniso = fit.aniso,
+      reparam = reparam, verbose = verbose
+    )
+    
+    stopCluster(cl)
+    
+  } else {
+        
+    ## fork child processes on non-windows OS
+    
+    result <- mclapply(
+      1:NROW(values),
+      f.aux, 
+      values = values, object = object, data = data, 
+      fixed.param = fixed.param, param = param, fit.param = fit.param,
+      fixed.aniso = fixed.aniso, aniso = aniso, fit.aniso = fit.aniso,
+      reparam = reparam, verbose = verbose,
+      mc.cores = ncores,
+      mc.allow.recursive = FALSE
+    )
+    
+  }
+  
+  ## collect results
+  
+  as.data.frame( cbind( values, t( simplify2array( result ) ) ) )
+  
+}
+

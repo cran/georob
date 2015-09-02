@@ -11,15 +11,15 @@
 \title{Computing (Robust) Sample Variograms of Spatial Data}
 
 \description{The function \code{sample.variogram} computes the
-sample empirical) variogram of a spatial variable by the method-of-moment
+sample (empirical) variogram of a spatial variable by the method-of-moment
 and three robust estimators.  Both omnidirectional and direction-dependent
-variograms can be computed, the latter for observation locations in s
+variograms can be computed, the latter for observation locations in a
 three-dimensionsal domain.  There are \code{summary} and \code{plot}
 methods for summarizing and displaying sample variograms.}
 
 
 \usage{
-sample.variogram(response, locations, lag.class.def, 
+sample.variogram(response, locations, lag.dist.def, 
     xy.angle.def = c(0, 180), xz.angle.def = c(0, 180), max.lag = Inf, 
     estimator = c("qn", "mad", "matheron", "ch"), mean.angle = TRUE)
    
@@ -43,7 +43,7 @@ sample.variogram(response, locations, lag.class.def,
   for an omnidirectional variogram, but at most 3 columns if a directional
   variogram is computed.}
   
-  \item{lag.class.def}{a numeric scalar defining a constant bin width for
+  \item{lag.dist.def}{a numeric scalar defining a constant bin width for
   grouping the lag distances or a numeric vector with the upper bounds of a
   set of contiguous bins.}
   
@@ -88,7 +88,7 @@ sample.variogram(response, locations, lag.class.def,
   default) or from the mid-angles of the respective angular classes
   (\code{FALSE}).}
   
-  \item{object, x}{an object of class \code{sample.variogram}}.
+  \item{object, x}{an object of class \code{sample.variogram}.}
   
   \item{type, xlim, ylim, xlab, ylab}{see respective arguments of
   \code{\link[graphics]{plot.default}}.}
@@ -131,15 +131,15 @@ sample.variogram(response, locations, lag.class.def,
   angular class is defined by the vector elements, say \var{l} and \var{u},
   with indices \eqn{i} and \eqn{i+1}.  A lag vector belongs to the
   \eqn{i}th angular class if its azimuth (or angle from zenith), say
-  \eqn{\varphi}, satisfies \eqn{ l < \varphi \leq u}{l < \phi <= u}.  If
-  the first and the last angles of \code{xy.angle.def} or
+  \eqn{\varphi}{\phi}, satisfies \eqn{ l < \varphi \leq u}{l < \phi <= u}.
+  If the first and the last element of \code{xy.angle.def} or
   \code{xz.angle.def} are equal to \code{0} and \code{180} degrees,
   respectively, then the first and the last angular class are
   \dQuote{joined}, i.e., if there are \eqn{K} angles, there will be only
   \eqn{K-2} angular classes and the first class is defined by the interval
   ( \var{xy.angle.def}[\var{K}-1]-180, \var{xy.angle.def}[2] ] and the last
-  class by ( \var{xy.angle.def}[\var{K}-2], \var{xy.angle.def}[\var{K}-1]
-  ].  }
+  class by ( \var{xy.angle.def}[\var{K}-2], \var{xy.angle.def}[\var{K}-1]]. 
+}
 
 \value{An object of class \code{sample.variogram}, which is a data frame
 with the following components:
@@ -189,14 +189,14 @@ data(wolfcamp, package = "geoR")
 
 ## fitting an isotropic IRF(0) model
 r.sv.iso <- sample.variogram(wolfcamp[["data"]], locations = wolfcamp[[1]], 
-    lag.class.def = seq(0, 200, by = 15))
+    lag.dist.def = seq(0, 200, by = 15))
 
 \dontrun{
 plot( r.sv.iso, type = "l")}
 
 ## fitting an anisotropic IRF(0) model
 r.sv.aniso <- sample.variogram(wolfcamp[["data"]],
-    locations = wolfcamp[[1]], lag.class.def = seq(0, 200, by = 15),
+    locations = wolfcamp[[1]], lag.dist.def = seq(0, 200, by = 15),
     xy.angle.def = c(0., 22.5, 67.5, 112.5, 157.5, 180.))
 \dontrun{
 plot(r.sv.aniso, type = "l", add = TRUE, col = 2:5)}

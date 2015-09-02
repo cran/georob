@@ -9,12 +9,16 @@
 # drop1.georob
 # extractAIC.georob
 # logLik.georob
+# step
 # step.default
 # step.georob
 # model.frame.georob
 # model.matrix.georob
 # nobs.georob
 # print.georob
+# proflik
+# proflik.likfit
+# proflik.georob
 # ranef.georob
 # residuals.georob
 # resid.georob
@@ -187,8 +191,9 @@ ranef.georob <- random.effects.georob <-
     class( object[["na.action"]] ) <- "omit"
   }
 
-  Valpha.objects <- expand( object[["Valpha.objects"]] )
-  covmat         <- expand( object[["cov"]] )
+  Valphaxi.objects <- expand( object[["Valphaxi.objects"]] )
+  zhat.objects     <- expand( object[["zhat.objects"]] )
+  covmat           <- expand( object[["cov"]] )
   
   bhat <- object[["bhat"]]   
   
@@ -203,15 +208,17 @@ ranef.georob <- random.effects.georob <-
         model.frame( object ) 
       )[!duplicated( object[["Tmat"]] ), , drop = FALSE]
       
-      r.cov <- compute.covariances(
-        Valpha.objects = Valpha.objects,
-        Aalpha = object[["Aalpha"]],
-        Palpha = object[["Palpha"]],
+      r.cov <- covariances.fixed.random.effects(
+        Valphaxi.objects = Valphaxi.objects[c("Valphaxi", "Valphaxi.inverse")],
+        Aalphaxi = zhat.objects[["Aalphaxi"]],
+        Palphaxi = zhat.objects[["Palphaxi"]],
+        Valphaxi.inverse.Palphaxi = zhat.objects[["Valphaxi.inverse.Palphaxi"]],
         rweights = object[["rweights"]],
-        XX = X, TT = object[["Tmat"]], names.yy = rownames( model.frame( object ) ),
+        XX = X, TT = object[["Tmat"]], TtT = as.vector( table( object[["Tmat"]] ) ),
+        names.yy = rownames( model.frame( object ) ),
         nugget = object[["param"]]["nugget"],
         eta = sum( object[["param"]][c( "variance", "snugget")] ) / object[["param"]]["nugget"],
-        expectations = object[["expectations"]],
+        expectations = object[["expectations"]], family = "gaussian",
         cov.bhat = TRUE, full.cov.bhat = FALSE,
         cov.betahat = FALSE, 
         cov.bhat.betahat = FALSE,
@@ -220,7 +227,7 @@ ranef.georob <- random.effects.georob <-
         cov.ehat = FALSE, full.cov.ehat = FALSE,
         cov.ehat.p.bhat = FALSE, full.cov.ehat.p.bhat = FALSE,
         aux.cov.pred.target = FALSE,
-        control.parallel = parallel.control(),
+        control.pmm = control.pmm(),
         verbose = 0
       )
       
@@ -278,7 +285,8 @@ fixef.georob <- fixed.effects.georob <-
 
 ## ##############################################################################
 
-residuals.georob <- resid.georob <- 
+residuals.georob <- 
+resid.georob <- 
   function( 
     object,
     type = c("working", "response", "deviance", "pearson", "partial" ), 
@@ -303,7 +311,7 @@ residuals.georob <- resid.georob <-
   ## 2011-12-14 AP modified for replicated observations
   ## 2013-05-31 AP modified for computing partial residuals for single terms
   ## 2013-06-12 AP substituting [["x"]] for $x in all lists
-  
+
   type <- match.arg( type )
   
   if( !level %in% 1:0 ) stop( "wrong level: must be either 1 or 0" )
@@ -325,8 +333,7 @@ residuals.georob <- resid.georob <-
     partial = r
   )
   
-    
-  if( level == 0 && any( type %in% c( "working", "response", "partial" ) ) ){
+  if( level == 0 && !identical( type, "pearson" ) ){
     res <- res + ranef( object, standard = FALSE )[object[["Tmat"]]]
   }
   
@@ -365,6 +372,7 @@ rstandard.georob <-
   ## 2013-06-12 AP substituting [["x"]] for $x in all lists
   ## 2104-08-19 AP correcting error when computing covariances of residuals
   
+
   ## temporarily redefine na.action component of model
   
   model.na <- model[["na.action"]]
@@ -372,8 +380,9 @@ rstandard.georob <-
     class( model[["na.action"]] ) <- "omit"
   }
   
-  Valpha.objects <- expand( model[["Valpha.objects"]] )
-  covmat         <- expand( model[["cov"]] )
+  Valphaxi.objects <- expand( model[["Valphaxi.objects"]] )
+  zhat.objects     <- expand( model[["zhat.objects"]] )
+  covmat           <- expand( model[["cov"]] )
   
   if( !level %in% 1:0 ) stop( "wrong level: must be either 1 or 0" )
   
@@ -389,15 +398,17 @@ rstandard.georob <-
       model.frame( model ) 
     )[!duplicated( model[["Tmat"]] ), , drop = FALSE]
     
-    r.cov <- compute.covariances(
-      Valpha.objects = Valpha.objects,
-      Aalpha = model[["Aalpha"]],
-      Palpha = model[["Palpha"]],
+    r.cov <- covariances.fixed.random.effects(
+      Valphaxi.objects = Valphaxi.objects,
+      Aalphaxi = zhat.objects[["Aalphaxi"]],
+      Palphaxi = zhat.objects[["Palphaxi"]],
+      Valphaxi.inverse.Palphaxi = zhat.objects[["Valphaxi.inverse.Palphaxi"]],
       rweights = model[["rweights"]],
-      XX = X, TT = model[["Tmat"]], names.yy = rownames( model.frame( model ) ),
+      XX = X, TT = model[["Tmat"]], TtT = as.vector( table( model[["Tmat"]] ) ),
+      names.yy = rownames( model.frame( model ) ),
       nugget = model[["param"]]["nugget"],
       eta = sum( model[["param"]][c( "variance", "snugget")] ) / model[["param"]]["nugget"],
-      expectations = model[["expectations"]],
+      expectations = model[["expectations"]], family = "long.tailed",
       cov.bhat = FALSE, full.cov.bhat = FALSE,
       cov.betahat = FALSE, 
       cov.bhat.betahat = FALSE,
@@ -406,7 +417,7 @@ rstandard.georob <-
       cov.ehat = level == 1, full.cov.ehat = FALSE,
       cov.ehat.p.bhat = level == 0, full.cov.ehat.p.bhat = FALSE,
       aux.cov.pred.target = FALSE,
-      control.parallel = parallel.control(),
+      control.pmm = control.pmm(),
       verbose = 0
     )
     
@@ -415,9 +426,9 @@ rstandard.georob <-
     )
     
     if( level == 1 ){
-      covmat[["cov.ehat"]] <-r.cov[["cov.ehat"]] 
+      covmat[["cov.ehat"]] <- r.cov[["cov.ehat"]] 
     } else {
-      covmat[["cov.ehat.p.bhat"]] <-r.cov[["cov.ehat.p.bhat"]] 
+      covmat[["cov.ehat.p.bhat"]] <- r.cov[["cov.ehat.p.bhat"]] 
     }
     
   } 
@@ -497,6 +508,9 @@ summary.georob <-
   ## 2013-06-12 AP substituting [["x"]] for $x in all lists
   ## 2013-07-03 AP new transformation of rotation angles
   ## 2014-08-26 AP changes to print ml.method
+  ## 2015-04-07 AP changes for fitting anisotropic variograms
+  
+  d2r <- pi / 180.
   
   covmat       <- expand( object[["cov"]] )
   
@@ -595,17 +609,25 @@ summary.georob <-
         ci[sel.names, ] <- t( 
           sapply(
             sel.names,
-            function( x, param, se, param.tf, trafo.fct, inv.trafo.fct ){
-              inv.trafo.fct[[param.tf[x]]]( 
-                trafo.fct[[param.tf[x]]]( param[x] ) + 
+            function( x, param, se, param.tf, trafo.fct, inv.trafo.fct, variogram.model ){
+              
+              xx <- param.tf[[x]]
+              if( length( xx ) > 1L ) xx <- xx[variogram.model]
+              
+              inv.trafo.fct[[xx]]( 
+                trafo.fct[[xx]]( param[x] ) + 
                 c(-1, 1) * se[x] * qnorm( (1-signif)/2, lower.tail = FALSE ) 
               )
             },
-            param         = c( object[["param"]], object[["aniso"]][["aniso"]] ),
+            param         = c( 
+              object[["param"]], 
+              object[["aniso"]][["aniso"]] * c( rep( 1., 2 ), rep( d2r, 3 ) )
+            ),
             se            = se,
-            param.tf      = object[["param.tf"]],
-            trafo.fct     = object[["fwd.tf"]],
-            inv.trafo.fct = object[["bwd.tf"]]
+            param.tf      = object[["control"]][["param.tf"]],
+            trafo.fct     = object[["control"]][["fwd.tf"]],
+            inv.trafo.fct = object[["control"]][["bwd.tf"]],
+            variogram.model = object[["variogram.model"]]
           )
         )
         
@@ -615,20 +637,23 @@ summary.georob <-
           
           if( !object[["aniso"]][["isotropic"]] ){
             sel <- match( "omega", rownames(ci) )
-            if( !is.na( sel ) ){
-              ci[sel, ] <- ifelse( ci[sel, ] <   0., ci[sel, ] + 180., ci[sel, ] )
-              ci[sel, ] <- ifelse( ci[sel, ] > 180., ci[sel, ] - 180., ci[sel, ] )
-            }
+            ci[sel, ] <- ci[sel, ] / d2r
+            #             if( !is.na( sel ) ){
+            #               ci[sel, ] <- ifelse( ci[sel, ] <   0., ci[sel, ] + 180., ci[sel, ] )
+            #               ci[sel, ] <- ifelse( ci[sel, ] > 180., ci[sel, ] - 180., ci[sel, ] )
+            #             }
             sel <- match( "phi", rownames(ci) )
-            if( !is.na( sel ) ){
-              ci[sel, ] <- ifelse( ci[sel, ] <   0., ci[sel, ] + 180., ci[sel, ] )
-              ci[sel, ] <- ifelse( ci[sel, ] > 180., ci[sel, ] - 180., ci[sel, ] )
-            }
+            ci[sel, ] <- ci[sel, ] / d2r
+            #             if( !is.na( sel ) ){
+            #               ci[sel, ] <- ifelse( ci[sel, ] <   0., ci[sel, ] + 180., ci[sel, ] )
+            #               ci[sel, ] <- ifelse( ci[sel, ] > 180., ci[sel, ] - 180., ci[sel, ] )
+            #             }
             sel <- match( "zeta", rownames(ci) )
-            if( !is.na( sel ) ){
-              ci[sel, ] <- ifelse( ci[sel, ] < -90., ci[sel, ] + 180., ci[sel, ] )
-              ci[sel, ] <- ifelse( ci[sel, ] >  90., ci[sel, ] - 180., ci[sel, ] )
-            }
+            ci[sel, ] <- ci[sel, ] / d2r
+            #             if( !is.na( sel ) ){
+            #               ci[sel, ] <- ifelse( ci[sel, ] < -90., ci[sel, ] + 180., ci[sel, ] )
+            #               ci[sel, ] <- ifelse( ci[sel, ] >  90., ci[sel, ] - 180., ci[sel, ] )
+            #             }
           }
           
         }
@@ -735,7 +760,7 @@ print.summary.georob <-
   }
   else print( bhat, digits = digits, ...)
   
-  resid <- x[["residuals"]]
+  resid <- residuals( x )
   cat( "\nResiduals (epsilon):\n")
   if(df > 5){
     nam <- c("Min", "1Q", "Median", "3Q", "Max")
@@ -745,7 +770,7 @@ print.summary.georob <-
   else print( resid, digits = digits, ...)
   
   if( !is.null( x[["se.residuals"]] ) ){
-    resid <- x[["residuals"]] / x[["se.residuals"]]
+    resid <- residuals( x, type = "working" ) / x[["se.residuals"]]
     cat( "\nStandardized residuals:\n")
     if(df > 5){
       nam <- c("Min", "1Q", "Median", "3Q", "Max")
@@ -769,6 +794,10 @@ print.summary.georob <-
     }
   )
   
+  tmp <- x[["param"]][ ,1]
+  tmp <- tmp[!is.na(tmp) & tmp > 0 ]
+  t.digits <- -floor( log10( min( tmp ) ) )
+  
   rownames( x[["param"]] ) <- ifelse(
     x[["fit.param"]],
     rownames( x[["param"]] ),
@@ -776,7 +805,7 @@ print.summary.georob <-
   )
   ##        print( format( x[["param"]], digits = digits ), print.gap = 2, quote = FALSE )
   printCoefmat(
-    x[["param"]], digits = digits, signif.stars = FALSE, ...
+    x[["param"]], digits = max( digits, t.digits) , signif.stars = FALSE, ...
   )
   
   
@@ -841,8 +870,8 @@ vcov.georob <-
 
 waldtest.georob <- 
   function(
-    object, ..., vcov = NULL, test = c("Chisq", "F"), name = NULL,
-    fixed = TRUE
+    object, ..., vcov = NULL, test = c("F", "Chisq"), name = NULL#,
+#     fixed = TRUE
   )
 {
 
@@ -852,32 +881,73 @@ waldtest.georob <-
   ## 2013-06-12 AP substituting [["x"]] for $x in all lists
   ## 2013-02-19 AP correcting option for verbose output
   ## 2014-05-15 AP changes for version 3 of RandomFields
+  ## 2015-08-28 AP computation of hessian suppressed
+  ## 2015-09-01 AP keep variogram parameters always fixed
 
   test <- match.arg( test )
   
   ## refit object with fixed variogram parameters
   
-  if( fixed ) {
+  #   if( fixed ) {
+  #     
+  #     cat( "\nWald-Test with fixed variogram parameters of model 1\n\n" )
+  #     
+  #     object <- update( 
+  #       object, 
+  #       param = object[["param"]],
+  #       aniso = object[["aniso"]][["aniso"]],
+  #       fit.param = c( 
+  #         variance = FALSE, snugget = FALSE, nugget = FALSE, scale = FALSE, 
+  #         alpha = FALSE, beta = FALSE, delta = FALSE, 
+  #         gamma = FALSE, kappa = FALSE, lambda = FALSE, mu = FALSE, nu = FALSE
+  #       )[names( object[["param"]] )],
+  #       fit.aniso = c(
+  #         f1 = FALSE, f2 = FALSE, omega = FALSE, phi = FALSE, zeta = FALSE 
+  #       ),
+  #       verbose = 0,
+  #       object. = object
+  #     )
+  #     
+  #   }
+  
+  cl <- object[["call"]]
+  
+  ## manipulate call to keep all variogram and anisotropy parameters fixed
+  
+  cl <- update( object, fit.param = c( 
+      variance = FALSE, snugget = FALSE, nugget = FALSE, scale = FALSE, 
+      alpha = FALSE, beta = FALSE, delta = FALSE, 
+      gamma = FALSE, kappa = FALSE, lambda = FALSE, mu = FALSE, nu = FALSE
+    )[names( object[["param"]] )],
+    fit.aniso = c(
+      f1 = FALSE, f2 = FALSE, omega = FALSE, phi = FALSE, zeta = FALSE 
+    ), verbose = 0, object. = object, evaluate = FALSE
+  )
+  
+  ## set hessian equal to FALSE in control argument of georob call and update
+  ## call
+  
+  if( "control" %in% names(cl) ){
     
-    cat( "\nWald-Test with fixed variogram parameters of model 1\n\n" )
+    ## georob called with control argument
     
-    object <- update( 
-      object, 
-      param = object[["param"]],
-      aniso = object[["aniso"]][["aniso"]],
-      fit.param = c( 
-        variance = FALSE, snugget = FALSE, nugget = FALSE, scale = FALSE, 
-        alpha = FALSE, beta = FALSE, delta = FALSE, 
-        gamma = FALSE, kappa = FALSE, lambda = FALSE, mu = FALSE, nu = FALSE
-      )[names( object[["param"]] )],
-      fit.aniso = c(
-        f1 = FALSE, f2 = FALSE, omega = FALSE, phi = FALSE, zeta = FALSE 
-      ),
-      verbose = 0,
-      object. = object
-    )
+    cl.control <- as.list( cl[["control"]] )
+    cl <- cl[ -match( "control", names(cl) ) ]
+    if( "hessian" %in% names(cl.control) ){
+      cl.control["hessian"] <- list( hessian = FALSE )
+    } else {
+      cl.control <- c( cl.control, hessian = FALSE )
+    }
+    
+  } else {
+    
+    ## georob called without control argument
+    
+    cl.control <- list( as.symbol("control.georob"), hessian = FALSE )
     
   }
+  
+  object[["call"]] <- as.call(  c( as.list(cl), control = as.call(cl.control) ) )
   
   ## Wald-Test
   
@@ -890,21 +960,34 @@ waldtest.georob <-
 ## ##############################################################################
 
 logLik.georob <- 
-  function( object, REML = FALSE, ... )
+function( object, warn = TRUE, REML = FALSE, ... )
 {
   
   ## 2012-12-22 method for extracting (restricted) loglikelihood
   ## 2013-06-12 AP substituting [["x"]] for $x in all lists
   ## 2014-02-27 AP computing 'pseudo' likelihood for robustly fitted models
+  ## 2015-03-16 AP computing 'pseudo' likelihood for REML case
   
-  
-  val <- if( REML ){
-    val <- object[["loglik"]] 
+  if( 
+    object[["tuning.psi"]] >= object[["control"]][["tuning.psi.nr"]] &&
+    ( 
+      (identical( object[["control"]][["ml.method"]], "REML" ) && REML) ||
+      (identical( object[["control"]][["ml.method"]], "ML" ) && !REML)
+    )
+  ){
+    val <- object[["loglik"]]    
   } else {
-    D <- deviance( object, ... )
-    -0.5 * ( 
-      D + attr( D, "log.det.covmat" ) + length( object[["residuals"]] ) * log( 2 * pi )
-    ) 
+    D <- deviance( object, warn = warn, REML = REML, ... )
+    if( REML ){
+      val <- -0.5 * ( 
+        D + attr( D, "log.det.covmat" ) + attr( D, "log.det.xticovmatx" ) + 
+        (length( object[["residuals"]] ) - length( object[["coefficients"]]) ) * log( 2 * pi )
+      ) 
+    } else {
+      val <- -0.5 * ( 
+        D + attr( D, "log.det.covmat" ) + length( object[["residuals"]] ) * log( 2 * pi )
+      ) 
+    }
   }
   
   attr(val, "nall") <- length(object[["residuals"]])
@@ -922,7 +1005,7 @@ logLik.georob <-
 
 deviance.georob <- 
 function( 
-  object, warn = TRUE, ...
+  object, warn = TRUE, REML = FALSE, ...
 )
 {
   ## deviance method for class georob
@@ -933,6 +1016,7 @@ function(
   ## 2013-06-12 AP substituting [["x"]] for $x in all lists
   ## 2014-02-27 AP computing 'pseudo' deviance for robustly fitted models
   ## 2014-03-12 AP option for suppressing warnings
+  ## 2015-03-16 AP attribute for computing maximized restricted loglikelihood
   
   ## redefine na.action component of object
   
@@ -945,7 +1029,7 @@ function(
   if( object[["tuning.psi"]] < object[["control"]][["tuning.psi.nr"]] ){
     if( warn ) warning( 
       "deviance for robustly fitted model approximated by deviance of\n",
-      "  equivalent model with heteroscedastic nugget"
+      "  equivalent Gaussian model with heteroscedastic nugget"
     )
     w <- object[["rweights"]]
   } else {
@@ -954,8 +1038,8 @@ function(
   
   ## invert covariance matrix of observations
   
-  Valpha.objects <- expand( object[["Valpha.objects"]] )
-  G <- sum( object[["param"]][c("variance", "snugget")] ) * Valpha.objects[["Valpha"]]
+  Valphaxi.objects <- expand( object[["Valphaxi.objects"]] )
+  G <- sum( object[["param"]][c("variance", "snugget")] ) * Valphaxi.objects[["Valphaxi"]]
   G <- G[object[["Tmat"]], object[["Tmat"]]]
   diag( G ) <- diag( G ) + object[["param"]]["nugget"] / w
   iucf <- try(
@@ -974,6 +1058,20 @@ function(
   } else {
     result <- sum( colSums( residuals( object, level = 0 ) * iucf )^2 )
     attr( result, "log.det.covmat" ) <- -2 * sum( log( diag( iucf ) ) )
+    if( REML ){
+      if( !is.null( object[["x"]] ) ){
+        XX <- object[["x"]]
+      } else {
+        if( is.null( object[["model"]]  ) ) stop(
+          "'model' component missing in 'object', update 'object' with argument 'model=TRUE"
+        )
+        XX <- model.matrix( object[["terms"]], object[["model"]] )
+      }
+     
+      tmp <- t( iucf ) %*% XX
+      tmp <- determinant( crossprod( tmp ) )
+      attr( result, "log.det.xticovmatx" ) <- tmp[["modulus"]] * tmp[["sign"]]
+    }
   }
   result
 }
@@ -1018,73 +1116,39 @@ add1.georob <- function( object, scope, scale = 0, test=c("none", "Chisq" ),
   ## 2014-03-12 AP 
   ## 2014-04-24 AP function returns only variogram parameters of best fitted object 
   ## 2014-05-15 AP changes for version 3 of RandomFields
+  ## 2015-07-23 AP warning and action for attempt to process Gaussian REML object
+  ## 2015-07-23 AP changes for dropping terms from model with fixed variogram parameters
+  ## 2015-08-28 AP computation of hessian suppressed
   
   ## auxiliary function for fitting model and extracting aic
   
-  f.aux <- function( 
-    tt, scale, k, trace,
-    fixed, use.fitted.param, object, data, param, aniso, fit.param, fit.aniso, 
-    verbose, ...
-  ){
-    converged <- TRUE
+  f.aux <- function( tt, scale, k, trace, object, data, verbose, ... ){
+
     if(trace > 1) {
       cat("\ntrying +", tt, "\n", sep = "")
       utils::flush.console()
     }
-    if( fixed ){
-      if( is.null( data ) ){
-        nfit <- update( 
-          object, as.formula(paste("~ . +", tt)), 
-          param = param, aniso = aniso, fit.param = fit.param, fit.aniso = fit.aniso,
-          initial.param = "no", verbose = verbose, object. = object
-        )
-      } else {
-        nfit <- update( 
-          object, as.formula(paste("~ . +", tt)), data = data,
-          param = param, aniso = aniso, fit.param = fit.param, fit.aniso = fit.aniso,
-          initial.param = "no", verbose = verbose, object. = object
-        )
-      }
-    } else {
-      if( use.fitted.param ){
-        if( is.null( data ) ){
-          nfit <- update( 
-            object, as.formula(paste("~ . +", tt)), 
-            param = param, aniso = aniso, initial.param = "no", verbose = verbose, 
-            object. = object
-          )
-        } else {
-          nfit <- update( 
-            object, as.formula(paste("~ . +", tt)), data = data,
-            param = param, aniso = aniso, initial.param = "no", verbose = verbose, 
-            object. = object
-          )
-        }
-      }
-      else {
-        if( is.null( data ) ){
-          nfit <- update( object, as.formula(paste("~ . +", tt)), 
-            verbose = verbose, object. = object 
-          )
-        } else {
-          nfit <- update( object, as.formula(paste("~ . +", tt)), data = data,
-            verbose = verbose, object. = object
-          )
-        }
-      }
-      if( !nfit$converged ){
-        converged <- FALSE
-        if( verbose > 0 ) cat( 
-          "lack of convergence when fitting model", paste("~ . +", tt), 
-          "\nconvergence code:", nfit$convergence.code, "\n"
-        )
-      }
+    
+    nfit <- update( 
+      object, as.formula(paste("~ . +", tt)), 
+      verbose = verbose, object. = object
+    )
+    
+    converged <- TRUE
+    
+    if( !is.na(!nfit[["converged"]]) && !nfit$converged ){
+      converged <- FALSE
+      if( verbose > 0 ) cat( 
+        "lack of convergence when fitting model", paste("~ . +", tt), 
+        "\nconvergence code:", nfit$convergence.code, "\n"
+      )
     }
+  
     nnew <- nobs( nfit, use.fallback = TRUE )
     if( all(is.finite(c(n0, nnew))) && nnew != n0 ) stop(
       "number of rows in use has changed: remove missing values?"
     )
-    df.aic <-  c( extractAIC( nfit, scale, k = k, ... ), as.numeric(converged))
+    df.aic <-  c( extractAIC( nfit, scale, k = k, REML = FALSE, ... ), as.numeric(converged))
     names( df.aic ) <- c("df", "AIC", "converged")
     attr( df.aic, "nfit" ) <- list(
       param = nfit[["param"]],
@@ -1094,6 +1158,152 @@ add1.georob <- function( object, scope, scale = 0, test=c("none", "Chisq" ),
     )
     df.aic
   }
+  
+  ## set hessian equal to FALSE in control argument of georob call and update
+  ## call
+  
+  cl <- object[["call"]]
+  
+  if( "control" %in% names(cl) ){
+    
+    ## georob called with control argument
+    
+    cl.control <- as.list( cl[["control"]] )
+    cl <- cl[ -match( "control", names(cl) ) ]
+    if( "hessian" %in% names(cl.control) ){
+      cl.control["hessian"] <- list( hessian = FALSE )
+    } else {
+      cl.control <- c( cl.control, hessian = FALSE )
+    }
+    
+  } else {
+    
+    ## georob called without control argument
+    
+    cl.control <- list( as.symbol("control.georob"), hessian = FALSE )
+    
+  }
+  
+  object[["call"]] <- as.call(  c( as.list(cl), control = as.call(cl.control) ) ) 
+  
+  ## check if object is result of GAUSSIAN ML fit and manipulate its call to
+  ## refit it by ML if required and suppress computation of hessian
+   
+  if( 
+    object[["tuning.psi"]] >= object[["control"]][["tuning.psi.nr"]] &&
+    identical( object[["control"]][["ml.method"]], "REML" )
+  ){
+    warning( "'object' was estmated by Gaussian REML which cannot be used for ",
+      "adding/dropping single terms\n=> 'object' is re-fitted by Gaussian ML ",
+      "before adding/deleting terms"
+    )
+    
+    cl <- object[["call"]]
+    
+    if( "control" %in% names(cl) ){
+      
+      ## georob called with control argument
+    
+      cl.control <- as.list( cl[["control"]] )
+      cl <- cl[ -match( "control", names(cl) ) ]
+      
+      if( "ml.method" %in% names(cl.control) ){
+        cl.control["ml.method"] <- list( ml.method = "ML" )
+      } else {
+        cl.control <- c( cl.control, ml.method = "ML" )
+      }
+      
+    } else {
+      
+      ## georob called without control argument
+      
+      cl.control <- list( as.symbol("control.georob"), ml.method = "ML" )
+      
+    }
+    
+    object[["call"]] <- as.call(  c( as.list(cl), control = as.call(cl.control) ) )
+    object <- update( object )
+    
+  }
+
+  ## manipulate object call if variogram parameters are fixed or estimation
+  ## should start from estimated values in object
+  
+  if( fixed || use.fitted.param ){
+    
+    t.fit.param <- object[["initial.objects"]][["fit.param"]]
+    t.fit.aniso <- object[["initial.objects"]][["fit.aniso"]]
+    
+    if( fixed ){
+      t.fit.param[t.fit.param] <- FALSE
+      t.fit.aniso[t.fit.aniso] <- FALSE
+      object[["initial.objects"]][["fit.param"]] <- t.fit.param
+      object[["initial.objects"]][["fit.aniso"]] <- t.fit.aniso
+    }
+    
+    object[["call"]] <- update( 
+      object, 
+      param = object[["param"]], 
+      fit.param = object[["initial.objects"]][["fit.param"]],
+      aniso = object[["aniso"]][["aniso"]], 
+      fit.aniso = object[["initial.objects"]][["fit.aniso"]],
+      evaluate = FALSE
+    )
+    
+  }
+  
+  ## update object call if fitted parameters are used as initial value
+  
+  if( use.fitted.param && !fixed ){
+  
+  
+  }
+  
+  ## update object call if data argument has been provided
+  
+  if( !is.null( data ) ) object[["call"]] <- update( object, data = data, evaluate = FALSE )
+  
+  ## further update object call to avoid computation of covariance matrices
+  
+  cl <- object[["call"]]
+
+#   if( "control" %in% names( cl ) ){
+    
+  ## georob called with control argument
+  
+  cl.control <- as.list( cl[["control"]] )
+  cl <- cl[ -match( "control", names(cl) ) ]
+  cl.control <- cl.control[ !names( cl.control ) %in% c( 
+    "force.gradient", "cov.bhat", "cov.betahat", 
+    "cov.bhat.betahat", "cov.delta.bhat", 
+    "cov.delta.bhat.betahat", "cov.ehat", 
+    "cov.ehat.p.bhat", "aux.cov.pred.target"
+  )]
+  cl.control <- c(
+    cl.control,
+    "force.gradient" = FALSE, "cov.bhat" = FALSE, 
+    "cov.betahat" = FALSE, "cov.bhat.betahat" = FALSE, 
+    "cov.delta.bhat" = FALSE, "cov.delta.bhat.betahat" = FALSE,
+    "cov.ehat" = FALSE,  "cov.ehat.p.bhat" = FALSE, 
+    "aux.cov.pred.target" = FALSE
+  )
+
+#   } else {
+#     
+#     ## georob called without control argument
+#     
+#     cl.control <- list( 
+#       as.symbol("control.georob"),
+#       force.gradient = FALSE, cov.bhat = FALSE, 
+#       cov.betahat = FALSE, cov.bhat.betahat = FALSE, 
+#       cov.delta.bhat = FALSE, cov.delta.bhat.betahat = FALSE,
+#       cov.ehat = FALSE,  cov.ehat.p.bhat = FALSE, 
+#       aux.cov.pred.target = FALSE
+#     )
+#   
+#   }
+
+  object[["call"]] <- as.call( c( as.list(cl), control = as.call(cl.control) ) )
   
   ## check scope
   
@@ -1114,14 +1324,14 @@ add1.georob <- function( object, scope, scale = 0, test=c("none", "Chisq" ),
   n0 <- nobs( object, use.fallback = TRUE )
   env <- environment( formula(object) )
   
-  param <- object[["param"]]
-  aniso <- object[["aniso"]][["aniso"]]
-  fit.param <- c( 
-    variance = FALSE, snugget = FALSE, nugget = FALSE, scale = FALSE, 
-    alpha = FALSE, beta = FALSE, delta = FALSE, 
-    gamma = FALSE, kappa = FALSE, lambda = FALSE, mu = FALSE, nu = FALSE
-  )[names( object[["param"]] )]
-  fit.aniso <- c( f1 = FALSE, f2 = FALSE, omega = FALSE, phi = FALSE, zeta = FALSE )
+  #   param <- object[["param"]]
+  #   aniso <- object[["aniso"]][["aniso"]]
+  #   fit.param <- c( 
+  #     variance = FALSE, snugget = FALSE, nugget = FALSE, scale = FALSE, 
+  #     alpha = FALSE, beta = FALSE, delta = FALSE, 
+  #     gamma = FALSE, kappa = FALSE, lambda = FALSE, mu = FALSE, nu = FALSE
+  #   )[names( object[["param"]] )]
+  #   fit.aniso <- c( f1 = FALSE, f2 = FALSE, omega = FALSE, phi = FALSE, zeta = FALSE )
   
   ## prepare for parallel execution
   
@@ -1148,9 +1358,8 @@ add1.georob <- function( object, scope, scale = 0, test=c("none", "Chisq" ),
     result <- parLapply(
       cl, 
       scope, f.aux,
-      scale = scale, k= k, trace = trace, fixed = fixed, use.fitted.param = use.fitted.param,
-      object = object, data = data, param = param, aniso = aniso, 
-      fit.param = fit.param, fit.aniso = fit.aniso, verbose = verbose, ...
+      scale = scale, k= k, trace = trace, 
+      object = object, data = data, verbose = verbose, ...
     )
     
     stopCluster(cl)
@@ -1161,9 +1370,8 @@ add1.georob <- function( object, scope, scale = 0, test=c("none", "Chisq" ),
     
     result <- mclapply(
       scope, f.aux, 
-      scale = scale, k= k, trace = trace, fixed = fixed, use.fitted.param = use.fitted.param,
-      object = object, data = data, param = param, aniso = aniso, 
-      fit.param = fit.param, fit.aniso = fit.aniso, verbose = verbose,
+      scale = scale, k= k, trace = trace,
+      object = object, data = data, verbose = verbose,
       mc.cores = ncores, ...
     )
     
@@ -1227,73 +1435,39 @@ drop1.georob <- function( object, scope, scale = 0, test=c( "none", "Chisq" ),
   ## 2014-03-12 AP 
   ## 2014-04-24 AP function returns only variogram parameters of best fitted object 
   ## 2014-05-15 AP changes for version 3 of RandomFields
+  ## 2015-07-23 AP warning and action for attempt to process Gaussian REML object
+  ## 2015-07-23 AP changes for dropping terms from model with fixed variogram parameters
+  ## 2015-08-28 AP computation of hessian suppressed
   
   ## auxiliary function for fitting model and extracting aic
   
-  f.aux <- function( 
-    tt, scale, k, trace,
-    fixed, use.fitted.param, object, data, param, aniso, fit.param, fit.aniso, 
-    verbose, ...
-  ){
-    converged <- TRUE
+  f.aux <- function( tt, scale, k, trace, object, data, verbose, ... ){
+    
     if(trace > 1) {
       cat("\ntrying -", tt, "\n", sep = "")
       utils::flush.console()
     }
-    if( fixed ){
-      if( is.null( data ) ){
-        nfit <- update( 
-          object, as.formula(paste("~ . -", tt)), 
-          param = param, aniso = aniso, fit.param = fit.param, fit.aniso = fit.aniso,
-          initial.param = "no", verbose = verbose, object. = object
-        )
-      } else {
-        nfit <- update( 
-          object, as.formula(paste("~ . -", tt)), data = data,
-          param = param, aniso = aniso, fit.param = fit.param, fit.aniso = fit.aniso,
-          initial.param = "no", verbose = verbose, object. = object
-        )
-      }
-    } else {
-      if( use.fitted.param ){
-        if( is.null( data ) ){
-          nfit <- update( 
-            object, as.formula(paste("~ . -", tt)), 
-            param = param, aniso = aniso, initial.param = "no", verbose = verbose, 
-            object. = object
-          )
-        } else {
-          nfit <- update( 
-            object, as.formula(paste("~ . -", tt)), data = data,
-            param = param, aniso = aniso, initial.param = "no", verbose = verbose, 
-            object. = object
-          )
-        }
-      }
-      else {
-        if( is.null( data ) ){
-          nfit <- update( object, as.formula(paste("~ . -", tt)), 
-            verbose = verbose, object. = object
-          )
-        } else {
-          nfit <- update( object, as.formula(paste("~ . -", tt)), data = data,
-            verbose = verbose, object. = object
-          )
-        }
-      }
-      if( !nfit$converged ){
-        converged <- FALSE
-        if( verbose > 0 ) cat( 
-          "lack of convergence when fitting model", paste("~ . -", tt), 
-          "\nconvergence code:", nfit$convergence.code, "\n"
-        )
-      }
+    
+    nfit <- update( 
+      object, as.formula(paste("~ . -", tt)), 
+      verbose = verbose, object. = object
+    )
+    
+    converged <- TRUE
+    
+    if( !is.na(!nfit[["converged"]]) && !nfit[["converged"]] ){
+      converged <- FALSE
+      if( verbose > 0 ) cat( 
+        "lack of convergence when fitting model", paste("~ . -", tt), 
+        "\nconvergence code:", nfit$convergence.code, "\n"
+      )
     }
+    
     nnew <- nobs( nfit, use.fallback = TRUE )
     if( all(is.finite(c(n0, nnew))) && nnew != n0 ) stop(
       "number of rows in use has changed: remove missing values?"
     )
-    df.aic <-  c( extractAIC( nfit, scale, k = k, ... ), as.numeric(converged))
+    df.aic <-  c( extractAIC( nfit, scale, k = k, REML = FALSE, ... ), as.numeric(converged))
     names( df.aic ) <- c("df", "AIC", "converged")
     attr( df.aic, "nfit" ) <- list(
       param = nfit[["param"]],
@@ -1303,6 +1477,145 @@ drop1.georob <- function( object, scope, scale = 0, test=c( "none", "Chisq" ),
     )
     df.aic
   }
+  
+  ## set hessian equal to FALSE in control argument of georob call and update
+  ## call
+  
+  cl <- object[["call"]]
+  
+  if( "control" %in% names(cl) ){
+    
+    ## georob called with control argument
+    
+    cl.control <- as.list( cl[["control"]] )
+    cl <- cl[ -match( "control", names(cl) ) ]
+    if( "hessian" %in% names(cl.control) ){
+      cl.control["hessian"] <- list( hessian = FALSE )
+    } else {
+      cl.control <- c( cl.control, hessian = FALSE )
+    }
+    
+  } else {
+    
+    ## georob called without control argument
+    
+    cl.control <- list( as.symbol("control.georob"), hessian = FALSE )
+    
+  }
+  
+  object[["call"]] <- as.call(  c( as.list(cl), control = as.call(cl.control) ) ) 
+  
+  ## check if object is result of GAUSSIAN ML fit and manipulate its call to
+  ## refit it by ML if required and suppress computation of hessian
+   
+  if( 
+    object[["tuning.psi"]] >= object[["control"]][["tuning.psi.nr"]] &&
+    identical( object[["control"]][["ml.method"]], "REML" )
+  ){
+    warning( "'object' was estmated by Gaussian REML which cannot be used for ",
+      "adding/dropping single terms\n=> 'object' is re-fitted by Gaussian ML ",
+      "before adding/deleting terms"
+    )
+    
+    cl <- object[["call"]]
+    
+    if( "control" %in% names(cl) ){
+      
+      ## georob called with control argument
+    
+      cl.control <- as.list( cl[["control"]] )
+      cl <- cl[ -match( "control", names(cl) ) ]
+      
+      if( "ml.method" %in% names(cl.control) ){
+        cl.control["ml.method"] <- list( ml.method = "ML" )
+      } else {
+        cl.control <- c( cl.control, ml.method = "ML" )
+      }
+      
+    } else {
+      
+      ## georob called without control argument
+      
+      cl.control <- list( as.symbol("control.georob"), ml.method = "ML" )
+      
+    }
+    
+    object[["call"]] <- as.call(  c( as.list(cl), control = as.call(cl.control) ) )
+    object <- update( object )
+    
+  }
+  
+  ## manipulate object call if variogram parameters are fixed or estimation
+  ## should start from estimated values in object
+  
+  if( fixed || use.fitted.param ){
+    
+    t.fit.param <- object[["initial.objects"]][["fit.param"]]
+    t.fit.aniso <- object[["initial.objects"]][["fit.aniso"]]
+    
+    if( fixed ){
+      t.fit.param[t.fit.param] <- FALSE
+      t.fit.aniso[t.fit.aniso] <- FALSE
+      object[["initial.objects"]][["fit.param"]] <- t.fit.param
+      object[["initial.objects"]][["fit.aniso"]] <- t.fit.aniso
+    }
+    
+    object[["call"]] <- update( 
+      object, 
+      param = object[["param"]], 
+      fit.param = object[["initial.objects"]][["fit.param"]],
+      aniso = object[["aniso"]][["aniso"]], 
+      fit.aniso = object[["initial.objects"]][["fit.aniso"]],
+      evaluate = FALSE
+    )
+    
+  }
+  
+  ## update object call if data argument has been provided
+  
+  if( !is.null( data ) ) object[["call"]] <- update( object, data = data, evaluate = FALSE )
+  
+  ## further update object call to avoid computation of covariance matrices
+  
+  cl <- object[["call"]]
+
+#   if( "control" %in% names( cl ) ){
+    
+  ## georob called with control argument
+  
+  cl.control <- as.list( cl[["control"]] )
+  cl <- cl[ -match( "control", names(cl) ) ]
+  cl.control <- cl.control[ !names( cl.control ) %in% c( 
+    "force.gradient", "cov.bhat", "cov.betahat", 
+    "cov.bhat.betahat", "cov.delta.bhat", 
+    "cov.delta.bhat.betahat", "cov.ehat", 
+    "cov.ehat.p.bhat", "aux.cov.pred.target"
+  )]
+  cl.control <- c(
+    cl.control,
+    "force.gradient" = FALSE, "cov.bhat" = FALSE, 
+    "cov.betahat" = FALSE, "cov.bhat.betahat" = FALSE, 
+    "cov.delta.bhat" = FALSE, "cov.delta.bhat.betahat" = FALSE,
+    "cov.ehat" = FALSE,  "cov.ehat.p.bhat" = FALSE, 
+    "aux.cov.pred.target" = FALSE
+  )
+  
+#   } else {
+#     
+#     ## georob called without control argument
+#     
+#     cl.control <- list( 
+#       as.symbol("control.georob"),
+#       force.gradient = FALSE, cov.bhat = FALSE, 
+#       cov.betahat = FALSE, cov.bhat.betahat = FALSE, 
+#       cov.delta.bhat = FALSE, cov.delta.bhat.betahat = FALSE,
+#       cov.ehat = FALSE,  cov.ehat.p.bhat = FALSE, 
+#       aux.cov.pred.target = FALSE
+#     )
+#   
+#   }
+
+  object[["call"]] <- as.call( c( as.list(cl), control = as.call(cl.control) ) )
   
   ## check scope
   
@@ -1329,15 +1642,15 @@ drop1.georob <- function( object, scope, scale = 0, test=c( "none", "Chisq" ),
   n0 <- nobs( object, use.fallback = TRUE )
   env <- environment( formula(object) )
   
-  param <- object[["param"]]
-  aniso <- object[["aniso"]][["aniso"]]
-  fit.param <- c( 
-    variance = FALSE, snugget = FALSE, nugget = FALSE, scale = FALSE, 
-    alpha = FALSE, beta = FALSE, delta = FALSE, 
-    gamma = FALSE, kappa = FALSE, lambda = FALSE, mu = FALSE, nu = FALSE
-  )[names( object[["param"]] )]
-  fit.aniso <- c( f1 = FALSE, f2 = FALSE, omega = FALSE, phi = FALSE, zeta = FALSE )
-
+  #   param <- object[["param"]]
+  #   aniso <- object[["aniso"]][["aniso"]]
+  #   fit.param <- c( 
+  #     variance = FALSE, snugget = FALSE, nugget = FALSE, scale = FALSE, 
+  #     alpha = FALSE, beta = FALSE, delta = FALSE, 
+  #     gamma = FALSE, kappa = FALSE, lambda = FALSE, mu = FALSE, nu = FALSE
+  #   )[names( object[["param"]] )]
+  #   fit.aniso <- c( f1 = FALSE, f2 = FALSE, omega = FALSE, phi = FALSE, zeta = FALSE )
+  
   ## prepare for parallel execution
   
   if( ncores > 1 ){
@@ -1349,7 +1662,7 @@ drop1.georob <- function( object, scope, scale = 0, test=c( "none", "Chisq" ),
   if( .Platform[["OS.type"]] == "windows" && ncores > 1 ){
   
     if( is.null( data ) ) stop( 
-      "argument 'data' required for parallel execution on windows OS"    
+      "argument 'data' required for parallel execution on windows OS"
     )
     
     ## create a SNOW cluster on windows OS
@@ -1357,15 +1670,14 @@ drop1.georob <- function( object, scope, scale = 0, test=c( "none", "Chisq" ),
     cl <- makePSOCKcluster( ncores, outfile = "")
     
     ## export required items to workers
-    
+
     junk <- clusterEvalQ( cl, require( georob, quietly = TRUE ) )
     
     result <- parLapply(
       cl, 
       scope, f.aux,
-      scale = scale, k= k, trace = trace, fixed = fixed, use.fitted.param = use.fitted.param,
-      object = object, data = data, param = param, aniso = aniso, 
-      fit.param = fit.param, fit.aniso = fit.aniso, verbose = verbose, ...
+      scale = scale, k= k, trace = trace, 
+      object = object, data = data, verbose = verbose, ...
     )
     
     stopCluster(cl)
@@ -1376,9 +1688,8 @@ drop1.georob <- function( object, scope, scale = 0, test=c( "none", "Chisq" ),
     
     result <- mclapply(
       scope, f.aux, 
-      scale = scale, k= k, trace = trace, fixed = fixed, use.fitted.param = use.fitted.param,
-      object = object, data = data, param = param, aniso = aniso, 
-      fit.param = fit.param, fit.aniso = fit.aniso, verbose = verbose,
+      scale = scale, k= k, trace = trace, 
+      object = object, data = data, verbose = verbose,
       mc.cores = ncores, ...
     )
     
@@ -1418,7 +1729,8 @@ drop1.georob <- function( object, scope, scale = 0, test=c( "none", "Chisq" ),
   
   ## format results
   
-  head <- c("Single term deletions", "\nModel:", deparse(formula(object)),
+  head <- c(
+    "Single term deletions", "\nModel:", deparse(formula(object)),
     if(scale > 0) paste("\nscale: ", format(scale), "\n"))
   class(aod) <- c("anova", "data.frame")
   attr( aod, "heading") <- head
@@ -1442,16 +1754,20 @@ step.default <- stats::step
 
 step.georob <- function( object, scope, scale = 0, 
   direction = c( "both", "backward", "forward" ), trace = 1, keep = NULL, steps = 1000, 
-  k = 2, data = NULL, fixed = TRUE, use.fitted.param =TRUE, verbose = 0, 
+  k = 2, data = NULL, fixed = TRUE, use.fitted.param = TRUE, verbose = 0, 
   ncores = 1, ... )
 {
   
   ## step method for class georob
   
   ## 2014-06-05 AP 
+  ## 2015-07-23 AP warning and action for attempt to process Gaussian REML object
+  ## 2015-07-23 AP changes for dropping terms from model with fixed variogram parameters
   
   ## code of step{stats} complemented by argument fixed to control whether
   ## variogram parameters should be kept fixed
+  
+  ## auxiliary functions
   
   mydeviance <- function(x, ...)
   {
@@ -1500,6 +1816,21 @@ step.georob <- function( object, scope, scale = 0,
     fit
   }
   
+  ## check if object is result of GAUSSIAN ML fit and manipulate its call to
+  ## refit it by ML if required
+   
+  if( 
+    object[["tuning.psi"]] >= object[["control"]][["tuning.psi.nr"]] &&
+    identical( object[["control"]][["ml.method"]], "REML" )
+  ){
+    warning( "'object' was estmated by Gaussian REML which cannot be used for ",
+      "adding/dropping single terms\n=> 'object' is re-fitted by Gaussian ML ",
+      "before adding/deleting terms"
+    )
+    object <- update( object, control = control.georob( ml.method = "ML" ) )
+    
+  }
+    
   Terms <- terms(object)
   object$call$formula <- object$formula <- Terms
   md <- missing(direction)
@@ -1528,8 +1859,51 @@ step.georob <- function( object, scope, scale = 0,
   models <- vector("list", steps)
   if(!is.null(keep)) keep.list <- vector("list", steps)
   n <- nobs(object, use.fallback = TRUE)  # might be NA
-  fit <- object
-  bAIC <- extractAIC(fit, scale, k = k, ...)
+  
+  fit0 <- object
+  
+  ## update call of fit0 if data argument has been provided
+  
+  if( !is.null( data ) ) fit0[["call"]] <- update( fit0, data = data, evaluate = FALSE )
+  
+  ## manipulate call of fit0 if variogram parameters are fixed or estimation
+  ## should start from estimated values in fit0
+  
+  if( fixed || use.fitted.param ){
+    
+    t.fit.param <- fit0[["initial.objects"]][["fit.param"]]
+    t.fit.aniso <- fit0[["initial.objects"]][["fit.aniso"]]
+    
+    fit0[["call"]] <- update( 
+      fit0, 
+      param = fit0[["param"]], 
+      aniso = fit0[["aniso"]][["aniso"]], 
+      evaluate = FALSE
+    )
+    
+    ## re-fit fit0 if variogram parameters are fixed 
+    
+    if( fixed ){
+      
+      t.fit.param[t.fit.param] <- FALSE
+      t.fit.aniso[t.fit.aniso] <- FALSE
+      fit0[["initial.objects"]][["fit.param"]] <- t.fit.param
+      fit0[["initial.objects"]][["fit.aniso"]] <- t.fit.aniso
+      
+      fit0 <- update( 
+        fit0, 
+        fit.param = fit0[["initial.objects"]][["fit.param"]],
+        fit.aniso = fit0[["initial.objects"]][["fit.aniso"]],
+        evaluate = TRUE
+      )
+      
+    }
+    
+  }
+  
+  fit <- fit0
+  
+  bAIC <- extractAIC(fit, scale, k = k, REML = FALSE, ...)
   edf <- bAIC[1L]
   bAIC <- bAIC[2L]
   if(is.na(bAIC))
@@ -1557,7 +1931,7 @@ step.georob <- function( object, scope, scale = 0,
     aod <- NULL
     change <- NULL
     if(backward && length(scope$drop)) {
-      aod <- drop1.georob(
+      aod <- drop1(
         fit, scope$drop, scale = scale,
         k = k, trace = trace, data = data, fixed = fixed, 
         use.fitted.param = use.fitted.param, verbose = verbose, 
@@ -1574,7 +1948,7 @@ step.georob <- function( object, scope, scale = 0,
     }
     if(is.null(change)) {
       if(forward && length(scope$add)) {
-        aodf <- add1.georob(
+        aodf <- add1(
           fit, scope$add, scale = scale,
           k = k, trace = trace, data = data, fixed = fixed, 
           use.fitted.param = use.fitted.param, verbose = verbose, 
@@ -1618,50 +1992,11 @@ step.georob <- function( object, scope, scale = 0,
       gamma = FALSE, kappa = FALSE, lambda = FALSE, mu = FALSE, nu = FALSE
     )[names( fit[["param"]] )]
     fit.aniso <- c( f1 = FALSE, f2 = FALSE, omega = FALSE, phi = FALSE, zeta = FALSE )
-    if( fixed ){
-      if( is.null( data ) ){
-        fit <- update(
-          fit, paste("~ .", change), 
-          param = param, aniso = aniso, fit.param = fit.param, fit.aniso = fit.aniso,
-          initial.param = "no", verbose = verbose, object. = fit
-        )
-      } else {
-        fit <- update(
-          fit, paste("~ .", change), data = data,
-          param = param, aniso = aniso, fit.param = fit.param, fit.aniso = fit.aniso,
-          initial.param = "no", verbose = verbose, object. = fit
-        )
-      }
-    } else {
-      if( use.fitted.param ){
-        if( is.null( data ) ){
-          fit <- update(
-            fit, paste("~ .", change), 
-            param = param, aniso = aniso, 
-            initial.param = "no", verbose = verbose, object. = fit
-          )
-        } else {
-          fit <- update(
-            fit, paste("~ .", change), data = data,
-            param = param, aniso = aniso, 
-            initial.param = "no", verbose = verbose, object. = fit
-          )
-        }
-      } else {
-        if( is.null( data ) ){
-          fit <- update(
-            fit, paste("~ .", change), 
-            initial.param = "no", verbose = verbose, object. = fit
-          )
-        } else {
-          fit <- update(
-            fit, paste("~ .", change), data = data,
-            initial.param = "no", verbose = verbose, object. = fit
-          )
-        }
-      }
     
-    }
+    fit <- update(
+      fit, paste("~ .", change), verbose = verbose, object. = fit
+    )
+    
     cl <- object[["call"]]
     cl["formula"] <- fit[["call"]]["formula"]
     fit[["call"]] <- cl
@@ -1671,7 +2006,7 @@ step.georob <- function( object, scope, scale = 0,
     if(all(is.finite(c(n, nnew))) && nnew != n)
     stop("number of rows in use has changed: remove missing values?")
     Terms <- terms(fit)
-    bAIC <- extractAIC(fit, scale, k = k, ...)
+    bAIC <- extractAIC(fit, scale, k = k, REML = FALSE, ...)
     edf <- bAIC[1L]
     bAIC <- bAIC[2L]
     if(trace) {
@@ -1691,3 +2026,6 @@ step.georob <- function( object, scope, scale = 0,
   if(!is.null(keep)) fit$keep <- re.arrange(keep.list[seq(nm)])
   step.results(models = models[seq(nm)], fit, object, usingCp)
 }
+
+
+

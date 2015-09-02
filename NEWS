@@ -3,4 +3,5 @@
 2014-05-15  georob Version 0.1-3 released to CRAN, new features: stepwise selection of covariates for trend model, changes for version 3 of package RandomFields
 2014-06-02  georob Version 0.1-4 released to CRAN
 2014-08-28  georob Version 0.1-5 released to CRAN, new features: Gaussian ML estimation, parallelized matrix multiplication
+2015-09-02  georob Version 0.2-1 released to CRAN, new features: Gaussian (RE)ML of re-parametrized variogram; new function for computing profile likelihood, multiple changes for reducing computational effort; optional computation of covariances for long-tailed errors
 

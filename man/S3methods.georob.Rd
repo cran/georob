@@ -1,4 +1,4 @@
-% 2014-05-28 A. Papritz
+% 2015-08-20 A. Papritz
 % R CMD Rdconv -t html -o bla.html S3methods.georob.Rd ; open bla.html; R CMD Rd2pdf --force S3methods.georob.Rd; 
 
 \encoding{macintosh}
@@ -99,8 +99,13 @@
   \eqn{\mbox{\boldmath$B$\unboldmath}}{B} should be standardized (default
   \code{FALSE}).}
   
-  \item{type}{character keyword indicating the type of residuals to compute, see
-  \code{\link[stats]{residuals.lm}}.}
+  \item{type}{character keyword indicating the type of residuals to
+  compute, see \code{\link[stats]{residuals.lm}}.  
+  \code{type = "huber"}
+  computes `huberized' residuals \eqn{\widehat{\sigma} /
+  \gamma_1\psi(\widehat{\varepsilon}(\mbox{\boldmath$s$\unboldmath}) /
+  \widehat{\sigma})}{hat\sigma/\gamma_1\psi(hat\epsilon(s)/hat\sigma)}.
+  }
   
   \item{terms}{If \code{type = "terms"}, which terms (default is all terms).}
   
@@ -108,6 +113,10 @@
   
 }
 \details{
+
+  For robust REML fits \code{deviance} returns (possibly with a warning)
+  the deviance of the Gaussian REML fit of the equivalent Gaussian spatial
+  linear model with heteroscedastic nugget.
 
   The methods \code{model.frame}, \code{model.matrix} and \code{nobs}
   extract the model frame, model matrix and the number of observations, see
@@ -155,7 +164,7 @@ r.logzn.reml <- georob(log(zinc) ~ sqrt(dist), data = meuse, locations = ~ x + y
     variogram.model = "RMexp",
     param = c( variance = 0.15, nugget = 0.05, scale = 200 ),
     tuning.psi = 1000,
-    control = georob.control(cov.bhat = TRUE, cov.ehat.p.bhat = TRUE))
+    control = control.georob(cov.bhat = TRUE, cov.ehat.p.bhat = TRUE))
 summary(r.logzn.reml, correlation = TRUE)
 
 ## robust REML fit 
