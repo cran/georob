@@ -1,4 +1,4 @@
-% 2015-07-28 A. Papritz
+% 2015-11-27 A. Papritz
 % R CMD Rdconv -t html -o bla.html profilelogLik.Rd ; open bla.html; R CMD Rd2pdf --force profilelogLik.Rd; 
 
 \encoding{macintosh}
@@ -18,14 +18,15 @@
 }
 
 \arguments{
-  \item{object}{an object of class \code{"georob"}, see \code{\link{georobObject}}.}
+  \item{object}{an object of class \code{"georob"} (mandatory argument),
+  see \code{\link{georobObject}}.}
   
    \item{values}{a \code{data.frame} or a \code{matrix} with the values of
-   the variogram and anisotropy parameters that should be kept fixed (see
-   \code{\link{georob}} and \code{\link{georobIntro}} for information about
-   the parametrization of variogram models).  The names of the columns of
-   \code{values} must match the names of variogram and anisotropy
-   parameters.}
+   the variogram and anisotropy parameters that should be kept fixed
+   (mandatory argument, see \code{\link{georob}} and
+   \code{\link{georobIntro}} for information about the parametrization of
+   variogram models).  The names of the columns of \code{values} must match
+   the names of variogram and anisotropy parameters.}
   
   \item{use.fitted}{logical scalar controlling whether the fitted variogram
   parameters of \code{object} should be used as initial values (default

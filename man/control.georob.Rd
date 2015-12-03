@@ -23,8 +23,8 @@
   control the behaviour of \code{\link{georob}}.}
 
 \usage{
-control.georob(ml.method = c( "REML", "ML" ), reparam = TRUE,
-    maximizer = c( "nlminb", "optim" ), initial.param = TRUE,
+control.georob(ml.method = c("REML", "ML"), reparam = TRUE,
+    maximizer = c("nlminb", "optim"), initial.param = TRUE,
     initial.fixef = c("lmrob", "rq", "lm"), bhat = NULL, 
     min.rweight = 0.25,
     param.tf = param.transf(), fwd.tf = fwd.transf(), 
@@ -51,12 +51,12 @@ control.georob(ml.method = c( "REML", "ML" ), reparam = TRUE,
     pmm = control.pmm(), ...)
     
 param.transf(variance = "log", snugget = "log", nugget = "log", scale = "log", 
-    alpha = c( 
+    alpha = c(
       RMaskey = "log", RMdewijsian = "logit2", RMfbm = "logit2", RMgencauchy = "logit2", 
       RMgenfbm = "logit2", RMlgd = "identity", RMqexp = "logit1", RMstable = "logit2"
     ), 
-    beta = c( RMdagum = "logit1", RMgencauchy = "log", RMlgd = "log" ), 
-    delta = "logit1", gamma = c( RMcauchy = "log", RMdagum = "logit1" ), 
+    beta = c(RMdagum = "logit1", RMgencauchy = "log", RMlgd = "log"), 
+    delta = "logit1", gamma = c(RMcauchy = "log", RMdagum = "logit1"), 
     kappa = "logit3", lambda = "log", mu = "log", nu = "log",
     f1 = "log", f2  ="log", omega = "identity", phi = "identity", zeta = "identity")
   
@@ -71,14 +71,14 @@ control.rq(tau = 0.5, rq.method = "br", rq.alpha = 0.1, ci = FALSE, iid = TRUE,
     Mm.factor = 0.8, max.bad.fixup = 3, ...)
                
 control.nleqslv(method = c("Broyden", "Newton"), 
-    global = c( "dbldog", "pwldog", "qline", "gline", "none" ),
-    xscalm = c( "fixed", "auto" ), control = list(ftol = 1e-04), ...)
+    global = c("dbldog", "pwldog", "qline", "gline", "none"),
+    xscalm = c("fixed", "auto"), control = list(ftol = 1e-04), ...)
     
 control.optim(method = c("BFGS", "Nelder-Mead", "CG", 
         "L-BFGS-B", "SANN", "Brent"), lower = -Inf, upper = Inf, 
     control = list(reltol = 1e-05), ...)
     
-control.nlminb(control = list( rel.tol = 1.e-5 ), lower = -Inf, 
+control.nlminb(control = list(rel.tol = 1.e-5), lower = -Inf, 
     upper = Inf, ...)
 
 }
@@ -407,11 +407,11 @@ control.nlminb(control = list( rel.tol = 1.e-5 ), lower = -Inf,
 
 \examples{
 \dontrun{
-data( meuse )
+data(meuse)
 
 r.logzn.rob <- georob(log(zinc) ~ sqrt(dist), data = meuse, locations = ~ x + y,
     variogram.model = "RMexp",
-    param = c( variance = 0.15, nugget = 0.05, scale = 200 ),
+    param = c(variance = 0.15, nugget = 0.05, scale = 200),
     tuning.psi = 1, control = control.georob(cov.bhat = TRUE, 
     cov.ehat.p.bhat = TRUE, initial.fixef = "rq"), verbose = 2)
   

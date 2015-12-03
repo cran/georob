@@ -66,10 +66,10 @@ data(meuse)
 
 r.logzn.rob <- georob(log(zinc) ~ sqrt(dist) + ffreq, data = meuse, locations = ~ x + y,
     variogram.model = "RMexp",
-    param = c( variance = 0.15, nugget = 0.05, scale = 200 ),
+    param = c(variance = 0.15, nugget = 0.05, scale = 200),
     tuning.psi = 1)
   
-cov2cor( expand(r.logzn.rob[["cov"]][["cov.betahat"]]) )
+cov2cor(expand(r.logzn.rob[["cov"]][["cov.betahat"]]))
 }
 }
 

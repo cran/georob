@@ -1,9 +1,12 @@
-% 2013-06-12 A. Papritz
+% 2015-11-30 A. Papritz
 % R CMD Rdconv -t html -o bla.html sample.variogram.Rd ; open bla.html; R CMD Rd2pdf --force sample.variogram.Rd; 
 
 \encoding{macintosh}
 \name{sample.variogram}
 \alias{sample.variogram}
+\alias{sample.variogram.default}
+\alias{sample.variogram.formula}
+\alias{sample.variogram.georob}
 \alias{summary.sample.variogram}
 \alias{print.summary.sample.variogram}
 \alias{plot.sample.variogram}
@@ -19,13 +22,26 @@ methods for summarizing and displaying sample variograms.}
 
 
 \usage{
-sample.variogram(response, locations, lag.dist.def, 
+
+sample.variogram(object, ...)
+
+\method{sample.variogram}{default}(object, locations, lag.dist.def, 
     xy.angle.def = c(0, 180), xz.angle.def = c(0, 180), max.lag = Inf, 
-    estimator = c("qn", "mad", "matheron", "ch"), mean.angle = TRUE)
+    estimator = c("qn", "mad", "matheron", "ch"), mean.angle = TRUE, ...)
+
+\method{sample.variogram}{formula}(object, data, subset, na.action,   
+    locations, lag.dist.def, xy.angle.def = c(0, 180), 
+    xz.angle.def = c(0, 180), max.lag = Inf, 
+    estimator = c("qn", "mad", "matheron", "ch"), mean.angle = TRUE, ...)
+
+\method{sample.variogram}{georob}(object, lag.dist.def, 
+    xy.angle.def = c(0, 180), xz.angle.def = c(0, 180), max.lag = Inf, 
+    estimator = c("qn", "mad", "matheron", "ch"), mean.angle = TRUE, ...)
    
 \method{summary}{sample.variogram}(object, ...)
 
-\method{plot}{sample.variogram}(x, type = "p", add = FALSE, xlim = c(0, max(x[["lag.dist"]])),
+\method{plot}{sample.variogram}(x, type = "p", add = FALSE, 
+    xlim = c(0, max(x[["lag.dist"]])),
     ylim = c(0, 1.1 * max(x[["gamma"]])), col, pch, cex = 0.8, 
     xlab = "lag distance", ylab = "semivariance", 
     annotate.npairs = FALSE, npairs.pos = 3, npairs.cex = 0.7, 
@@ -35,17 +51,42 @@ sample.variogram(response, locations, lag.dist.def,
 }
 
 \arguments{
-  \item{response}{a numeric vector with the values of the response for
-  which the sample variogram should be computed.} 
+  \item{object}{a numeric vector with the values of the response for which
+  the sample variogram should be computed
+  (\code{sample.variogram.default}), a formula, specifying in its left part
+  the response variable (right part of formula is ignored,
+  \code{sample.variogram.formula}), an object of class \code{georob}
+  (\code{sample.variogram.georob}) or an object of class
+  \code{sample.variogram} (\code{summary.sample.variogram}).}
   
   \item{locations}{a numeric matrix with the coordinates of the locations
-  where the response was observed.  May have an arbitrary number of columns
-  for an omnidirectional variogram, but at most 3 columns if a directional
-  variogram is computed.}
+  where the response was observed (\code{sample.variogram.default}) or a
+  one-sided formula specifying the coordinates
+  (\code{sample.variogram.formula}).  The matrix may have an arbitrary
+  number of columns for an omnidirectional variogram, but at most 3 columns
+  if a directional variogram is computed.}
+  
+  \item{data}{an optional data frame, list or environment (or another
+  object coercible by \code{\link{as.data.frame}} to a data frame)
+  containing the response variable and the coordinates where the data
+  was recorded.  If not found in \code{data}, the variables are taken from
+  \code{environment(formula)}, typically the environment from which
+  \code{sample.variogram} is called.}
+  
+  \item{subset}{an optional vector specifying a subset of observations
+  to be used for estimating the variogram.}
+    
+  \item{na.action}{a function which indicates what should happen when the
+  data contain \code{NA}s.  The default is set by the \code{na.action}
+  argument of \code{\link{options}}, and is \code{\link{na.fail}} if that is
+  unset.  The \dQuote{factory-fresh} default is \code{\link{na.omit}}.
+  Another possible value is \code{NULL}, no action.  Value
+  \code{\link{na.exclude}} can be useful.}
   
   \item{lag.dist.def}{a numeric scalar defining a constant bin width for
-  grouping the lag distances or a numeric vector with the upper bounds of a
-  set of contiguous bins.}
+  grouping the lag distances or a numeric vector with the bounds of a set
+  of contiguous bins (upper bounds of bins except for the first element of
+  \code{lag.dist.def} which is the lower bound of the first bin).}
   
   \item{xy.angle.def}{an numeric vector defining angular classes
   in the horizontal plane for computing directional variograms.
@@ -88,7 +129,7 @@ sample.variogram(response, locations, lag.dist.def,
   default) or from the mid-angles of the respective angular classes
   (\code{FALSE}).}
   
-  \item{object, x}{an object of class \code{sample.variogram}.}
+  \item{x}{an object of class \code{sample.variogram}.}
   
   \item{type, xlim, ylim, xlab, ylab}{see respective arguments of
   \code{\link[graphics]{plot.default}}.}
@@ -122,7 +163,8 @@ sample.variogram(response, locations, lag.dist.def,
   legend, see \code{\link[graphics]{legend}} for possible values.}
   
   \item{...}{additional arguments passed to
-  \code{\link{plot.sample.variogram}} and \code{\link{lines.georob}}.}
+  \code{\link[graphics]{plot.formula}}.}
+  
 }
 
 \details{
@@ -154,8 +196,6 @@ with the following components:
   \code{lag.x} \tab the \eqn{y}-component of the mean lag vector of the lag class, \cr
   \code{lag.z} \tab the \eqn{z}-component of the mean lag vector of the lag class.\cr
 }
-
-
 
 }
 
@@ -192,7 +232,7 @@ r.sv.iso <- sample.variogram(wolfcamp[["data"]], locations = wolfcamp[[1]],
     lag.dist.def = seq(0, 200, by = 15))
 
 \dontrun{
-plot( r.sv.iso, type = "l")}
+plot(r.sv.iso, type = "l")}
 
 ## fitting an anisotropic IRF(0) model
 r.sv.aniso <- sample.variogram(wolfcamp[["data"]],

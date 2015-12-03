@@ -1,4 +1,4 @@
-% 2015-06-30 A. Papritz
+% 2015-11-27 A. Papritz
 % R CMD Rdconv -t html -o bla.html validate.predictions.Rd ; open bla.html; R CMD Rd2pdf --force validate.predictions.Rd; 
 
 \encoding{macintosh}
@@ -19,13 +19,13 @@
 
 \usage{
 % validate.predictions(data, pred, se.pred, 
-%     statistic = c( "crps", "pit", "mc", "bs", "st" ), 
+%     statistic = c( "crps", "pit", "mc", "bs", "st"), 
 %     robust = FALSE, ncutoff = NULL, se.signal = NULL, scld.res = NULL)
 validate.predictions(data, pred, se.pred, 
-    statistic = c( "crps", "pit", "mc", "bs", "st" ), ncutoff = NULL)
+    statistic = c("crps", "pit", "mc", "bs", "st"), ncutoff = NULL)
     
 \method{plot}{cv.georob}(x, 
-    type = c( "sc", "lgn.sc", "ta", "qq", "hist.pit", "ecdf.pit", "mc", "bs" ), 
+    type = c("sc", "lgn.sc", "ta", "qq", "hist.pit", "ecdf.pit", "mc", "bs"), 
     smooth = TRUE, span = 2/3, ncutoff = NULL, add = FALSE, 
     col, pch, lty, main, xlab, ylab, ...)
  
@@ -37,11 +37,14 @@ validate.predictions(data, pred, se.pred,
 }
 
 \arguments{
-  \item{data}{a numeric vector with observations about a response.}
+  \item{data}{a numeric vector with observations about a response
+  (mandatory argument).}
 
-  \item{pred}{a numeric vector with predictions for the response.}
+  \item{pred}{a numeric vector with predictions for the response (mandatory
+  argument).}
 
-  \item{se.pred}{a numeric vector with prediction standard errors.}
+  \item{se.pred}{a numeric vector with prediction standard errors
+  (mandatory argument).}
 
   \item{statistic}{character keyword defining what statistic of the
   prediction errors should be computed.  
@@ -293,15 +296,15 @@ validate.predictions(data, pred, se.pred,
 
 \examples{
 \dontrun{
-data( meuse )
+data(meuse)
 
 r.logzn <- georob(log(zinc) ~ sqrt(dist), data = meuse, locations = ~ x + y,
     variogram.model = "RMexp",
-    param = c( variance = 0.15, nugget = 0.05, scale = 200 ),
+    param = c(variance = 0.15, nugget = 0.05, scale = 200),
     tuning.psi = 1)
 
-r.logzn.cv.1 <- cv(r.logzn, seed = 1, lgn = TRUE )
-r.logzn.cv.2 <- cv(r.logzn, formula = .~. + ffreq, seed = 1, lgn = TRUE )
+r.logzn.cv.1 <- cv(r.logzn, seed = 1, lgn = TRUE)
+r.logzn.cv.2 <- cv(r.logzn, formula = .~. + ffreq, seed = 1, lgn = TRUE)
 
 summary(r.logzn.cv.1, se = TRUE)
 summary(r.logzn.cv.2, se = TRUE)
@@ -316,7 +319,7 @@ abline(h=0, lty= "dotted")
 plot(r.logzn.cv.2, type = "mc", add = TRUE, col = "red")
 plot(r.logzn.cv.1, type = "bs")
 plot(r.logzn.cv.2, type = "bs", add = TRUE, col = "red")
-legend("topright", lty = 1, col = c( "black", "red"), bty = "n",
+legend("topright", lty = 1, col = c("black", "red"), bty = "n",
     legend = c("log(Zn) ~ sqrt(dist)", "log(Zn) ~ sqrt(dist) + ffreq"))
 par(op)}
 }

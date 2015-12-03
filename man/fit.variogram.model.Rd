@@ -1,4 +1,4 @@
-% 2015-07-16 A. Papritz
+% 2015-12-02 A. Papritz
 % R CMD Rdconv -t html -o bla.html fit.variogram.model.Rd ; open bla.html; R CMD Rd2pdf --force fit.variogram.model.Rd; 
 
 \encoding{macintosh}
@@ -25,14 +25,8 @@ fit.variogram.model(sv,
         "RMfbm", "RMgauss", "RMgencauchy", "RMgenfbm", "RMgengneiting", 
         "RMgneiting", "RMlgd", "RMmatern", "RMpenta", "RMqexp", 
         "RMspheric", "RMstable", "RMwave", "RMwhittle"), 
-    param, 
-    fit.param = c(variance = TRUE, snugget = FALSE, nugget = TRUE, 
-        scale = TRUE, alpha = FALSE, beta = FALSE, delta = FALSE, 
-        gamma = FALSE, kappa = FALSE, lambda = FALSE, mu = FALSE, 
-        nu = FALSE)[names(param)], 
-    aniso = c(f1 = 1, f2 = 1, omega = 90, phi = 90, zeta = 0), 
-    fit.aniso = c(f1 = FALSE, f2 = FALSE, omega = FALSE, 
-        phi = FALSE, zeta = FALSE),
+    param, fit.param = default.fit.param(),
+	aniso = default.aniso(), fit.aniso = default.fit.aniso(),
     max.lag = max(sv[["lag.dist"]]), min.npairs = 30, 
     weighting.method = c("cressie", "equal", "npairs"), hessian = TRUE, 
     verbose = 0, ...)
@@ -82,28 +76,32 @@ fit.variogram.model(sv,
   smoothness parameter \eqn{\nu} of the Whittle-Mat\'ern model (see
   \code{\link[RandomFields]{RMmodel}} and \code{\link{param.names}}).} } }
   
-  \item{fit.param}{a named logical vector with the same names as used for 
-  \code{param}, defining which parameters are adjusted (\code{TRUE}) and which 
-  are kept fixed at their initial values (\code{FALSE}) when fitting the model.}
-  
-  \item{aniso}{a named numeric vector with initial values for fitting
-    geometrically anisotropic variogram models. The following parameter names are allowed 
-    (see \emph{Details} of \code{\link{georob}} and \code{\link{georobIntro}} for information about the 
-    parametrization of variogram models): 
+  \item{fit.param}{a named logical vector (or a function such as
+  \code{\link{default.fit.param}} that creates this vector) with the same
+  names as used for \code{param}, defining which parameters are adjusted
+  (\code{TRUE}) and which are kept fixed at their initial values
+  (\code{FALSE}) when fitting the model.}
     
-    \itemize{
+  \item{aniso}{a named numeric vector with initial values (or a function such as
+  \code{\link{default.aniso}} that creates this vector) for fitting
+  geometrically anisotropic variogram models.  The names of \code{aniso}
+  are matched against the following names (see \emph{Details} and
+  \code{\link{georobIntro}} for information about the parametrization of
+  variogram models):
+  
+  \itemize{
     
       \item{\code{f1}: ratio \eqn{f_1} of lengths of second and first
-        second semi-principal axes of an ellipsoidal surface with constant
+        semi-principal axes of an ellipsoidal surface with constant
         semivariance in \eqn{\mathrm{I}\!\mathrm{R}^3}{R^3} (default \code{f1 = 1}).}
       
       \item{\code{f2}: ratio \eqn{f_2} of lengths of third and first
         semi-principal axes of the semivariance ellipsoid (default \code{f2 = 1}).}
       
-      \item{\code{omega}: azimuth in degrees of first semi-principal axis 
+      \item{\code{omega}: azimuth in degrees of the first semi-principal axis 
         of the semivariance ellipsoid (default \code{omega = 90}).}
       
-      \item{\code{phi}: 90 degrees minus altitude of first semi-principal axis 
+      \item{\code{phi}: 90 degrees minus altitude of the first semi-principal axis 
         of the semivariance ellipsoid (default \code{phi = 90}).}
      
       \item{\code{zeta}: angle in degrees between the second semi-principal
@@ -114,9 +112,11 @@ fit.variogram.model(sv,
     } 
   }
 
-  \item{fit.aniso}{a named logical vector with the same names as used for 
-    \code{aniso}, defining which parameters are adjusted (\code{TRUE}) and which 
-    are kept fixed at their initial values (\code{FALSE}) when fitting the model.}
+  \item{fit.aniso}{a named logical vector (or a function such as
+  \code{\link{default.fit.aniso}} that creates this vector) with the same
+  names as used for \code{aniso}, defining which parameters are adjusted
+  (\code{TRUE}) and which are kept fixed at their initial values
+  (\code{FALSE}) when fitting the model.}
 
   \item{max.lag}{a positive numeric defining the maximum lag distance to be
   used for fitting or plotting variogram models (default all lag classes).}
@@ -297,13 +297,13 @@ r.sv.iso <- sample.variogram(wolfcamp[["data"]], locations = wolfcamp[[1]],
 
 r.irf0.iso <- fit.variogram.model(r.sv.iso, variogram.model = "RMfbm",
     param = c(variance = 100, nugget = 1000, scale = 1., alpha = 1.),
-    fit.param = c( variance = TRUE, nugget = TRUE, scale = FALSE, alpha = TRUE),
+    fit.param = default.fit.param(scale = FALSE, alpha = TRUE),
     method = "Nelder-Mead", hessian = FALSE, control = list(maxit = 5000))  
 summary(r.irf0.iso, correlation = TRUE)
 
 \dontrun{
-plot( r.sv.iso, type = "l")
-lines( r.irf0.iso, line.col = "red")}
+plot(r.sv.iso, type = "l")
+lines(r.irf0.iso, line.col = "red")}
 
 ## fitting an anisotropic IRF(0) model
 r.sv.aniso <- sample.variogram(wolfcamp[["data"]],
@@ -314,14 +314,14 @@ plot(r.sv.aniso, type = "l")}
 
 r.irf0.aniso <- fit.variogram.model(r.sv.aniso, variogram.model = "RMfbm",
     param = c(variance = 100, nugget = 1000, scale = 1., alpha = 1.5),
-    fit.param = c(variance = TRUE, nugget = TRUE, scale = FALSE, alpha = TRUE),
-    aniso = c(f1 = 0.4, f2 = 1., omega = 135, phi = 90., zeta = 0.),
-    fit.aniso = c(f1 = TRUE, f2 = FALSE, omega = TRUE, phi = FALSE, zeta = FALSE),
+    fit.param = default.fit.param(scale = FALSE, alpha = TRUE),
+    aniso = default.aniso(f1 = 0.4, omega = 135.),
+    fit.aniso = default.fit.aniso(f1 = TRUE, omega = TRUE),
     method = "Nelder-Mead", hessian = TRUE, control = list(maxit = 5000))
 summary(r.irf0.aniso, correlation = TRUE)
 
 \dontrun{
-lines(r.irf0.aniso, xy.angle = seq( 0, 135, by = 45))}
+lines(r.irf0.aniso, xy.angle = seq(0, 135, by = 45))}
 }
 
 \keyword{models}

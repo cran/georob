@@ -1,4 +1,4 @@
-% 2014-05-28 A. Papritz
+% 2015-12-01 A. Papritz
 % R CMD Rdconv -t html -o bla.html plot.georob.Rd ; open bla.html; R CMD Rd2pdf --force plot.georob.Rd; 
 
 \encoding{macintosh}
@@ -12,17 +12,19 @@
 \code{georob} plot the variogram model, estimated by (robust) restricted
 maximum likelihood.
 \code{plot.georob} computes and plots in addition the
-sample variogram of the (robust) regression residuals.
+sample variogram of the (robust) regression residuals and can be used to
+generate residual diagnostics plots (Tukey-Anscombe plot, normal QQ plots
+of residuals and random effects).
 
 }
 
 
 \usage{
-\method{plot}{georob}(x, type, what = c("variogram", "covariance", "correlation"),
-    plot.sv = TRUE, add = FALSE, lag.dist.def, 
-    xy.angle.def = c(0, 180), xz.angle.def = c(0, 180), 
-    max.lag = Inf, estimator = c("mad", "qn", "ch", "matheron"), 
-    mean.angle = TRUE, col, pch, lty, ...)
+\method{plot}{georob}(x, what = c("variogram", "covariance", "correlation", 
+    "ta", "qq.res", "qq.ranef"), add = FALSE, lag.dist.def, 
+    xy.angle.def = c(0, 180), xz.angle.def = c(0, 180), max.lag = Inf, 
+    estimator = c("mad", "qn", "ch", "matheron"), mean.angle = TRUE, 
+    level = 1, col, pch, xlab, ylab, main, lty = "solid", ...)
 
 \method{lines}{georob}(x, what = c("variogram", "covariance", "correlation"),
     from = 1.e-6, to, n = 501, xy.angle = 90, xz.angle = 90, 
@@ -32,25 +34,39 @@ sample variogram of the (robust) regression residuals.
 \arguments{
   \item{x}{an object of class \code{georob}, see \code{\link{georobObject}}.}
   
-  \item{type}{the type of plot for display of the sample variogram,
-  see \code{\link[graphics]{plot}}.}
+  \item{what}{character keyword for the quantity that should be displayed.
+  Possible values are:
   
-  \item{what}{the quantity that should be displayed.  Note that
-  \code{plot.sv} will be set to \code{FALSE} unless \code{what ==
-  "variogram"} (default).}
+    \itemize{
+    
+      \item \code{"variogram"}: the variogram
+    
+      \item \code{"covariance"}: the covariance function
+    
+      \item \code{"correlation"}: the correlation function
+      
+      \item \code{"ta"}: residals plotted against fitted values
+      (Tukey-Anscombe plot)
+
+      \item \code{"qq.res"}: normal Q-Q plot of standardized residuals
+      
+      \item \code{"qq.ranef"}: normal Q-Q plot of standardized random
+      effects \eqn{\hat{B}}{hatB}
+    
+    }
   
-  \item{plot.sv}{logical controlling if the sample variogram of the
-  regression residuals, \eqn{\widehat{B}(\mbox{\boldmath$s$\unboldmath}) +
-  \widehat{\varepsilon}(\mbox{\boldmath$s$\unboldmath})}{hatB(s) +
-  hat\epsilon{s}} should be added to the plot (default \code{TRUE}).}
+  }
   
   \item{add}{logical controlling whether a new plot should be
   generated (\code{FALSE}, default) or whether the information should be
   added to the current plot (\code{TRUE}).}
 
-  \item{lag.dist.def}{a numeric scalar defining a constant bin width for
-  grouping the lag distances or a numeric vector with the upper bounds of a
-  set of contiguous bins.}
+  \item{lag.dist.def}{an optional numeric scalar defining a constant bin
+  width for grouping the lag distances or an optional numeric vector with
+  the upper bounds of a set of contiguous bins for computing the sample
+  variogram of the regression residuals, see
+  \code{\link{sample.variogram}}.  If missing then the sample variogram is
+  not computed.}
   
   \item{xy.angle.def}{an numeric vector defining angular classes in the
   horizontal plane for computing directional variograms.
@@ -93,6 +109,14 @@ sample variogram of the (robust) regression residuals.
   default) or from the mid-angles of the respective angular classes
   (\code{FALSE}).}
   
+  \item{level}{an integer giving the level for extracting the residuals
+  from \code{object} for \code{what = "ta"} or \code{what = "qq.res"}.
+  \code{level = 0} extracts the regression residuals
+  \eqn{\widehat{B}(\mbox{\boldmath$s$\unboldmath}) +
+  \widehat{\varepsilon}(\mbox{\boldmath$s$\unboldmath})}{hatB(s) +
+  hat\epsilon(s)} and \code{level = 1} (default) only the estimated errors
+  \eqn{\widehat{\varepsilon}(\mbox{\boldmath$s$\unboldmath})}{hat\epsilon(s)}.}
+  
   \item{from}{numeric, minimal lag distance for plotting variogram models.}
 
   \item{to}{numeric, maximum lag distance for plotting variogram
@@ -110,16 +134,19 @@ sample variogram of the (robust) regression residuals.
   degrees, clockwise positive from zenith to south) for which semivariances
   should be plotted.}
 
-  \item{col}{color of curves to distinguish curves relating to
-  different azimuth angles in \eqn{x}-\eqn{y}-plane.}
+  \item{col}{optional color of points and curves to distinguish items
+  relating to different azimuth angles in \eqn{x}-\eqn{y}-plane.}
 
-  \item{pch}{type of plotting symbols added to lines to distinguish
-  curves relating to different angles in \eqn{x}-\eqn{z}-plane.}
+  \item{pch}{optional symbol for points and curves to distinguish items
+  relating to different azimuth angles in \eqn{x}-\eqn{z}-plane.}
 
   \item{lty}{line type for plotting variogram models.}
 
+  \item{xlab, ylab, main}{test annotation, see
+  \code{\link[graphics]{plot}}.}
+  
   \item{...}{additional arguments passed to
-  \code{\link{plot.sample.variogram}} and methods.} 
+  \code{\link{plot.sample.variogram}} and graphical methods.}
   
 }
 
@@ -139,12 +166,12 @@ sample variogram of the (robust) regression residuals.
 ################
 ## meuse data ##
 ################
-data( meuse )
+data(meuse)
 
 ## Gaussian REML fit
 r.logzn.reml <- georob(log(zinc) ~ sqrt(dist), data = meuse, locations = ~ x + y,
     variogram.model = "RMexp",
-    param = c( variance = 0.15, nugget = 0.05, scale = 200 ),
+    param = c(variance = 0.15, nugget = 0.05, scale = 200),
     tuning.psi = 1000)
 summary(r.logzn.reml, correlation = TRUE)
 
@@ -153,7 +180,7 @@ r.logzn.rob <- update(r.logzn.reml, tuning.psi = 1)
     
 summary(r.logzn.rob, correlation = TRUE)
 
-plot(r.logzn.reml, lag.dist.def = seq( 0, 2000, by = 100 ))
+plot(r.logzn.reml, lag.dist.def = seq(0, 2000, by = 100))
 lines(r.logzn.rob, col = "red")}
 }
 

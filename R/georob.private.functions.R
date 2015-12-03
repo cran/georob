@@ -408,6 +408,7 @@ update.zhat <-
   ## 2013-02-04 AP solving estimating equations for xi
   ## 2013-06-12 AP substituting [["x"]] for $x in all lists
   ## 2015-06-29 AP solving linear system of equation by cholesky decomposition
+  ## 2015-12-02 AP correcting error in try(chol(m))
   
   ## function computes (1) updated IRWLS estimates zhat of linearized
   ## normal equations, (2) the associated rweights,
@@ -468,8 +469,7 @@ update.zhat <-
 #   
 #   if( !identical( class( r.solve ), "try-error" ) ) {
     
-    
-  t.chol <- try( chol( M, silent = TRUE ) )
+  t.chol <- try( chol( M ), silent = TRUE )
   if( !identical( class( t.chol ), "try-error" ) ){
     
     r.solve <- forwardsolve( t( t.chol ), b )
@@ -874,6 +874,7 @@ f.aux.gcr <-
     
   } else {
     
+    warning( "there were errors: call 'georob' with argument 'verbose' > 1" )
     if( verbose > 3 ) cat(
       "\n an error occurred when computing the negative semivariance matrix\n"
     )
@@ -924,6 +925,7 @@ likelihood.calculations <-
   ## 2015-07-17 AP TtT passed to function
   ## 2015-07-17 AP new name of function, Gaussian (RE)ML estimation for reparametrized variogram
   ## 2015-07-23 AP changes for avoiding computation of Valphaxi object if not needed
+  ## 2015-12-02 AP reparametrized variogram parameters renamed
 
   ##  function transforms (1) the variogram parameters back to their
   ##  original scale; computes (2) the correlation matrix, its inverse
@@ -1074,12 +1076,20 @@ likelihood.calculations <-
   
   ## print updated variogram parameters
   
-  t.param <- lik.item[["param"]]
-  if( !lik.item[["aniso"]][["isotropic"]] ) t.param <- c( 
-    t.param, lik.item[["aniso"]][["aniso"]] / c( rep( 1., 2), rep( d2r, 3 ) )
-  )
   if( verbose > 1 ) {
-#     print( t.param, digits = 13 )
+    
+    t.param <- lik.item[["param"]]
+    
+    if( reparam ){
+      tmp <- names( t.param )
+      tmp[tmp %in% "snugget"] <- "xi"
+      tmp[tmp %in% "nugget"]  <- "eta"
+      names( t.param ) <- tmp  
+    }
+    
+    if( !lik.item[["aniso"]][["isotropic"]] ) t.param <- c( 
+      t.param, lik.item[["aniso"]][["aniso"]] / c( rep( 1., 2), rep( d2r, 3 ) )
+    )
     cat( "\n\n                      ",
       format( names( t.param ), width = 14, justify = "right" ), 
       "\n", sep = ""
@@ -2278,6 +2288,7 @@ estimating.equations.theta <-
   ##  check whether generalized covariance matrix is positive definite
   
   if( lik.item[["Valphaxi"]][["error"]] ) {
+    warning( "there were errors: call 'georob' with argument 'verbose' > 1" )
     if( verbose > 0 ) cat(
       "\n(generalized) correlation matrix Valphaxi is not positive definite\n"
     )
@@ -2289,6 +2300,7 @@ estimating.equations.theta <-
   ##  check whether computation of betahat and bhat failed
   
   if( lik.item[["zhat"]][["error"]] ) {
+    warning( "there were errors: call 'georob' with argument 'verbose' > 1" )
     if( verbose > 0 ) cat(
       "\nan error occurred when estimating the fixed and random effects\n"
     )
@@ -2332,6 +2344,7 @@ estimating.equations.theta <-
     )
     
     if( r.cov[["error"]] ) {
+      warning( "there were errors: call 'georob' with argument 'verbose' > 1" )
       if( verbose > 0 ) cat(
         "\nan error occurred when computing the covariances of fixed and random effects\n"
       )
@@ -2478,6 +2491,7 @@ negative.loglikelihood <-
   ##  check whether generalized covariance matrix is positive definite
   
   if( lik.item[["Valphaxi"]][["error"]] ) {
+    warning( "there were errors: call 'georob' with argument 'verbose' > 1" )
     if( verbose > 0 ) cat(
       "\n(generalized) correlation matrix Valphaxi is not positive definite\n"
     )
@@ -2487,6 +2501,7 @@ negative.loglikelihood <-
   ##  check whether computation of betahat and bhat failed
   
   if( lik.item[["zhat"]][["error"]] ) {
+    warning( "there were errors: call 'georob' with argument 'verbose' > 1" )
     if( verbose > 0 ) cat(
       "\nan error occurred when estimating the fixed and random effects\n"
     )
@@ -2496,6 +2511,7 @@ negative.loglikelihood <-
   ##  check whether Q matrix not positive definite
   
   if( lik.item[["Q"]][["error"]] ) {
+    warning( "there were errors: call 'georob' with argument 'verbose' > 1" )
     if( verbose > 0 ) cat(
       "\nan error occurred when determinants required for",
       "Gaussian log-likelihood were computed\n"
@@ -2592,7 +2608,7 @@ gradient.negative.loglikelihood <-
   ## 2015-03-16 AP elimination of unused variables
   ## 2015-07-17 AP new name of function, Gaussian (RE)ML estimation for reparametrized variogram
   ## 2015-07-29 AP changes for elimination of parallelized computation of gradient or estimating equations
-  
+  ## 2015-12-02 AP reparametrized variogram parameters renamed
   ##  get lik.item
   
   lik.item <- likelihood.calculations(
@@ -2611,6 +2627,7 @@ gradient.negative.loglikelihood <-
   ##  check whether generalized covariance matrix is positive definite
   
   if( lik.item[["Valphaxi"]][["error"]] ) {
+    warning( "there were errors: call 'georob' with argument 'verbose' > 1" )
     if( verbose > 0 ) cat(
       "\n(generalized) correlation matrix Valphaxi is not positive definite\n"
     )
@@ -2620,6 +2637,7 @@ gradient.negative.loglikelihood <-
   ##  check whether computation of betahat and bhat failed
   
   if( lik.item[["zhat"]][["error"]] ) {
+    warning( "there were errors: call 'georob' with argument 'verbose' > 1" )
     if( verbose > 0 ) cat(
       "\nan error occurred when estimating the fixed and random effects\n"
     )
@@ -2629,6 +2647,7 @@ gradient.negative.loglikelihood <-
   ##  check whether Q matrix not positive definite
   
   if( lik.item[["Q"]][["error"]] ) {
+    warning( "there were errors: call 'georob' with argument 'verbose' > 1" )
     if( verbose > 0 ) cat(
       "\nan error occurred when determinants required for ",
       "Gaussian log-likelihood were computed\n"
@@ -2729,13 +2748,23 @@ gradient.negative.loglikelihood <-
     r.gradient <- -r.gradient[names( adjustable.param )]
     
     if( verbose > 1 ){
+      
+      t.gradient <- r.gradient
+      
+      if( reparam ){
+        tmp <- names( t.gradient )
+        tmp[tmp %in% "snugget"] <- "xi"
+        tmp[tmp %in% "nugget"]  <- "eta"
+        names( t.gradient ) <- tmp  
+      }
+      
       cat( "\n                      ",
-        format( names( r.gradient ), width = 14, justify = "right" ), 
+        format( names( t.gradient ), width = 14, justify = "right" ), 
         "\n", sep = ""
       )
       cat( "  Gradient           :", 
         format( 
-          signif( r.gradient, digits = 7 ), 
+          signif( t.gradient, digits = 7 ), 
           scientific = TRUE, width = 14
         ), "\n" , sep = ""
       )
@@ -2885,6 +2914,7 @@ georob.fit <-
   ## 2015-08-19 AP variances of eps and psi(eps/sigma) for long-tailed error distribution; 
   ##               computing covariances of residuals under long-tailed error model,
   ##               control about error families for computing covariances added
+  ## 2015-12-02 AP catching error in computation of covariances
   
   ##  ToDos:
   
@@ -2937,7 +2967,7 @@ georob.fit <-
         XX, 
         2, 
         function( x ){
-          if( length(x) > 1 && any( x[-1] != x[1] ) ) warning(
+          if( length(x) > 1 && any( x[-1] != x[1] ) ) stop(
             "explanatory variables differ for some replicated observations" 
           )
         }
@@ -3824,7 +3854,16 @@ georob.fit <-
       aux.cov.pred.target = aux.cov.pred.target,
       control.pmm = control.pmm,
       verbose = verbose
-    )[-1]
+    )
+    
+    if( r.cov[["error"]] ) {
+      warning( "there were errors: call 'georob' with argument 'verbose' > 1" )
+      if( verbose > 0 ) cat(
+        "\nan error occurred when computing the covariances of fixed and random effects\n"
+      )
+    } else {
+      r.cov <- r.cov[!names(r.cov) %in% "error"]
+    }
     
   }
   
@@ -3857,8 +3896,17 @@ georob.fit <-
         aux.cov.pred.target = FALSE,
         control.pmm = control.pmm,
         verbose = verbose
-      )[-1]
+      )
     )
+    
+    if( r.cov[["error"]] ) {
+      warning( "there were errors: call 'georob' with argument 'verbose' > 1" )
+      if( verbose > 0 ) cat(
+        "\nan error occurred when computing the covariances of residuals\n"
+      )
+    } else {
+      r.cov <- r.cov[!names(r.cov) %in% "error"]
+    }
     
   }
   
@@ -4214,6 +4262,7 @@ f.aux.gradient.nll <- function(
   
   ##  auxiliary function to compute gradient of (restricted) log-likelihood
   ##  (called by gradient.negative.loglikelihood)
+  ##  original parametrization of variogram
   
   ## 2014-07-29 A. Papritz
   ## 2015-07-17 AP new parametrization of loglikelihood
@@ -4391,6 +4440,7 @@ f.aux.gradient.npll <- function(
   
   ##  auxiliary function to compute gradient of (restricted) profile
   ##  log-likelihood (called by gradient.negative.loglikelihood)
+  ## reparametrized variogram
   
   ## 2015-07-17 A. Papritz
   ## 2015-07-27 AP changes to improve efficiency

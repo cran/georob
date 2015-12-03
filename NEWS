@@ -4,4 +4,4 @@
 2014-06-02  georob Version 0.1-4 released to CRAN
 2014-08-28  georob Version 0.1-5 released to CRAN, new features: Gaussian ML estimation, parallelized matrix multiplication
 2015-09-02  georob Version 0.2-1 released to CRAN, new features: Gaussian (RE)ML of re-parametrized variogram; new function for computing profile likelihood, multiple changes for reducing computational effort; optional computation of covariances for long-tailed errors
-
+2015-12-02  georob Version 0.2-2 released to CRAN, new features: better error diagnostics, generic and methods for computing sample variograms, new functions to set default values for variogram parameters, extended plot method for class georob with residual diagnostic plots

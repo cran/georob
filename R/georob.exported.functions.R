@@ -10,14 +10,8 @@ georob <-
       "RMmatern", "RMpenta", "RMqexp", "RMspheric", "RMstable",
       "RMwave", "RMwhittle"
     ), 
-    param,
-    fit.param = c( 
-      variance = TRUE, snugget = FALSE, nugget = TRUE, scale = TRUE, 
-      alpha = FALSE, beta = FALSE, delta = FALSE, gamma = FALSE, 
-      kappa = FALSE, lambda = FALSE, mu = FALSE, nu = FALSE
-    )[ names(param) ],
-    aniso = c( f1 = 1., f2 = 1., omega = 90., phi = 90., zeta = 0. ),
-    fit.aniso = c( f1 = FALSE, f2 = FALSE, omega = FALSE, phi = FALSE, zeta = FALSE ),
+    param, fit.param = default.fit.param()[names(param)],
+	aniso = default.aniso(), fit.aniso = default.fit.aniso(),
     tuning.psi = 2, control = control.georob(), verbose = 0,
     ...
   )
@@ -92,16 +86,18 @@ georob <-
   ## 2015-08-19 AP control about error families for computing covariances added
   ## 2015-08-28 AP computation of hessian suppressed; correction of error when using georob.object;
   ##               control arguments hessian, initial.param, initial.fixef newly organized
+  ## 2015-11-25 AP new way to control which variogram parameters are fitted
   
   ## check validity of tuning.psi
   
   if( identical( control[["psi.func"]], "t.dist" ) && tuning.psi <= 1. ) 
     stop( "'tuning.psi' must be greater than 1 for t-dist psi-function" )
     
-  ## check whether input is complete
+  ## check whether all mandatory arguments have been provided
   
-  if( any( missing( formula ) || missing( locations ) || missing( param ) ) )
-    stop( "some mandatory arguments are missing" )
+  if( missing( formula ) || missing( locations ) || missing( param ) ) stop( 
+    "some mandatory arguments are missing" 
+  )
   
   ## check whether anisotropy parameters were passed to georob
   
@@ -113,7 +109,7 @@ georob <-
   tmp <- sapply(tmp, function(x, choices){
       match.arg(x, choices)
     },
-    choices = names( param.transf() )
+    choices = names( default.fit.param() )
   )
   names( param ) <- tmp
   
@@ -122,9 +118,10 @@ georob <-
     tmp <- sapply(tmp, function(x, choices){
         match.arg(x, choices)
       },
-      choices = names( param.transf() )
+      choices = names( default.fit.param() )
     )
     names( fit.param ) <- tmp
+    fit.param <- fit.param[names( fit.param ) %in% names( param )]
   }
   
   if( !missing( aniso ) ){
@@ -132,7 +129,7 @@ georob <-
     tmp <- sapply(tmp, function(x, choices){
         match.arg(x, choices)
       },
-      choices = names( param.transf() )
+      choices = names( default.aniso() )
     )
     names( aniso ) <- tmp
   }
@@ -142,7 +139,7 @@ georob <-
     tmp <- sapply(tmp, function(x, choices){
         match.arg(x, choices)
       },
-      choices = names( param.transf() )
+      choices = names( default.aniso() )
     )
     names( fit.aniso ) <- tmp
   }
@@ -1217,6 +1214,59 @@ function( model, d )
  
 ##  ##############################################################################
 
+default.fit.param <- 
+function(
+  variance = TRUE, snugget = FALSE, nugget = TRUE, scale = TRUE, 
+  alpha = FALSE, beta = FALSE, delta = FALSE, gamma = FALSE, 
+  kappa = FALSE, lambda = FALSE, mu = FALSE, nu = FALSE )
+{
+  
+  ## function sets default flags for fitting variogram parameters
+  
+  ## 2015-11-27 A. Papritz
+  
+  c( 
+	variance = variance, snugget = snugget, nugget = nugget, scale = scale,
+	alpha = alpha, beta = beta, delta = delta, gamma = gamma,
+	kappa = kappa, lambda = lambda, mu = mu, nu = nu
+  )
+  
+}
+
+ 
+##  ##############################################################################
+
+default.fit.aniso <- 
+function( f1 = FALSE, f2 = FALSE, omega = FALSE, phi = FALSE, zeta = FALSE )
+{
+  
+  ## function sets default flags for fitting anisotropy parameters
+  
+  ## 2015-11-27 A. Papritz
+  
+  c( f1 = f1, f2 = f2, omega = omega, phi = phi, zeta = zeta )
+  
+}
+
+ 
+##  ##############################################################################
+
+default.aniso <- 
+function(
+  f1 = 1., f2 = 1., omega = 90., phi = 90., zeta = 0. )
+{
+  
+  ## function sets default values for anisotropy parameters
+  
+  ## 2015-11-26 A. Papritz
+  
+  c( f1 = f1, f2 = f2, omega = omega, phi = phi, zeta = zeta )
+  
+}
+
+ 
+##  ##############################################################################
+
 profilelogLik <- 
 function( object, values, use.fitted = TRUE, verbose = 0, 
   ncores = min( detectCores(), NROW(values) ) ){
@@ -1291,6 +1341,12 @@ function( object, values, use.fitted = TRUE, verbose = 0,
     )
     
   }
+  
+  ## check whether all mandatory arguments have been provided
+  
+  if( missing(object) || missing(values) ) stop(
+	"some mandatory arguments are missing" 
+  )
   
   ## warning for robust fits
   

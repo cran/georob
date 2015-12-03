@@ -366,6 +366,18 @@ processing col and pch arguments
 * georob.exported.functions.R (georob, control.georob) control arguments newly organized
 * georob.private.functions.R (georob.fit) correcting error when using georob.object
 
+
+2015-12-02  Andreas Papritz  <papritz@env.ethz.ch>
+
+* georob.cv.R (cv.georob)  catching errors occurring during parallel model fits
+* georob.cv.R (validate.predictions)  checking whether mandatory arguments were provided
+* georob.exported.functions.R (default.aniso, default.fit.param, default.fit.aniso, georob, control.georob) new way to control which variogram parameters are fitted
+* georob.predict.R (predict.georob) catching errors occurring during parallel computations
+* variogram.R (sample.variogram, sample.variogram.default, sample.variogram.formula, sample.variogram.gerob) generic and methods for computing sample variogram
+* variogram.R (fit.variogram.model) checking mandatory arguments, issuing warnings
+* variogram.R (plot.georob) changes for Tukey-Anscombe, QQnorm plots and for plotting variograms
+* georob.private.functions (f.aux.gcr,estimating.equations.theta, negative.loglikelihood, gradient.negative.loglikelihood, georob.fit) issuing warnings
+
  
 
 

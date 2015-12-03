@@ -26,6 +26,9 @@ export(
   control.predict.georob,           # ok
   control.rq,                       # ok
   cv,                               # ok
+  default.aniso,                    # ok
+  default.fit.aniso,                # ok
+  default.fit.param,                # ok
   dfwd.transf,                      # ok
   expand,                           # ok
   fixed.effects,                    # ok export of generic fixed.effects{nlme}
@@ -56,6 +59,7 @@ export(
 #   cv.georob                       # ok
 #   deviance.georob,                # ok
 #   drop1.georob,                   # ok
+#   drop1.georob,                   # ok
 #   exportAIC.georob,               # ok
 #   fixed.effects.georob,           # ok
 #   fixef.georob,                   # ok
@@ -85,6 +89,9 @@ export(
 #   rstudent.georob,                # ok
 #   step.default,                   # ok
 #   step.georob,                    # ok
+#   sample.variogram.default,       # ok
+#   sample.variogram.formula,       # ok
+#   sample.variogram.georob,        # ok
 #   summary.cv.georob,              # ok
 #   summary.fitted.variogram,       # ok
 #   summary.georob,                 # ok
@@ -160,6 +167,9 @@ S3method( residuals, georob )
 S3method( rstandard, georob )
 S3method( rstudent, cv.georob )
 S3method( rstudent, georob )
+S3method( sample.variogram, default )
+S3method( sample.variogram, formula )
+S3method( sample.variogram, georob )
 S3method( step, default )
 S3method( step, georob )
 S3method( summary, cv.georob )

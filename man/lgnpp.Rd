@@ -319,7 +319,7 @@ lgnpp(object, newdata, locations, is.block = FALSE, all.pred = NULL,
 
 \examples{
 \dontrun{
-data(meuse )
+data(meuse)
 
 data(meuse.grid)
 coordinates(meuse.grid) <- ~x+y
@@ -330,7 +330,7 @@ library(constrainedKriging)
 data(meuse.blocks)
 
 r.logzn.rob <- georob(log(zinc) ~ sqrt(dist), data = meuse, locations = ~ x + y,
-    variogram.model = "RMexp", param = c( variance = 0.15, nugget = 0.05, scale = 200 ),
+    variogram.model = "RMexp", param = c(variance = 0.15, nugget = 0.05, scale = 200),
     tuning.psi = 1., control = control.georob(cov.bhat = TRUE, full.cov.bhat = TRUE,
         cov.bhat.betahat = TRUE, aux.cov.pred.target = TRUE))
         
@@ -351,7 +351,7 @@ r.block
 
 ## block predictions of log(Zn)
 r.pred.block <- predict(r.logzn.rob, newdata = meuse.blocks, 
-    control = control.predict.georob( extended.output = TRUE,
+    control = control.predict.georob(extended.output = TRUE,
         pwidth = 75, pheight = 75))
 r.backtf.pred.block <- lgnpp(r.pred.block, newdata = meuse.grid)
 

@@ -75,6 +75,7 @@ function(
   ## 2015-07-20 AP inactivation of modifications for robust prediction of response 
   ##               (variables: rp.response, se.signal, scld.res, resscl)
   ## 2015-08-27 AP correcting error in processing output
+  ## 2015-11-30 AP catching errors occurring during parallel computations
 
   
   ##  ##############################################################################
@@ -763,35 +764,37 @@ function(
         save( cl, file = "SOCKcluster.RData" )
         options( error = f.stop.cluster )
         
-        t.result <- parLapply(
-          cl,
-          1:n.part,
-          f.aux,
-          rs = rs, re = re, n.part = n.part,
-          type = type,
-          locations.coords = locations.coords,
-          betahat = object[["coefficients"]],
-          bhat = object[["bhat"]],
-          response = model.response( model.frame( object ) ),
-          #           rp.response = rp.response,
-          #           scld.res = scld.res,
-          pred.X = pred.X, pred.coords = pred.coords, offset = offset, newdata = newdata,
-          variogram.model = object[["variogram.model"]],
-          param = object[["param"]],
-          aniso = object[["aniso"]],
-          cov.delta.bhat.betahat.l = cov.delta.bhat.betahat.l,
-          cov.betahat.l = cov.betahat.l,
-          cov.bhat.betahat = cov.bhat.betahat,
-          cov.p.t = cov.p.t,
-          gcr.constant = Valphaxi.objects[["gcr.constant"]],
-          Valphaxi = Valphaxi.objects[["Valphaxi"]],
-          Valphaxi.inverse = Valphaxi.objects[["Valphaxi.inverse"]],
-          pwidth = control[["pwidth"]], pheight = control[["pheight"]], napp = control[["napp"]],
-          signif = signif,
-          extended.output = control[["extended.output"]], 
-          full.covmat = control[["full.covmat"]],
-          control.pmm = control.pmm,
-          verbose = verbose
+        t.result <- try(
+          parLapply(
+            cl,
+            1:n.part,
+            f.aux,
+            rs = rs, re = re, n.part = n.part,
+            type = type,
+            locations.coords = locations.coords,
+            betahat = object[["coefficients"]],
+            bhat = object[["bhat"]],
+            response = model.response( model.frame( object ) ),
+            #           rp.response = rp.response,
+            #           scld.res = scld.res,
+            pred.X = pred.X, pred.coords = pred.coords, offset = offset, newdata = newdata,
+            variogram.model = object[["variogram.model"]],
+            param = object[["param"]],
+            aniso = object[["aniso"]],
+            cov.delta.bhat.betahat.l = cov.delta.bhat.betahat.l,
+            cov.betahat.l = cov.betahat.l,
+            cov.bhat.betahat = cov.bhat.betahat,
+            cov.p.t = cov.p.t,
+            gcr.constant = Valphaxi.objects[["gcr.constant"]],
+            Valphaxi = Valphaxi.objects[["Valphaxi"]],
+            Valphaxi.inverse = Valphaxi.objects[["Valphaxi.inverse"]],
+            pwidth = control[["pwidth"]], pheight = control[["pheight"]], napp = control[["napp"]],
+            signif = signif,
+            extended.output = control[["extended.output"]], 
+            full.covmat = control[["full.covmat"]],
+            control.pmm = control.pmm,
+            verbose = verbose
+          )
         )
         
         f.stop.cluster( cl )
@@ -807,40 +810,53 @@ function(
         
         ## fork child processes on non-windows OS
         
-        t.result <- mclapply(
-          1:n.part,
-          f.aux,
-          rs = rs, re = re, n.part = n.part,
-          type = type,
-          locations.coords = locations.coords,
-          betahat = object[["coefficients"]],
-          bhat = object[["bhat"]],
-          response = model.response( model.frame( object ) ),
-          #           rp.response = rp.response,
-          #           scld.res = scld.res,
-          pred.X = pred.X, pred.coords = pred.coords, offset = offset, newdata = newdata,
-          variogram.model = object[["variogram.model"]],
-          param = object[["param"]],
-          aniso = object[["aniso"]],
-          cov.delta.bhat.betahat.l = cov.delta.bhat.betahat.l,
-          cov.betahat.l = cov.betahat.l,
-          cov.bhat.betahat = cov.bhat.betahat,
-          cov.p.t = cov.p.t,
-          gcr.constant = Valphaxi.objects[["gcr.constant"]],
-          Valphaxi = Valphaxi.objects[["Valphaxi"]],
-          Valphaxi.inverse = Valphaxi.objects[["Valphaxi.inverse"]],
-          pwidth = control[["pwidth"]], pheight = control[["pheight"]], napp = control[["napp"]],
-          signif = signif,
-          extended.output = control[["extended.output"]], 
-          full.covmat = control[["full.covmat"]],
-          control.pmm = control.pmm,
-          verbose = verbose,
-          mc.cores = ncores 
+        t.result <- try(
+          mclapply(
+            1:n.part,
+            f.aux,
+            rs = rs, re = re, n.part = n.part,
+            type = type,
+            locations.coords = locations.coords,
+            betahat = object[["coefficients"]],
+            bhat = object[["bhat"]],
+            response = model.response( model.frame( object ) ),
+            #           rp.response = rp.response,
+            #           scld.res = scld.res,
+            pred.X = pred.X, pred.coords = pred.coords, offset = offset, newdata = newdata,
+            variogram.model = object[["variogram.model"]],
+            param = object[["param"]],
+            aniso = object[["aniso"]],
+            cov.delta.bhat.betahat.l = cov.delta.bhat.betahat.l,
+            cov.betahat.l = cov.betahat.l,
+            cov.bhat.betahat = cov.bhat.betahat,
+            cov.p.t = cov.p.t,
+            gcr.constant = Valphaxi.objects[["gcr.constant"]],
+            Valphaxi = Valphaxi.objects[["Valphaxi"]],
+            Valphaxi.inverse = Valphaxi.objects[["Valphaxi.inverse"]],
+            pwidth = control[["pwidth"]], pheight = control[["pheight"]], napp = control[["napp"]],
+            signif = signif,
+            extended.output = control[["extended.output"]], 
+            full.covmat = control[["full.covmat"]],
+            control.pmm = control.pmm,
+            verbose = verbose,
+            mc.cores = ncores 
+          )
         )
         
-      }
+       }
       
-    } else {
+       has.error <- sapply(
+         t.result, function( x ) identical( class(x), "try-error" ) 
+       )
+       
+       if( any( has.error ) ){
+         cat( "\nerror(s) occurred when computing kriging predictions in parallel:\n\n" )
+         sapply( t.result[has.error], cat)
+         cat( "\nuse 'mmax > nrow(newdata)' and 'verbose = 1' to avoid parallel computations and to see where problem occurs\n\n" ) 
+         stop()
+       }
+       
+     } else {
       
       t.result <- lapply(
         1:n.part,

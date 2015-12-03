@@ -71,29 +71,19 @@ cv.georob <-
   ## 2015-07-20 AP inactivation of modifications for robust prediction of response 
   ##               (variables: robust, se.signal, scld.res, resscl)
   ## 2015-08-28 AP computation of hessian suppressed
+  ## 2015-11-26 AP catching errors occurring during parallel model fits
   
   
   ## auxiliary function that fits the model and computes the predictions of
   ## a cross-validation set
   
   f.aux <- function( 
-    ..i.., object, formula, data, sets, re.estimate, 
+    ..i.., object, formula, data, sets,  
     param, fit.param, aniso, fit.aniso, lgn, 
     verbose, ...
   ){  ## cv function
     
     if (verbose) cat( "\n\n  processing cross-validation set", ..i.., "\n" ) 
-    
-    ## fit model to complement of current set
-    
-    if( !re.estimate ){
-      fit.param <- c( 
-        variance = FALSE, snugget = FALSE, nugget = FALSE, scale = FALSE, 
-        alpha = FALSE, beta = FALSE, delta = FALSE, gamma = FALSE, 
-        kappa = FALSE, lambda = FALSE, mu = FALSE, nu = FALSE
-      )[names( param )]
-      fit.aniso <- c( f1 = FALSE, f2 = FALSE, omega = FALSE, phi = FALSE, zeta = FALSE )
-    }
     
     ## change environment of terms and formula so that subset selection works for update            
     
@@ -175,19 +165,7 @@ cv.georob <-
   ## begin of main body of function
   
   method <- match.arg( method )
-    
-  ## check consistency of arguments
-  
-  if( !any( c( fit.param, fit.aniso ) ) && re.estimate ){
-    re.estimate <- FALSE
-    cat(
-      "re.estimate set equal to FALSE because all variogram parameters are fixed\n\n"    
-    )
-    warnings(
-      "re.estimate set equal to FALSE because all variogram parameters are fixed"    
-    )
-  }
-  
+      
   mfl.action <- match.arg( mfl.action )
   
   ## update terms of object is formula is provided
@@ -334,15 +312,25 @@ cv.georob <-
     class( object[["na.action"]] ) <- "omit"
   }
   
-
+  ## check whether all variogram parameters are fixed
   
-  ## check dimension of param and fit.param
+  if( !any( c( fit.param, fit.aniso ) ) && re.estimate ){
+    re.estimate <- FALSE
+    cat(
+      "re.estimate set equal to FALSE because all variogram parameters are fixed\n\n"    
+    )
+    warnings(
+      "re.estimate set equal to FALSE because all variogram parameters are fixed"    
+    )
+  }
+  
+  ## check dimension of param, fit.param, aniso, fit.aniso
   
   if( ( is.matrix( param ) || is.data.frame( param ) ) && nrow( param )!= nset ) stop(
     "'param' must have 'nset' rows if it is a matrix or data frame"  
   )
     
-  if( ( is.matrix( fit.param ) || is.data.frame( fit.param ) ) && nrow( param )!= nset ) stop(
+  if( ( is.matrix( fit.param ) || is.data.frame( fit.param ) ) && nrow( fit.param )!= nset ) stop(
     "'fit.param' must have 'nset' rows if it is a matrix or data frame"  
   )
     
@@ -350,9 +338,17 @@ cv.georob <-
     "'aniso' must have 'nset' rows if it is a matrix or data frame"  
   )
     
-  if( ( is.matrix( fit.aniso ) || is.data.frame( fit.aniso ) ) && nrow( aniso )!= nset ) stop(
+  if( ( is.matrix( fit.aniso ) || is.data.frame( fit.aniso ) ) && nrow( fit.aniso )!= nset ) stop(
     "'fit.aniso' must have 'nset' rows if it is a matrix or data frame"  
   )
+  
+  ## keep all variogram parameters fixed for re.estimate == FALSE
+  
+  if( !re.estimate ){
+	fit.param <- default.fit.param( variance = FALSE, nugget = FALSE, scale = FALSE )[names( param )]
+	fit.aniso <- default.fit.aniso()
+  }
+  
   
   ## set hessian equal to FALSE in control argument of georob call and update
   ## call
@@ -386,52 +382,91 @@ cv.georob <-
   
   ## loop over all cross-validation sets
   
-  if( .Platform[["OS.type"]] == "windows" ){
+  if( ncores > 1 ){
     
-    ## create a SNOW cluster on windows OS
+    ## parallel processing    
+
+    if( .Platform[["OS.type"]] == "windows" ){
+      
+      ## create a SNOW cluster on windows OS
+      
+      cl <- makePSOCKcluster( ncores, outfile = "")
+      
+      ## export required items to workers
+      
+      junk <- clusterEvalQ( cl, require( georob, quietly = TRUE ) )
+      
+      t.result <- try(
+        parLapply(
+          cl, 
+          1:length( sets ),
+          f.aux, 
+          object = object,
+          formula = formula,
+          data = data,
+          sets = sets,
+          param = param, fit.param = fit.param,
+          aniso = aniso, fit.aniso = fit.aniso,
+          lgn = lgn, 
+          verbose = verbose,
+          ...
+        ), silent = TRUE
+      )
+      
+      stopCluster(cl)
+      
+    } else {
+      
+      ## fork child processes on non-windows OS
+      
+      t.result <- try(
+        mclapply(
+          1:length( sets ),
+          f.aux, 
+          object = object,
+          formula = formula,
+          data = data,
+          sets = sets,
+          param = param, fit.param = fit.param,
+          aniso = aniso, fit.aniso = fit.aniso,
+          lgn = lgn, 
+          verbose = verbose,
+          mc.cores = ncores,
+          mc.allow.recursive = FALSE,
+          ...
+        ) 
+        , silent = TRUE
+      )
+            
+    }
     
-    cl <- makePSOCKcluster( ncores, outfile = "")
-    
-    ## export required items to workers
-    
-    junk <- clusterEvalQ( cl, require( georob, quietly = TRUE ) )
-    
-    t.result <- parLapply(
-      cl, 
-      1:length( sets ),
-      f.aux, 
-      object = object,
-      formula = formula,
-      data = data,
-      sets = sets,
-      re.estimate = re.estimate,
-      param = param, fit.param = fit.param,
-      aniso = aniso, fit.aniso = fit.aniso,
-      lgn = lgn, 
-      verbose = verbose,
-      ...
+    has.error <- sapply(
+      t.result, function( x ) identical( class(x), "try-error" ) 
     )
     
-    stopCluster(cl)
+    if( any( has.error ) ){
+      cat( "\nerror(s) occurred when fitting model in parallel to cross-validation sets:\n\n" )
+      sapply( t.result[has.error], cat)
+      cat( "\nrun cross-validation with arguments 'ncores = 1' and 'verbose = 2'\n\n" ) 
+      stop()
+    
+    }
     
   } else {
-        
-    ## fork child processes on non-windows OS
     
-    t.result <- mclapply(
+    ## sequential processing
+    
+    t.result <- lapply(
       1:length( sets ),
       f.aux, 
       object = object,
       formula = formula,
       data = data,
       sets = sets,
-      re.estimate = re.estimate,
       param = param, fit.param = fit.param,
       aniso = aniso, fit.aniso = fit.aniso,
       lgn = lgn, 
       verbose = verbose,
-      mc.cores = ncores,
-      mc.allow.recursive = FALSE,
       ...
     )
     
@@ -1076,6 +1111,13 @@ validate.predictions <-
   ## 2012-05-04 AP coping with NAs
   ## 2013-06-12 AP substituting [["x"]] for $x in all lists
   ## 2015-06-25 AP new method to compute pit, mc, bs and crps (Gaussian and robust)
+  ## 2015-11-27 AP checking whether mandatory arguments were provided
+  
+  ## checking whether mandatory arguments were provided
+  
+  if( missing( data ) || missing( pred ) || missing( se.pred ) ) stop(
+	"some mandatory arguments are missing" 
+  )
   
   statistic = match.arg( statistic )
   

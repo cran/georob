@@ -1,8 +1,8 @@
 Package: georob
 Type: Package
 Title: Robust Geostatistical Analysis of Spatial Data
-Version: 0.2-1
-Date: 2015-09-02
+Version: 0.2-2
+Date: 2015-12-02
 Authors@R: c(
   person( "Andreas", "Papritz", role = c( "cre", "aut" ), 
           email =  "andreas.papritz@env.ethz.ch" ),
@@ -21,10 +21,10 @@ Description: The georob package provides functions for efficiently fitting
          by cross-validation and for unbiased back-transformation of kriging
          predictions of log-transformed data.
 License: GPL (>= 2)
-Packaged: 2015-09-02 11:09:39 UTC; papritz
+NeedsCompilation: no
+Packaged: 2015-12-02 20:02:41 UTC; papritz
 Author: Andreas Papritz [cre, aut],
   Cornelia Schwierz [ctb]
 Maintainer: Andreas Papritz <andreas.papritz@env.ethz.ch>
-NeedsCompilation: no
 Repository: CRAN
-Date/Publication: 2015-09-02 15:52:13
+Date/Publication: 2015-12-03 00:15:16

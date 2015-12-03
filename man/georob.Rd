@@ -1,4 +1,4 @@
-% 2015-08-28 A. Papritz
+% 2015-11-27 A. Papritz
 % R CMD Rdconv -t html -o bla.html georob.Rd ; open bla.html; R CMD Rd2pdf --force georob.Rd; 
 
 \encoding{macintosh}
@@ -21,21 +21,17 @@ georob(formula, data, subset, weights, na.action, model = TRUE,
         "RMfbm", "RMgauss", "RMgencauchy", "RMgenfbm", "RMgengneiting", 
         "RMgneiting", "RMlgd", "RMmatern", "RMpenta", "RMqexp", 
         "RMspheric", "RMstable", "RMwave", "RMwhittle"), 
-    param, 
-    fit.param = c(variance = TRUE, snugget = FALSE, nugget = TRUE, 
-        scale = TRUE, alpha = FALSE, beta = FALSE, delta = FALSE, 
-        gamma = FALSE, kappa = FALSE, lambda = FALSE, mu = FALSE, 
-        nu = FALSE)[names(param)], 
-    aniso = c(f1 = 1, f2 = 1, omega = 90, phi = 90, zeta = 0), 
-    fit.aniso = c(f1 = FALSE, f2 = FALSE, omega = FALSE, 
-        phi = FALSE, zeta = FALSE), 
+    param, fit.param = default.fit.param()[names(param)],
+	aniso = default.aniso(), fit.aniso = default.fit.aniso(),
     tuning.psi = 2, control = control.georob(),
     verbose = 0, ...)
 }
 %
 \arguments{
-  \item{formula}{a symbolic description of the regression model to be fit.  See
-    \code{\link[stats]{lm}} and \code{\link[stats]{formula}} for more details.}
+  \item{formula}{a symbolic description of the regression model for the
+  external drift to be fit (mandatory argument).  See
+  \code{\link[stats]{lm}} and \code{\link[stats]{formula}} for more
+  details.}
     
   \item{data}{an optional data frame, a
   \code{\link[sp]{SpatialPointsDataFrame}}, list or environment (or another
@@ -65,24 +61,26 @@ georob(formula, data, subset, weights, na.action, model = TRUE,
   \item{contrasts}{an optional list.  See the \code{contrasts.arg} of
     \code{\link{model.matrix.default}}.}
     
-  \item{offset}{this can be used to specify an \emph{a priori}
-    known component to be included in the linear predictor
-    during fitting.  An \code{\link{offset}} term can be included in the
-    formula instead or as well, and if both are specified their sum is used.}
+  \item{offset}{this optional argument can be used to specify an \emph{a
+  priori} known component to be included in the linear predictor during
+  fitting.  An \code{\link{offset}} term can be included in the formula
+  instead or as well, and if both are specified their sum is used.}
     
-  \item{locations}{a one-sided formula defining the variables that are used
-    as coordinates of the locations were the data was recorded.}
+  \item{locations}{a one-sided formula defining the variables
+  that are used as coordinates of the locations were the data was
+  recorded (mandatory argument).}
     
   \item{variogram.model}{a character keyword defining the variogram model
-    to be fitted.  Currently, most basic variogram models
-    provided by the package \pkg{RandomFields} can be fitted (see \emph{Details} 
-    and \code{\link[RandomFields]{RMmodel}}).}
+  to be fitted.  Currently, most basic variogram models
+  provided by the package \pkg{RandomFields} can be fitted (see \emph{Details} 
+  and \code{\link[RandomFields]{RMmodel}}).}
   
-    \item{param}{a named numeric vector with initial values of the
-    variogram parameters.  The names of \code{param} are matched against
-    the following names (see \emph{Details} and \code{\link{georobIntro}}
-    for information about the parametrization of variogram models):
-    
+  \item{param}{a named numeric vector with initial values of the
+  variogram parameters (mandatory argument).  The names of \code{param}
+  are matched against the following names (see \emph{Details} and
+  \code{\link{georobIntro}} for information about the parametrization of
+  variogram models):
+  
     \itemize{
       \item{\code{variance}: variance (sill \eqn{\sigma^2}) of the
       auto-correlated component of the Gaussian random field 
@@ -105,19 +103,23 @@ georob(formula, data, subset, weights, na.action, model = TRUE,
       \code{\link[RandomFields]{RMmodel}} and
       \code{\link{param.names}}).}
        
-    }
-  }
-  \item{fit.param}{a named logical vector with the same names as used for 
-    \code{param}, defining which parameters are adjusted (\code{TRUE}) and which 
-    are kept fixed at their initial values (\code{FALSE}) when fitting the model.}
+    } 
+  } 
+  
+  \item{fit.param}{a named logical vector (or a function such as
+  \code{\link{default.fit.param}} that creates this vector) with the same
+  names as used for \code{param}, defining which parameters are adjusted
+  (\code{TRUE}) and which are kept fixed at their initial values
+  (\code{FALSE}) when fitting the model.}
     
-    \item{aniso}{a named numeric vector with initial values for fitting
-    geometrically anisotropic variogram models.  The names of \code{aniso}
-    are matched against the following names (see \emph{Details} and
-    \code{\link{georobIntro}} for information about the parametrization of
-    variogram models):
-    
-    \itemize{
+  \item{aniso}{a named numeric vector with initial values (or a function such as
+  \code{\link{default.aniso}} that creates this vector) for fitting
+  geometrically anisotropic variogram models.  The names of \code{aniso}
+  are matched against the following names (see \emph{Details} and
+  \code{\link{georobIntro}} for information about the parametrization of
+  variogram models):
+  
+  \itemize{
     
       \item{\code{f1}: ratio \eqn{f_1} of lengths of second and first
         semi-principal axes of an ellipsoidal surface with constant
@@ -140,9 +142,11 @@ georob(formula, data, subset, weights, na.action, model = TRUE,
     } 
   }
 
-  \item{fit.aniso}{a named logical vector with the same names as used for 
-    \code{aniso}, defining which parameters are adjusted (\code{TRUE}) and which 
-    are kept fixed at their initial values (\code{FALSE}) when fitting the model.}
+  \item{fit.aniso}{a named logical vector (or a function such as
+  \code{\link{default.fit.aniso}} that creates this vector) with the same
+  names as used for \code{aniso}, defining which parameters are adjusted
+  (\code{TRUE}) and which are kept fixed at their initial values
+  (\code{FALSE}) when fitting the model.}
     
   \item{tuning.psi}{positive numeric.  The tuning constant \eqn{c} of the
     \eqn{\psi_c}-function of the robust REML algorithm.}
@@ -270,7 +274,7 @@ georob(formula, data, subset, weights, na.action, model = TRUE,
         "L-BFGS-B"}, \code{lower = \var{l}}, \code{upper = \var{u}}, where
         \var{l} and \var{u} are numeric vectors with the lower and upper
         bounds of the \emph{transformed} parameters in the order as they
-        appear in\cr \code{c( c(variance, snugget, nugget, scale,
+        appear in\cr \code{c(variance, snugget, nugget, scale,
         \ldots)[fit.param], aniso[fit.aniso])},\cr where \code{\ldots} are
         additional parameters of isotropic variogram models (use \cr
         \code{param.names(variogram.model)} to display the names and the
@@ -306,7 +310,11 @@ georob(formula, data, subset, weights, na.action, model = TRUE,
     Finding the roots of the robustified estimating equations of the
     variogram and anisotropy parameters is more sensitive to a good choice
     of initial values than maximizing the Gaussian (restricted)
-    loglikelihood with respect to the same parameters.  Setting
+    loglikelihood with respect to the same parameters.  If the initial
+    values for \code{param} and \code{aniso} are not sufficiently close to
+    the roots of the system of nonlinear equations, then
+    \code{\link[nleqslv]{nleqslv}} may fail to find them.      
+    Setting
     \code{initial.param = TRUE} allows one to find initial values that are
     often sufficiently close to the roots so that
     \code{\link[nleqslv]{nleqslv}} converges.  This is achieved by:
@@ -332,6 +340,9 @@ georob(formula, data, subset, weights, na.action, model = TRUE,
         subsequent robust fit of the model by \code{\link[nleqslv]{nleqslv}}.
         
     }
+    
+    Note that for step 3 above, initial values of \code{param} and
+    \code{aniso} must be provided to \code{georob}.
     
   }
     
@@ -410,12 +421,12 @@ fit of a spatial linear model.  See
 ################
 ## meuse data ##
 ################
-data( meuse )
+data(meuse)
 
 ## Gaussian REML fit
 r.logzn.reml <- georob(log(zinc) ~ sqrt(dist), data = meuse, locations = ~ x + y,
     variogram.model = "RMexp",
-    param = c( variance = 0.15, nugget = 0.05, scale = 200 ),
+    param = c(variance = 0.15, nugget = 0.05, scale = 200),
     tuning.psi = 1000)
 summary(r.logzn.reml, correlation = TRUE)
 
@@ -424,7 +435,7 @@ r.logzn.rob <- update(r.logzn.reml, tuning.psi = 1)
     
 summary(r.logzn.rob, correlation = TRUE)
 
-plot(r.logzn.reml, lag.dist.def = seq( 0, 2000, by = 100 ))
+plot(r.logzn.reml, lag.dist.def = seq(0, 2000, by = 100))
 lines(r.logzn.rob, col = "red")
 
 
@@ -439,20 +450,20 @@ d.wolfcamp <- data.frame(x = wolfcamp[[1]][,1], y = wolfcamp[[1]][,2],
   
 r.irf0.iso <- georob(pressure ~ 1, data = d.wolfcamp, locations = ~ x + y, 
     variogram.model = "RMfbm",
-    param = c( variance = 10, nugget = 1500, scale = 1, alpha = 1.5 ),
-    fit.param = c( variance = TRUE, nugget = TRUE, scale = FALSE, alpha = TRUE),
+    param = c(variance = 10, nugget = 1500, scale = 1, alpha = 1.5),
+    fit.param = default.fit.param(scale = FALSE, alpha = TRUE),
     tuning.psi = 1000)
   
 summary(r.irf0.iso)
 
-## fitting isotropic IRF(0) model
+## fitting anisotropic IRF(0) model
   
 r.irf0.aniso <- georob(pressure ~ 1, data = d.wolfcamp, locations = ~ x + y, 
     variogram.model = "RMfbm",
-    param = c( variance = 5.9, nugget = 1450, scale = 1, alpha = 1 ),
-    fit.param = c( variance = TRUE, nugget = TRUE, scale = FALSE, alpha = TRUE),
-    aniso = c( f1 = 0.51, f2 = 1, omega = 148, phi = 90, zeta = 0 ),
-    fit.aniso = c( f1 = TRUE, f2 = FALSE, omega = TRUE, phi = FALSE, zeta = FALSE ), 
+    param = c(variance = 5.9, nugget = 1450, scale = 1, alpha = 1),
+    fit.param = default.fit.param(scale = FALSE, alpha = TRUE),
+    aniso = default.aniso(f1 = 0.51, omega = 148.),
+    fit.aniso = default.fit.aniso(f1 = TRUE, omega = TRUE), 
     tuning.psi = 1000)
 summary(r.irf0.aniso)
 
@@ -461,7 +472,7 @@ plot(r.irf0.aniso, lag.dist.def = seq(0, 200, by = 7.5),
     xy.angle.def = c(0, 22.5, 67.5, 112.5, 157.5, 180.), 
     add = TRUE, col = 2:5)
     
-pchisq( 2*(r.irf0.aniso[["loglik"]] - r.irf0.iso[["loglik"]]), 2, lower = FALSE )}
+pchisq(2*(r.irf0.aniso[["loglik"]] - r.irf0.iso[["loglik"]]), 2, lower = FALSE)}
 }
 
 \keyword{models}

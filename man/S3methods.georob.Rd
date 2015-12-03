@@ -51,14 +51,14 @@
 \method{random.effects}{georob}(object, standard = FALSE, ...)
 
 \method{resid}{georob}(object, 
-    type = c("working", "response", "deviance", "pearson", "partial" ), 
+    type = c("working", "response", "deviance", "pearson", "partial"), 
     terms = NULL,
-    level = 1, ... )
+    level = 1, ...)
 
 \method{residuals}{georob}(object, 
-    type = c("working", "response", "deviance", "pearson", "partial" ), 
+    type = c("working", "response", "deviance", "pearson", "partial"), 
     terms  = NULL,
-    level = 1, ... )
+    level = 1, ...)
     
 \method{rstandard}{georob}(model, level = 1, ...)
 
@@ -162,7 +162,7 @@ data(meuse)
 ## Gaussian REML fit
 r.logzn.reml <- georob(log(zinc) ~ sqrt(dist), data = meuse, locations = ~ x + y,
     variogram.model = "RMexp",
-    param = c( variance = 0.15, nugget = 0.05, scale = 200 ),
+    param = c(variance = 0.15, nugget = 0.05, scale = 200),
     tuning.psi = 1000,
     control = control.georob(cov.bhat = TRUE, cov.ehat.p.bhat = TRUE))
 summary(r.logzn.reml, correlation = TRUE)

@@ -1138,6 +1138,7 @@ add1.georob <- function( object, scope, scale = 0, test=c("none", "Chisq" ),
     
     if( !is.na(!nfit[["converged"]]) && !nfit$converged ){
       converged <- FALSE
+      warning( "there were errors: call function with argument 'verbose' > 1" )
       if( verbose > 0 ) cat( 
         "lack of convergence when fitting model", paste("~ . +", tt), 
         "\nconvergence code:", nfit$convergence.code, "\n"
@@ -1457,6 +1458,7 @@ drop1.georob <- function( object, scope, scale = 0, test=c( "none", "Chisq" ),
     
     if( !is.na(!nfit[["converged"]]) && !nfit[["converged"]] ){
       converged <- FALSE
+      warning( "there were errors: call function with argument 'verbose' > 1" )
       if( verbose > 0 ) cat( 
         "lack of convergence when fitting model", paste("~ . -", tt), 
         "\nconvergence code:", nfit$convergence.code, "\n"

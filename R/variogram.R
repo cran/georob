@@ -1,15 +1,130 @@
+##  ############################################################################
+
+sample.variogram <- function( object, ... ) UseMethod( "sample.variogram" )
+
+
 ## ##############################################################################
 
-sample.variogram <- 
+sample.variogram.georob <- function(
+  object,
+  lag.dist.def,
+  xy.angle.def = c( 0., 180. ),
+  xz.angle.def = c( 0., 180. ),
+  max.lag = Inf,
+  estimator = c( "qn", "mad", "matheron", "ch" ),
+  mean.angle = TRUE, ...
+)
+{
+  
+  ## purpose:          georob method for generic sample.variogram
+  ##                   
+  ## author:           A. Papritz
+  ## date:             2015-11-27
+  
+  ## checking mandatory arguments
+  
+  if( missing( lag.dist.def ) ) stop(
+    "some mandatory arguments are missing"
+  )
+  
+  ## preparing response vector and matrix of coordinates
+  
+  x <- residuals( object, level = 0 )
+  locations <- object[["locations.objects"]][["coordinates"]]
+  
+  ##computing sample.variogram
+  
+  sample.variogram.default(
+    x, locations, 
+    lag.dist.def = lag.dist.def,
+    xy.angle.def = xy.angle.def, xz.angle.def = xz.angle.def,
+    max.lag = max.lag, estimator = estimator, mean.angle = mean.angle
+  )
+  
+}
+
+
+## ##############################################################################
+
+sample.variogram.formula <- function(
+  object,
+  data, subset, na.action, 
+  locations,
+  lag.dist.def,
+  xy.angle.def = c( 0., 180. ),
+  xz.angle.def = c( 0., 180. ),
+  max.lag = Inf,
+  estimator = c( "qn", "mad", "matheron", "ch" ),
+  mean.angle = TRUE, ...
+)
+{
+  
+  ## purpose:          formula method for generic sample.variogram
+  ##                   
+  ## author:           A. Papritz
+  ## date:             2015-11-27
+  
+  ## checking mandatory arguments
+  
+  if( missing( locations ) || missing( lag.dist.def ) ) stop(
+    "some mandatory arguments are missing"
+  )
+  
+  # get model frame, response vector, matrix of coordinates
+  
+  ### build combined formula for response and locations
+  
+  extended.formula <- update( 
+    object,
+    paste( as.character( object )[2], as.character( locations )[2], sep = " ~ " )
+  )
+  
+  ## setting-up model frame
+  
+  cl <- match.call()
+  mf <- match.call( expand.dots = FALSE )
+  m <- match( 
+    c( "data", "subset", "na.action" ),
+    names(mf), 0L 
+  )
+  mf <- mf[c(1L, m)]
+  mf[["formula"]] <- extended.formula
+  mf[["drop.unused.levels"]] <- TRUE
+  mf[[1L]] <- as.name( "model.frame" )
+  
+  mf <- eval( mf, parent.frame() )
+  
+  attr( attr( mf, "terms" ), "intercept" ) <- 0
+  
+  ## preparing response vector and matrix of coordinates
+  
+  x <- model.response( mf )
+  locations <- model.matrix( terms( mf ), mf )
+  
+  ## computing sample.variogram
+  
+  sample.variogram.default(
+    x, locations, 
+    lag.dist.def = lag.dist.def,
+    xy.angle.def = xy.angle.def, xz.angle.def = xz.angle.def,
+    max.lag = max.lag, estimator = estimator, mean.angle = mean.angle
+  )
+  
+}
+
+
+## ##############################################################################
+
+sample.variogram.default <- 
   function(
-    response,
+    object,
     locations,
     lag.dist.def,
     xy.angle.def = c( 0., 180. ),
     xz.angle.def = c( 0., 180. ),
     max.lag = Inf,
     estimator = c( "qn", "mad", "matheron", "ch" ),
-    mean.angle = TRUE
+    mean.angle = TRUE, ...
   )
 {
   
@@ -20,11 +135,18 @@ sample.variogram <-
   # date:             2012-04-13
   ## 2013-06-12 AP substituting [["x"]] for $x in all lists
   ## 2015-04-07 AP correcting error when computing directional variograms
+  ## 2015-11-27 default method for generic sample.variogram, checking mandatory arguments
   
+  # checking mandatory arguments
+  
+  if( missing( object ) || missing( locations ) || missing( lag.dist.def ) ) stop(
+	"some mandatory arguments are missing"
+  )
+    
   d2r <- pi / 180.
 
   estimator <- match.arg( estimator )
-    
+  
   # pad missing coordinates
   
   if( ( ndim <- NCOL( locations ) ) < 3 ){
@@ -50,7 +172,7 @@ sample.variogram <-
   
   # compute pairwise differences of responses
   
-  t.diff <- response[indices.pairs[2,]] - response[indices.pairs[1,]]
+  t.diff <- object[indices.pairs[2,]] - object[indices.pairs[1,]]
   
   # compute Euclidean distances
   
@@ -454,14 +576,8 @@ fit.variogram.model <-
       "RMmatern", "RMpenta", "RMqexp", "RMspheric", "RMstable",
       "RMwave", "RMwhittle"
     ), 
-    param,
-    fit.param = c( 
-      variance = TRUE, snugget = FALSE, nugget = TRUE, scale = TRUE, 
-      alpha = FALSE, beta = FALSE, delta = FALSE, 
-      gamma = FALSE, kappa = FALSE, lambda = FALSE, mu = FALSE, nu = FALSE
-    )[ names(param) ],
-    aniso = c( f1 = 1., f2 = 1., omega = 90., phi = 90., zeta = 0. ),
-    fit.aniso = c( f1 = FALSE, f2 = FALSE, omega = FALSE, phi = FALSE, zeta = FALSE ),
+    param, fit.param = default.fit.param(),
+	aniso = default.aniso(), fit.aniso = default.fit.aniso(),
     max.lag = max( sv[["lag.dist"]] ),
     min.npairs = 30,
     weighting.method = c( "cressie", "equal", "npairs" ),
@@ -478,6 +594,7 @@ fit.variogram.model <-
   ## 2013-06-12 AP substituting [["x"]] for $x in all lists
   ## 2014-05-15 AP changes for version 3 of RandomFields
   ## 2015-04-07 AP changes for fitting anisotropic variograms
+  ## 2015-11-27 AP checking mandatory arguments, issuing warnings
   
   ## auxiliary function called by optim to compute objective function
   
@@ -582,6 +699,7 @@ fit.variogram.model <-
     )
     
     if( identical( class( t.model ), "try-error" ) || any( is.na( t.model ) ) ){
+      warning( "there were errors: call function with argument 'verbose' > 1" )
       if( verbose > 1 ) cat( "\nan error occurred when computing semivariances\n" )
       return( NA )
     }
@@ -618,6 +736,14 @@ fit.variogram.model <-
     
   }
   
+  ## begin of main body of function
+  
+  ## check whether all mandatory arguments have been provided
+  
+  if( missing( sv ) || missing( param ) ) stop( 
+    "some mandatory arguments are missing" 
+  )
+  
   d2r <- pi / 180.
       
   ## match arguments
@@ -627,6 +753,47 @@ fit.variogram.model <-
   variogram.model <- match.arg( variogram.model )  
   weighting.method = match.arg( weighting.method )
   
+  ## match names of param, aniso, fit.param, fit.aniso
+  
+  tmp <- names( param )
+  tmp <- sapply(tmp, function(x, choices){
+      match.arg(x, choices)
+    },
+    choices = names( default.fit.param() )
+  )
+  names( param ) <- tmp
+  
+  if( !missing( fit.param ) ){
+    tmp <- names( fit.param )
+    tmp <- sapply(tmp, function(x, choices){
+        match.arg(x, choices)
+      },
+      choices = names( default.fit.param() )
+    )
+    names( fit.param ) <- tmp
+    fit.param <- fit.param[names( fit.param ) %in% names( param )]
+  }
+  
+  if( !missing( aniso ) ){
+    tmp <- names( aniso )
+    tmp <- sapply(tmp, function(x, choices){
+        match.arg(x, choices)
+      },
+      choices = names( default.aniso() )
+    )
+    names( aniso ) <- tmp
+  }
+  
+  if( !missing( fit.aniso ) ){
+    tmp <- names( fit.aniso )
+    tmp <- sapply(tmp, function(x, choices){
+        match.arg(x, choices)
+      },
+      choices = names( default.aniso() )
+    )
+    names( fit.aniso ) <- tmp
+  }
+
   ## set snugget to zero if snugget has not been specified or if there are
   ## no replicated observations
   
@@ -1194,15 +1361,17 @@ print.summary.fitted.variogram <-
 ## ##############################################################################
 plot.georob <- 
   function(
-    x, type, what = c("variogram", "covariance", "correlation"),
-    plot.sv = TRUE, add = FALSE,
+    x, what = c( "variogram", "covariance", "correlation", 
+      "ta", "qq.res", "qq.ranef" ),
+    add = FALSE,
     lag.dist.def, 
     xy.angle.def = c( 0., 180. ),
     xz.angle.def = c( 0., 180. ),
     max.lag = Inf,
     estimator = c( "mad", "qn", "ch", "matheron" ),
     mean.angle = TRUE,
-    col, pch, lty = "solid", ...    
+    level = 1, 
+    col, pch, xlab, ylab, main, lty = "solid", ...    
   )
 {
   
@@ -1212,81 +1381,192 @@ plot.georob <-
   ## 2012-12-21 AP correction for using col and pch 
   ## 2013-06-12 AP substituting [["x"]] for $x in all lists
   ## 2014-05-08 AP changes for plotting covariances and correlations
+  ## 2015-11-27 AP changes for Tukey-Anscombe, QQnorm plots and for plotting variograms
   
   x[["na.action"]] <- NULL
   
   estimator <- match.arg( estimator )
   what <- match.arg( what )
-  if( what != "variogram" ) plot.sv <- FALSE
-  
-  ## compute sample variogram
-  
-  r.sv <- sample.variogram(
-    response = residuals( x, level = 0 ), 
-    locations = x[["locations.objects"]][["coordinates"]],
-    lag.dist.def = lag.dist.def,
-    xy.angle.def = xy.angle.def, 
-    xz.angle.def = xz.angle.def,
-    max.lag = max.lag,
-    estimator = estimator,
-    mean.angle = mean.angle
-  )
-  
-  ## plot sample variogram
-  
-  if( missing( type ) ){
-    type <- if( plot.sv ){
-      "p"
-    } else {
-      "n"
-    }
-  }
-  
-  if( missing( col ) ){
-    col <- 1:nlevels( r.sv[["xy.angle"]] )
-  } else if( length( col ) < nlevels( r.sv[["xy.angle"]] ) ) stop(
-    "number of colors less than number of directions in x-y-plane for which semivariances are computed"
-  )
-  if( missing( pch ) ){
-    pch <- 1:nlevels( r.sv[["xz.angle"]] )
-  } else if( length( pch ) < nlevels( r.sv[["xz.angle"]] ) ) stop(
-    "number of colors less than number of directions in x-z-plane for which semivariances are computed"
-  )
   
   switch(
     what,
-    variogram = plot( 
-      r.sv, add = add, type = type, col = col, pch = pch, ... 
-    ),
-    covariance = if( "ylab" %in% names(list(...)) ) plot( 
-      r.sv, add = add, type = type, col = col, pch = pch, ... 
-    ) else plot( 
-      r.sv, add = add, type = type, col = col, pch = pch, ylab = "covariance", ... 
-    ),
-    correlation = if( "ylab" %in% names(list(...)) ) plot(
-      r.sv, add = add, type = type, col = col, pch = pch, ylim = c(0, 1), ... 
-    ) else plot(
-      r.sv, add = add, type = type, col = col, pch = pch, ylim = c(0, 1),  
-      ylab = "correlation", ... 
-    )
+    ta = {
+      
+      ## Tukey-Anscombe plot
+      
+      if( missing( col ) ) col <- 1; if( missing( pch ) ) pch <- 1
+      if( missing( xlab ) ) xlab <- "Fitted values"
+      if( missing( ylab ) ) ylab <- "Residuals"
+      if( missing( main ) ) main <- "Residuals vs. Fitted"
+      if( !add ){
+        plot( x[["fitted.values"]], residuals( x, level = level ), 
+          col = col, pch = pch,
+          xlab = xlab, ylab = ylab, main = main, ...
+        )
+      } else {
+        points( x[["fitted.values"]], residuals( x, level = level ), col = col, pch = pch, ... )
+      }
+      
+    },
+    qq.res = {
+      
+      ## qqnorm of standardized residuals (eps or eps + b, depending of
+      ## value of level passed in ...)
+      
+      if( missing( col ) ) col <- 1; if( missing( pch ) ) pch <- 1
+      if( missing( xlab ) ) xlab <- "Theoretial quantiles"
+      if( missing( ylab ) ) ylab <- "Standardized residuals"
+      if( missing( main ) ) main <- "Normal Q-Q standardized residuals"
+      tmp <- qqnorm( rstandard( x, level = level ), 
+        col = col, pch = pch,
+        xlab = xlab, ylab = ylab, main = main, 
+        plot.it = !add, ...
+      )
+      if( add ) points( y~x, tmp, col = col, pch = pch, ... )
+      
+    },
+    qq.ranef = {
+      
+      ## qqnorm of standardized random effects
+      
+      if( missing( col ) ) col <- 1; if( missing( pch ) ) pch <- 1
+      if( missing( xlab ) ) xlab <- "Theoretial quantiles"
+      if( missing( ylab ) ) ylab <- "Standardized random effects"
+      if( missing( main ) ) main <- "Normal Q-Q standardized random effects"
+      tmp <- qqnorm( ranef( x, standard = TRUE ), 
+        col = col, pch = pch,
+        xlab = xlab, ylab = ylab, main = main, 
+        plot.it = !add, ...
+      )
+      if( add ) points( y~x, tmp, col = col, pch = pch, ... )
+      
+    },
+    {
+      
+      ## plotting variogram, covariance or correlation
+      
+      ## compute and plot sample variogram
+      
+      if( !missing( lag.dist.def ) ){
+        
+        ## compute and plot sample variogram of regression residuals
+        
+        r.sv <- sample.variogram(
+          x, 
+          lag.dist.def = lag.dist.def,
+          xy.angle.def = xy.angle.def, 
+          xz.angle.def = xz.angle.def,
+          max.lag = max.lag,
+          estimator = estimator,
+          mean.angle = mean.angle
+        )
+        
+        if( missing( col ) ){
+          col <- 1:nlevels( r.sv[["xy.angle"]] )
+        } else if( length( col ) < nlevels( r.sv[["xy.angle"]] ) ) stop(
+          "number of colors less than number of directions in x-y-plane for which semivariances are computed"
+        )
+        if( missing( pch ) ){
+          pch <- 1:nlevels( r.sv[["xz.angle"]] )
+        } else if( length( pch ) < nlevels( r.sv[["xz.angle"]] ) ) stop(
+          "number of colors less than number of directions in x-z-plane for which semivariances are computed"
+        )
+        if( missing( xlab ) ) xlab <- "lag distance"
+        if( missing( ylab ) ) ylab <- "semivariance"
+        
+        plot( 
+          r.sv, add = add, col = col, pch = pch, xlab = xlab, ylab = ylab, ... 
+        )
+        
+        xmax <- max( r.sv[["lag.dist"]] )
+        xy.angle.mid.class <- attr( r.sv, "xy.angle.mid.class" )
+        xz.angle.mid.class <- attr( r.sv, "xz.angle.mid.class" )
+        
+      } else {
+        
+        ## setup window for plotting variogram, covariance, correlation model
+        
+        if( is.finite( max.lag ) ){
+          xmax <- max.lag
+        } else {
+          xmax <- sqrt( max( rowSums( x[["locations.objects"]][["lag.vectors"]]^2 ) ) )
+        }
+        
+        ymax <- 1.1 * switch(
+          what,
+          correlation = 1.,
+          sum( x[["param"]][c("variance", "snugget", "nugget")] )
+        )
+        
+        ## see sample.variogram.default
+        
+        # join first and last angle classes if end points match and there is
+        # more than one angle
+        
+        # xy-plane
+        
+        n <- length( xy.angle.def )
+        d <- diff( xy.angle.def )
+        xy.angle.mid.class <- 0.5 * ( xy.angle.def[-1] + xy.angle.def[-n] )
+        if( 
+          n > 2 &&
+          identical( xy.angle.def[1], 0. ) && 
+          identical( xy.angle.def[n], 180. ) &&
+          !all( d[1] == d[-1] )
+        ){
+          
+          xy.angle.mid.class[1] <- xy.angle.mid.class[1] - (180. - xy.angle.mid.class[n-1])
+          xy.angle.mid.class <- xy.angle.mid.class[-(n-1)]
+        }
+        
+        # xz-plane
+        
+        n <- length(xz.angle.def)
+        d <- diff( xz.angle.def )
+        xz.angle.mid.class <- 0.5 * ( xz.angle.def[-1] + xz.angle.def[-n] )
+        if( 
+          n > 2 &&
+          identical( xz.angle.def[1], 0. ) && 
+          identical( xz.angle.def[n], 180. ) &&
+          !all( d[1] == d[-1] )
+        ){
+          
+          xz.angle.mid.class[1] <- xz.angle.mid.class[1] - (180. - xz.angle.mid.class[n-1])
+          xz.angle.mid.class <- xz.angle.mid.class[-(n-1)]
+        }
+                
+        if( missing( col ) ) col <- 1:length( xy.angle.mid.class )
+        if( missing( pch ) ) pch <- 1:length( xz.angle.mid.class )
+        if( missing( xlab ) ) xlab <- "lag distance"
+        if( missing( ylab ) ) ylab <- what
+        
+        if( !add ){
+          plot( c(0, xmax), c(0, ymax ), xlab = xlab, 
+            ylab = ylab, type = "n", ... )
+        }
+        
+      }
+      
+      ## add graph of fitted variogram/covariance/correlation model
+      
+      lines( 
+        x, 
+        what,
+        to = xmax,
+        xy.angle = xy.angle.mid.class,
+        xz.angle = xz.angle.mid.class,
+        col = col, pch = pch, lty = lty, ...
+      )
+      
+    }
+    
   )
- 
-  ## add graph of fitted variogram model
   
-  lines( 
-    x, 
-    what,
-    to = max( r.sv[["lag.dist"]] ),
-    xy.angle = attr( r.sv, "xy.angle.mid.class" ),
-    xz.angle = attr( r.sv, "xz.angle.mid.class" ),
-    col = col, pch = pch, lty = lty, ...
-  )
-  
-  invisible( r.sv )
+  invisible()
   
 }
 
-#  ##############################################################################
+ ##############################################################################
 
 lines.georob <- lines.fitted.variogram <- 
   function( 
@@ -1309,8 +1589,11 @@ lines.georob <- lines.fitted.variogram <-
   
   what <- match.arg( what )
   
-  if( x$variogram.model == "RMfbm" && what != "variogram" ) stop(
-    "stationary covarinance and correlation does not exist for intrinsic variogram model 'RMfbm'"  
+  if( 
+    x[["variogram.model"]] %in% control.georob()[["irf.models"]] && 
+    what != "variogram" 
+  ) stop(
+    "stationary covariance and correlation does not exist for intrinsic variogram model 'RMfbm'"  
   )
   
   ## generate grid of angle classes
@@ -1365,6 +1648,10 @@ lines.georob <- lines.fitted.variogram <-
       r.gamma <- f.aux.gamma(
         lag.vector, variogram.model, param, aniso
       )
+      
+      if( identical( class( r.gamma ), "try-error" ) || any( is.na( r.gamma ) ) ){
+        stop( "\nan error occurred when computing semivariances\n" )
+      }
       
       ## plot semivariance
       
