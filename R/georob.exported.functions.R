@@ -41,7 +41,7 @@ georob <-
   ## - Modifikation fuer Fall, dass alle Variogrammparameter fixiert sind
   ## - IRWLS Berechung von betahat und bhat entweder von Werten im initial.object 
   ##   oder von Schaetzwerten aus vorangehender Iteration
-  ## - Berechung der Kovarianzen zwischen betahat und (z - bhat)
+  ## - Berechung der Kovarianzen zwischen betahat und (B - bhat)
   ## - Steuerung der Berechnung der verschiedenen Kovarianzen via control.georob
   ## - vollstaendige Implementierung von Standard Interfaces fuer Input und
   ##   Output fuer statistische Modellierung (analog lm, lmrob)

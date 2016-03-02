@@ -1,4 +1,4 @@
-% 2015-08-28 A. Papritz
+% 2016-02-29 A. Papritz
 % R CMD Rdconv -t html -o bla.html control.georob.Rd ; open bla.html; R CMD Rd2pdf --force control.georob.Rd; 
 \encoding{macintosh}
 \name{control.georob}
@@ -207,7 +207,7 @@ control.nlminb(control = list(rel.tol = 1.e-5), lower = -Inf,
   \item{error.family.cov.effects}{character keyword, defining the
   probability distribution for \eqn{\varepsilon} (default:
   \code{"gaussian"}) that is used to approximate the covariances of
-  \eqn{\widehat{\mbox{\boldmath$\beta$\unboldmath}}}{hatB},
+  \eqn{\widehat{\mbox{\boldmath$\beta$\unboldmath}}}{hat\beta},
   \eqn{\widehat{\mbox{\boldmath$B$\unboldmath}}}{hatB} and
   \eqn{\mbox{\boldmath$B$\unboldmath}-\widehat{\mbox{\boldmath$B$\unboldmath}}}{B-hatB},
   see \emph{Details}.}

@@ -492,7 +492,7 @@ update.zhat <-
 
 ##    ##############################################################################
 
-estimating.equations.z <- function( 
+estimating.equations.B <- function( 
   res, TT, zhat, 
   nugget, eta, reparam,
   Valphaxi.inverse.Palphaxi, 
@@ -591,7 +591,7 @@ estimate.zhat <-
       
     res <- yy - zhat[TT]
     
-    eeq.old <- estimating.equations.z(     
+    eeq.old <- estimating.equations.B(     
       res, TT, zhat, 
       nugget, eta, reparam,
       result[["Valphaxi.inverse.Palphaxi"]], 
@@ -632,7 +632,7 @@ estimate.zhat <-
       
       ##  evaluate estimating equations for xi and compute its l2 norm
       
-      eeq.new <- estimating.equations.z(       
+      eeq.new <- estimating.equations.B(       
         new[["residuals"]], TT, new[["zhat"]], 
         nugget, eta, reparam,
         result[["Valphaxi.inverse.Palphaxi"]], 
@@ -2915,6 +2915,7 @@ georob.fit <-
   ##               computing covariances of residuals under long-tailed error model,
   ##               control about error families for computing covariances added
   ## 2015-12-02 AP catching error in computation of covariances
+  ## 2016-01-26 AP refined check of initial values of variogram parameters
   
   ##  ToDos:
   
@@ -3055,10 +3056,10 @@ georob.fit <-
   
   ## check whether intitial values of variogram parameters are valid
   
-  if( param["variance"] < 0. ) stop("initial value of 'variance' must be positive" )
-  if( param["snugget"] < 0. )  stop("initial value of 'snugget' must be positive" )
-  if( param["nugget"] < 0. ) stop("initial value of 'nugget' must be positive" )
-  if( param["scale"] <= 0. ) stop("initial value of 'scale' must be positive" )
+  if( param["variance"] < 0. ) stop("initial value of 'variance' must be > 0" )
+  if( param["snugget"] < 0. )  stop("initial value of 'snugget' must be > 0" )
+  if( param["nugget"] <= 0. ) stop("initial value of 'nugget' must be >= 0" )
+  if( param["scale"] <= 0. ) stop("initial value of 'scale' must be >= 0" )
   
   param.bounds <- param.bounds( variogram.model, NCOL( coordinates ) )
   ep.param <- param[ep]

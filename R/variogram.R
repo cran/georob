@@ -576,7 +576,7 @@ fit.variogram.model <-
       "RMmatern", "RMpenta", "RMqexp", "RMspheric", "RMstable",
       "RMwave", "RMwhittle"
     ), 
-    param, fit.param = default.fit.param(),
+    param, fit.param = default.fit.param()[names(param)],
 	aniso = default.aniso(), fit.aniso = default.fit.aniso(),
     max.lag = max( sv[["lag.dist"]] ),
     min.npairs = 30,
@@ -595,6 +595,7 @@ fit.variogram.model <-
   ## 2014-05-15 AP changes for version 3 of RandomFields
   ## 2015-04-07 AP changes for fitting anisotropic variograms
   ## 2015-11-27 AP checking mandatory arguments, issuing warnings
+  ## 2016-02-08 AP correcting error in setting default values for fit.param
   
   ## auxiliary function called by optim to compute objective function
   
@@ -1362,7 +1363,7 @@ print.summary.fitted.variogram <-
 plot.georob <- 
   function(
     x, what = c( "variogram", "covariance", "correlation", 
-      "ta", "qq.res", "qq.ranef" ),
+      "ta", "sl", "qq.res", "qq.ranef" ),
     add = FALSE,
     lag.dist.def, 
     xy.angle.def = c( 0., 180. ),
@@ -1370,8 +1371,12 @@ plot.georob <-
     max.lag = Inf,
     estimator = c( "mad", "qn", "ch", "matheron" ),
     mean.angle = TRUE,
-    level = 1, 
-    col, pch, xlab, ylab, main, lty = "solid", ...    
+    level = what != "ta", 
+    smooth = what == "ta" || what == "sl",
+    id.n = 3, labels.id = names(residuals(x)), cex.id = 0.75,
+    label.pos = c(4,2),    
+    col, pch, xlab, ylab, main, lty = "solid", 
+    ...    
   )
 {
   
@@ -1388,6 +1393,31 @@ plot.georob <-
   estimator <- match.arg( estimator )
   what <- match.arg( what )
   
+  ## labelling of points in residual diagnostic plots (taken from plot.lmrob())
+  
+  n <- length(x[["fitted.values"]])
+  if (is.null(id.n)){
+    id.n <- 0
+  } else {
+    id.n <- as.integer(id.n)
+    if(id.n < 0L || id.n > n) stop(gettextf("'id.n' must be in {1,..,%d}", n), domain = NA)
+  }
+  if(id.n > 0L){ ## label the largest residuals
+    if(is.null(labels.id))
+    labels.id <- paste(1L:n)
+    iid <- 1L:id.n
+    ##    show.r <- sort.list(abs(r), decreasing = TRUE)[iid]
+    ## if(any(show[2L:3L]))
+    ##     show.rs <- sort.list(abs(rs), decreasing = TRUE)[iid]
+    text.id <- function(x, y, ind, adj.x = TRUE) {
+      labpos <-
+      if(adj.x) label.pos[1+as.numeric(x > mean(range(x)))] else 3
+      text(x, y, labels.id[ind], cex = cex.id, xpd = TRUE,
+        pos = labpos, offset = 0.25)
+    }
+  }
+  yh <- x[["fitted.values"]]
+  
   switch(
     what,
     ta = {
@@ -1398,13 +1428,49 @@ plot.georob <-
       if( missing( xlab ) ) xlab <- "Fitted values"
       if( missing( ylab ) ) ylab <- "Residuals"
       if( missing( main ) ) main <- "Residuals vs. Fitted"
+      r <- residuals( x, level = level )
       if( !add ){
-        plot( x[["fitted.values"]], residuals( x, level = level ), 
-          col = col, pch = pch,
+        plot( yh, r, col = col, pch = pch,
           xlab = xlab, ylab = ylab, main = main, ...
         )
       } else {
-        points( x[["fitted.values"]], residuals( x, level = level ), col = col, pch = pch, ... )
+        points( yh, r, col = col, pch = pch, ... )
+      }
+      if( smooth ){
+        lines( loess.smooth( yh, r, ... ), col = "red", lty = 1, ... )
+      }
+      if(id.n > 0){   ## adapted from plot.lmrob()
+        show.r <- sort.list(abs(r), decreasing = TRUE)[iid]
+        y.id <- r[show.r]
+        y.id[y.id < 0] <- y.id[y.id < 0] - strheight(" ")/3
+        text.id(yh[show.r], y.id, show.r)
+      }
+      
+    },
+    sl = {
+      
+      ## scale.location plot
+      
+      if( missing( col ) ) col <- 1; if( missing( pch ) ) pch <- 1
+      if( missing( xlab ) ) xlab <- "Fitted values"
+      if( missing( ylab ) ) ylab <- "Sqrt of abs(Residuals)"
+      if( missing( main ) ) main <- "Sqrt of abs(Residuals) vs. Fitted Values"
+      r <- sqrt( abs( residuals( x, level = level ) ) )
+      if( !add ){
+        plot( yh, r, col = col, pch = pch,
+          xlab = xlab, ylab = ylab, main = main, ...
+        )
+      } else {
+        points( yh, r, col = col, pch = pch, ... )
+      }
+      if( smooth ){
+        lines( loess.smooth( yh, r, ... ), col = "red", lty = 1 )
+      }
+      if(id.n > 0) {   ## adapted from plot.lmrob()
+        show.r <- sort.list(abs(r), decreasing = TRUE)[iid]
+        y.id <- r[show.r]
+        y.id[y.id < 0] <- y.id[y.id < 0] - strheight(" ")/3
+        text.id(yh[show.r], y.id, show.r)
       }
       
     },
@@ -1417,13 +1483,16 @@ plot.georob <-
       if( missing( xlab ) ) xlab <- "Theoretial quantiles"
       if( missing( ylab ) ) ylab <- "Standardized residuals"
       if( missing( main ) ) main <- "Normal Q-Q standardized residuals"
-      tmp <- qqnorm( rstandard( x, level = level ), 
-        col = col, pch = pch,
+      r <- rstandard( x, level = level )
+      tmp <- qqnorm( r, col = col, pch = pch,
         xlab = xlab, ylab = ylab, main = main, 
         plot.it = !add, ...
       )
       if( add ) points( y~x, tmp, col = col, pch = pch, ... )
-      
+      if(id.n > 0){   ## adapted from plot.lmrob()
+        show.r <- sort.list(abs(r), decreasing = TRUE)[iid]
+        text.id(tmp$x[show.r], tmp$y[show.r], show.r)
+      }
     },
     qq.ranef = {
       

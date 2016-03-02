@@ -1,4 +1,4 @@
-% 2015-12-01 A. Papritz
+% 2016-02-25 A. Papritz
 % R CMD Rdconv -t html -o bla.html plot.georob.Rd ; open bla.html; R CMD Rd2pdf --force plot.georob.Rd; 
 
 \encoding{macintosh}
@@ -20,11 +20,13 @@ of residuals and random effects).
 
 
 \usage{
-\method{plot}{georob}(x, what = c("variogram", "covariance", "correlation", 
-    "ta", "qq.res", "qq.ranef"), add = FALSE, lag.dist.def, 
+\method{plot}{georob}(x, what = c( "variogram", "covariance", "correlation", 
+    "ta", "sl", "qq.res", "qq.ranef" ), add = FALSE, lag.dist.def, 
     xy.angle.def = c(0, 180), xz.angle.def = c(0, 180), max.lag = Inf, 
     estimator = c("mad", "qn", "ch", "matheron"), mean.angle = TRUE, 
-    level = 1, col, pch, xlab, ylab, main, lty = "solid", ...)
+    level = what != "ta", smooth = what == "ta" || what == "sl", 
+    id.n = 3, labels.id = names(residuals(x)), cex.id = 0.75,
+    label.pos = c(4,2), col, pch, xlab, ylab, main, lty = "solid", ...)
 
 \method{lines}{georob}(x, what = c("variogram", "covariance", "correlation"),
     from = 1.e-6, to, n = 501, xy.angle = 90, xz.angle = 90, 
@@ -45,10 +47,14 @@ of residuals and random effects).
     
       \item \code{"correlation"}: the correlation function
       
-      \item \code{"ta"}: residals plotted against fitted values
+      \item \code{"scale-location"}: square root of absolute regression
+      residals plotted against fitted values (Scale-Location plot)
+
+      \item \code{"ta"}: regression residals plotted against fitted values
       (Tukey-Anscombe plot)
 
-      \item \code{"qq.res"}: normal Q-Q plot of standardized residuals
+      \item \code{"qq.res"}: normal Q-Q plot of standardized errors
+      \eqn{\hat{\varepsilon}}{hat\epsilon}
       
       \item \code{"qq.ranef"}: normal Q-Q plot of standardized random
       effects \eqn{\hat{B}}{hatB}
@@ -111,11 +117,29 @@ of residuals and random effects).
   
   \item{level}{an integer giving the level for extracting the residuals
   from \code{object} for \code{what = "ta"} or \code{what = "qq.res"}.
-  \code{level = 0} extracts the regression residuals
-  \eqn{\widehat{B}(\mbox{\boldmath$s$\unboldmath}) +
+  \code{level = 0} (default for \code{what == "ta"}) extracts the
+  regression residuals \eqn{\widehat{B}(\mbox{\boldmath$s$\unboldmath}) +
   \widehat{\varepsilon}(\mbox{\boldmath$s$\unboldmath})}{hatB(s) +
-  hat\epsilon(s)} and \code{level = 1} (default) only the estimated errors
+  hat\epsilon(s)} and \code{level = 1} (default for \code{what ==
+  "qq.res"}) only the estimated errors
   \eqn{\widehat{\varepsilon}(\mbox{\boldmath$s$\unboldmath})}{hat\epsilon(s)}.}
+  
+  \item{smooth}{logical controlling whether a
+  \code{\link[stats]{loess.smooth}} is added to the Tukey-Anscombe plot
+  (default \code{TRUE}.}
+  
+  \item{id.n}{number of points to be labelled in each plot, starting
+  with the most extreme (see \code{\link[robustbase]{plot.lmrob}}).}
+
+  \item{labels.id}{vector of labels, from which the labels for extreme
+  points will be chosen (see \code{\link[robustbase]{plot.lmrob}}).
+  \code{NULL} uses observation numbers.}
+
+  \item{cex.id}{magnification of point labels (see
+  \code{\link[robustbase]{plot.lmrob}}).}
+
+  \item{label.pos}{positioning of labels, for the left half and right half
+  of the graph respectively (see \code{\link[robustbase]{plot.lmrob}}).}
   
   \item{from}{numeric, minimal lag distance for plotting variogram models.}
 
@@ -146,7 +170,8 @@ of residuals and random effects).
   \code{\link[graphics]{plot}}.}
   
   \item{...}{additional arguments passed to
-  \code{\link{plot.sample.variogram}} and graphical methods.}
+  \code{\link{plot.sample.variogram}}, \code{\link[stats]{loess.smooth}}
+  and graphical methods.}
   
 }
 

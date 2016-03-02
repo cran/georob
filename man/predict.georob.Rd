@@ -191,7 +191,7 @@ control.predict.georob(full.covmat = FALSE, extended.output = FALSE,
     intervals,
     
     \item \code{trend}, \code{var.pred}, \code{cov.pred.target},
-    \code{var.target}: only present if \code{extend.output} is \code{TRUE},
+    \code{var.target}: only present if \code{extended.output} is \code{TRUE},
     see \emph{Details}.
     
   } 
@@ -233,7 +233,7 @@ control.predict.georob(full.covmat = FALSE, extended.output = FALSE,
   (WSL), pp. 51. 
   \url{http://e-collection.library.ethz.ch/eserv/eth:6027/eth-6027-01.pdf}
 
-  Kuensch, H. R., Papritz, A., Schwierz, C. and Stahel, W. A. (2011) Robust
+  \enc{KŸnsch}{Kuensch}, H. R., Papritz, A., Schwierz, C. and Stahel, W. A. (2011) Robust
   estimation of the external drift and the variogram of spatial data.
   Proceedings of the ISI 58th World Statistics Congress of the International
   Statistical Institute.

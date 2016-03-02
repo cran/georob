@@ -752,7 +752,7 @@ print.summary.georob <-
   df <- x[["df.residual"]]
   
   bhat <- x[["bhat"]]
-  cat( "\nPredicted latent variable (z):\n")
+  cat( "\nPredicted latent variable (B):\n")
   if(df > 5){
     nam <- c("Min", "1Q", "Median", "3Q", "Max")
     rq <- structure( quantile(bhat), names = nam )

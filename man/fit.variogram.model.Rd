@@ -1,4 +1,4 @@
-% 2015-12-02 A. Papritz
+% 2016-02-08 A. Papritz
 % R CMD Rdconv -t html -o bla.html fit.variogram.model.Rd ; open bla.html; R CMD Rd2pdf --force fit.variogram.model.Rd; 
 
 \encoding{macintosh}
@@ -25,7 +25,7 @@ fit.variogram.model(sv,
         "RMfbm", "RMgauss", "RMgencauchy", "RMgenfbm", "RMgengneiting", 
         "RMgneiting", "RMlgd", "RMmatern", "RMpenta", "RMqexp", 
         "RMspheric", "RMstable", "RMwave", "RMwhittle"), 
-    param, fit.param = default.fit.param(),
+    param, fit.param = default.fit.param()[names(param)],
 	aniso = default.aniso(), fit.aniso = default.fit.aniso(),
     max.lag = max(sv[["lag.dist"]]), min.npairs = 30, 
     weighting.method = c("cressie", "equal", "npairs"), hessian = TRUE, 

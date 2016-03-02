@@ -1020,7 +1020,7 @@ function(
 
 ##  ###########################################################################
 
-## auxiliary function for computinge robust kriging predictions for a part
+## auxiliary function for computing robust kriging predictions for a part
 ## of prediction targets
 
 f.robust.uk <- function(
@@ -1070,8 +1070,8 @@ f.robust.uk <- function(
       
       ## compute point or block kriging predictions
       
-      ## get covariance matrix (cov.target) of z at predictons locations and
-      ## covariance matrix (gamma) between z at prediction and support
+      ## get covariance matrix (cov.target) of B at predictons locations and
+      ## covariance matrix (gamma) between B at prediction and support
       ## locations
       
       sill <- gcr.constant * sum( param[c("variance", "snugget")] )

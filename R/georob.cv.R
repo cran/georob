@@ -577,6 +577,7 @@ plot.cv.georob <-
   ## 2013-06-12 AP substituting [["x"]] for $x in all lists
   ## 2015-03-12 AP adding smooth curve of types sc and lgn.sc
   ## 2015-06-25 AP new method to compute pit, mc, bs and crps (Gaussian and robust)
+  ## 2016-02-29 AP minor changes for adding plots to existing graphics
   
   x <- x[["pred"]]
   
@@ -584,6 +585,11 @@ plot.cv.georob <-
   
   if( type == "sc.lgn" && !"lgn.pred" %in% names( x ) ) stop(
     "lognormal kriging results missing, use 'lgn = TRUE' for cross-validation"
+  )
+  
+    
+  if( add && type %in% c("hist.pit", "mc") ) warning( 
+    "plot will be replaced (adding elements not possible" 
   )
   
   ## extract scaled residuals and predictions standard error of signal for
@@ -603,12 +609,12 @@ plot.cv.georob <-
       se.pred = x[["se"]],
       statistic = gsub( "ecdf.", "", gsub( "hist.", "", type ) ), 
     #       robust = robust,
-    ncutoff = ncutoff#,
+      ncutoff = ncutoff#,
     #       se.signal = se.signal,
     #       scld.res <- scld.res
-  )
+    )
   }
-  
+
   if( missing( col ) ) col <- 1
   if( missing( pch ) ) pch <- 1
   if( missing( lty ) ) lty <- 1
@@ -707,7 +713,7 @@ plot.cv.georob <-
       if( missing( ylab ) ) ylab <- "density"
       
       r.hist <- hist( 
-        result, 
+        result,
         col = col, lty = lty, 
         main = main, xlab = xlab, ylab = ylab, freq = FALSE, ... )
     },
@@ -720,7 +726,7 @@ plot.cv.georob <-
       if( missing( ylab ) ) ylab <- "probability"
       
       r.hist <- plot(
-        ecdf(result), 
+        ecdf(result),  add = add,
         col = col, lty = lty, 
         main = main, xlab = xlab, ylab = ylab, ... 
       )

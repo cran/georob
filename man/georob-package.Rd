@@ -1,5 +1,6 @@
-% 2015-07-24 A. Papritz
+% 2016-02-26 A. Papritz
 % R CMD Rd2pdf --force georob-package.Rd;  R CMD Rdconv -t html -o bla.html georob-package.Rd ; open bla.html; 
+% Rd2latex("georob-package.Rd", "../vignettes/georob-package.tex", outputEncoding="macintosh")
 
 \encoding{macintosh}
 \name{georob-package}
@@ -15,7 +16,7 @@
 \details{
 
 % intro
-
+ 
   \pkg{georob} is a package for robust analyses of geostatistical data.
   Such data, say \eqn{y_i=y(\mbox{\boldmath$s$\unboldmath}_i)}{y(s_i)}, are
   recorded at a set of locations,
@@ -28,36 +29,36 @@
 %   model
     
   \subsection{Model}{
-    We use the following model for the data
-    \deqn{Y(\mbox{\boldmath$s$\unboldmath}) = 
-      Z(\mbox{\boldmath$s$\unboldmath}) + 
-      \varepsilon(\mbox{\boldmath$s$\unboldmath}) =
-      \mbox{\boldmath $x$\unboldmath}(\mbox{\boldmath$s$\unboldmath})^\mathrm{T}
+    We use the following model for the data 
+    \eqn{y_i=y(\mbox{\boldmath$s$\unboldmath}_{i})}{y_i=y(s_i)}:
+    \deqn{Y(\mbox{\boldmath$s$\unboldmath}_i) = 
+      Z(\mbox{\boldmath$s$\unboldmath}_i) + \varepsilon =
+      \mbox{\boldmath $x$\unboldmath}(\mbox{\boldmath$s$\unboldmath}_i)^\mathrm{T}
          \mbox{\boldmath$\beta$\unboldmath} +
-      B(\mbox{\boldmath$s$\unboldmath}) +
-      \varepsilon(\mbox{\boldmath$s$\unboldmath}),}{%
-      Y(s) = Z(s) + \epsilon(s) = x(s)^T \beta + B(s) + \epsilon(s),} 
+      B(\mbox{\boldmath$s$\unboldmath}_i) +
+      \varepsilon_i,}{%
+      Y(s_i) = Z(s_i) + \epsilon = x(s_i)^T \beta + B(s_i) + \epsilon_i,} 
     where 
-    \eqn{Z(\mbox{\boldmath$s$\unboldmath})=\mbox{\boldmath $x$\unboldmath}(\mbox{\boldmath$s$\unboldmath})^\mathrm{T}
+    \eqn{Z(\mbox{\boldmath$s$\unboldmath}_i)=\mbox{\boldmath $x$\unboldmath}(\mbox{\boldmath$s$\unboldmath}_i)^\mathrm{T}
          \mbox{\boldmath$\beta$\unboldmath} +
-      B(\mbox{\boldmath$s$\unboldmath})}{Z(s) = x(s)^T \beta + B(s)} is the so-called signal, 
-    \eqn{\mbox{\boldmath $x$\unboldmath}(\mbox{\boldmath$s$\unboldmath})^\mathrm{T}
-      \mbox{\boldmath$\beta$\unboldmath}}{x^T\beta} 
+      B(\mbox{\boldmath$s$\unboldmath}_i)}{Z(s_i) = x(s_i)^T \beta + B(s_i)} is the so-called signal, 
+    \eqn{\mbox{\boldmath $x$\unboldmath}(\mbox{\boldmath$s$\unboldmath}_i)^\mathrm{T}
+      \mbox{\boldmath$\beta$\unboldmath}}{x(s_i)^T\beta} 
     is the external drift, 
-    \eqn{B(\mbox{\boldmath$s$\unboldmath})}{B(s)} is a stationary or
+    \eqn{\{B(\mbox{\boldmath$s$\unboldmath})\}}{\{B(s)\}} is an unobserved stationary or
     intrinsic spatial Gaussian random field with zero mean, and
-    \eqn{\varepsilon(\mbox{\boldmath$s$\unboldmath})}{\epsilon(s)} are
-    \emph{i.i.d} errors from a possibly long-tailed distribution with scale parameter
+    \eqn{\varepsilon_i}{\epsilon_i} is an
+    \emph{i.i.d} error from a possibly long-tailed distribution with scale parameter
     \eqn{\tau} (\eqn{\tau^2} is usually called nugget effect).
-    In vector form the model leads to 
+    In vector form the model is written as
     \deqn{\mbox{\boldmath $Y = X \beta + B + \varepsilon$\unboldmath},}{%
       Y = X \beta + B + \epsilon,} 
-    where \eqn{\mbox{\boldmath $X$\unboldmath}}{X} is the model matrix consisting
-    of the rows 
+    where \eqn{\mbox{\boldmath $X$\unboldmath}}{X} is the model matrix with the
+    rows 
     \eqn{\mbox{\boldmath $x$\unboldmath}(\mbox{\boldmath$s$\unboldmath}_i)^\mathrm{T}}{%
       x^T(s_i)}.
       
-    The (generalized) covariance matrix of the vector of unobserved 
+    The (generalized) covariance matrix of the vector of  
     spatial Gaussian random effects 
     \eqn{\mbox{\boldmath$B$\unboldmath}}{B} 
     is denoted by 
@@ -67,9 +68,9 @@
       \mbox{\boldmath$\Gamma$\unboldmath}_\theta =
       \sigma_{\mathrm{n}}^2\mbox{\boldmath$I$\unboldmath} +
       \sigma^2\mbox{\boldmath$V$\unboldmath}_\alpha = 
-      \sigma^2_Z\mbox{\boldmath$V$\unboldmath}_{\alpha,\xi} = 
-      \sigma^2_Z (\xi \mbox{\boldmath$I$\unboldmath} + 
-      (1-\xi)\mbox{\boldmath$V$\unboldmath}_\alpha )
+      \sigma^2_Z \, \mbox{\boldmath$V$\unboldmath}_{\alpha,\xi} = 
+      \sigma^2_Z \, (\xi \, \mbox{\boldmath$I$\unboldmath} + 
+      (1-\xi)\, \mbox{\boldmath$V$\unboldmath}_\alpha )
       ,}{%
       E[B B^T] = \Gamma_\theta = \sigma_n^2 I+\sigma^2 V_\alpha =
       \sigma_Z^2 V_{\alpha,\xi} = \sigma_Z^2 (\xi I - (1-\xi) V_\alpha)
@@ -90,17 +91,16 @@
     \eqn{\mbox{\boldmath$s$\unboldmath}_i}{s_i}.
     
     We define 
-    \eqn{\mbox{\boldmath$V$\unboldmath}_{\alpha,\xi}}{V_{\alpha,\xi}} 
+    \eqn{\mbox{\boldmath$V$\unboldmath}_{\alpha}}{V_{\alpha}} 
     to be the matrix with elements
-    \deqn{(\mbox{\boldmath$V$\unboldmath}_{\alpha,\xi})_{ij} =
+    \deqn{(\mbox{\boldmath$V$\unboldmath}_{\alpha})_{ij} =
       \gamma_0 - \gamma(|\mbox{\boldmath$A$\unboldmath}\;(
-      \mbox{\boldmath$s$\unboldmath}_i-\mbox{\boldmath$s$\unboldmath}_j) |,\xi),}{
-      (V_{\alpha,\xi})_ij = \gamma_0 - \gamma(|A (s_i - s_j )|,\xi),}
+      \mbox{\boldmath$s$\unboldmath}_i-\mbox{\boldmath$s$\unboldmath}_j)|),}{
+      (V_{\alpha})_ij = \gamma_0 - \gamma(|A (s_i - s_j )|),}
     where the constant \eqn{\gamma_0} is chosen large enough so that 
-    \eqn{\mbox{\boldmath$V$\unboldmath}_{\alpha,\xi}}{V_{\alpha,\xi}}
+    \eqn{\mbox{\boldmath$V$\unboldmath}_{\alpha}}{V_{\alpha}}
     is positive definite,
-    \eqn{\gamma(\cdot)}{v()} is (the sum of) a valid stationary or intrinsic variogram 
-    (and possibly a pure nugget variogram), and
+    \eqn{\gamma(\cdot)}{v()} is a valid stationary or intrinsic variogram, and
     \eqn{\mbox{\boldmath$A$\unboldmath} = 
       \mbox{\boldmath$A$\unboldmath}(\alpha, f_1, f_2; \omega, \phi, \zeta)}{
       A = A(\alpha, f_1, f_2; \omega, \phi, \zeta)} 
@@ -178,41 +178,87 @@
     and for \eqn{f_1 = f_2 = 1} 
     one obtains the model for isotropic auto-correlation 
     with range parameter \eqn{\alpha}. 
-    Note that for isotropic auto-correlation \eqn{d} may exceed 3.
+    Note that for isotropic auto-correlation the software processes data for 
+    which \eqn{d} may exceed 3.
     
-    Depending on the context, the term \dQuote{variogram parameters}
-    denotes sometimes all parameters of a geometrically anisotropic
-    variogram model, but in places only the parameters of an isotropic
-    variogram model, i.e. \eqn{\sigma^2, \ldots, \alpha, \ldots} and
-    \eqn{f_1, \ldots, \zeta} are denoted by the term \dQuote{anisotropy
-    parameters}. 
+    Two remarks are in order:
+    
+    \enumerate{
+    
+      \item Clearly, the (generalized) covariance matrix of the observations 
+      \eqn{\mbox{\boldmath $Y$\unboldmath}}{Y} is given by
+      \deqn{\mathrm{Cov}[\mbox{\boldmath $Y$\unboldmath},\mbox{\boldmath $Y$\unboldmath}^\mathrm{T}]
+        = \tau^2 \mbox{\boldmath$I$\unboldmath} + \mbox{\boldmath$\Gamma$\unboldmath}_\theta.      
+      }{
+        Cov[Y, Y^T] = \tau^2 I + \Gamma_\theta.
+      }
+      
+      \item  Depending on the context, the term \dQuote{variogram parameters}
+      denotes sometimes all parameters of a geometrically anisotropic
+      variogram model, but in places only the parameters of an isotropic
+      variogram model, i.e. \eqn{\sigma^2, \ldots, \alpha, \ldots} and
+      \eqn{f_1, \ldots, \zeta} are denoted by the term \dQuote{anisotropy
+      parameters}. 
+      
+    }
+   
     
   }
   
 %   estimation
   
   \subsection{Estimation}{
-    The  spatial random effects 
-    \eqn{\mbox{\boldmath$B$\unboldmath}}{B}
-    and the  model parameters 
+    The unobserved spatial random effects 
+    \eqn{\mbox{\boldmath$B$\unboldmath}}{B} at the data locations 
+    \eqn{\mbox{\boldmath$s$\unboldmath}_i}{s_i}
+    and the model parameters 
     \eqn{\mbox{\boldmath$\beta$\unboldmath}}{\beta} and
     \eqn{\mbox{\boldmath$\theta$\unboldmath}^\mathrm{T} = 
-      (\sigma^2, \sigma_{\mathrm{n}}^2, \tau^2, \alpha, \newline \ldots,  f_{1}, f_{2}, 
+      (\sigma^2, \sigma_{\mathrm{n}}^2, \tau^2, \alpha, \ldots,  f_{1}, f_{2}, 
         \omega, \phi, \zeta)
     }{\theta^T = 
       (\sigma^2, \sigma^2_n, \tau^2, \alpha, f_1, f_2, 
         \omega, \phi, \zeta, \ldots)
     } 
-    are estimated by Gaussian or robust restricted maximum likelihood (REML) or 
+    are unknown and are estimated in \pkg{georob} either by Gaussian or 
+    robust restricted maximum likelihood (REML) or 
     Gaussian maximum likelihood (ML). Here \var{\ldots} 
     denote further parameters of the variogram such as the smoothness parameter
-    of the Whittle-Matérn model.
-    In brief, the robust REML method is based on the insight that 
-    the kriging predictions of \eqn{\mbox{\boldmath$B$\unboldmath}}{B} 
-    and the Gaussian maximum likelihood estimates of 
-    \eqn{\mbox{\boldmath$\beta$\unboldmath}}{\beta} and
-    \eqn{\mbox{\boldmath$\theta$\unboldmath}}{\theta} can be obtained 
+    of the Whittle-\enc{Matérn}{Matern} model.
+    
+    In brief, the robust REML method is based on the insight that for
+    given \eqn{\mbox{\boldmath$\theta$\unboldmath}}{\theta} the
+    kriging predictions (= BLUP) of
+    \eqn{\mbox{\boldmath$B$\unboldmath}}{B} and the generalized least
+    squares (GLS = ML) estimates of
+    \eqn{\mbox{\boldmath$\beta$\unboldmath}}{\beta} can be obtained
     simultaneously by maximizing 
+    \deqn{
+      - \sum_i 
+        \left(
+          \frac{
+            y_i - 
+            \mbox{\boldmath $x$\unboldmath}(\mbox{\boldmath$s$\unboldmath}_i)^\mathrm{T}
+            \mbox{\boldmath$\beta$\unboldmath} -
+            B(\mbox{\boldmath$s$\unboldmath}_i)
+          }{\tau}
+        \right)^2 - 
+        \mbox{\boldmath$B$\unboldmath}^{\mathrm{T}} 
+        \mbox{\boldmath$\Gamma$\unboldmath}^{-1}_\theta
+        \mbox{\boldmath$B$\unboldmath}
+    }{
+      - \sum_i ( y_i - x^T(s_i)\beta - B(s_i) )^2 / \tau^2
+      - B^T \Gamma_\theta^-1 B  
+    }
+    with respect to
+    \eqn{\mbox{\boldmath$B$\unboldmath}}{B} and
+    \eqn{\mbox{\boldmath$\beta$\unboldmath}}{\beta} e.g.
+    \cite{Harville (1977)}.
+    %
+    Hence, the BLUP of \eqn{\mbox{\boldmath$B$\unboldmath}}{B} 
+    and ML estimates of \eqn{\mbox{\boldmath$\beta$\unboldmath}}{\beta} and 
+    \eqn{\mbox{\boldmath$\theta$\unboldmath}}{\theta}
+    are obtained by maximizing 
     \deqn{
       - \log(\det(
         \tau^2 \mbox{\boldmath$I$\unboldmath} + 
@@ -235,21 +281,23 @@
       - \sum_i ( y_i - x^T(s_i)\beta - B(s_i) )^2 / \tau^2
       - B^T \Gamma_\theta^-1 B  
     }
-    with respect to 
+    jointly with respect to 
     \eqn{\mbox{\boldmath$B$\unboldmath}}{B},
     \eqn{\mbox{\boldmath$\beta$\unboldmath}}{\beta}, 
     \eqn{\mbox{\boldmath$\theta$\unboldmath}}{\theta}.
+    
     The respective estimating equations can then by robustified by 
     \itemize{
       \item replacing the standardized residuals, say
-        \eqn{\widehat{\varepsilon}/\widehat{\tau}}{r/s},
-        by a bounded function, 
-        \eqn{\psi_c(\widehat{\varepsilon}/\widehat{\tau})}{\psi_c(r/s)},
-        of them and by
+        \eqn{\varepsilon_i/\tau}{\epsilon_i/\tau},
+        by a bounded or redescending \eqn{\psi}-function, 
+        \eqn{\psi_c(\varepsilon_i/\tau)}{\psi_c(\epsilon_i/\tau)},
+        of them (e.g. Marona et al, 2006, chap. 2) and by
       \item introducting suitable bias correction terms for Fisher consistency at 
         the Gaussian model,
     }
-    see Künsch et al. (2011) for details. The robustified estimating equations
+    see \cite{\enc{Künsch}{Kuensch} et al. (2011)} for details. 
+    The robustified estimating equations
     are solved numerically by a combination of iterated re-weighted least squares
     (IRWLS) to estimate \eqn{\mbox{\boldmath$B$\unboldmath}}{B} and
     \eqn{\mbox{\boldmath$\beta$\unboldmath}}{\beta} for given 
@@ -263,30 +311,34 @@
     Instead of solving the Gaussian (RE)ML estimating equations, our software then
     maximizes the Gaussian (restricted) loglikelihood using  \code{\link[stats]{nlminb}} or
     \code{\link[stats]{optim}}.
-    
+        
     \pkg{georob} uses variogram models implemented in the \R package
     \pkg{RandomFields} (see \code{\link[RandomFields]{RMmodel}}).
     Currently, estimation of the parameters of the following models is
-    implemented: \code{"RMaskey"}, \code{"RMbessel"}, \code{"RMcauchy"},
-    \code{"RMcircular"}, \code{"RMcubic"}, \code{"RMdagum"},
-    \code{"RMdampedcos"}, \cr \code{"RMdewijsian"}, \code{"RMexp"} (default),
-    \code{"RMfbm"}, \code{"RMgauss"}, \code{"RMgencauchy"},
-    \code{"RMgenfbm"}, \cr  \code{"RMgengneiting"}, \code{"RMgneiting"},
-    \code{"RMlgd"}, \code{"RMmatern"}, \code{"RMpenta"}, \code{"RMqexp"},
-    \code{"RMspheric"}, \code{"RMstable"}, \code{"RMwave"},
-    \code{"RMwhittle"}.  For most variogram parameters, closed-form
+    implemented: 
+    
+    \code{"RMaskey"}, \code{"RMbessel"}, \code{"RMcauchy"},
+    \code{"RMcircular"}, \code{"RMcubic"}, \code{"RMdagum"}, \cr
+    \code{"RMdampedcos"}, \code{"RMdewijsian"}, \code{"RMexp"} (default),
+    \code{"RMfbm"}, \code{"RMgauss"}, \cr \code{"RMgencauchy"},
+    \code{"RMgenfbm"}, \code{"RMgengneiting"}, \code{"RMgneiting"},
+    \code{"RMlgd"}, \cr \code{"RMmatern"}, \code{"RMpenta"}, \code{"RMqexp"},
+    \code{"RMspheric"}, \code{"RMstable"}, \code{"RMwave"}, \cr
+    \code{"RMwhittle"}. 
+    
+    For most variogram parameters, closed-form
     expressions of \eqn{\partial \gamma/ \partial
     \theta_i}{d\gamma/d\theta_i} are used in the computations.  However,
     for the parameter \eqn{\nu} of the models \code{"RMbessel"},
     \code{"RMmatern"} and \code{"RMwhittle"} \eqn{\partial \gamma/ \partial
-    \theta_i}{d\gamma/d\theta_i} is evaluated numerically by the function
+    \nu}{d\gamma/d\nu} is evaluated numerically by the function
     \code{\link[stats]{numericDeriv}}, and this results in an increase in
     computing time when \eqn{\nu} is estimated.  }
   
   %     prediction
   
   \subsection{Prediction}{ 
-    Robust plug-in external drift point kriging predictions 
+    Robust plug-in external-drift point kriging predictions 
     can be computed for an unsampled location 
     \eqn{\mbox{\boldmath$s$\unboldmath}_0}{s_0}
     from the covariates
@@ -321,16 +373,18 @@
     Kriging variances can be computed as well, based on approximated covariances of 
     \eqn{\widehat{\mbox{\boldmath$B$\unboldmath}}}{hatB} and 
     \eqn{\widehat{\mbox{\boldmath$\beta$\unboldmath}}}{hat\beta}
-    (see Künsch et al., 2011, and Appendices of
-    Nussbaum et al., 2012, for details).
+    (see \cite{Künsch et al., 2011}, and appendices of
+    \cite{Nussbaum et al., 2012}, for details).
     
     The package \pkg{georob} provides in addition software for computing
-    robust external drift \emph{block} kriging predictions.  The required
+    robust external-drift \emph{block} kriging predictions.  The required
     integrals of the generalized covariance function are computed by
     functions of the \R package \pkg{constrainedKriging}.
   }
 
-  \subsection{Main functionality}{
+% functionality
+  
+  \subsection{Functionality}{
     For the time being, the functionality of \pkg{georob} is limited 
     to robust geostatistical analyses of \emph{single} response variables. 
     No software is currently available for robust multivariate geostatistical 
@@ -339,8 +393,8 @@
     \enumerate{
       \item Robustly fitting a spatial linear model to data that are 
       possibly contaminated by independent errors from a long-tailed
-      distribution by robust REML (see \code{\link{georob}}, which also
-      fits such  models efficiently by Gaussian (RE)ML, \code{\link{profilelogLik}} and 
+      distribution by robust REML (see functions \code{\link{georob}} --- which also
+      fits such  models efficiently by Gaussian (RE)ML --- \code{\link{profilelogLik}} and 
       \code{\link{control.georob}}).
       \item Extracting estimated model components (see \code{\link{residuals.georob}}, 
       \code{\link{rstandard.georob}}, \cr \code{\link{rstudent.georob}}, 
@@ -360,8 +414,8 @@
       \item Assessing the goodness-of-fit and predictive power of the model by 
       \var{K}-fold cross-validation (see \code{\link{cv.georob}} and 
       \code{\link{validate.predictions}}).
-      \item Computing robust external drift point and block kriging 
-      predictions (see \code{\link{predict.georob}}).
+      \item Computing robust external-drift point and block kriging 
+      predictions (see \code{\link{predict.georob}}, \code{\link{control.predict.georob}}).
       \item Unbiased back-transformation of both point and block
       kriging predictions of log-transformed data to the original scale of
       the measurements (see \code{\link{lgnpp}}).
@@ -382,14 +436,17 @@
   (WSL), pp. 51. 
   \url{http://e-collection.library.ethz.ch/eserv/eth:6027/eth-6027-01.pdf}
 
-  Kuensch, H. R., Papritz, A., Schwierz, C. and Stahel, W. A. (in
+  \enc{Künsch}{Kuensch}, H. R., Papritz, A., Schwierz, C. and Stahel, W. A. (in
   preparation) Robust Geostatistics.
 
-  Kuensch, H. R., Papritz, A., Schwierz, C. and Stahel, W. A. (2011) Robust
+  \enc{Künsch}{Kuensch}, H. R., Papritz, A., Schwierz, C. and Stahel, W. A. (2011) Robust
   estimation of the external drift and the variogram of spatial data.
   Proceedings of the ISI 58th World Statistics Congress of the International
   Statistical Institute.
   \url{http://e-collection.library.ethz.ch/eserv/eth:7080/eth-7080-01.pdf}
+  
+  Maronna, R. A., Martin, R. D. and Yohai, V. J. (2006) Robust Statistics Theory and
+  Methods, John Wiley \& Sons.
 }
 
 \seealso{

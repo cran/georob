@@ -170,9 +170,10 @@ georob(formula, data, subset, weights, na.action, model = TRUE,
 }
 
 \details{\code{georob} fits a spatial linear model by robust or Gaussian RE(ML) 
-  (Kuensch et al., 2011, Kuensch et al., in preparation). \code{\link{georobIntro}} 
-  describes the employed model and briefly sketches the robust REML estimation 
-  and the robust external-drift kriging method. Here, we describe further details 
+  (\cite{\enc{Künsch}{Kuensch} et al., 2011}, \cite{\enc{Künsch}{Kuensch}
+  et al., in preparation}).  \code{\link{georobIntro}} describes the
+  employed model and briefly sketches the robust REML estimation and the
+  robust external-drift kriging method.  Here, we describe further details
   of \code{georob}.
   
   \subsection{Implemented variogram models}{
@@ -256,7 +257,7 @@ georob(formula, data, subset, weights, na.action, model = TRUE,
       
         \item \emph{Checking permissible ranges}: The additional parameters
         of the variogram models such as the smoothness parameter \eqn{\nu}
-        of the Whittle-Mat\'{e}rn model are forced to stay in the permissible
+        of the Whittle-Matérn model are forced to stay in the permissible
         ranges by signalling an error to \code{nleqslv} or \code{optim} if
         the current trial values are invalid. These functions then
         graciously update the trial values of the parameters and carry
@@ -389,10 +390,10 @@ fit of a spatial linear model.  See
 \references{
   Diggle, P. J. and Ribeiro, P. J. R. (2006) Model-based Geostatistics. Springer.
 
-  Kuensch, H. R., Papritz, A., Schwierz, C. and Stahel, W. A. (in
+  \enc{Künsch}{Kuensch}, H. R., Papritz, A., Schwierz, C. and Stahel, W. A. (in
   preparation) Robust Geostatistics.
 
-  Kuensch, H. R., Papritz, A., Schwierz, C. and Stahel, W. A. (2011) Robust
+  \enc{Künsch}{Kuensch}, H. R., Papritz, A., Schwierz, C. and Stahel, W. A. (2011) Robust
   estimation of the external drift and the variogram of spatial data.
   Proceedings of the ISI 58th World Statistics Congress of the International
   Statistical Institute.

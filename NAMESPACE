@@ -1,7 +1,7 @@
 import( stats, parallel, sp )
 
 importFrom( constrainedKriging, covmodel, f.point.block.cov, K, preCKrige )
-importFrom( graphics, axis, hist, legend, lines, matplot, par, points)
+importFrom( graphics, axis, hist, legend, lines, matplot, par, points, strheight, text)
 importFrom( lmtest, waldtest, waldtest.default )
 importFrom( nlme, fixef, fixed.effects, ranef, random.effects )
 importFrom( nleqslv, nleqslv )
@@ -106,7 +106,7 @@ export(
 ## crpspd.resp.rob                    # currently not used
 ## estimate.zhat
 ## estimating.equations.theta
-## estimating.equations.z
+## estimating.equations.B
 ## f.aux.Qstar
 ## f.aux.RSS
 ## f.aux.Valphaxi

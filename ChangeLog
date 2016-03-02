@@ -380,4 +380,17 @@ processing col and pch arguments
 
  
 
+2015-12-02  Andreas Papritz  <papritz@env.ethz.ch>
+
+* variogram.R (fit.variogram.model) correcting error in setting default values for fit.param
+ 
+
+2015-12-25  Andreas Papritz  <papritz@env.ethz.ch>
+
+* variogram.R (plot.georob) changes for residual diagnostic plots
+ 
+
+2015-12-29  Andreas Papritz  <papritz@env.ethz.ch>
+
+* georob.cv.R (plot.cv.georob) minor changes for adding plots to existing diagnostics graphics
 
