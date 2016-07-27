@@ -1,5 +1,8 @@
 % 2014-05-28 A. Papritz
 % R CMD Rdconv -t html -o bla.html compress.Rd ; open bla.html; R CMD Rd2pdf --force compress.Rd; 
+
+%  hunspell -d en_GB -t -i mac  *.Rd
+
 \name{compress}
 \alias{compress}
 \alias{expand}
@@ -38,7 +41,7 @@
   
   \item{\code{diag}}{a vector with the diagonal elements of \code{m}.}
     
-  \item{\code{tri}}{a vector with non-redudant off-diagonal elements.}
+  \item{\code{tri}}{a vector with non-redundant off-diagonal elements.}
   
   If \code{m} is a list of square matrices then the result is also a list
   of compressed matrices. 

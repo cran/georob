@@ -47,7 +47,8 @@ step(object, ...)
 
 \method{step}{georob}(object, scope, scale = 0, 
     direction = c("both", "backward", "forward"), trace = 1, 
-    keep = NULL, steps = 1000, k = 2, data = NULL, fixed = TRUE, 
+    keep = NULL, steps = 1000, k = 2, data = NULL, 
+    fixed.add1.drop1 = TRUE, fixed.step = fixed.add1.drop1,
     use.fitted.param = TRUE, verbose = 0, ncores = 1, ...)
 
 \method{waldtest}{georob}(object, ..., vcov = NULL, test = c("F", "Chisq"), 
@@ -65,10 +66,15 @@ step(object, ...)
   \item{direction}{the mode of stepwise search, see
     \code{\link[stats]{step}}.  }
   
-    \item{fixed}{logical controlling whether the variogram parameters are
-    \emph{not} adjusted when fitting alternative regression models for
-    \code{add}ing or \code{drop}ping model terms (default \code{TRUE}).}
-  
+  \item{fixed,fixed.add1.drop1}{logical controlling whether the variogram parameters are
+   \emph{not} adjusted when 
+   \code{add}ing or \code{drop}ping model terms by \code{add1} 
+   and \code{drop1} (default \code{TRUE}), see \emph{Details}.}
+    
+  \item{fixed.step}{logical controlling whether the variogram parameters are
+   \emph{not} adjusted after having called \code{add1} and \code{drop1} in 
+   \code{step} (default \code{TRUE}), see \emph{Details}.}
+    
   \item{k}{numeric specifying the 'weight' of the equivalent degrees of
     freedom (=: edf) part in the AIC formula, see
     \code{\link[stats]{extractAIC}}.}
@@ -88,7 +94,7 @@ step(object, ...)
     terms to be added or dropped determines the number of cores that is
     actually used.}
   
-  \item{REML}{logical controlling whether the restricted loglikelihood
+  \item{REML}{logical controlling whether the restricted log-likelihood
     should be extracted (default \code{TRUE}).}
   
   \item{scale}{numeric, currently not used, see
@@ -145,20 +151,26 @@ step(object, ...)
   \eqn{\tau^2/\mbox{\boldmath $w$\unboldmath}}{\tau/w} where \eqn{\mbox{\boldmath $w$\unboldmath}}{w} are 
   the \dQuote{robustness weights} \code{rweights}, see \code{\link{georobObject}}.
 
-  \code{logLik} returns the the maximized (restricted) loglikelihood.  For
-  a robust fit, the loglikelihood is not defined.  The function then
-  computes the (restricted) loglikelihood of an equivalent Gaussian model with
+  \code{logLik} returns the the maximized (restricted) log-likelihood.  For
+  a robust fit, the log-likelihood is not defined.  The function then
+  computes the (restricted) log-likelihood of an equivalent Gaussian model with
   heteroscedastic nugget (see above).
   
   The methods \code{extractAIC}, \code{add1}, \code{drop1} and \code{step}
-  are used for stepwise model building.  If \code{fixed==TRUE} (default)
-  then the variogram parameters are kept fixed at the values fitted for
-  fixed-effects model in \code{object}.  For \code{fixed==FALSE} the
-  variogram parameters are fitted for each model tested by \code{add1} and
+  are used for stepwise model building.  If \code{fixed==TRUE} or
+  \code{fixed.add1.drop1==TRUE} (default) then the variogram parameters are
+  kept fixed at the values of \code{object}.  For
+  \code{fixed==FALSE} or \code{fixed.add1.drop1==FALSE} the variogram
+  parameters are fitted afresh for each model tested by \code{add1} and
   \code{drop1}.  Then either the variogram parameters in
   \code{object$initial.objects} (\code{use.fitted.param==FALSE}) or the
   fitted parameters of \code{object} (\code{use.fitted.param==TRUE}) are
-  used as initial values.
+  used as initial values.  For \code{fixed.step==TRUE} the variogram
+  parameters are \emph{not} fitted afresh by \code{step} after the calls to
+  \code{drop1} and \code{add1} have been completed, unlike for
+  \code{fixed.step==FALSE} where the parameters are estimated afresh for 
+  the new model that minimized AIC (BIC) in the previous step.
+  
   
   In addition, the functions of the \R package \pkg{multcomp} can be used
   to test general linear hypotheses about the fixed effects of the model.
@@ -204,7 +216,7 @@ deviance(r.logzn.rob)
 logLik(r.logzn.rob)
 logLik(r.logzn.rob, REML=TRUE)
 
-step(r.logzn.rob, ~ sqrt(dist) + ffreq + soil, fixed=FALSE, trace=2)
+step(r.logzn.rob, ~ sqrt(dist) + ffreq + soil, fixed.step=FALSE, trace=2)
 }
 }
 

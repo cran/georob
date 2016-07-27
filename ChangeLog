@@ -376,7 +376,7 @@ processing col and pch arguments
 * variogram.R (sample.variogram, sample.variogram.default, sample.variogram.formula, sample.variogram.gerob) generic and methods for computing sample variogram
 * variogram.R (fit.variogram.model) checking mandatory arguments, issuing warnings
 * variogram.R (plot.georob) changes for Tukey-Anscombe, QQnorm plots and for plotting variograms
-* georob.private.functions (f.aux.gcr,estimating.equations.theta, negative.loglikelihood, gradient.negative.loglikelihood, georob.fit) issuing warnings
+* georob.private.functions.R (f.aux.gcr,estimating.equations.theta, negative.loglikelihood, gradient.negative.loglikelihood, georob.fit) issuing warnings
 
  
 
@@ -394,3 +394,44 @@ processing col and pch arguments
 
 * georob.cv.R (plot.cv.georob) minor changes for adding plots to existing diagnostics graphics
 
+
+2016-05-22  Andreas Papritz  <papritz@env.ethz.ch>
+
+* georob.S3methods.R (add1.georob, drop1.georob, step.georob) correction of error and extended functionality for refitting variorum parameters or keeping them fixed, changes for better computational efficiency
+
+
+2016-05-27  Andreas Papritz  <papritz@env.ethz.ch>
+
+* georob.S3methods.R (add1.georob), drop1.georob) diagnostics about convergence
+
+
+2016-05-27  Andreas Papritz  <papritz@env.ethz.ch>
+
+* georob.cv.R (cv.georob) allow recursive calls of mclapply
+
+
+2016-07-15  Andreas Papritz  <papritz@env.ethz.ch>
+
+* georob.S3methods (waldtest.georob) optimization
+* georob.exported.functions.R (profilelogLik) optimization* georob.exported.functions.R (profilelogLik) optimization
+* georob.exported.functions.R (gearbox) allowing use of lmrob for computing initial fixed effects for rank-deficient model matrix
+
+2016-07-21  Andreas Papritz  <papritz@env.ethz.ch>
+
+* georob.cv.R (cv.georob) changes for parallel computations
+* georob.exported.functions.R (georob, pmm, control.pcmp, profilelogLik) changes for parallel computations
+* georob.predict.R (control.predict.georob, predict.georob, f.robust.uk) changes for parallel computations
+* georob.private.functions.R (covariances.fixed.random.effects, estimate.zhat, f.aux.gcr, likelihood.calculations, estimating.equations.theta, negative.loglikelihood, gradient.negative.loglikelihood, georob.fit, f.aux.eeq, f.aux.gradient.nll, f.aux.gradient.npll, f.aux.Qstar, f.aux.Valphaxi) changes for parallel computations
+* georob.S3methods.R (ranef.georob, add1.georob, drop1.georob, step.georob) changes for parallel computations
+* georob.S3methods.R (fixef.georob) correcting wrong component name
+
+
+2016-07-22  Andreas Papritz  <papritz@env.ethz.ch>
+
+* georob.predict.R (predict.georob) SpatialPoints, SpatialPixels and SpatialGrid as newdata objects
+* georob.private.functions.R (georob.fit) corrected names of gradient components
+
+
+2016-07-25  Andreas Papritz  <papritz@env.ethz.ch>
+
+* cv.georob.R (plot.cv.georob) added line color and type for scatterplot smooths

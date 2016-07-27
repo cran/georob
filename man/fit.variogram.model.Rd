@@ -93,21 +93,21 @@ fit.variogram.model(sv,
     
       \item{\code{f1}: ratio \eqn{f_1} of lengths of second and first
         semi-principal axes of an ellipsoidal surface with constant
-        semivariance in \eqn{\mathrm{I}\!\mathrm{R}^3}{R^3} (default \code{f1 = 1}).}
+        semi-variance in \eqn{\mathrm{I}\!\mathrm{R}^3}{R^3} (default \code{f1 = 1}).}
       
       \item{\code{f2}: ratio \eqn{f_2} of lengths of third and first
-        semi-principal axes of the semivariance ellipsoid (default \code{f2 = 1}).}
+        semi-principal axes of the semi-variance ellipsoid (default \code{f2 = 1}).}
       
       \item{\code{omega}: azimuth in degrees of the first semi-principal axis 
-        of the semivariance ellipsoid (default \code{omega = 90}).}
+        of the semi-variance ellipsoid (default \code{omega = 90}).}
       
       \item{\code{phi}: 90 degrees minus altitude of the first semi-principal axis 
-        of the semivariance ellipsoid (default \code{phi = 90}).}
+        of the semi-variance ellipsoid (default \code{phi = 90}).}
      
       \item{\code{zeta}: angle in degrees between the second semi-principal
         axis and the direction of the line defined by the intersection
         between the \eqn{x}-\eqn{y}-plane and the plane orthogonal to the
-        first semi-principal axis of the semivariance ellipsoid through the
+        first semi-principal axis of the semi-variance ellipsoid through the
         origin (default \code{zeta = 0}).} 
     } 
   }
@@ -164,15 +164,15 @@ fit.variogram.model(sv,
   models (default: largest lag distance of current plot).}
 
   \item{n}{positive integer specifying the number of equally spaced lag
-  distances for which semivariances are evaluated in plotting variogram
+  distances for which semi-variances are evaluated in plotting variogram
   models (default \code{501}).}
 
   \item{xy.angle}{numeric (vector) with azimuth angles (in degrees,
   clockwise positive from north) in \eqn{x}-\eqn{y}-plane for which
-  semivariances should be plotted.}
+  semi-variances should be plotted.}
 
   \item{xz.angle}{numeric (vector) with angles in \eqn{x}-\eqn{z}-plane (in
-  degrees, clockwise positive from zenith to south) for which semivariances
+  degrees, clockwise positive from zenith to south) for which semi-variances
   should be plotted.}
 
   \item{col}{color of curves to distinguish curves relating to
@@ -260,9 +260,9 @@ mechanisms are used in \code{fit.variogram.model}.
   
   
   \item{residuals}{a numeric vector with the residuals, that is the sample
-  semivariance minus the fitted values.}
+  semi-variance minus the fitted values.}
   
-  \item{fitted}{a numeric vector with the modelled semivariances.}
+  \item{fitted}{a numeric vector with the modelled semi-variances.}
 
   \item{weights}{a numeric vector with the weights used for fitting.}
   

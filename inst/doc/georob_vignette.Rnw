@@ -1,0 +1,3667 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                                                                                        %
+%   Robust analysis of geostatistical data --- a vignette for the R package ``georob''   %
+%                                                                                        %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% 2016-02-xx A. Papritz
+
+% cd R.user.home/georob/vignettes/
+% R CMD Sweave georob_vignette.Rnw;  R CMD Stangle georob_vignette.Rnw; pdflatex georob_vignette.tex; open georob_vignette.pdf;
+% bibtex georob_vignette; pdflatex georob_vignette.tex;  open georob_vignette.pdf;
+
+% sketches how model parameters are estimated robustly 
+
+% hunspell -d en_GB -t -i mac  georob_vignette.Rnw
+
+\documentclass[12pt]{article}
+
+\usepackage{Rd}
+\usepackage{Sweave}
+
+\usepackage{graphicx}
+\usepackage{natbib}
+\usepackage{color}
+\usepackage[a4paper,margin=2.5cm]{geometry}
+
+\usepackage{hyperref}
+
+% define colors
+
+\definecolor{Sinput}{rgb}{0,0,0.56}
+\definecolor{Scode}{rgb}{0,0,0.56}
+\definecolor{Soutput}{rgb}{0.56,0,0}
+
+\definecolor{darkblue}{rgb}{0,0,0.4}
+\definecolor{darkmagenta}{rgb}{0.5,0,0.5}
+\definecolor{darkgreen}{rgb}{0,0.3,0}
+\definecolor{darkred}{rgb}{0.4,0,0}
+
+% hyperref settings
+
+\hypersetup{
+    draft=false,
+    colorlinks=true,linkcolor=darkblue,citecolor=darkgreen,urlcolor=darkgreen,
+    breaklinks=true,
+    bookmarksnumbered=true
+}
+
+\newcommand{\autorefs}[1]{%
+\renewcommand{\figureautorefname}{Figures}\renewcommand{\tableautorefname}{Tables}%
+\renewcommand{\sectionautorefname}{Sections}\renewcommand{\subsectionautorefname}{Subsections}%
+\renewcommand{\subsubsectionautorefname}{Subsections}\renewcommand{\footnoteautorefname}{footnotes}%
+\autoref{#1}%
+\renewcommand{\figureautorefname}{Figure}\renewcommand{\tableautorefname}{Table}%
+\renewcommand{\sectionautorefname}{Section}\renewcommand{\subsectionautorefname}{Subsection}%
+\renewcommand{\subsubsectionautorefname}{Subsection}\renewcommand{\footnoteautorefname}{footnote}%
+}
+
+% sweave settings and options
+
+\def\setSinput#1{\DefineVerbatimEnvironment{Sinput}{Verbatim}{%
+    formatcom={\color{Sinput}},fontsize=#1}}
+\def\setSoutput#1{\DefineVerbatimEnvironment{Soutput}{Verbatim}{%
+    formatcom={\color{Soutput}},fontsize=#1}}
+\setSinput{\footnotesize}
+\setSoutput{\footnotesize}
+\DefineVerbatimEnvironment{Scode}{Verbatim} {formatcom={\color{Scode}},%
+  fontsize=\small}
+
+\SweaveOpts{engine=R, keep.source=TRUE}
+\SweaveOpts{eps=FALSE, pdf=TRUE, width=9, height=6, strip.white=true}
+\SweaveOpts{prefix.string=fig}
+
+% Kontrolle, ob aufw\"{a}ndig zu berechnende Schritte durchgef\"{u}hrt werden
+
+\SweaveOpts{echo=TRUE, eval=TRUE}      % <<- Anpassen!!
+
+% macros
+
+% wrappers of Rd macros
+
+\renewcommand{\code}[1]{\mbox{\texttt{#1}}}
+\renewenvironment{SubSection}[1]{\subsection{#1} \label{sec:#1}}{}
+\renewenvironment{Details}{\bigskip}{}
+
+\newcommand{\mb}[1]{\mbox{\boldmath\ensuremath{#1}\unboldmath}}
+\newcommand{\mbsubscript}[1]{\mbox{\boldmath\({\scriptstyle#1}\)\unboldmath}}
+
+% centred figure environment
+
+% \newenvironment{cf}[1][0.8]{\begin{figure}[!h]\begin{center}\setkeys{Gin}{width=#1\textwidth}
+% }{\end{center}\end{figure}}
+% \newenvironment{cf}[1][0.8]{\refstepcounter{figure}\begin{center}\setkeys{Gin}{width=#1\textwidth}
+% }{\end{center}}
+% 
+% \newcommand{\ecf}[2]{\caption{#1\label{fig:#2}}}
+\newcounter{cf}
+\newcommand{\bcf}[1][0.8]{
+%   \begin{figure}[!tbp]
+  \refstepcounter{cf}\begin{center}\setkeys{Gin}{width=#1\textwidth}}
+  
+\newcommand{\ecf}[2]{
+  \end{center}\par\small 
+    {\itshape Figure~\thecf}\,: #1\label{fig:#2}\normalsize\par\bigskip
+%   \end{figure}
+  }
+
+
+\setlength{\parindent}{0mm}
+
+\author{Andreas Papritz} \title{Tutorial and Manual for Geostatistical
+Analyses with the R package \pkg{georob}}
+
+%\VignetteIndexEntry{Tutorial and Manual for georob}
+
+\begin{document}
+
+<<preliminaries,echo=FALSE,results=hide,eval=TRUE>>=
+options(
+  SweaveHooks=list(
+    fig=function() par(
+      mar=c(3.1, 3.1, 2.1, 2.1), mgp = c(1.5, 0.25, 0), tcl = -0.25
+    )),
+  width=80, str=strOptions(strict.width="cut"),
+  digits=5)
+t.t <- (1:9)
+t.tick.locations <- c(
+  t.t*0.0001, t.t*0.001, t.t*0.01, t.t*0.1, t.t, t.t*10, t.t*100, t.t*1000,
+  t.t*10000, t.t*100000, t.t*1000000
+)
+
+t.tl <- c(1, 2, NA, NA, 5, NA, NA, NA, NA )
+t.tick.labels <- as.character(
+  c( t.tl*0.0001, t.tl*0.001, t.tl*0.01, t.tl*0.1, t.tl, t.tl*10, t.tl*100, t.tl*1000,
+    t.tl*10000,  t.tl*100000,  t.tl*1000000
+  )
+)
+@
+
+\sloppy
+
+\maketitle
+
+\tableofcontents
+
+\clearpage
+
+%% 
+ % Summary
+ %%
+
+\section{Summary}\label{sec:summary}
+
+\pkg{georob} is a package for model-based Gaussian and robust analyses
+of geostatistical data.  The software of the package performs two main
+tasks:
+
+\begin{itemize}
+  \item It fits a linear model with spatially correlated errors to
+  geostatistical data that are possibly contaminated by outliers.  The
+  coefficients of the linear model (so-called external-drift) and the
+  parameters of the variogram model are estimated by robust or
+  Gaussian (restricted) maximum likelihood ([RE]ML).
+  
+  \item It computes from a fitted model object customary and robust
+  external drift point and block kriging predictions.
+\end{itemize}
+
+\citet{Kuensch-etal-2011} and \citet{Kuensch-etal-in-prep} explain the theoretical
+foundations of the robust approach, and \citet{Diggle-Ribeiro-2007} is
+a good reference for model-based Gaussian geostatistical analyses.
+%
+
+\smallskip
+
+This document provides a practical introduction to model-based
+Gaussian and robust analyses of geostatistical data.  It contains a
+short summary of the modelling approach, illustrates the use of the
+software with two examples and explains in some depth selected aspects
+of (i) (robust) parameter estimation (ii) computing predictions by
+(robust) kriging and (iii) model building.
+
+
+
+%% 
+ % Introduction
+ %%
+
+% material taken from
+% tools::Rd2latex("georob-package.Rd", "georob-package.tex", outputEncoding="macintosh")
+
+\section{Introduction} \label{sec:introduction}
+
+This section presents briefly
+
+\begin{itemize}
+  \item the modelling assumptions and model parametrization,
+    
+  \item  sketches how model parameters are estimated robustly and how
+  robust kriging predictions are computed, and 
+  
+  \item summarizes the main functionality of the package.
+\end{itemize}
+
+Further information on selected aspects can be found in
+sections~\ref{sec:est-details} and \ref{sec:krig-details}.
+
+
+\renewcommand{\\}{}
+
+ 
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Model
+  
+\subsection{Model}\label{sec:intro-model}
+
+We use the following model for the data \eqn{y_{i}=y(\mbox{\boldmath$s$\unboldmath}_{i})}{}:
+%
+\begin{equation}\label{eq:model}
+  Y(\mbox{\boldmath$s$\unboldmath}_{i}) = 
+  Z(\mbox{\boldmath$s$\unboldmath}_{i}) + \varepsilon_i =
+  \mbox{\boldmath $x$\unboldmath}(\mbox{\boldmath$s$\unboldmath}_{i})^\mathrm{T}
+  \mbox{\boldmath$\beta$\unboldmath} +
+  B(\mbox{\boldmath$s$\unboldmath}_{i}) +
+  \varepsilon_i,
+\end{equation}
+%
+where \eqn{\mbox{\boldmath$s$\unboldmath}_{i}}{} denotes a data
+location, \eqn{Z(\mbox{\boldmath$s$\unboldmath}_{i})=\mbox{\boldmath
+$x$\unboldmath}(\mbox{\boldmath$s$\unboldmath}_{i})^\mathrm{T}
+\mbox{\boldmath$\beta$\unboldmath} +
+B(\mbox{\boldmath$s$\unboldmath}_{i})}{} is the so-called signal,
+\eqn{\mbox{\boldmath
+$x$\unboldmath}(\mbox{\boldmath$s$\unboldmath}_{i})^\mathrm{T}
+\mbox{\boldmath$\beta$\unboldmath}}{} is the external drift,
+\eqn{\{B(\mbox{\boldmath$s$\unboldmath})\}}{} is an unobserved
+stationary or intrinsic Gaussian random field with zero mean, and
+\eqn{\varepsilon_i}{} is an \emph{i.i.d} error from a possibly
+long-tailed distribution with scale parameter \eqn{\tau}{}
+(\eqn{\tau^2}{} is usually called nugget effect).  In vector form the
+model is written as
+%
+\begin{equation}\label{eq:model-vector}
+  \mbox{\boldmath $Y = X \beta + B + \varepsilon$\unboldmath},
+\end{equation}
+%
+where \eqn{\mbox{\boldmath $X$\unboldmath}}{} is the model matrix with
+the rows \eqn{\mbox{\boldmath
+$x$\unboldmath}(\mbox{\boldmath$s$\unboldmath}_i)^\mathrm{T}}{}.
+
+The (generalized) covariance matrix of the vector of  
+spatial Gaussian random effects 
+\eqn{\mbox{\boldmath$B$\unboldmath}}{} 
+%
+is denoted by 
+%
+\begin{equation}\label{eq:covariance-matrix-signal}
+  \mathrm{E}[
+  \mbox{\boldmath$B$\unboldmath}\,
+  \mbox{\boldmath$B$\unboldmath}^\mathrm{T}] =
+  \mbox{\boldmath$\Gamma$\unboldmath}_\theta =
+  \sigma_{\mathrm{n}}^2\mbox{\boldmath$I$\unboldmath} +
+  \sigma^2\mbox{\boldmath$V$\unboldmath}_\alpha = 
+  \sigma^2_Z \, \mbox{\boldmath$V$\unboldmath}_{\alpha,\xi} = 
+  \sigma^2_Z \, (\xi \, \mbox{\boldmath$I$\unboldmath} + 
+  (1-\xi)\, \mbox{\boldmath$V$\unboldmath}_\alpha ),
+\end{equation}
+%
+where 
+\eqn{\sigma_{\mathrm{n}}^2}{} 
+is the variance of seemingly uncorrelated micro-scale variation in 
+\eqn{B(\mbox{\boldmath$s$\unboldmath})}{} 
+that cannot be resolved with the chosen sampling design,  
+\eqn{\sigma^2}{} is the variance of the captured auto-correlated variation in 
+\eqn{B(\mbox{\boldmath$s$\unboldmath})}{},  
+\eqn{\sigma_Z^2=\sigma_{\mathrm{n}}^2+\sigma^2}{} 
+is the signal variance, and 
+\eqn{\xi=\sigma_{\mathrm{n}}^2/\sigma_Z^2}{}. 
+To estimate both 
+\eqn{\sigma_{\mathrm{n}}^2}{} and \eqn{\tau^2}{} (and not only their sum), one needs
+replicated measurements for some of the 
+\eqn{\mbox{\boldmath$s$\unboldmath}_i}{}.
+
+We define \eqn{\mbox{\boldmath$V$\unboldmath}_{\alpha}}{} to be the
+matrix with elements
+%
+\begin{equation}\label{eq:valpha}
+  (\mbox{\boldmath$V$\unboldmath}_{\alpha})_{ij} =
+  \gamma_0 - \gamma(|\mbox{\boldmath$A$\unboldmath}\;(
+  \mbox{\boldmath$s$\unboldmath}_i-\mbox{\boldmath$s$\unboldmath}_j)|),
+\end{equation}
+%
+where the constant \eqn{\gamma_0}{} is chosen large enough so that
+\eqn{\mbox{\boldmath$V$\unboldmath}_{\alpha}}{} is positive definite,
+\eqn{\gamma(\cdot)}{} is a valid stationary or intrinsic variogram,
+and \eqn{\mbox{\boldmath$A$\unboldmath}
+% =
+% \mbox{\boldmath$A$\unboldmath}(\alpha, f_1, f_2; \omega, \phi,
+% \zeta)
+}{} is a matrix that is used to model geometrically anisotropic
+auto-correlation (see section~\ref{sec:est-details-anisotropy}).
+
+\smallskip
+
+Two remarks are in order:
+
+\begin{enumerate}
+
+
+\item Clearly, the (generalized) covariance matrix of the observations 
+\eqn{\mbox{\boldmath $Y$\unboldmath}}{} is given by
+%
+\begin{equation}\label{eq:covariance-matrix-response}
+  \mathrm{Cov}[\mbox{\boldmath $Y$\unboldmath},\mbox{\boldmath $Y$\unboldmath}^\mathrm{T}]
+        = \tau^2 \mbox{\boldmath$I$\unboldmath} + \mbox{\boldmath$\Gamma$\unboldmath}_\theta.      
+\end{equation}
+%
+\item Depending on the context, the term ``variogram parameters''
+denotes sometimes all parameters of a geometrically anisotropic
+variogram model, but in places only the parameters of an isotropic
+variogram model, i.e. \eqn{\sigma^2, \ldots, \alpha, \ldots}{} and
+\eqn{f_1, \ldots, \zeta}{} are denoted by the term ``anisotropy
+parameters''.  In the sequel
+\eqn{\mbox{\boldmath$\theta$\unboldmath}}{} is used to denote all
+variogram and anisotropy parameters except the nugget effect
+\eqn{\tau^2}{}.
+
+\end{enumerate}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  Estimation
+
+\subsection{Estimation}\label{sec:intro-estimation}
+The unobserved spatial random effects 
+\eqn{\mbox{\boldmath$B$\unboldmath}}{} at the data locations 
+\eqn{\mbox{\boldmath$s$\unboldmath}_i}{}
+and the model parameters 
+\eqn{\mbox{\boldmath$\beta$\unboldmath}}{}, $\tau^2$ and
+\eqn{\mbox{\boldmath$\theta$\unboldmath}^\mathrm{T} = 
+      (\sigma^2, \sigma_{\mathrm{n}}^2, \alpha, \ldots,  f_{1}, f_{2}, 
+        \omega, \phi, \zeta)
+    }{} 
+are unknown and are estimated in \pkg{georob} either by Gaussian or 
+robust restricted maximum likelihood (REML) or 
+Gaussian maximum likelihood (ML). Here \var{\ldots} 
+denote further parameters of the variogram such as the smoothness parameter
+of the Whittle-Mat\'ern model. 
+
+\smallskip
+
+In brief, the robust REML method is based on the insight that for
+given \eqn{\mbox{\boldmath$\theta$\unboldmath}}{} and \eqn{\tau^2}{} the
+kriging predictions (= BLUP) of
+\eqn{\mbox{\boldmath$B$\unboldmath}}{} and the generalized least
+squares (GLS = ML) estimates of
+\eqn{\mbox{\boldmath$\beta$\unboldmath}}{} can be obtained
+simultaneously by maximizing 
+%
+\begin{displaymath}
+      - \sum_i 
+        \left(
+          \frac{
+            y_i - 
+            \mbox{\boldmath $x$\unboldmath}(\mbox{\boldmath$s$\unboldmath}_i)^\mathrm{T}
+            \mbox{\boldmath$\beta$\unboldmath} -
+            B(\mbox{\boldmath$s$\unboldmath}_i)
+          }{\tau}
+        \right)^2 - 
+        \mbox{\boldmath$B$\unboldmath}^{\mathrm{T}} 
+        \mbox{\boldmath$\Gamma$\unboldmath}^{-1}_\theta
+        \mbox{\boldmath$B$\unboldmath}
+\end{displaymath}
+%
+with respect to
+\eqn{\mbox{\boldmath$B$\unboldmath}}{} and
+\eqn{\mbox{\boldmath$\beta$\unboldmath}}{}, e.g.
+% \Cite{Harville (1977)}.
+\citet{Harville-1977}.
+
+Hence, the BLUP of \eqn{\mbox{\boldmath$B$\unboldmath}}{},
+ML estimates of \eqn{\mbox{\boldmath$\beta$\unboldmath}}{},  
+\eqn{\mbox{\boldmath$\theta$\unboldmath}}{} and \eqn{\tau^2}{} 
+are obtained by maximizing 
+%
+\begin{equation}\label{eq:ml-objective-function}
+      - \log(\det(
+        \tau^2 \mbox{\boldmath$I$\unboldmath} + 
+        \mbox{\boldmath$\Gamma$\unboldmath}_\theta        
+      )) -
+      \sum_i 
+        \left(
+          \frac{
+            y_i - 
+            \mbox{\boldmath $x$\unboldmath}(\mbox{\boldmath$s$\unboldmath}_i)^\mathrm{T}
+            \mbox{\boldmath$\beta$\unboldmath} -
+            B(\mbox{\boldmath$s$\unboldmath}_i)
+          }{\tau}
+        \right)^2 - 
+        \mbox{\boldmath$B$\unboldmath}^{\mathrm{T}} 
+        \mbox{\boldmath$\Gamma$\unboldmath}^{-1}_\theta
+        \mbox{\boldmath$B$\unboldmath}
+\end{equation}
+%
+jointly with respect to \eqn{\mbox{\boldmath$B$\unboldmath}}{},
+\eqn{\mbox{\boldmath$\beta$\unboldmath}}{},
+\eqn{\mbox{\boldmath$\theta$\unboldmath}}{} and  \eqn{\tau^2}{}  or by solving the
+respective estimating equations.
+
+\smallskip
+
+The estimating equations can then by robustified by 
+\begin{itemize}
+
+\item replacing the standardized errors, say
+\eqn{\varepsilon_{i}/\tau}{}, by a bounded or re-descending
+\eqn{\psi}{}-function, \eqn{\psi_c(\varepsilon_{i}/\tau)}{}, of them
+\citep[e.g.][chap.~2]{Maronna-etal-2006} and by
+\item
+introducing suitable bias correction terms for Fisher consistency at
+the Gaussian model,
+
+\end{itemize}
+
+see \citet{Kuensch-etal-2011} for details. 
+The robustified estimating equations
+are solved numerically by a combination of iterated re-weighted least squares
+(IRWLS) to estimate \eqn{\mbox{\boldmath$B$\unboldmath}}{} and
+\eqn{\mbox{\boldmath$\beta$\unboldmath}}{} for given 
+\eqn{\mbox{\boldmath$\theta$\unboldmath}}{} and  \eqn{\tau^2}{} 
+and non-linear root finding by the function 
+\code{nleqslv()} of the \R{} package \pkg{nleqslv}
+to get \eqn{\mbox{\boldmath$\theta$\unboldmath}}{} and  \eqn{\tau^2}{}.
+The robustness of the procedure is controlled by the tuning parameter \eqn{c}{}
+of the \eqn{\psi_c}{}-function. For \eqn{c \ge 1000}{} the algorithm computes
+Gaussian (RE)ML estimates and customary plug-in kriging predictions. 
+Instead of solving the Gaussian (RE)ML estimating equations, our software then
+maximizes the Gaussian (restricted) log-likelihood using  \code{nlminb()} or
+\code{optim()}.
+
+\smallskip
+
+\pkg{georob} uses variogram models implemented in the \R{} package
+\pkg{RandomFields} (see \code{RMmodel()}).  For most variogram
+parameters, closed-form expressions of \eqn{\partial \gamma/ \partial
+\theta_i}{} are used in the computations.  However, for the parameter
+\eqn{\nu}{} of the models \code{"RMbessel"}, \code{"RMmatern"} and
+\code{"RMwhittle"} \eqn{\partial \gamma/ \partial \nu}{} is evaluated
+numerically by the function \code{numericDeriv()}, and this results in
+an increase in computing time when \eqn{\nu}{} is estimated.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  Prediction
+
+\subsection{Prediction}\label{sec:intro-prediction}
+ 
+Robust plug-in external drift point kriging predictions 
+can be computed for an unsampled location 
+\eqn{\mbox{\boldmath$s$\unboldmath}_0}{}
+from the covariates
+\eqn{\mbox{\boldmath$x$\unboldmath}(\mbox{\boldmath$s$\unboldmath}_0)}{},
+the estimated parameters 
+\eqn{\widehat{\mbox{\boldmath$\beta$\unboldmath}}}{},
+\eqn{\widehat{\mbox{\boldmath$\theta$\unboldmath}}}{}
+and the predicted random effects
+\eqn{\widehat{\mbox{\boldmath$B$\unboldmath}}}{}
+by
+%
+\begin{equation}\label{eq:robust-edk}
+      \widehat{Y}(\mbox{\boldmath$s$\unboldmath}_0) = \widehat{Z}(\mbox{\boldmath$s$\unboldmath}_0) = 
+      \mbox{\boldmath$x$\unboldmath}(\mbox{\boldmath$s$\unboldmath}_0)^\mathrm{T}
+      \widehat{\mbox{\boldmath$\beta$\unboldmath}} + 
+      \mbox{\boldmath$\gamma$\unboldmath}^\mathrm{T}_{\widehat{\theta}}(\mbox{\boldmath$s$\unboldmath}_0)
+      \mbox{\boldmath$\Gamma$\unboldmath}^{-1}_{\widehat{\theta}}
+      \widehat{\mbox{\boldmath$B$\unboldmath}},
+\end{equation}
+%
+where
+\eqn{\mbox{\boldmath$\Gamma$\unboldmath}_{\widehat{\theta}}}{}
+is the estimated (generalized) covariance matrix of
+\eqn{\mbox{\boldmath$B$\unboldmath}}{} and
+\eqn{\mbox{\boldmath$\gamma$\unboldmath}_{\widehat{\theta}}(\mbox{\boldmath$s$\unboldmath}_0)}{}
+is the vector with the estimated (generalized) covariances between 
+\eqn{\mbox{\boldmath$B$\unboldmath}}{} and
+\eqn{B(\mbox{\boldmath$s$\unboldmath}_0)}{}.
+Kriging variances can be computed as well, based on approximated covariances of 
+\eqn{\widehat{\mbox{\boldmath$B$\unboldmath}}}{} and 
+\eqn{\widehat{\mbox{\boldmath$\beta$\unboldmath}}}{}
+(see \citealp{Kuensch-etal-2011}, and appendices of
+\citealp{Nussbaum-etal-2012,Nussbaum-etal-2014b}, for details).
+
+The package \pkg{georob} provides in addition software for computing
+robust external drift \emph{block} kriging predictions.  The required
+integrals of the (generalized) covariance function are computed by
+functions of the \R{} package \pkg{constrainedKriging}
+\citep{Hofer-Papritz-2011}.
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  Functionality
+
+\subsection{Functionality}\label{sec:intro-functionality}
+For the time being, the functionality of \pkg{georob} is limited 
+to robust geostatistical analyses of \emph{single} response variables. 
+No software is currently available for robust multivariate geostatistical 
+analyses.
+\pkg{georob} offers functions for: 
+\begin{enumerate}
+  
+  \item Robustly fitting a spatial linear model to data that are
+  possibly contaminated by independent errors from a long-tailed
+  distribution by robust REML (see functions \code{georob()} ---
+  which also fits such models efficiently by Gaussian (RE)ML ---
+  \code{profilelogLik()} and \code{control.georob()}).
+  
+  \item Extracting estimated model components (see
+  \code{residuals.georob()},
+  \code{rstandard.georob()}, 
+  %   \code{rstudent.georob()},
+  \code{ranef.georob()}).
+  
+  \item Robustly estimating sample variograms and for fitting
+  variogram model functions to them (see
+  \code{sample.variogram()} and
+  \code{fit.variogram.model()}).
+  
+  \item Model building by forward and backward selection of covariates
+  for the external drift (see \code{waldtest.georob()},
+  \code{step.georob()}, \code{add1.georob()}, \code{drop1.georob()},
+  \code{extractAIC.georob()},  \code{logLik.georob()},
+  \code{deviance.georob()}).  For a robust fit, the log-likelihood is
+  not defined.  The function then computes the (restricted)
+  log-likelihood of an equivalent Gaussian model with heteroscedastic
+  nugget (see \code{deviance.georob()} for details).
+  
+  \item Assessing the goodness-of-fit and predictive power of the
+  model by \var{K}-fold cross-validation (see
+  \code{cv.georob()} and
+  \code{validate.predictions()}).
+  
+  \item Computing robust external drift point and block kriging
+  predictions (see \code{predict.georob()},
+  \code{control.predict.georob()}).
+  
+  \item Unbiased back-transformation of both point and block kriging
+  predictions of log-transformed data to the original scale of the
+  measurements (see \code{lgnpp()}).
+  
+\end{enumerate}
+
+
+
+
+\renewcommand{\\}{}
+
+\clearpage
+
+%% 
+ % Analysis of meuse zinc data
+ %%
+
+\section{Model-based Gaussian analysis of \texttt{zinc}, data set \code{meuse}}\label{sec:meuse}
+
+<<meuse-zinc-load,eval=TRUE,echo=FALSE,eval=FALSE>>=
+if(file.exists("r_meuse_zinc_objects.RData")) load("r_meuse_zinc_objects.RData")
+@
+
+The package \pkg{sp} provides this data set.  According to the help
+page, it ``gives locations and topsoil heavy metal concentrations,
+along with a number of soil and landscape variable at the observation
+locations, collected in a flood plain of the river Meuse, near the
+village of Stein (NL)''. 
+%
+<<meuse-data,eval=TRUE>>=
+data(meuse, package="sp")
+levels(meuse$ffreq) <- paste("ffreq", levels(meuse$ffreq), sep="")
+levels(meuse$soil) <- paste("soil", levels(meuse$soil), sep="")
+str(meuse)
+@
+%
+\citet{Bivand-etal-2013} use the data to illustrate geostatistical
+analyses by the package \pkg{gstat} \citep{Pebesma-2004}.
+%
+We analyse here the data on \code{zinc} in the topsoil (Figure~\ref{fig:meuse}).
+
+\subsection{Exploratory analysis}\label{sec:meuse-zinc-eda}
+
+\bcf
+% 
+\begin{center}
+  \includegraphics[width=0.45\textwidth]{0-overview-zinc-meuse.pdf}
+\end{center}
+% 
+\ecf{Meuse data set: zinc concentration at 155 locations in floodplain
+of river Meuse near Stein (NL) shown in Google Earth\texttrademark.}{meuse}
+% 
+Figure~\ref{fig:meuse} suggests that \code{zinc} concentration depends
+on \code{dist}ance to the river.  We check graphically whether the
+two factors \code{ffreq} (frequency of flooding) and \code{soil}
+(type) also influence \code{zinc}:
+% 
+\bcf
+%
+<<meuse-zinc-eda-plot-1,fig=TRUE,height=4,width=6,eval=TRUE=>>=
+library(lattice)
+palette(trellis.par.get("superpose.symbol")$col)
+plot(zinc~dist, meuse, pch=as.integer(ffreq), col=soil)
+legend("topright", col=c(rep(1, nlevels(meuse$ffreq)), 1:nlevels(meuse$soil)),
+  pch=c(1:nlevels(meuse$ffreq), rep(1, nlevels(meuse$soil))), bty="n",
+  legend=c(levels(meuse$ffreq), levels(meuse$soil)))
+@
+% 
+\ecf{Dependence of \code{zinc} concentration on \code{dist}ance to
+river, frequency of flooding (\code{ffreq}) and \code{soil} type.}{meuse-eda-plot-1}
+% 
+\code{zinc} depends non-linearly on \code{dist} and seems in addition
+to depend on \code{ffreq} (larger concentration at more often flooded
+sites).  Furthermore, the scatter of \code{zinc} for given distance
+increases with decreasing distance (= increasing \code{zinc}
+concentration, heteroscedastic variation).  We use \code{log(zinc)} to
+stabilize the variance:
+% 
+\bcf
+%
+<<meuse-zinc-eda-plot-2,fig=TRUE,height=4,width=6,eval=TRUE=>>=
+xyplot(log(zinc)~dist | ffreq, meuse, groups=soil, panel=function(x, y, ...){
+    panel.xyplot(x, y, ...)
+    panel.loess(x, y, ...)
+  }, auto.key=TRUE)
+@
+%
+\ecf{Dependence of \code{zinc} on \code{dist}ance to river, frequency
+of flooding (\code{ffreq}) and \code{soil} type.}{meuse-eda-plot-2}
+%
+The relation \code{log(zinc)\~{}dist} is still non-linear, hence we
+transform \code{dist} by $\sqrt{\;\;}$:
+% 
+\bcf
+%
+<<meuse-zinc-eda-plot-3,fig=TRUE,height=4,width=6,eval=TRUE=>>=
+xyplot(log(zinc)~sqrt(dist) | ffreq, meuse, groups=soil, panel=function(x, y, ...){
+    panel.xyplot(x, y, ...)
+    panel.loess(x, y, ...)
+    panel.lmline(x, y, lty="dashed", ...)
+  }, auto.key=TRUE)
+@
+%
+\ecf{Dependence of \code{zinc} concentration on \code{dist}ance to
+river, frequency of flooding (\code{ffreq}) and \code{soil} type.}{meuse-eda-plot-3}
+%
+which approximately linearizes the relation.
+
+\smallskip
+
+The slopes of the regression lines \code{log(zinc)\~{}sqrt(dist)} are
+about the same for all levels of \code{ffreq}.  But the intercept of
+\code{ffreq1} differs from the intercepts of the other levels.  Hence,
+as an initial drift model we use
+%
+<<meuse-zinc-lm,eval=TRUE>>=
+r.lm <- lm(log(zinc)~sqrt(dist)+ffreq, meuse)
+summary(r.lm)
+@
+%
+
+The residual diagnostic plots
+%
+\bcf
+%
+<<meuse-zinc-lm-resdiag,fig=TRUE,height=5,width=6,eval=TRUE=>>=
+op <- par(mfrow=c(2, 2)); plot(r.lm); par(op)
+@
+%
+\ecf{Residual diagnostic plots for linear drift model
+\code{log(zinc)\~{}sqrt(dist)+ffreq}.}{meuse-zinc-lm-resdiag}
+%
+do not show violations of modelling assumptions.
+
+\smallskip
+
+Next, we compute the sample variogram of the residuals for the 4
+directions N-S, NE-SW, E-W, SE-NW by the methods-of-moments estimator:
+%
+\bcf
+%
+<<meuse-zinc-lm-res-sv-1,fig=TRUE,width=6,height=4,results=hide,eval=TRUE>>=
+library(georob)
+plot(sample.variogram(residuals(r.lm), locations=meuse[, c("x","y")],
+  lag.dist.def=100, max.lag=2000, xy.angle.def=c(0, 22.5, 67.5, 112.5, 157.5, 180),
+  estimator="matheron"), type="l",
+  main="sample variogram of residuals log(zinc)~sqrt(dist)+ffreq")
+@
+%
+\ecf{Direction-dependent sample variogram of regression residuals of
+\code{log(zinc)\~{}sqrt(dist)+ffreq}.}{meuse-zinc-lm-res-sv-1}
+%
+The residuals appear to be spatially dependent.  For the short lags
+there is no clear dependence on direction, hence, we assume that
+auto-correlation is isotropic.  
+
+To complete the exploratory modelling exercise, we compute the
+direction-indepdendent sample variogram and fit a spherical variogram
+model by weighted non-linear least squares (using Cressie's weights)
+%
+\bcf
+%
+<<meuse-zinc-lm-res-sv-2,fig=TRUE,width=6,height=4,results=hide,eval=TRUE>>=
+library(georob)
+plot(r.sv <- sample.variogram(residuals(r.lm), locations=meuse[, c("x","y")],
+  lag.dist.def=100, max.lag=2000, 
+  estimator="matheron"), type="l",
+  main="sample variogram of residuals log(zinc)~sqrt(dist)+ffreq")
+lines(r.sv.spher <- fit.variogram.model(r.sv, variogram.mode="RMspheric",
+  param=c(variance=0.1, nugget=0.05, scale=1000)))
+@
+%
+\ecf{Sample variogram of regression residuals of
+\code{log(zinc)\~{}sqrt(dist)+ffreq} along with fitted spherical
+variogram function.}{meuse-zinc-lm-res-sv-2}
+%
+and output the fitted variogram parameters
+%
+<<meuse-zinc-lm-res-spher,eval=TRUE>>=
+summary(r.sv.spher)
+@
+
+
+\clearpage
+
+%%%%%%%%%%%%%%%%%%%%%%%%%
+% fitting model by robust REML
+
+\subsection{Fitting  a spatial linear model by Gaussian (RE)ML}\label{sec:meuse-zinc-modelfit}
+
+We fit the model that we developed in the exploratory analysis now by
+Gaussian REML:
+%
+<<meuse-zinc-georob-reml>>=
+r.georob.m0.spher.reml <- georob(log(zinc)~sqrt(dist)+ffreq, meuse, locations=~x+y,
+  variogram.model="RMspheric", param=c(variance=0.1, nugget=0.05, scale=1000), 
+  tuning.psi=1000)
+@
+%
+<<meuse-zinc-summary-georob-reml,eval=TRUE>>=
+summary(r.georob.m0.spher.reml)
+@
+%
+The diagnostics at the begin of the \code{summary} output suggest that
+maximization of the restricted log-likelihood by \code{nlminb()} was
+successful.
+%
+Nevertheless, before we interprete the output, we compute the profile
+log-likelihood for the range to see whether the maximization has found
+the global maximum:
+%
+<<meuse-zinc-proflik-reml-scale-1a,eval=FALSE>>=
+r.prfl.m0.spher.reml.scale <- profilelogLik(r.georob.m0.spher.reml,
+  values=data.frame(scale=seq(500, 5000, by=50)))
+@
+%
+<<meuse-zinc-proflik-reml-scale-1b,echo=FALSE>>=
+r.prfl.m0.spher.reml.scale <- profilelogLik(r.georob.m0.spher.reml,
+  values=data.frame(scale=seq(500, 5000, by=50)), ncores=1)
+@
+%
+\bcf
+%
+<<meuse-zinc-proflik-reml-scale-2,fig=TRUE,width=6,height=4,results=hide,eval=TRUE>>=
+plot(loglik~scale, r.prfl.m0.spher.reml.scale, type="l")
+abline(v=r.georob.m0.spher.reml$param["scale"], lty="dashed")
+abline(h=r.georob.m0.spher.reml$loglik - 0.5*qchisq(0.95, 1), lty="dotted")
+@
+%
+\ecf{Restricted profile log-likelihood for range parameter
+(\code{scale}) of spherical variogram (vertical line: estimate of
+\code{scale} returned by \code{georob()}; intersection of horizontal
+line with profile defines a 95\% confidence region for \code{scale}
+based on likelihood ratio test).
+}{meuse-zinc-proflik-reml-scale-2}
+%
+Although the restricted log-likelihood is multimodal~---~which is
+often observed for variogram models with compact support~---~we were
+lucky to find the global maximum because the initial values of the
+variogram parameters were close to the REML estimates.
+%
+Estimates of \code{scale} (range of variogram) and \code{variance}
+(partial sill) are correlated, \code{nugget} and \code{scale}
+less so:
+%
+\bcf
+%
+<<meuse-zinc-proflik-reml-scale-3,fig=TRUE,width=6,height=3,results=hide,eval=TRUE>>=
+op <- par(mfrow=c(1,2), cex=0.66)
+plot(variance~scale, r.prfl.m0.spher.reml.scale, ylim=c(0, max(variance)), type="l")
+plot(nugget~scale, r.prfl.m0.spher.reml.scale, ylim=c(0, max(nugget)), type="l")
+par(op)
+@
+%
+\ecf{Estimates of \code{variance} (partial sill) and \code{nugget} as
+a function of the estimate of the range (\code{scale}) of the
+variogram.}{meuse-zinc-proflik-reml-scale-3}
+%
+
+\smallskip
+
+We now study the \code{summary} output in detail: 
+%
+% The criteria controlling convergence of the maximization can be
+% controlled by the arguments of \code{control.nlminb()}, see
+% section~\ref{sec:control-georob}.  The maximized restricted
+% log-likelihood is equal to -54.6.
+%
+The estimated variogram parameters are reported along with 95\%
+confidence intervals that are computed based on the asympotic normal
+distribution of (RE)ML estimates from the observed Fisher information.
+
+The dependence of \code{log(zinc)} on \code{sqrt(dist)} is highly
+significant, as is the dependence on \code{ffreq}:
+%
+<<meuse-zinc-georob-reml-waldtest-1,eval=TRUE>>=
+waldtest(r.georob.m0.spher.reml, .~.-ffreq)
+@
+%
+We can test equality of all pairs of intercepts
+ by functions of the package \pkg{multcomp}
+%
+<<meuse-zinc-georob-reml-multcomp,eval=TRUE>>=
+library(multcomp)
+summary(glht(r.georob.m0.spher.reml, 
+  linfct = mcp(ffreq = c("ffreq1 - ffreq2 = 0", "ffreq1 - ffreq3 = 0",
+  "ffreq2 - ffreq3 = 0"))))
+@
+%
+As suspected only the intercept of \code{ffreq1} differs from the
+others.
+%
+Adding the interaction
+\code{sqrt(dist):ffreq} does not improve the model:
+%
+<<meuse-zinc-georob-reml-waldtest-2,eval=TRUE>>=
+waldtest(r.georob.m0.spher.reml, .~.+sqrt(dist):ffreq)
+@
+%
+nor does adding \code{soil}:
+%
+<<meuse-zinc-georob-reml-waldtest-3,eval=TRUE>>=
+waldtest(r.georob.m0.spher.reml, .~.+soil)
+@
+
+\smallskip
+
+Drift models may also be build by stepwise covariate selection based
+on AIC, either keeping the variogram parameters fixed (default)
+%
+<<meuse-zinc-georob-reml-step-1,eval=TRUE>>=
+step(r.georob.m0.spher.reml, scope=log(zinc)~ffreq*sqrt(dist)+soil)
+@
+%
+or re-estimating them afresh for each evaluated model
+%
+<<meuse-zinc-georob-reml-step-2,eval=TRUE>>=
+step(r.georob.m0.spher.reml, scope=log(zinc)~ffreq*sqrt(dist)+soil, 
+  fixed.add1.drop1=FALSE)
+@
+%
+which selects the same model.  Note that stepwise covariate
+selection by \code{step.georob()}, \code{add1.georob()} and
+\code{drop1.georob()} requires the \emph{non-restricted}
+log-likelihood.  Before evaluating candidate models, the initial model
+is therefore re-fitted by ML, which can be done by
+%
+<<meuse-zinc-georob-ml>>=
+r.georob.m0.spher.ml <- update(r.georob.m0.spher.reml, 
+  control=control.georob(ml.method="ML"))
+@
+
+<<meuse-zinc-georob-aic,eval=TRUE>>=
+extractAIC(r.georob.m0.spher.reml, REML=TRUE)
+extractAIC(r.georob.m0.spher.ml)
+r.georob.m0.spher.ml
+@
+
+Models can be also compared by cross-validation
+%
+<<meuse-zinc-cv-1,eval=FALSE>>=
+r.cv.m0.spher.reml <- cv(r.georob.m0.spher.reml, seed=3245, lgn=TRUE)
+r.georob.m1.spher.reml <- update(r.georob.m0.spher.reml, .~.-ffreq)
+r.cv.m1.spher.reml <- cv(r.georob.m1.spher.reml, seed=3245, lgn=TRUE)
+@
+%
+<<meuse-zinc-cv-2,echo=FALSE>>=
+r.cv.m0.spher.reml <- cv(r.georob.m0.spher.reml, seed=3245, lgn=TRUE, ncores=1)
+r.georob.m1.spher.reml <- update(r.georob.m0.spher.reml, .~.-ffreq)
+r.cv.m1.spher.reml <- cv(r.georob.m1.spher.reml, seed=3245, lgn=TRUE, ncores=1)
+@
+%
+<<meuse-zinc-cv-summary,eval=TRUE>>=
+summary(r.cv.m0.spher.reml)
+summary(r.cv.m1.spher.reml)
+@
+%
+Note that the argument \code{lng=TRUE} has the effect that the
+cross-validation predictions of a log-transformed response are
+transformed back to the original scale of the measurements.
+%
+%
+\bcf
+%
+<<meuse-zinc-cv-plot,fig=TRUE,width=6,height=7.5,results=hide,eval=TRUE>>=
+op <- par(mfrow=c(3,2))
+plot(r.cv.m1.spher.reml, "sc")
+plot(r.cv.m0.spher.reml, "sc", add=TRUE, col=2) 
+abline(0, 1, lty="dotted")
+legend("topleft", pch=1, col=1:2, bty="n", 
+  legend=c("log(zinc)~sqrt(dist)", "log(zinc)~sqrt(dist)+ffreq"))
+plot(r.cv.m1.spher.reml, "lgn.sc"); plot(r.cv.m0.spher.reml, "lgn.sc", add=TRUE, col=2) 
+abline(0, 1, lty="dotted")
+plot(r.cv.m1.spher.reml, "hist.pit")
+plot(r.cv.m0.spher.reml, "hist.pit", col=2) 
+plot(r.cv.m1.spher.reml, "ecdf.pit")
+plot(r.cv.m0.spher.reml, "ecdf.pit", add=TRUE, col=2)
+abline(0, 1, lty="dotted")
+plot(r.cv.m1.spher.reml, "bs")
+plot(r.cv.m0.spher.reml, add=TRUE, "bs", col=2) 
+par(op)
+@
+%
+\ecf{Diagnostic plots of cross-validation predictions of REML fits of
+models \code{log(zinc)\~{}sqrt(dist)} (blue) and
+\code{log(zinc)\~{}sqrt(dist)+ffreq} (magenta).}{meuse-zinc-cv-plot}
+
+The simpler model gives less precise predictions (larger \code{rmse},
+Brier score and therefore also larger continuous ranked probability
+score \code{crps}), but it models prediction uncertainty better
+\citep[PIT closer to uniform distribution, see section~\ref{sec:cv}
+and][]{Gneiting-etal-2007}.  
+
+We finish modelling by plotting residual diagnostics of the model
+\code{r.georob.m0.spher.reml} and comparing the estimated variogram
+with the ML estimate and the model fitted previously to the sample
+variogram of ordinary least squares (OLS) residuals:
+%
+\bcf%
+<<meuse-zinc-georob-plot,fig=TRUE,width=6,height=5,results=hide,eval=TRUE>>=
+op <- par(mfrow=c(2,2), cex=0.66)
+plot(r.georob.m0.spher.reml, "ta"); abline(h=0, lty="dotted")
+plot(r.georob.m0.spher.reml, "qq.res"); abline(0, 1, lty="dotted")
+plot(r.georob.m0.spher.reml, "qq.ranef"); abline(0, 1, lty="dotted")
+plot(r.georob.m0.spher.reml, lag.dist.def=100, max.lag=2000)
+lines(r.georob.m0.spher.ml, col=2); lines(r.sv.spher, col=3)
+par(op)
+@
+%
+\ecf{Residual diagnostic plots of model
+\code{log(zinc)\~{}sqrt(dist)+ffreq} and spherical variogram estimated
+by REML (blue), ML (magenta) and fit to sample variogram
+(darkgreen).}{meuse-zinc-georob-plot}
+%
+As expected REML estimates larger range and partial sill parameters.
+The diagnostics plots do not reveal serious violations of modelling
+assumptions.
+%
+
+
+\subsection{Computing kriging predictions}\label{sec:lognormal-edk}
+
+\subsubsection{Lognormal point kriging}\label{sec:meuse-point-kriging}
+
+The data set \code{meuse.grid} (provided also by package \pkg{sp})
+contains the covariates
+%
+<<meuse-zinc-meuse-grid,eval=TRUE>>=
+data(meuse.grid)
+levels(meuse.grid$ffreq) <- paste("ffreq", levels(meuse.grid$ffreq), sep="")
+levels(meuse.grid$soil) <- paste("soil", levels(meuse.grid$soil), sep="")
+coordinates(meuse.grid) <- ~x+y
+gridded(meuse.grid) <- TRUE
+@
+%
+for computing kriging predictions of \code{log(zinc)} and transforming
+them back to the original scale of the measurements by
+%
+<<meuse-zinc-meuse-point-kriging,eval=TRUE>>=
+r.pk <- predict(r.georob.m0.spher.reml, newdata=meuse.grid,
+  control=control.predict.georob(extended.output=TRUE))
+r.pk <- lgnpp(r.pk)
+@
+%
+<<meuse-zinc-meuse-point-kriging-lgn,eval=TRUE>>=
+str(r.pk)
+@
+%
+Note that 
+\begin{itemize}
+  \item \code{meuse.grid} was converted to a
+  \code{SpatialPixelsDataFrame} object prior to kriging.
+
+
+  \item The argument
+  \code{control=control.predict.georob(extended.output=TRUE)} of
+  \code{predict.georob()} has the effect that all items required for
+  the back-transformation are computed.
+  
+  \item The variables \code{lgn.{\itshape xxx}} in \code{r.pk} contain
+  the back-transformed prediction items.
+\end{itemize}
+
+Finally, the function \code{spplot()} (package \pkg{sp}) allows to
+easily plot prediction results:
+%
+\bcf[1]
+%
+<<meuse-zinc-point-kriging-plot,fig=TRUE,width=9,height=3.5,results=hide,eval=TRUE>>=
+brks <- c(25, 50, 75, 100, 150, 200, seq(500, 3500,by=500))
+pred <- spplot(r.pk, zcol="lgn.pred", at=brks, main="prediction")
+lwr <- spplot(r.pk, zcol="lgn.lower", at=brks, main="lower bound 95% PI")
+upr <- spplot(r.pk, zcol="lgn.upper", at=brks, main="upper bound 95% PI")
+plot(pred, position=c(0, 0, 1/3, 1), more=TRUE)
+plot(lwr, position=c(1/3, 0, 2/3, 1), more=TRUE)
+plot(upr, position=c(2/3, 0, 1, 1), more=FALSE)
+@ 
+%
+\ecf{Lognormal point kriging prediction of \code{zinc} (left:
+prediction; middle and right: lower and upper bounds of pointwise 95\%
+prediction intervals).}{meuse-zinc-point-kriging-plot}
+%
+
+\subsubsection{Lognormal block kriging}\label{sec:meuse-block-kriging}
+
+If \code{newdata} is a \code{SpatialPolygonsDataFrame} then
+\code{predict.georob()} computes block kriging predictions.  We
+illustrate this here with the \code{SpatialPolygonsDataFrame}
+\code{meuse.blocks} that is provided by the package
+\pkg{constrainedKriging}:
+%
+<<meuse-zinc-block-kriging,eval=TRUE>>=
+data(meuse.blocks, package="constrainedKriging")
+str(meuse.blocks, max=2)
+@
+%
+\code{meuse.blocks} contains  \code{dist} as only covariate for the
+blocks, therefore, we use the model \code{log(zinc)\~{}sqrt(dist)} for
+computing the block kriging predictions of \code{log(zinc)}:
+%
+<<meuse-zinc-meuse-block-kriging-1a,eval=FALSE>>=
+r.bk <- predict(r.georob.m1.spher.reml, newdata=meuse.blocks,
+  control=control.predict.georob(extended.output=TRUE, pwidth=25, pheight=25, mmax=25))
+@
+%
+<<meuse-zinc-meuse-block-kriging-1b,echo=FALSE>>=
+r.bk <- predict(r.georob.m1.spher.reml, newdata=meuse.blocks,
+  control=control.predict.georob(extended.output=TRUE, pwidth=25, pheight=25))
+@
+%
+and transform the predictions back by the approximately unbiased
+back-transformation proposed by \citet{Cressie-2006} (see
+section~\ref{eq:spatial-covariance-covariates}):
+%
+<<meuse-zinc-meuse-block-kriging-2>>=
+r.bk <- lgnpp(r.bk, newdata=meuse.grid)
+@
+%
+Note the following points:
+\begin{itemize}
+  \item \code{pwidth} and \code{pheight} are the dimensions of the
+  pixels used for efficiently computing ``block-block-'' and
+  ``point-block- averages'' of the covariance function, see
+  section~\ref{sec:block-kriging}).
+  
+  \item \code{mmax} controls parallelization when computing kriging
+  predictions, see
+  section~\ref{sec:kriging-parallelized-computations}.
+
+  \item \code{newdata} is used to pass point support covariates to
+  \code{lgnpp()}, from which the spatial covariances of the
+  covariates, needed for the back-transformation, are computed,
+  \citep[see equation~\ref{eq:spatial-covariance-covariates}
+  and][appendix~C]{Cressie-2006}.
+\end{itemize}
+
+We display the prediction results again by \code{spplot()}:
+%
+\bcf[1]
+%
+<<meuse-zinc-block-kriging-plot,fig=TRUE,width=9,height=3.5,results=hide,eval=TRUE>>=
+brks <- c(25, 50, 75, 100, 150, 200, seq(500, 3500,by=500))
+pred <- spplot(r.bk, zcol="lgn.pred", at=brks, main="prediction")
+lwr <- spplot(r.bk, zcol="lgn.lower", at=brks, main="lower bound 95% PI")
+upr <- spplot(r.bk, zcol="lgn.upper", at=brks, main="upper bound 95% PI")
+plot(pred, position=c(0, 0, 1/3, 1), more=TRUE)
+plot(lwr, position=c(1/3, 0, 2/3, 1), more=TRUE)
+plot(upr, position=c(2/3, 0, 1, 1), more=FALSE)
+@ 
+%
+\ecf{Lognormal block kriging prediction of \code{zinc} computed under
+the assumption of permanence of log-normality (left: prediction; middle
+and right: lower and upper bounds of pointwise 95\% prediction
+intervals).}{meuse-zinc-block-kriging-plot}
+%
+
+The assumption that both point values and block means follow
+log-normal laws~---~which strictly cannot hold~---~does not much
+impair the efficiency of the back-transformation as long as the blocks
+are small \citep{Cressie-2006,Hofer-etal-2013}.  However, for
+larger blocks, one should use the optimal predictor obtained by
+\emph{averaging back-transtransformed point predictions}.  \code{lgnpp()}
+allows to compute this as well.  We illustrate this here by predicting
+the spatial mean over two larger square blocks:
+%
+\bcf[0.4]
+<<meuse-zinc-block-kriging-blocks,fig=TRUE,width=4,height=5,results=hide,eval=TRUE>>=
+## define blocks
+tmp <- data.frame(x=c(179100, 179900), y=c(330200, 331000))
+blks <- SpatialPolygons(sapply(1:nrow(tmp), function(i, x){  
+  Polygons(list(Polygon(t(x[,i] + 400*t(cbind(c(-1, 1, 1, -1, -1), c(-1, -1, 1, 1, -1)))),
+  hole=FALSE)), ID=paste("block", i, sep=""))}, x=t(tmp)))
+## compute spatial mean of sqrt(dist) for blocks
+ind <- over(as(meuse.grid, "SpatialPoints"), blks)
+tmp <- tapply(sqrt(meuse.grid$dist), ind, mean)
+names(tmp) <- paste("block", 1:length(tmp), sep="")
+## create SpatialPolygonsDataFrame
+blks <- SpatialPolygonsDataFrame(blks, data=data.frame(dist=tmp^2))
+## and plot
+plot(as(meuse.grid, "SpatialPoints"), axes=TRUE)
+plot(geometry(blks), add=TRUE, col=2)
+@
+%
+\ecf{Point prediction grid and position of 2 target blocks for computing
+optimal log-normal block predictor.}{meuse-zinc-block-kriging-blocks}
+%
+
+We first compute block-kriging predictions of \code{log(zinc)} and
+back-transform them as before under the permanence of log-normality
+assumption:
+%
+<<meuse-zinc-block-kriging-3>>=
+r.blks <- predict(r.georob.m1.spher.reml, newdata=blks, 
+  control=control.predict.georob(extended.output=TRUE, pwidth=800, pheight=800))
+r.blks <- lgnpp(r.blks, newdata=meuse.grid)
+@
+%
+Note that we set \code{pwidth} and \code{pheight} equal to the
+dimension of the blocks.  This is best for rectangular blocks
+because the blocks are then represented by a single pixel, which
+reduces computations.
+
+Next we use \code{lgnpp()} for computing the optimal log-normal block
+predictions.  As we need the full covariance matrix of the point
+prediction errors for this we must re-compute the points predictions
+of \code{log(zinc)} with the additional \code{control} argument
+\code{full.covmat=TRUE}:
+%
+<<<meuse-zinc-block-kriging-4a>>=
+t.pk <- predict(r.georob.m0.spher.reml, newdata=as.data.frame(meuse.grid),
+  control=control.predict.georob(extended.output=TRUE, full.covmat=TRUE))
+str(t.pk)
+@
+%
+\begin{Schunk}
+\begin{Soutput}
+List of 5
+ $ pred           :'data.frame':	3103 obs. of  10 variables:
+  ..$ x              : num [1:3103] 181180 181140 181180 181220 181100 ...
+  ..$ y              : num [1:3103] 333740 333700 333700 333700 333660 ...
+  ..$ pred           : num [1:3103] 7.05 7.06 6.8 6.57 7.07 ...
+  ..$ se             : num [1:3103] 0.277 0.248 0.252 0.259 0.212 ...
+  ..$ lower          : num [1:3103] 6.51 6.57 6.3 6.06 6.65 ...
+  ..$ upper          : num [1:3103] 7.59 7.54 7.29 7.07 7.48 ...
+  ..$ trend          : num [1:3103] 7.09 7.09 6.85 6.64 7.09 ...
+  ..$ var.pred       : num [1:3103] 0.0779 0.0899 0.0822 0.0757 0.1027 ...
+  ..$ cov.pred.target: num [1:3103] 0.0681 0.0818 0.0768 0.0717 0.0963 ...
+  ..$ var.target     : num [1:3103] 0.135 0.135 0.135 0.135 0.135 ...
+  ..- attr(*, "variogram.model")= chr "RMspheric"
+  ..- attr(*, "param")= Named num [1:4] 0.1349 0 0.0551 876.5812
+  .. ..- attr(*, "names")= chr [1:4] "variance" "snugget" "nugget" "scale"
+  ..- attr(*, "psi.func")= chr "logistic"
+  ..- attr(*, "tuning.psi")= num 1000
+  ..- attr(*, "type")= chr "signal"
+ $ mse.pred       : num [1:3103, 1:3103] 0.0766 0.0565 0.0606 0.0583 0.0373 ...
+ $ var.pred       : num [1:3103, 1:3103] 0.0779 0.0833 0.0794 0.0748 0.0878 ...
+ $ cov.pred.target: num [1:3103, 1:3103] 0.0681 0.0736 0.0714 0.0684 0.0781 ...
+ $ var.target     : num [1:3103, 1:3103] 0.135 0.122 0.126 0.122 0.109 ...
+\end{Soutput}
+\end{Schunk}
+The predictions are now stored in the list component \code{pred}, and
+list components \code{mse.pred}, \code{var.pred}, \code{var.target}
+and \code{cov.pred.target} store the covariance matrices of prediction
+errors, predictions, prediction targets and the covariances between
+predictions and targets.
+
+Then we back-transform the predictions and
+average them separately for the two blocks:
+%
+<<meuse-zinc-block-kriging-5>>=
+## index defining to which block the points predictions belong
+ind <- over(geometry(meuse.grid), geometry(blks))
+ind <- tapply(1:nrow(meuse.grid), factor(ind), function(x) x)
+## select point predictions in block and predict block average
+tmp <- t(sapply(ind, function(i, x){
+  x$pred <- x$pred[i,]
+  x$mse.pred <- x$mse.pred[i,i]
+  x$var.pred <- x$var.pred[i,i]
+  x$cov.pred.target <- x$cov.pred.target[i,i]
+  x$var.target <- x$var.target[i,i]
+  res <- lgnpp(x, is.block=TRUE)
+  res
+  }, x=t.pk))
+colnames(tmp) <- c("opt.pred", "opt.se")
+r.blks <- cbind( r.blks, tmp)
+@
+%
+<<meuse-zinc-block-kriging-6,eval=TRUE>>=
+r.blks@data[, c("lgn.pred", "opt.pred", "lgn.se", "opt.se")]
+@
+%
+Both the predictions and the prediction standard errors differ
+somewhat for \code{block1}.  Based on the \citeauthor{Cressie-2006}'s
+simulation study, we prefer the optimal prediction results.
+
+
+
+
+<<meuse-zinc-cleanup-1,echo=FALSE,eval=TRUE>>=
+palette("default")
+@
+
+<<meuse-zinc-cleanup-2,echo=FALSE,eval=FALSE>>=
+save(list=ls(pattern="^r\\."), file="r_meuse_zinc_objects.RData")
+rm(list=ls(pattern="^r\\."))
+@
+
+
+\clearpage
+
+
+%% 
+ % Analysis of coalash data
+ %%
+
+\section{Robust analysis of \code{coalash} data}\label{sec:coalash}
+
+<<ash-load,eval=TRUE,echo=FALSE,eval=FALSE>>=
+if(file.exists("r_coalash_objects.RData")) load("r_coalash_objects.RData")
+@
+This data set reports measurements of ash content [\% mass] in a
+coal seam in Pennsylvania \citep{Gomez-Hazen-1970}.  A subset of the
+data was analysed by \citet[section~2.2]{Cressie-1993a}
+to illustrate techniques for robust exploratory analysis of
+geostatistical data and for robust estimation of the sample variogram.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%
+% exploratory analysis
+
+\subsection{Exploratory analysis}\label{sec:coalash-eda}
+
+The subset of the data analyzed by Cressie is available from the R package
+\pkg{gstat} \citep{Pebesma-2004} as data frame \code{coalash}:
+%
+<<ash-data,eval=TRUE>>=
+data(coalash, package="gstat")
+summary(coalash)
+@
+%
+The coordinates are given as column and row numbers,  the spacing
+between columns and rows is 2\,500~ft.
+%
+We display the spatial distribution of ash content by a ``bubble plot''
+of the centred data:
+%
+\bcf[0.55]
+%
+<<ash-centred-bubbleplot1,fig=TRUE,height=6,width=4,eval=TRUE>>=
+plot(y~x, coalash, cex=sqrt(abs(coalash - median(coalash))), 
+  col=c("blue", NA, "red")[sign(coalash - median(coalash))+2], asp=1,
+  main="coalash - median(coalash)", ylab="northing", xlab="easting")
+points(y~x, coalash, subset=c(15, 50, 63, 73, 88, 111), pch=4); grid()
+legend("topleft", pch=1, col=c("blue", "red"), legend=c("< 0", "> 0"), bty="n")
+@
+%
+\ecf{``Bubble plot'' of coalash data centred by median (area of
+symbols $\propto$ moduli of centred data; $\times$: observation identified by
+\citeauthor{Cressie-1993a} as outlier).}{coalash-bubble-centred-data}
+%
+%
+Ash content tends to decrease from west to east and is about
+constant along the north-south direction:
+%
+
+\clearpage
+
+\bcf
+%
+<<ash-coords-scatterplot,fig=TRUE,width=6,height=3,eval=TRUE>>=
+op <- par(mfrow=c(1,2))
+with(coalash, scatter.smooth(x, coalash, main="coalash ~ x"))
+with(coalash, scatter.smooth(y, coalash, main="coalash ~ y"))
+par(op)
+@
+%
+\ecf{Coalash data plotted vs easting and
+northing.}{coalash-trend}
+%
+%
+There is a distinct outlier at position (5,6), other observations do
+not clearly stand out from the marginal distribution:
+%
+\bcf[0.4]
+%
+<<ash-centerd-qqnorm,fig=TRUE,height=4,width=4,eval=TRUE>>=
+qqnorm(coalash$coalash)
+@
+%
+\ecf{Normal QQ plot of coalash data.}{coalash-normalqq}
+%
+%
+\citeauthor{Cressie-1993a} identified the observations at locations
+(7,3), (8,6), (6,8), (3,13) and (5,19) as \emph{local outliers}
+(marked by $\times$ in Figure~\ref{fig:coalash-bubble-centred-data})
+and the observations of row 2 as ``pocket of non-stationarity''.  One
+could add to this list the observation at location (12,23), which is
+clearly larger than the values at adjacent locations.
+
+\bigskip
+
+% exploratory model fit by lmrob
+
+To further explore the data we fit a linear function of the
+coordinates as drift to the data by a robust MM-estimator:
+%
+<<ash-lmrob,eval=TRUE>>=
+library(robustbase)
+r.lmrob <- lmrob(coalash~x+y, coalash)
+summary(r.lmrob)
+@
+%
+and check the fitted model by residual diagnostic plots:
+%
+\bcf
+%
+<<ash-diag-lmrob,fig=TRUE,width=6,height=5,eval=TRUE>>=
+op <- par(mfrow=c(2,2))
+plot(r.lmrob, which=c(1:2, 4:5))
+par(op)
+@
+%
+\ecf{Residual diagnostic plots for robust fit of the linear drift
+model for coalash data.}{coalash-resdiag-lmrob}
+
+Observations (5,6), (8,6) and (6,8) (Indices: 50, 111, 73) are
+labelled as outliers.  Their
+robustness weights,
+%
+\[
+w_{i}= \frac{
+\psi_{c}\big(\widehat{r}_{i}/\textrm{se}(\widehat{r}_{i})\big)}{\widehat{r}_{i}/\textrm{se}(\widehat{r}_{i})},
+\]
+%
+---~$\widehat{r}_{i}$ are the regression residuals and
+$\textrm{se}(\widehat{r}_{i})$ denote their standard errors~---~are
+equal to $\approx$~0, 0.16 and 0.26, respectively.
+
+\bigskip
+
+% sample variogram of lmrob residuals
+
+Next, we compute the isotropic sample variogram of the \code{lmrob}
+residuals by various (robust) estimators \citep[e.g.][]{Lark-2000a}:
+%
+\bcf
+%
+<<ash-sv-res-lmrob-iso,fig=TRUE,width=6,height=4,results=hide,eval=TRUE>>=
+library(georob)
+plot(sample.variogram(residuals(r.lmrob), locations=coalash[, c("x","y")],
+  lag.dist.def=1, max.lag=10, estimator="matheron"), pch=1, col="black",
+  main="sample variogram of residuals coalash~x+y")
+plot(sample.variogram(residuals(r.lmrob), locations=coalash[, c("x","y")],
+  lag.dist.def=1, estimator="qn"), pch=2, col="blue", add=TRUE)
+plot(sample.variogram(residuals(r.lmrob), locations=coalash[, c("x","y")],
+  lag.dist.def=1, estimator="ch"), pch=3, col="cyan", add=TRUE)
+plot(sample.variogram(residuals(r.lmrob), locations=coalash[, c("x","y")],
+  lag.dist.def=1, estimator="mad"), pch=4, col="orange", add=TRUE)
+legend("bottomright", pch=1:4, col=c("black", "blue", "cyan", "orange"),
+  legend=paste(c("method-of-moments", "Qn", "Cressie-Hawkins", "MAD"), 
+  "estimator"), bty="n")
+@
+%
+\ecf{(Non-)robustly estimated isotropic sample variogram of robust
+regression residuals of coalash data.}{coalash-isotropic-samplevariogram-lmrob}
+%
+%
+Spatial dependence of the residuals is very weak, the outliers clearly
+distort the method-of-moment estimate, but the various robust estimates
+hardly differ.
+
+\smallskip
+
+To check whether drift removal accounted for directional effects we
+compute the sample variogram separately for the N-S and W-E directions
+(only Qn-estimator):
+%
+\bcf
+%
+<<ash-sv-res-lmrob-aniso,fig=TRUE,width=6,height=4,results=hide,eval=TRUE>>=
+r.sv <- sample.variogram(residuals(r.lmrob), locations=coalash[, c("x","y")],
+  lag.dist.def=1, max.lag=10, xy.angle.def=c(-0.1, 0.1, 89.9, 90.1),
+  estimator="qn")
+plot(gamma~lag.dist, r.sv, subset=lag.x < 1.e-6, xlim=c(0, 10), ylim=c(0, 1.4),
+  pch=1, col="blue", 
+  main="directional sample variogram of residuals (Qn-estimator)")
+points(gamma~lag.dist, r.sv, subset=lag.y < 1.e-6, pch=3, col="orange")
+legend("bottomright", pch=c(1, 3), col=c("blue", "orange"), 
+  legend=c("N-S direction", "W-E direction"), bty="n")
+@
+%
+\ecf{Direction-dependent sample variogram of robust regression
+residuals of coalash data
+($\mathrm{Q_{n}}$-estimate).}{coalash-anisotropic-samplevariogram-lmrob}
+%
+There is no indication that residual auto-correlation depends on
+direction.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%
+% fitting model by robust REML
+
+\subsection{Fitting  a spatial linear model robust REML}\label{sec:coalash-modelfit}
+
+Based on the results of the exploratory analysis, we fit a model with a
+linear drift in the coordinates and an isotropic exponential variogram
+to the data by robust REML. By default, \code{georob()} uses a
+scaled and shifted ``logistic'' $\psi_{c}$-function 
+\[ 
+  \psi_{c}(x) = \tanh(x/c)
+\]
+with a tuning constant $c=2$ for robust REML, but the
+popular Huber function and a redescending $\psi$-function based on the
+$t$-distribution are also implemented (see section~\ref{sec:control-georob}):
+%
+<<ash-georob-robust-1>>=
+r.georob.m0.exp.c2 <- georob(coalash~x+y, coalash, locations=~x+y, 
+  variogram.model="RMexp", param=c(variance=0.1, nugget=0.9, scale=1))
+@
+%
+<<ash-summary-georob-robust-1,eval=TRUE>>=
+summary(r.georob.m0.exp.c2)
+@
+%
+The diagnostics at the begin of the \code{summary} output report that
+\code{nleqslv()} found the roots of the estimating equations of the
+variogram parameters (reported numbers are function values evaluated
+at the root).  The criteria controlling convergence of the
+root-finding algorithm can be controlled by the arguments of
+\code{control.nleqslv()}, see section~\ref{sec:control-georob}.
+%
+
+\smallskip
+
+The drift coefficients confirm that there is no clear change of ash
+content along the N-S direction.  A quadratic drift
+function does not fit the data any better:
+%
+<<ash-waldtest-quadratic-robust,eval=TRUE>>=
+waldtest(update(r.georob.m0.exp.c2, .~.+I(x^2)+I(y^2)+I(x*y)), r.georob.m0.exp.c2)
+@
+%
+We simplify the drift model by dropping $y$:
+%
+<<ash-georob-robust-2>>=
+r.georob.m1.exp.c2 <- update(r.georob.m0.exp.c2, .~.-y)
+@
+% %
+% <<ash-results-save-2,echo=FALSE>>=
+% <<ash-results-save-1>>
+% @
+% %
+<<ash-summary-georob-robust-2,eval=TRUE>>=
+r.georob.m1.exp.c2
+@
+%
+and plot the robust REML estimate of the variogram along with a robust
+estimate of the sample variogram of the robust REML regression residuals:
+%
+\bcf
+%
+<<ash-georob-robust-3,fig=TRUE,width=6,height=4,eval=TRUE>>=
+plot(r.georob.m1.exp.c2, lag.dist.def=1, max.lag=10, estimator="qn", col="blue")
+@
+%
+\ecf{Robust REML estimate of exponential
+variogram).}{coalasl-robust-reml-variogram}
+%
+As already seen before, residual auto-correlation is weak.
+%
+% residual diagnostics
+
+\smallskip
+
+Next, we check the fit of the model by residual diagnostic plots:
+%
+\bcf[0.9]
+%
+<<ash-diag-georob-robust-2-1,fig=TRUE,width=6.64,height=6.64,eval=TRUE>>=
+op <- par(mfrow=c(2,2))
+plot(r.georob.m1.exp.c2, what="ta")
+plot(r.georob.m1.exp.c2, what="sl")
+plot(r.georob.m1.exp.c2, what="qq.res"); abline(0, 1, lty="dotted")
+plot(r.georob.m1.exp.c2, what="qq.ranef"); abline(0, 1, lty="dotted")
+par(op)
+@
+%
+\ecf{Residual diagnostic plots for robust REML fit of coalash
+data.}{coalash-resdiag-robust-reml}
+%
+Note that the \code{plot} method for class \code{georob} displays for
+\code{what = "ta"} or \code{what = "sl"} the regression residuals $y_{i}
+-\mb{x}(\mb{s}_{i}) \widehat{\mb{\beta}}$, for \code{what = "qq.res"}
+the standardized errors $\widehat{\varepsilon}_{i} /
+\widehat{\mathrm{se}}(\widehat{\varepsilon}_{i}) = \big(y_{i}
+-\mb{x}(\mb{s}_{i}) \widehat{\mb{\beta}} - \widehat{B}(\mb{s}_{i})
+\big) / \widehat{\mathrm{se}}(\widehat{\varepsilon}_{i})$ and for
+\code{what = "qq.ranef"} the standardized random effects $
+\widehat{B}(\mb{s}_{i})/\widehat{\mathrm{se}}(
+\widehat{B}(\mb{s}_{i}))$.
+
+\smallskip
+
+The robustness weights of the outliers identified so far are equal to
+%
+<<ash-rw-georob-robust-2-1,eval=TRUE>>=
+round(cbind(coalash[, c("x", "y")], 
+  rweights=r.georob.m1.exp.c2[["rweights"]])[c(15, 50, 63, 73, 88, 111, 192),],
+  2)
+@
+%
+In addition, the observations
+%
+<<ash-rw-georob-robust-2-1,eval=TRUE>>=
+sel <- r.georob.m1.exp.c2[["rweights"]] <= 0.8 & 
+  !1:nrow(coalash) %in% c(15, 50, 63, 73, 88, 111, 192)
+round(cbind(coalash[, c("x", "y")], 
+  rweights=r.georob.m1.exp.c2[["rweights"]])[sel,],
+  2)
+@
+%
+have weights $\leq 0.8$.  All these outliers are marked in
+Figure~\ref{fig:coalash-bubble-residuals-robust-reml} by $\times$:
+%
+\bcf[0.55]
+%
+<<ash-diag-georob-robust-2-2,fig=TRUE,height=6,width=4,eval=TRUE>>=
+plot(y~x, coalash, cex=sqrt(abs(residuals(r.georob.m1.exp.c2))), 
+  col=c("blue", NA, "red")[sign(residuals(r.georob.m1.exp.c2))+2], asp=1,
+  main="estimated errors robust REML", xlab="northing", ylab="easting")
+points(y~x, coalash, subset=r.georob.m1.exp.c2[["rweights"]]<=0.8, pch=4); grid()
+legend("topleft", pch=1, col=c("blue", "red"), legend=c("< 0", "> 0"), bty="n")
+@
+%
+\ecf{``Bubble plot'' of independent errors $\widehat{\varepsilon}$ estimated by
+robust REML (area of symbols $\propto$ moduli of residuals; $\times$: observation
+with robustness weights $w_{i} \leq 0.8$).}{coalash-bubble-residuals-robust-reml}
+%
+Comparison with Figure~\ref{fig:coalash-bubble-centred-data} reveals
+that the 5 additional mild outliers were visible in this plot as well,
+but were not identified by Cressie's exploratory analysis.
+
+% comparison Gaussian vs robust REML fit
+
+\smallskip
+
+For comparison, we fit the same model by Gaussian REML by setting the
+tuning constant of the $\psi_c$-function $c \geq 1000$:
+%
+<<ash-georob-gaussian-1>>=
+r.georob.m1.exp.c1000 <- update(r.georob.m1.exp.c2, tuning.psi=1000)
+@
+<<ash-georob-summary-gaussian-1,eval=TRUE>>=
+summary(r.georob.m1.exp.c1000)
+@
+% %
+% <<ash-results-save-3,echo=FALSE>>=
+% <<ash-results-save-1>>
+% @
+% %
+and compare the Gaussian and robust REML estimates of the variogram:
+%
+\bcf
+%
+<<ash-georob-gaussian-2,fig=TRUE,width=6,height=4,eval=TRUE>>=
+plot(r.georob.m1.exp.c1000, lag.dist.def=1, max.lag=10, estimator="matheron")
+plot(r.georob.m1.exp.c2, lag.dist.def=1, max.lag=10, estimator="qn", add = TRUE, 
+  col="blue")
+legend("bottomright", lt=1, col=c("black","blue"), 
+  legend =c("Gaussian REML (c=1000)", "robust REML (c=2)"), bty="n")
+@
+%
+\ecf{Gaussian and robust REML estimate of exponential
+variogram.}{coalash-gaussian-robust-reml-variogram}
+%
+% Note that by default for Gaussian REML, \code{georob()} maximizes a
+% restricted profile loglikelihood that only depends on
+% \eqn{\xi=\sigma_{\mathrm{n}}^2/\sigma_Z^2}{}, \eqn{\eta = \sigma_Z^2 /
+% \tau^2} and $\alpha$ with respect to these parameters, and the
+% variance of the signal
+% \eqn{\sigma_Z^2=\sigma_{\mathrm{n}}^2+\sigma^2}{} is estimated by an
+% explicit expression that depends on these parameters
+% \citep[e.g.][p.~113]{Diggle-Ribeiro-2007}, see help page of
+% \code{georob()}.
+%
+The outliers inflate mostly the nugget (by $\approx$ 20~\%) and less
+so the signal variance and range parameter (by $\approx$ 10~\%).  The
+estimated drift coefficients hardly differ.
+
+\smallskip
+
+% \bcf[0.9]
+% %
+% <<ash-georob-diag-gaussian-robust-1,fig=TRUE,width=6.64,height=3.32,eval=TRUE>>=
+% op <- par(mfrow=c(1,2), cex=5/6)
+% plot(r.georob.m1.exp.c1000, what="qq.res"); abline(0, 1, lty="dotted")
+% plot(r.georob.m1.exp.c1000, what="qq.ranef"); abline(0, 1, lty="dotted")
+% @
+% %
+% \ecf{Normal QQ plots of standardized errors and random effects
+% (Gaussian REML).}{coalash-resdiag-1-robust-reml}
+
+Gaussian REML masks the estimated independent errors
+($\widehat{\varepsilon}_{i}$) somewhat at the cost of inflated
+estimates of random effects ($\widehat{B}(\mb{s}_{i})$):
+
+
+\bcf[0.8]
+%
+<<ash-georob-diag-gaussian-robust-2,fig=TRUE,width=6.64,height=3.32,eval=TRUE>>=
+op <- par(mfrow=c(1,2), cex=5/6)
+plot(residuals(r.georob.m1.exp.c2), residuals(r.georob.m1.exp.c1000), 
+  asp = 1, main=expression(paste("Gaussian vs robust ", widehat(epsilon))),
+  xlab=expression(paste("robust ", widehat(epsilon))), 
+  ylab=expression(paste("Gaussian ", widehat(epsilon))))
+abline(0, 1, lty="dotted")
+plot(ranef(r.georob.m1.exp.c2), ranef(r.georob.m1.exp.c1000), 
+  asp = 1, main=expression(paste("Gaussian vs robust ", italic(widehat(B)))),
+  xlab=expression(paste("robust ", italic(widehat(B)))), 
+  ylab=expression(paste("Gaussian ", italic(widehat(B)))))
+abline(0, 1, lty="dotted")
+@
+%
+\ecf{Comparison of estimated errors $\widehat{\varepsilon}_{i}$ and
+random effects $\widehat{B}(\mb{s}_{i})$ for Gaussian and robust REML
+fit of coalash data.}{coalash-resdiag-2-robust-reml}
+
+\smallskip
+
+We compare the Gaussian and robust REML fit by 10-fold cross-validation:
+%
+\begin{Schunk}
+\begin{Sinput}
+> r.cv.georob.m1.exp.c2 <- cv(r.georob.m1.exp.c2, seed=1)
+> r.cv.georob.m1.exp.c1000 <- cv(r.georob.m1.exp.c1000, seed=1)
+\end{Sinput}
+\begin{Soutput}
+Warning message:
+In cv.georob(r.georob.m1.exp.c2, seed = 1, ) :
+  lack of covergence for  1 cross-validation sets
+\end{Soutput}
+\end{Schunk}
+%
+The robustfied estimating equations could not be solved for one
+cross-valiation subset.  This may happen if the initial guesses of the
+variogram parameters are too far away from the root (see
+section~\ref{sec:est-details-initial-values}).  Sometimes it helps
+then to suppress the computation of robust guesses of the variogram
+parameters and to use the robust parameter estimates computed from the
+whole data set as initial values (see argument \code{initial.param} of
+\code{control.georob()} and
+section~\ref{sec:est-details-initial-values}):
+
+<<ash-cv-georob-gaussian-robust-1,eval=FALSE>>=
+r.cv.georob.m1.exp.c2 <- cv(r.georob.m1.exp.c2, seed=1, param=r.georob.m1.exp.c2$param,
+  control=control.georob(initial.param=FALSE))
+r.cv.georob.m1.exp.c1000 <- cv(r.georob.m1.exp.c1000, seed=1)
+@
+% %
+<<ash-cv-georob-gaussian-robust-2,echo=FALSE>>=
+r.cv.georob.m1.exp.c2 <- cv(r.georob.m1.exp.c2, seed=1, param=r.georob.m1.exp.c2$param,
+  control=control.georob(initial.param=FALSE), ncores=1)
+r.cv.georob.m1.exp.c1000 <- cv(r.georob.m1.exp.c1000, seed=1, ncores=1)
+@
+% %
+% <<ash-results-save-3,echo=FALSE>>=
+% <<ash-results-save-1>>
+% @
+% %
+By default, \code{cv.georob()} partitions the data set into 10
+geographically compact subsets of adjacent locations (see argument
+\code{method} of \code{cv.georob()} and section~\ref{sec:cv}):
+%
+\bcf[0.55]
+%
+<<ash-cv-georob-subsets,fig=TRUE,height=6,width=4,eval=TRUE>>=
+plot(y~x, r.cv.georob.m1.exp.c2$pred, asp=1, col=subset, pch=as.integer(subset))
+@
+%
+\ecf{Default method for defining cross-validation subsets by
+\code{kmeans()} using argument \code{method="block"} of
+\code{cv.georob()}.}{coalash-cv-devault-partition}
+
+\smallskip
+
+We compute now summary statistics of the (standardized)
+cross-validation prediction errors for the two model fits (see
+section~\ref{sec:cv}):
+%
+<<ash-summary-cv-georob-gaussian-robust,eval=TRUE>>=
+summary(r.cv.georob.m1.exp.c1000, se=TRUE)
+summary(r.cv.georob.m1.exp.c2, se=TRUE)
+@
+%
+The statistics of cross-validation errors are marginally better for
+the robust fit.
+
+\smallskip
+
+For robust REML, the standard errors of the cross-validation errors
+are likely too small.  This is due to the fact that for the time
+being, the kriging variance of the \emph{response} $Y$ is approximated
+by adding the estimated nugget $\widehat{\tau}^2$ to the kriging
+variance of the signal $Z$.  This approximation likely underestimates
+the mean squared prediction error of the response if the errors come
+from a long-tailed distribution.  Hence, the summary statistics of the
+\emph{standardized prediction errors} (\code{msse, medsse}) should
+be interpreted with caution.  The same is true for the
+continuous-ranked probability score (\code{crps}), which is computed
+under the assumption that the predictive distribution of $Y$ is
+Gaussian even if the errors come from a long-tailed distribution.
+This cannot strictly hold.
+
+\smallskip
+
+For illustration, we nevertheless show here some diagnostics plots of
+criteria of the cross-validation prediction errors that further depend
+on the predictive distributions of the response:
+%
+\bcf[0.9]
+%
+<<ash-diag-cv-georob-gaussian-robust,fig=TRUE,width=6.64,height=9.96,eval=TRUE>>=
+op <- par(mfrow=c(3, 2))
+plot(r.cv.georob.m1.exp.c2, type="ta", col="blue")
+plot(r.cv.georob.m1.exp.c1000, type="ta", col="orange", add=TRUE)
+abline(h=0, lty="dotted")
+legend("topleft", pch=1, col=c("orange", "blue"), legend=c("Gaussian", "robust"), bty="n")
+plot(r.cv.georob.m1.exp.c2, type="qq", col="blue")
+plot(r.cv.georob.m1.exp.c1000, type="qq", col="orange", add=TRUE)
+abline(0, 1, lty="dotted")
+legend("topleft", lty=1, col=c("orange", "blue"), legend=c("Gaussian", "robust"), bty="n")
+plot(r.cv.georob.m1.exp.c2, type="ecdf.pit", col="blue", do.points=FALSE)
+plot(r.cv.georob.m1.exp.c1000, type="ecdf.pit", col="orange", add=TRUE, do.points=FALSE)
+abline(0, 1, lty="dotted")
+legend("topleft", lty=1, col=c("orange", "blue"), legend=c("Gaussian", "robust"), bty="n")
+plot(r.cv.georob.m1.exp.c2, type="bs", col="blue")
+plot(r.cv.georob.m1.exp.c1000, type="bs", col="orange", add=TRUE)
+legend("topright", lty=1, col=c("orange", "blue"), legend=c("Gaussian", "robust"), bty="n")
+plot(r.cv.georob.m1.exp.c1000, type="mc", main="Gaussian REML")
+plot(r.cv.georob.m1.exp.c2, type="mc", main="robust REML")
+par(op)
+@
+%
+\ecf{Diagnostic plots of the standardized cross-validation errors, the
+probability integral transform (PIT), the Brier score and of the
+predictive distributions for Gaussian and robust
+REML.}{coalash-diag-cv-gaussian-robust}
+%
+
+In general, the diagnostics are slightly better for robust than for
+Gaussian REML: The empirical distribution of the probability integral
+transform (PIT) is closer to a uniform distribution, the Brier score
+(BS) is smaller and the average predictive distribution $\bar{F}$ is
+closer to the empirical distribution of the data $\widehat{G}$
+\citep[see section~\ref{sec:cv} and][for more details about the
+interpretation of these plots]{Gneiting-etal-2007}.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%
+% kriging coalash data
+
+\subsection{Computing robust kriging predictions}\label{sec:coalash-kriging}
+
+% point kriging
+
+\subsubsection{Point kriging}\label{sec:coalash-point-kriging}
+
+For point kriging  we must first generate a fine-meshed
+grid of predictions points (optionally with the covariates for the
+drift) that is passed as argument \code{newdata} to
+\code{predict.georob()}.  \code{newdata} can be an customary
+\code{data.frame}, an object of class \code{SpatialPointsDataFrame},
+\code{SpatialPixelsDataFrame} or \code{SpatialGridDataFrame} or
+\code{SpatialPoints}, \code{SpatialPixels} or \code{SpatialGrid}, all
+provided by the package \pkg{sp}.  If \code{newdata} is a
+\code{SpatialPoints}, \code{SpatialPixels} or a
+\code{SpatialGrid} object then the drift model may only use the coordinates
+as covariates (universal kriging), as we do it here.
+%
+<<ash-kriging-grid,eval=TRUE>>=
+coalash.grid <- expand.grid(x=seq(-1, 17, by=0.1),
+  y=seq( -1, 24, by=0.1))
+coordinates( coalash.grid) <- ~x+y  # convert to SpatialPoints
+gridded( coalash.grid) <- TRUE      # convert to SpatialPixels
+fullgrid( coalash.grid) <- TRUE     # convert to SpatialGrid
+str(coalash.grid, max=2)
+@
+%
+
+Computing (robust) plug-in kriging predictions is then straightforward:
+%
+<<ash-pkriging-1,eval=FALSE>>=
+r.pk.m1.exp.c2 <- predict(r.georob.m1.exp.c2, newdata=coalash.grid)
+r.pk.m1.exp.c1000 <- predict(r.georob.m1.exp.c1000, newdata=coalash.grid)
+@
+% %
+<<ash-pkriging-2,echo=FALSE>>=
+r.pk.m1.exp.c2 <- predict(r.georob.m1.exp.c2, newdata=coalash.grid, control=control.predict.georob(ncores=1))
+r.pk.m1.exp.c1000 <- predict(r.georob.m1.exp.c1000, newdata=coalash.grid, control=control.predict.georob(ncores=1))
+@
+% %
+% <<ash-results-save-4,echo=FALSE>>=
+% <<ash-results-save-1>>
+% @
+% %
+and plotting the results by the function \code{spplot()} of the
+package \pkg{sp} as well:
+% 
+% \clearpage
+% 
+%
+\bcf[1]
+%
+<<ash-pkriging-plot-robust-gaussian-1,fig=TRUE,width=9.96,height=9.96,eval=TRUE>>=
+pred.rob <- spplot(r.pk.m1.exp.c2, "pred", at=seq(8, 12, by=0.25), 
+  main="robust kriging prediction", scales=list(draw=TRUE))
+pred.gauss <- spplot(r.pk.m1.exp.c1000, "pred", at=seq(8, 12, by=0.25), 
+  main="Gaussian kriging prediction", scales=list(draw=TRUE))
+se.rob <- spplot(r.pk.m1.exp.c2, "se", at=seq(0.35, 0.65, by=0.025), 
+  main="standard error robust kriging", scales=list(draw=TRUE))
+se.gauss <- spplot(r.pk.m1.exp.c1000, "se", at=seq(0.35, 0.65, by=0.025), 
+  main="standard error Gaussian kriging", scales=list(draw=TRUE))
+plot(pred.rob, pos=c(0, 0.5, 0.5, 1), more=TRUE)
+plot(pred.gauss, pos=c(0.5, 0.5, 1, 1), more=TRUE)
+plot(se.rob, pos=c(0, 0, 0.5, 0.5), more=TRUE)
+plot(se.gauss, pos=c(0.5, 0, 1, 0.5), more=FALSE)
+@
+%
+\ecf{Robust (left) and Gaussian (right) point kriging predictions (top) and
+kriging standard errors (bottom).}{coalash-pkriging-robust-gaussian}
+%
+By default, \code{predict.georob()} predicts the \emph{signal}
+$Z(\mb{s})$, but predictions of the \emph{response} $Y(\mb{s})$ or
+estimates of \emph{model terms} and \emph{trend} (drift) can be
+computed as well (see argument \code{type} of \code{predict.georob()}
+and section~\ref{sec:prediction-targets}).  Apart from kriging
+predictions and standard errors, bounds (\code{lower}, \code{upper})
+of point-wise 95\%-prediction intervals (plug-in) are computed for
+assumed Gaussian predictive distributions.
+
+\smallskip
+
+The kriging predictions visibly differ around the outlier at (5,6) and
+the kriging standard errors are larger for Gaussian kriging because
+the outliers inflated the non-robustly estimated sill of the variogram
+(Figure~\ref{fig:coalash-gaussian-robust-reml-variogram}).
+%
+To see the effects of outliers more clearly, we plot the relative
+difference of  Gaussian and robust kriging predictions and the ratio
+of the respective kriging variances:
+%
+\bcf[1]
+%
+<<ash-pkriging-plot-robust-gaussian-2,results=hide,fig=TRUE,width=9.96,height=4.98,eval=TRUE>>=
+library(lattice)
+# rel. difference of predictions
+r.pk.m1.exp.c2$reldiff.pred <- (r.pk.m1.exp.c1000$pred -
+  r.pk.m1.exp.c2$pred) / r.pk.m1.exp.c2$pred * 100
+reldiff.pred <- spplot(r.pk.m1.exp.c2, "reldiff.pred", at=-1:7, 
+  main="Gaussian - robust kriging predictions", scales=list(draw=TRUE))
+# ratio kriging variances
+r.pk.m1.exp.c2$ratio.msep <- r.pk.m1.exp.c1000$se^2 / 
+  r.pk.m1.exp.c2$se^2 * 100
+ratio.msep <- spplot(r.pk.m1.exp.c2, "ratio.msep",  at=105:115, 
+  main="ratio of Gaussian to robust kriging variances",scales=list(draw=TRUE))
+plot(reldiff.pred, pos=c(0, 0, 0.5, 1), more=TRUE)
+#  add bubble plot of centred data colored by "robustness" weights
+rw <- cut(r.georob.m1.exp.c2$rweights, seq(0.2, 1, by = 0.2))
+trellis.focus("panel", 1, 1)
+panel.points(coalash$x, coalash$y, lwd=2, 
+  cex=sqrt(abs(coalash$coalash - median((coalash$coalash)))), 
+  col=colorRampPalette(c("yellow", "orange", grey(0.4)))(4)[as.numeric(rw)])
+panel.text(rep(17, nlevels(rw)+1), 0:nlevels(rw), pos=2, cex=0.8, 
+  labels=c(rev(levels(rw)), "rob. weights"), 
+  col=c(rev(colorRampPalette(c("yellow", "orange", grey(0.4)))(4)), "white"))
+trellis.unfocus()
+
+plot(ratio.msep, pos=c(0.5, 0, 1, 1), more=FALSE)
+@
+%
+\ecf{Relative differences of Gaussian and robust point kriging predictions
+(\%, left) and ratio of Gaussian to robust point kriging variances (\%,
+right).  The area of the ``bubbles'' in the left panel is proportional
+to the moduli of centred ash content and their color codes the
+``robustness'' weights of robust
+REML.}{coalash-diff-kriging-gaussian-robusts}
+%
+The kriging predictions differ by more than $\pm$ 1~\% around
+observations with robustness weights $\leq 0.6$, and the efficiency of
+the Gaussian relative to robust kriging varies between 106--114~\%.
+
+% block kriging
+
+\subsubsection{Block kriging}\label{sec:coalash-block-kriging}
+
+First, we must define the blocks (and the covariates) for which
+predictions should be computed.  The package \pkg{georob} computes
+block kriging predictions for \code{newdata} objects of class
+\code{SpatialPolygonsDataFrame}s provided by \pkg{sp}:
+%
+\bcf[0.4]
+<<ash-kriging-polygons,fig=TRUE,height=6,width=4,eval=TRUE>>=
+tmp <- expand.grid(x = seq(2.5, 16.5, by=4), y=seq(2, 22, by=4))
+rownames(tmp) <- paste("block", rownames(tmp), sep="")
+# create SpatialPolygonsDataFrame
+coalash.polygons <- sapply(1:nrow(tmp), function(i, x){  
+  Polygons(list(Polygon(
+        t(x[,i] + t(cbind(c(-2, 2, 2, -2, -2), c(-2, -2, 2, 2, -2)))),
+        hole=FALSE)), ID=paste("block", i, sep=""))},
+  x=t(tmp))
+coalash.polygons <- SpatialPolygonsDataFrame(SpatialPolygons(coalash.polygons), 
+  data = tmp)
+summary(coalash.polygons)
+plot(coalash.polygons, col="grey", axes=TRUE); points(y~x, coalash)
+@
+%
+\ecf{Geometry of blocks for which kriging predictions are
+computed (dots are data locations).}{coalash-block-geometry}
+%
+Note that coordinates of the  block centres are the covariates for the
+drift model of the block means.
+%
+Block-block- and point-block-means of the semi-variance are computed by
+\code{predict.georob()} efficiently by functions of the R packages
+\pkg{constrainedKriging} and \pkg{spatialCovariance}
+\citep[see section~\protect\ref{sec:predict-georob} and][]{Hofer-Papritz-2011,Clifford-2005}:
+%
+<<ash-bkriging-1,eval=TRUE>>=
+r.bk.m1.exp.c2 <- predict(r.georob.m1.exp.c2, newdata=coalash.polygons,
+  control=control.predict.georob(pwidth=4, pheight=4, full.covmat=TRUE))
+r.bk.m1.exp.c1000 <- predict(r.georob.m1.exp.c1000, newdata=coalash.polygons,
+  control=control.predict.georob(pwidth=4, pheight=4, full.covmat=TRUE))
+@
+% %
+% <<ash-results-save-5,echo=FALSE>>=
+% <<ash-results-save-1>>
+% @
+% %
+Since the blocks are squares of constant size, choosing a square
+``integration pixel'' of the same dimension (arguments \code{pwidth},
+\code{pheight} of \code{control.predict.georob()}) allows to compute
+the required mean semi-variances most efficiently \citep[see][for
+details]{Hofer-Papritz-2011}.  The third argument
+\code{full.covmat=TRUE} of \code{control.predict.georob()} has the
+effect that the full covariance matrix of the predictions errors of
+the block means is computed (and stored as list component
+\code{mse.pred} in \code{r.bk.m1.exp.c2}):
+%
+<<ash-str-bkriging,eval=TRUE>>=
+str(r.bk.m1.exp.c2, max=2)
+@
+%
+We can compute from these covariances the kriging variances of the
+spatial means over groups of block, in particular of the spatial mean
+over the whole domain:
+%
+<<ash-gkriging,eval=TRUE>>=
+c(pred=mean(r.bk.m1.exp.c2$pred$pred),
+  se=sqrt(sum(r.bk.m1.exp.c2$mse.pred))/24)
+@
+%
+which is of course the same as predicting the mean over the whole
+domain by block kriging:
+%
+<<ash-bkriging-2,eval=TRUE>>=
+coalash.domain <- rbind(c(0.5,0), c(16.5,0), c(16.5,24), c(0.5,24), c(0.5,0))
+coalash.domain <- SpatialPolygonsDataFrame(
+  SpatialPolygons(list(Polygons(list(Polygon(coalash.domain)), ID= "domain"))), 
+  data=data.frame(x=8.5,y=12,row.names="domain"))
+slot(predict(r.georob.m1.exp.c2, newdata=coalash.domain,
+  control=control.predict.georob(pwidth=16, pheight=24)), "data")
+@
+
+We conclude this section by graphs of the robust and Gaussian block
+kriging predictions:
+%
+\bcf[1]
+%
+<<ash-bkriging-plot-robust-gaussian-1,fig=TRUE,width=9.96,height=9.96,eval=TRUE>>=
+pred.rob <- spplot(r.bk.m1.exp.c2$pred, "pred", at=seq(8, 11, by=0.25), 
+  main="robust kriging prediction", scales=list(draw=TRUE))
+pred.gauss <- spplot(r.bk.m1.exp.c1000$pred, "pred", at=seq(8, 11, by=0.25), 
+  main="Gaussian kriging prediction", scales=list(draw=TRUE))
+se.rob <- spplot(r.bk.m1.exp.c2$pred, "se", at=seq(0.15, 0.45, by=0.025), 
+  main="standard error robust kriging", scales=list(draw=TRUE))
+se.gauss <- spplot(r.bk.m1.exp.c1000$pred, "se", at=seq(0.15, 0.45, by=0.025), 
+  main="standard error Gaussian kriging", scales=list(draw=TRUE))
+plot(pred.rob, pos=c(0, 0.5, 0.5, 1), more=TRUE)
+plot(pred.gauss, pos=c(0.5, 0.5, 1, 1), more=TRUE)
+plot(se.rob, pos=c(0, 0, 0.5, 0.5), more=TRUE)
+plot(se.gauss, pos=c(0.5, 0, 1, 0.5), more=FALSE)
+@
+%
+\ecf{Robust (left) and Gaussian (right) block kriging predictions (top) and
+kriging standard errors (bottom).}{coalash-kriging-robust-gaussian}
+%
+The outlier at (5,6) also affects the the prediction of the block
+means and robust block kriging is again more efficient than Gaussian
+block kriging.
+
+<<ash-results-save-1,echo=FALSE>>=
+save(list=ls(pattern="^r\\."), file="r_coalash_objects.RData")
+@
+%
+<<ash-rm,eval=TRUE,echo=FALSE,eval=FALSE>>=
+rm(list=ls(pattern="^r\\."))
+@
+
+\clearpage
+
+
+% \input
+
+%% 
+ % Details about parameter estimation
+ %%
+
+% material taken from
+% tools::Rd2latex("georob.Rd", "../../../vignettes/georob.tex", outputEncoding="macintosh")
+% tools::Rd2latex("control.georob.Rd", "../../../vignettes/control.georob.tex", outputEncoding="macintosh")
+
+\section{Details about parameter estimation}\label{sec:est-details}
+
+\subsection{Implemented variogram models}\label{sec:est-details-models}
+
+Currently, estimation of the parameters of the following models is
+implemented (see argument \code{variogram.model} of \code{georob()}):
+
+\code{"RMaskey"}, \code{"RMbessel"}, \code{"RMcauchy"},
+\code{"RMcircular"}, \code{"RMcubic"}, \code{"RMdagum"}, \\{}
+\code{"RMdampedcos"}, \code{"RMdewijsian"}, \code{"RMexp"} (default),
+\code{"RMfbm"}, \code{"RMgauss"}, \\{} \code{"RMgencauchy"},
+\code{"RMgenfbm"}, \code{"RMgengneiting"}, \code{"RMgneiting"},
+\code{"RMlgd"}, \\{} \code{"RMmatern"}, \code{"RMpenta"}, \code{"RMqexp"},
+\code{"RMspheric"}, \code{"RMstable"}, \code{"RMwave"}, \\{}
+\code{"RMwhittle"}. 
+
+\smallskip
+
+Some of these models have in addition to \code{variance},
+\code{snugget}, \code{nugget} and \code{scale} further parameters.
+Initial values of these parameters (\code{param}) and fitting flags
+(\code{fit.param}) must be passed to \code{georob()} by the same names
+as used by the functions \code{RM...()} of the package
+\pkg{RandomFields} (see \code{RMmodel())}.  Use the
+function \code{param.names()} to list additional parameters of a
+given variogram.model.
+
+\smallskip
+
+The arguments \code{fit.param} and \code{fit.aniso} are used to
+control what variogram and anisotropy parameters are estimated and
+which are kept at the constant initial values.  The functions
+\code{default.fit.param()} and \code{default.fit.aniso()} set
+reasonable default values for these arguments.  Note, as an aside,
+that the function \code{default.aniso()} sets (default) values of the
+anisotropy parameters for an isotropic variogram.
+
+
+\subsection{Estimating parameters of power function variogram}\label{sec:est-details-intrisic-models}
+ 
+The intrinsic variogram model \code{RMfbm} is over-parametrized when
+both the \code{variance} (plus possibly \code{snugget}) and the
+\code{scale} are estimated.  Therefore, to estimate the parameters of this
+model, \code{scale} must be kept fixed at an arbitrary value by using
+\code{fit.param = default.fit.param(scale = FALSE)}.
+
+
+\subsection{Estimating parameters of geometrically anisotropic variograms}\label{sec:est-details-anisotropy}
+
+Subsection~\ref{sec:intro-model} describes how covariances are
+modelled in general.  Here we describe in detail how geometrically
+anisotropic variogram are parametrized:
+
+\smallskip
+
+The matrix \eqn{\mbox{\boldmath$A$\unboldmath} =
+\mbox{\boldmath$A$\unboldmath}(\alpha, f_1, f_2; \omega, \phi, \zeta)
+}{} (see equation \ref{eq:valpha}) maps an arbitrary point on an
+ellipsoidal surface with constant (generalized) covariance in \eqn{
+\mathrm{I}\!\mathrm{R}^3}{}, centred on the origin, and having lengths
+of semi-principal axes, \eqn{\mbox{\boldmath$p$\unboldmath}_1}{},
+\eqn{\mbox{\boldmath$p$\unboldmath}_2}{},
+\eqn{\mbox{\boldmath$p$\unboldmath}_3}{}, equal to
+\eqn{|\mbox{\boldmath$p$\unboldmath}_1|=\alpha}{},
+\eqn{|\mbox{\boldmath$p$\unboldmath}_2|=f_1\,\alpha}{} and
+\eqn{|\mbox{\boldmath$p$\unboldmath}_3|=f_2\,\alpha}{}, \eqn{0 < f_2
+\leq f_1 \leq 1}{}, respectively, onto the surface of the unit ball
+centred on the origin.
+%
+The orientation of the ellipsoid is defined by the three angles
+\eqn{\omega}{}, \eqn{\phi}{} and \eqn{\zeta}{}: 
+\begin{description}
+  
+  \item[\eqn{\omega}{}] is the azimuth of \eqn{\mbox{\boldmath$p$\unboldmath}_1}{}
+  (= angle between north and the projection  
+  of
+  \eqn{\mbox{\boldmath$p$\unboldmath}_1}{}
+  onto the \eqn{x}{}-\eqn{y}{}-plane, 
+  measured from north to south positive clockwise in degrees),
+  
+  
+  \item[\eqn{\phi}{}] is 90 degrees minus the altitude of 
+  \eqn{\mbox{\boldmath$p$\unboldmath}_1}{}
+  (= angle between the zenith and
+  \eqn{\mbox{\boldmath$p$\unboldmath}_1}{},
+  measured from zenith to nadir positive clockwise in degrees), and
+  
+  
+  \item[\eqn{\zeta}{}] is the angle between 
+  \eqn{\mbox{\boldmath$p$\unboldmath}_2}{}
+  and the direction of the line, say \eqn{y^\prime}{}, 
+  defined by the intersection between the
+  \eqn{x}{}-\eqn{y}{}-plane and the plane orthogonal to 
+  \eqn{\mbox{\boldmath$p$\unboldmath}_1}{} running through the origin
+  (\eqn{\zeta}{} is measured from \eqn{y^\prime}{} positive counter-clockwise in degrees).
+  
+\end{description}
+
+
+The transformation matrix is given by
+%
+\begin{equation}\label{eq:coordinate-transformation-matrix}
+  \mbox{\boldmath$A$\unboldmath}=
+  \left(\begin{array}{ccc} 1/\alpha & 0 & 0\\
+  0 & 1/(f_1\,\alpha) & 0\\
+  0 & 0 & 1/(f_2\,\alpha) \\
+  \end{array}\right) ( \mbox{\boldmath$C$\unboldmath}_1,
+  \mbox{\boldmath$C$\unboldmath}_2, \mbox{\boldmath$C$\unboldmath}_3)
+\end{equation}
+%
+where
+%
+\begin{eqnarray}\label{eq:coordinate-rotation-matrix}
+  \mbox{\boldmath$C$\unboldmath}_1^\mathrm{T} & = & (\sin\phi \sin\omega, -\cos\zeta \cos\omega + \sin\zeta \cos\phi \sin\omega, 
+    -\cos\omega \sin\zeta - \cos\zeta \cos\phi \sin\omega) \nonumber \\
+  \mbox{\boldmath$C$\unboldmath}_2^\mathrm{T} & = & (-\sin\phi \cos\omega, \cos\omega \sin\zeta \cos\phi 
+    + \cos\zeta \sin\omega, -\cos\zeta \cos\omega \cos\phi + \sin\zeta \sin\omega)\nonumber \\
+  \mbox{\boldmath$C$\unboldmath}_3^\mathrm{T} & = & (\cos\phi, -\sin\phi \sin\zeta, \cos\zeta \sin\phi)
+\end{eqnarray}
+%
+To model geometrically anisotropic variograms in 
+\eqn{ \mathrm{I}\!\mathrm{R}^2}{} 
+one has to set \eqn{\phi=90}{} and \eqn{f_2 = 1}{},
+and for \eqn{f_1 = f_2 = 1}{} 
+one obtains the model for isotropic auto-correlation 
+with range parameter \eqn{\alpha}{}. 
+Note that for isotropic auto-correlation the software processes data for 
+which \eqn{d}{} may exceed 3.
+
+
+\smallskip
+
+Some additional remarks might be helpful:
+
+\begin{itemize}
+  
+  \item The first semi-principal axis points into the direction with 
+  the farthest reaching auto-correlation, which is described by the range
+  parameter \code{scale} (\eqn{\alpha}{}).
+  
+  \item The ranges in the direction of the second and third
+  semi-principal axes are given by \eqn{f_1\alpha}{} and \eqn{f_2
+  \alpha}{}, with \eqn{0 < f_2 \leq f_1 \leq 1}{}.
+  
+  \item The default values for \code{aniso} (\eqn{f_1=1}{}, \eqn{f_2=1}{})
+  define an isotropic variogram model.
+  
+  \item Valid ranges for the angles characterizing the orientation of
+  the semi-variance ellipsoid are (in degrees): \eqn{\omega}{} [0, 180],
+  \eqn{\phi}{} [0, 180], \eqn{\zeta}{} [-90, 90].  
+  
+\end{itemize}
+
+
+\subsection{Estimating variance of micro-scale variation}\label{sec:est-details-microscale}
+
+Simultaneous estimation of the variance of the micro-scale variation
+(\code{snugget}, \eqn{\sigma_\mathrm{n}^2}{}), which appears seemingly
+as spatially uncorrelated with a given sampling design, and of the
+variance (\code{nugget}, \eqn{\tau^2}{}) of the independent errors
+requires that for some locations
+\eqn{\mbox{\boldmath$s$\unboldmath}_i}{} replicated observations are
+available.  Locations less or equal than \code{zero.dist} apart are
+thereby considered as being coincident (see
+\code{control.georob()}).
+
+%
+\subsection{Estimating variance parameters by Gaussian (RE)ML}\label{sec:est-details-gaussian-reml}
+
+Unlike robust REML, where robustified estimating equations are solved
+for the variance parameters \code{nugget} (\eqn{\tau^2}{}),
+\code{variance} (\eqn{\sigma^2}{}), and possibly \code{snugget}
+(\eqn{\sigma_{\mathrm{n}}^2}{}), for Gaussian (RE)ML the
+variances can be re-parametrized to
+
+\begin{itemize}
+
+\item the signal variance 
+\eqn{\sigma_Z^2 = \sigma^2 + \sigma_{\mathrm{n}}^2}{},
+
+\item the inverse relative nugget 
+\eqn{\eta = \sigma_Z^2 / \tau^2}{} and
+
+\item the relative spatial nugget 
+\eqn{\xi = \sigma_{\mathrm{n}}^2/\sigma_Z^2}{}.
+
+\end{itemize}
+
+
+\code{georob()} maximizes then a (restricted) \emph{profile
+log-likelihood} that depends only on \eqn{\eta}{}, \eqn{\xi}{},
+\eqn{\alpha}{}, \ldots, and \eqn{\sigma_Z^2}{} is estimated by an
+explicit expression that depends on these parameters
+\citep[e.g.][p.~113]{Diggle-Ribeiro-2007}.  This is usually more
+efficient than maximizing the (restricted) log-likelihood with respect
+to the original variance parameters \eqn{\tau^2}{},
+\eqn{\sigma_{\mathrm{n}}^2}{} and \eqn{\sigma^2}{}.  \code{georob()}
+chooses the parametrization automatically, but the user can control it
+by the argument \code{reparam} of the function
+\code{control.georob()}.
+
+
+
+\subsection{Constraining estimates of variogram parameters}\label{sec:est-details-constraining-parameters}
+
+Parameters of variogram models can vary only within certain bounds
+(see \code{param.bounds()} and \code{RMmodel()} for allowed ranges).
+\code{georob()} uses three mechanisms to constrain parameter estimates
+to permissible ranges:
+
+\begin{enumerate}
+  
+  \item \emph{Parameter transformations}: By default, all variance
+  (\code{variance}, \code{snugget}, \code{nugget}), the range
+  \code{scale} and the anisotropy parameters \code{f1} and \code{f2}
+  are log-transformed before solving the estimating equations or
+  maximizing the restricted log-likelihood and this warrants that the
+  estimates are always positive (see \code{control.georob()} and
+  section~\ref{sec:parameter-transformations} for detailed
+  explanations how to control parameter transformations).
+  
+  \item \emph{Checking permissible ranges}: The additional parameters
+  of the variogram models such as the smoothness parameter \eqn{\nu}{}
+  of the Whittle-Mat\'ern model are forced to stay in the permissible
+  ranges by signalling an error to \code{nleqslv()}, \code{nlminb()} or
+  \code{optim()} if the current trial values are invalid.  These
+  functions then graciously update the trial values of the parameters
+  and carry their task on.  However, it is clear that such a procedure
+  likely gets stuck at a point on the boundary of the parameter space
+  and is therefore just a workaround for avoiding runtime errors due
+  to invalid parameter values.
+  
+  \item \emph{Exploiting the functionality of
+  {\upshape\code{nlminb()}} and {\upshape\code{optim()}}}: If a
+  spatial model is fitted non-robustly, then the arguments
+  \code{lower}, \code{upper} (and \code{method} of \code{optim()}) can
+  be used to constrain the parameters (see \code{control.optim()} how
+  to pass them to \code{optim()}).  For \code{optim()} one has to use
+  the arguments \code{method = "L-BFGS-B"}, \code{lower = \var{l}},
+  \code{upper = \var{u}}, where \var{l} and \var{u} are numeric
+  vectors with the lower and upper bounds of the \emph{transformed}
+  parameters in the order as they appear in\\{} \code{c(variance,
+  snugget, nugget, scale, ...)[fit.param], aniso[fit.aniso])},\\{}
+  where \code{...} are additional parameters of isotropic variogram
+  models (use \\{} \code{param.names(variogram.model)} to display the
+  names and the order of the additional parameters for
+  \code{variogram.model}).
+  
+  
+\end{enumerate}
+
+
+%
+\subsection{Computing robust initial estimates of parameters for robust REML}\label{sec:est-details-initial-values}
+
+To solve the robustified estimating equations for
+\eqn{\mbox{\boldmath$B$\unboldmath}}{} and
+\eqn{\mbox{\boldmath$\beta$\unboldmath}}{} the following initial
+estimates are used:
+
+\begin{itemize}
+
+  \item \eqn{ \widehat{\mbox{\boldmath$B$\unboldmath}}=
+  \mbox{\boldmath$0$\unboldmath},}{} if this turns out to be
+  infeasible, initial values can be passed to \code{georob()} by the
+  argument \code{bhat} of \code{control.georob()}.
+  
+  \item \eqn{\widehat{\mbox{\boldmath$\beta$\unboldmath}}}{} is either
+  estimated robustly by the function \code{lmrob()}, \code{rq()} or
+  non-robustly by \code{lm()} (see argument \code{initial.fixef} of
+  \code{control.georob()}).
+  
+
+\end{itemize}
+
+
+Finding the roots of the robustified estimating equations of the
+variogram and anisotropy parameters is more sensitive to a good choice
+of initial values than maximizing the Gaussian (restricted)
+log-likelihood with respect to the same parameters.  If the initial
+values for \code{param} and \code{aniso} are not sufficiently close to
+the roots of the system of nonlinear equations, then \code{nleqslv()}
+may fail to find them.  Setting \code{initial.param = TRUE} allows one
+to find initial values that are often sufficiently close to the roots
+so that \code{nleqslv()} converges.  This is achieved by:
+
+\begin{enumerate}
+  
+  \item Initial values of the regression parameters are computed by
+  \code{lmrob()} irrespective of the choice for \code{initial.fixef}
+  (see \code{control.georob()}).
+  
+  \item Observations with ``robustness weights'' of the \code{lmrob}
+  fit, satisfying\\{}
+  \eqn{\psi_c(\widehat{\varepsilon}_i/\widehat{\tau})/(\widehat{\varepsilon}_i/\widehat{\tau})
+  \leq \mbox{\code{min.rweight}}}{}, are discarded (see
+  \code{control.georob()}).
+  
+  \item The model is fit to the pruned data set by Gaussian REML using 
+  \code{optim()} or \code{nlminb()}.
+  
+  \item The resulting estimates of the variogram parameters
+  (\code{param}, \code{aniso}) are used as initial estimates for the
+  subsequent robust fit of the model by \code{nleqslv()}.
+  
+  
+\end{enumerate}
+
+
+Note that for step 3 above, initial values of \code{param} (and
+possibly \code{aniso}) must be provided to \code{georob()}.
+
+
+
+%
+% \subsection{Approximation of covariances of fixed and random effects and residuals}\label{sec:est-details-covariances}
+% 
+% The robustified estimating equations of robust REML depend on the
+% covariances of \eqn{\widehat{\mbox{\boldmath$B$\unboldmath}}}{}.
+% These covariances (and the covariances of
+% \eqn{\mbox{\boldmath$B$\unboldmath}-\widehat{\mbox{\boldmath$B$\unboldmath}}}{},
+% \eqn{\widehat{\mbox{\boldmath$\beta$\unboldmath}}}{},
+% \eqn{\widehat{\mbox{\boldmath$\varepsilon$\unboldmath}}}{},
+% \eqn{\widehat{\mbox{\boldmath$\varepsilon$\unboldmath}} +
+% \widehat{\mbox{\boldmath$B$\unboldmath}}}{}) are approximated by
+% expressions that in turn depend on the variances of
+% \eqn{\varepsilon}{}, \eqn{\psi_c(\varepsilon/\tau)}{} and the
+% expectation of \eqn{\psi_c'(\varepsilon/\tau)\ (= \partial / \partial
+% \varepsilon\, \psi_c(\varepsilon/\tau))}{}.  The arguments
+% \code{error.family.estimation}, \code{error.family.cov.effects} and
+% \code{error.family.cov.residuals} of \code{control.georob()} control
+% what parametric distribution for \eqn{\varepsilon}{} is used to
+% compute the variances of \eqn{\varepsilon}{},
+% \eqn{\psi_c(\varepsilon/\tau)}{} and the expectation of
+% \eqn{\psi_c'(\varepsilon/\tau)}{} when
+% 
+% \begin{itemize}
+%   
+%   \item solving the estimating equations (\code{error.family.estimation}),
+%   
+%   \item computing the covariances of
+%   \eqn{\widehat{\mbox{\boldmath$\beta$\unboldmath}}}{},
+%   \eqn{\widehat{\mbox{\boldmath$B$\unboldmath}}}{} and
+%   \eqn{\mbox{\boldmath$B$\unboldmath}-\widehat{\mbox{\boldmath$B$\unboldmath}}}{}
+%   (\code{error.family.cov.effects}) and
+%   
+%   \item computing the covariances of
+%   \eqn{\widehat{\mbox{\boldmath$\varepsilon$\unboldmath}}=\mbox{\boldmath$Y$\unboldmath}
+%   - \mbox{\boldmath$X$\unboldmath}
+%   \widehat{\mbox{\boldmath$\beta$\unboldmath}} -
+%   \widehat{\mbox{\boldmath$B$\unboldmath}}}{} and \eqn{\widehat{\mbox{\boldmath$\varepsilon$\unboldmath}} +
+%   \widehat{\mbox{\boldmath$B$\unboldmath}}
+%   =\mbox{\boldmath$Y$\unboldmath} - \mbox{\boldmath$X$\unboldmath}
+%   \widehat{\mbox{\boldmath$\beta$\unboldmath}}}{} (\code{error.family.cov.residuals}).
+%   
+% \end{itemize}
+% 
+% Possible options are: \code{"gaussian"} or \code{"long.tailed"}.  In
+% the latter case, the PDF of \eqn{\varepsilon}{} is assumed to be
+% proportional to \eqn{1/\tau \, \exp(-\rho_c(\varepsilon/\tau))}{}, where
+% \eqn{\psi_c(x)=\rho_c'(x)}{}.
+
+\subsection{Controlling \code{georob()} by the function \code{control.georob()}}\label{sec:control-georob}
+
+% tools::Rd2latex("control.georob.Rd", "../../../vignettes/control.georob.tex", outputEncoding="macintosh")
+% tools::Rd2latex("pmm.Rd", "../../../vignettes/pmm.tex", outputEncoding="macintosh")
+
+All control and tuning parameters except the robustness tuning
+constant $c$ of the $\psi_{c}$-function (argument \code{tuning.psi} of
+\code{georob()}) are set by the arguments of the function
+\code{control.georob()}, which generates a list that is passed by the
+\code{control} argument to \code{georob()}.
+% 
+This section describes in some detail how to control \code{georob()}
+by the various arguments of \code{control.georob()}.
+
+
+\subsubsection{Gaussian (RE)ML estimation}\label{sec:gaussian-reml}
+
+Gaussian (RE)ML estimates are computed provided \code{tuning.psi}
+$\geq 1000$.  
+%
+Use the argument \code{ml.method} to select either \code{"ML"} or
+\code{"REML"} (default) and the argument \code{reparam} to
+control whether the re-parametrized (default  \code{TRUE}) or the original
+variogram parameters are estimated (see section~\ref{sec:est-details-gaussian-reml}).
+%
+The function used to maximize the (restricted) log-likelihood is
+chosen by the argument \code{maximizer} (default \code{"nlminb"}).
+%
+Use the argument \code{nlminb} along with the function
+\code{control.nlminb()} (or the argument \code{optim} along with
+\code{control.optim()} to pass arguments to \code{nlminb()}
+(or \code{optim()}), in particular the argument \code{rel.tol}, which
+controls convergence.
+%
+The argument \code{hessian} controls whether confidence intervals of
+variogram parameters are computed from the observed Fisher information
+based on the asymptotic normal distribution of (RE)ML estimates
+(default \code{TRUE}, see \code{summary.georob()}).
+
+
+\subsubsection{Robust REML estimation}\label{sec:robust-reml}
+
+The argument \code{psi.func} selects the $\psi_{c}$-function for robust
+REML. Apart from a shifted and scaled logistic CDF
+%
+\[ 
+  \psi_{c}(x) = \tanh(x/c)
+\]
+%
+(\code{"logistic"}, default), the Huber (\code{"huber"}) or a
+re-descending $\psi_c$-function based on the $t$-distribution
+(\code{"t.dist"})
+%
+\[ 
+  \psi_{c}(x) = \frac{c^2\,x}{c^2+x^2}
+\]
+can be used.
+
+The argument \code{initial.fixef} chooses the function for computing
+(robust) initial estimates of \mb{\beta}.  Possible choices are
+\code{"lmrob"} (default) \code{"rq"} and \code{"lm"}.  
+%
+Use the argument \code{lmrob} along with the function
+\code{lmrob.control()} (or the argument \code{rq} along with the
+function \code{control.rq()} to pass arguments to \code{lmrob()} (or
+\code{rq()}).
+%
+The argument \code{initial.param} controls whether robust initial
+estimates of the variogram parameters are computed (default
+\code{TRUE}, see section~\ref{sec:est-details-initial-values}).
+
+For given variogram parameters, the estimating equations for
+\mb{\beta} and \mb{B} are solved by iterated re-weighted least squares
+(IRWLS).  The argument \code{irwls.maxiter} sets the maximum number of
+iterations (default 50), and the argument \code{irwls.ftol} controls
+convergence: Convergence is assumed if the largest absolute function
+value at the current root is less than \code{irwls.ftol} (default
+$10^{-5}$).
+%
+The current estimates $\widehat{\mb{\beta}}$ and $\widehat{\mb{B}}$
+are then plugged into the estimating equations for \mb{\theta} and
+$\tau^2$ that are solved in turn by \code{nleqslv()}.  Use the
+argument \code{nleqslv} along with the function
+\code{control.nleqslv()} to pass arguments to \code{nleqslv()}, in
+particular \code{ftol}, which controls convergence for root finding.
+
+
+\subsubsection{Approximation of covariances of fixed and random effects and residuals}\label{sec-covariances-fixed-random-efects}
+
+The robustified estimating equations of robust REML depend on the
+covariances of \eqn{\widehat{\mbox{\boldmath$B$\unboldmath}}}{}.
+These covariances (and the covariances of
+\eqn{\mbox{\boldmath$B$\unboldmath}-\widehat{\mbox{\boldmath$B$\unboldmath}}}{},
+\eqn{\widehat{\mbox{\boldmath$\beta$\unboldmath}}}{},
+\eqn{\widehat{\mbox{\boldmath$\varepsilon$\unboldmath}}}{},
+\eqn{\widehat{\mbox{\boldmath$\varepsilon$\unboldmath}} +
+\widehat{\mbox{\boldmath$B$\unboldmath}}}{}) are approximated by
+expressions that in turn depend on the variances of
+\eqn{\varepsilon}{}, \eqn{\psi_c(\varepsilon/\tau)}{} and the
+expectation of \eqn{\psi_c'(\varepsilon/\tau)\ (= \partial / \partial
+\varepsilon\, \psi_c(\varepsilon/\tau))}{}.  The arguments
+\code{error.family.estimation}, \code{error.family.cov.effects} and
+\code{error.family.cov.residuals} of \code{control.georob()} control
+what parametric distribution for \eqn{\varepsilon}{} is used to
+compute the variances of \eqn{\varepsilon}{},
+\eqn{\psi_c(\varepsilon/\tau)}{} and the expectation of
+\eqn{\psi_c'(\varepsilon/\tau)}{} when
+
+\begin{itemize}
+  
+  \item solving the estimating equations (\code{error.family.estimation}),
+  
+  \item computing the covariances of
+  \eqn{\widehat{\mbox{\boldmath$\beta$\unboldmath}}}{},
+  \eqn{\widehat{\mbox{\boldmath$B$\unboldmath}}}{} and
+  \eqn{\mbox{\boldmath$B$\unboldmath}-\widehat{\mbox{\boldmath$B$\unboldmath}}}{}
+  (\code{error.family.cov.effects}) and
+  
+  \item computing the covariances of
+  \eqn{\widehat{\mbox{\boldmath$\varepsilon$\unboldmath}}=\mbox{\boldmath$Y$\unboldmath}
+  - \mbox{\boldmath$X$\unboldmath}
+  \widehat{\mbox{\boldmath$\beta$\unboldmath}} -
+  \widehat{\mbox{\boldmath$B$\unboldmath}}}{} and \eqn{\widehat{\mbox{\boldmath$\varepsilon$\unboldmath}} +
+  \widehat{\mbox{\boldmath$B$\unboldmath}}
+  =\mbox{\boldmath$Y$\unboldmath} - \mbox{\boldmath$X$\unboldmath}
+  \widehat{\mbox{\boldmath$\beta$\unboldmath}}}{} (\code{error.family.cov.residuals}).
+  
+\end{itemize}
+
+Possible options are: \code{"gaussian"} or \code{"long.tailed"}.  In
+the latter case, the PDF of \eqn{\varepsilon}{} is assumed to be
+proportional to \eqn{1/\tau \, \exp(-\rho_c(\varepsilon/\tau))}{}, where
+\eqn{\psi_c(x)=\rho_{c}'(x)}{}.
+
+\smallskip
+
+% \subsubsection{Controlling computation of (co-)variances}
+
+The logical arguments \code{cov.{\itshape xxx}} and
+\code{full.cov.{\itshape xxx}} of \code{control.georob()} control what
+(co-)variances should be computed by \code{georob()}.  \code{full.cov.{\itshape xxx}}
+controls whether the full covariance matrix (\texttt{TRUE}) or only the
+variances (\texttt{FALSE}) are computed.
+%
+\begin{tabbing}
+  \code{delta.bhat.betahat} \quad \= (co-)variances of \quad \= default \texttt{cov.\itshape xxx}\quad \= default  \texttt{full.cov.\itshape xxx}\kill
+  \texttt{\itshape xxx} \> (co-)variances of \>  default \texttt{cov.\itshape xxx} \> default  \texttt{full.cov.\itshape xxx} \\
+  \texttt{bhat} \> $\widehat{\mb{B}}$ \>  \texttt{TRUE} \> \texttt{FALSE} \\
+  \texttt{betahat} \> $\widehat{\mb{\beta}}$ \> \texttt{TRUE} \> -- \\
+  \texttt{delta.bhat} \> $\mb{B} - \widehat{\mb{B}}$ \> \texttt{TRUE} \> \texttt{TRUE} \\
+  \texttt{delta.bhat.betahat} \> $\mb{B} - \widehat{\mb{B}}$ and $\widehat{\mb{\beta}}$ \> \texttt{TRUE} \> -- \\
+  \texttt{ehat} \> $\widehat{\mb{\varepsilon}}$ \> \texttt{TRUE} \> \texttt{FALSE} \\
+  \texttt{ehat.p.bhat} \> $\widehat{\mb{\varepsilon}} + \widehat{\mb{B}}$ \> \texttt{FALSE} \> \texttt{FALSE} \\
+\end{tabbing}
+
+
+\subsubsection{Transformations of variogram parameters for (RE)ML estimation}\label{sec:parameter-transformations}
+
+The arguments \code{param.tf}, \code{fwd.tf}, \code{deriv.fwd.tf},
+\code{bwd.tf} of \code{control.georob()} define the transformations of
+the variogram parameters for RE(ML) estimation.  Implemented are
+currently \code{"log"}, \code{"logit1"}, \code{"logit2"},
+\code{"logit3"} (various variants of logit-transformation, see code of
+function \code{fwd.transf}) and \code{"identity"} (= no)
+transformations.  These are the possible values that the many
+arguments of the function \code{param.transf()} accept (as quoted
+character strings) and these are the names of the list components
+returned by \code{fwd.transf()}, \code{dfwd.transf()} and
+\code{bwd.transf()}.  Additional transformations can be implemented by:
+
+\begin{enumerate}
+  \item Extending the function definitions by arguments like
+  
+  \code{fwd.tf = fwd.transf(my.fun = function(x) your transformation)},\\{}
+  \code{deriv.fwd.tf = dfwd.transf(my.fun = function(x) your derivative)},\\{}
+  \code{bwd.tf = bwd.transf(my.fun = function(x) your back-transformation)},
+  
+  \item Assigning to a given argument of \code{param.transf} the name of
+  the new function, e.g.\\{} \code{variance = "my.fun"}.  
+\end{enumerate}
+
+Note that the values given for the arguments of \code{param.transf()}
+must match a name of the functions returned by \code{fwd.transf()},
+\code{dfwd.transf()} and \code{bwd.transf()}.
+
+
+\subsubsection{Miscellaneous arguments of \code{control.georob()}}\label{sec:georob-control-miscellaneous}
+
+\code{control.georob()} has the following additional arguments:
+
+\begin{ldescription}
+
+  \item[\code{bhat}] initial values for the spatial random effects
+  \eqn{\widehat{\mbox{\boldmath$B$\unboldmath}}}{}, with
+  \eqn{\widehat{\mbox{\boldmath$B$\unboldmath}}=\mbox{\boldmath$0$\unboldmath}}{}
+  if \code{bhat} is equal to \code{NULL} (default).
+  
+  \item[\code{force.gradient}] logical controlling whether the estimating
+  equations or the gradient of the Gaussian restricted log-likelihood are
+  evaluated even if all variogram parameters are fixed (default
+  \code{FALSE}).
+  
+  \item[\code{min.condnum}] positive numeric.  Minimum acceptable ratio of smallest to
+  largest singular value of the model matrix
+  \eqn{\mbox{\boldmath$X$\unboldmath}}{} (default \code{1.e-12}).
+  
+  \item[\code{zero.dist}] positive numeric equal to the maximum distance, separating two
+  sampling locations that are still considered as being coincident.
+  
+\end{ldescription}
+
+Note that \code{georob()} can fit models with rank-deficient model
+matrices.  It uses then the Moore-Penrose inverse of the matrix
+$\mb{X} \mb{V}_{\alpha,\xi}^{-1}\mb{X}$ to compute the projection
+matrices $\mb{A}_{\alpha}$ and $\mb{P}_{\alpha}$ 
+\citep[see][]{Kuensch-etal-in-prep}.
+
+
+\subsection{Parallelized computations}\label{sec:parallization}
+
+Parallelized computations shorten computing time for large data sets
+(\eqn{n>1000}{}).  \code{georob()} and other functions of the package
+therefore use on non-windows OS the function \code{mclapply()}
+(forking, package \pkg{parallel}) and on windows OS the functions
+\code{parLapply} (socket cluster, package \pkg{parallel}) as well as
+\code{sfLapply()} (socket cluster, package \pkg{snowfall}) for
+parallelized computations.  The following tasks may be executed in
+parallel:
+
+\begin{enumerate}
+  
+  \item \label{item:parallel-other} Simultaneously fitting multiple
+  models by functions \code{cv.georob()},
+  \code{profilelogLik()} (section~\ref{sec:model-assessment}),
+  \code{add1.georob()}, \code{drop1.georob()} and
+  \code{step.georob()} (section~\ref{sec:model-building});
+ 
+  \item \label{item:parallel-predict} computing kriging predictions by
+  \code{predict.georob()} (section~\ref{sec:predict-georob});
+  
+  \item \label{item:parallel-pmm} matrix multiplication by function \code{pmm()};
+    
+  \item \label{item:parallel-gcr} computing the (generalized)
+  covariance matrix $\mb{\Gamma}_{\theta}$ of the data by the
+  (non-exported) function \code{f.aux.gcr()}.
+  
+\end{enumerate}
+
+For tasks \ref{item:parallel-other} and \ref{item:parallel-predict}
+the functions have an argument \code{ncores} to control how many cores
+should be used for parallel computations.
+%
+For tasks \ref{item:parallel-pmm} and \ref{item:parallel-gcr} one can
+use the argument \code{pcmp} of \code{control.georob()} along with the
+function \code{pcmp.control()} to control parallelized computations.
+The function \code{pcmp.control()} has the following arguments:
+
+\begin{ldescription}
+\item[\code{pmm.ncores}] number (integer, default 1) of cores used for parallelized
+matrix multiplication.
+
+\item[\code{gcr.ncores}] number (integer, default 1) of cores used for parallelized
+computation of (generalized) covariance matrix.
+
+\item[\code{max.ncores}] allowed maximum number of cores (integer,
+default all cores of a machine) used for parallelized computations.
+
+\item[\code{f}] number (integer, default 2) of tasks assigned to each core in
+  parallelized computations.
+
+\item[\code{sfstop}] logical controlling whether the SNOW socket
+cluster is stopped after each parallelized computations on windows OS
+(default \code{FALSE}).
+
+\item[\code{allow.recursive}] logical controlling whether nested parallelized
+computation should be allowed (default \code{TRUE}).
+
+\end{ldescription}
+
+Generating child processes requires itself resources and increasing
+the number of cores for tasks \ref{item:parallel-pmm} and
+\ref{item:parallel-gcr} does not always result in reduced computing
+time.  A sensible default for the number of cores for tasks
+\ref{item:parallel-pmm} and \ref{item:parallel-gcr} is likely
+2.  \code{max.ncores} controls how many child processes
+are generated in total.  This can be used to prevent that child
+processes generate themselves children which may result in too many
+child processes.
+
+\smallskip
+
+Note, however, that very substantial reductions in computing time
+results when one uses the \strong{OpenBLAS} library instead of the
+reference BLAS library that ships with R, see
+\url{http://www.openblas.net/} and R FAQ for your OS. With OpenBLAS no
+gains are obtained by using more than one core for matrix
+multiplication, and one should therefore use the default argument
+\code{pmm.ncores = 1} for \code{control.pcmp()}.
+%
+
+\clearpage
+%
+
+
+
+%% 
+ % Details kriging
+ %%
+
+% material taken from
+% tools::Rd2latex("predict.georob.Rd", "../../../vignettes/predict.georob.tex", outputEncoding="macintosh")
+% tools::Rd2latex("lgnpp.Rd", "../../../vignettes/lgnpp.tex", outputEncoding="macintosh")
+% tools::Rd2latex("validate.predictions.Rd", "../../../vignettes/validate.predictions.tex", outputEncoding="macintosh")
+
+\section{Details about kriging}\label{sec:krig-details}
+
+
+\subsection{Functionality of \texttt{predict.georob()}}\label{sec:predict-georob}
+
+The \code{predict} method of class \code{georob} computes customary or
+robust external drift point or block plug-in kriging predictions (see
+equation \ref{eq:robust-edk}).  
+%
+Data about the prediction targets are passed as argument
+\code{newdata} to \code{predict.georob()}, where \code{newdata} can be
+either an ordinary \strong{data frame}, a \strong{SpatialPoints-},
+\strong{SpatialPixels-}, \strong{SpatialGrid} or a
+\strong{SpatialPolygonsDataFrame}, a \strong{SpatialPoints},
+\strong{SpatialPixels} or a \strong{SpatialGrid} object, the all the
+latter provided by the package \pkg{sp}.  If \code{newdata} is a
+\code{SpatialPoints}, \code{SpatialPixels} or a
+\code{SpatialGrid} then the drift model may only use the coordinates
+as covariates (universal kriging).  If \code{newdata} is a
+\code{SpatialPolygonsDataFrame} then block kriging predictions are
+computed, otherwise point kriging predictions.
+
+
+\subsubsection{Prediction targets}\label{sec:prediction-targets}
+
+% \smallskip
+% 
+The argument \code{type} controls what quantities
+\code{predict.georob()} computes (given here for a target point
+\mb{s}, but the same quantities are also computed for a block):
+%
+\begin{itemize}
+  
+  \item \code{"signal"}: the ``signal''
+  \eqn{Z(\mbox{\boldmath$s$\unboldmath}) =
+  \mbox{\boldmath$x$\unboldmath}(\mbox{\boldmath$s$\unboldmath})^\mathrm{T}
+  \mbox{\boldmath$\beta$\unboldmath} +
+  B(\mbox{\boldmath$s$\unboldmath})}{} of
+  the process (default),
+  
+  \item \code{"response"}: the observations
+  \eqn{Y(\mbox{\boldmath$s$\unboldmath}) =
+  Z(\mbox{\boldmath$s$\unboldmath}) +
+  \varepsilon(\mbox{\boldmath$s$\unboldmath}),}{}
+  
+  \item \code{"trend"}: the external drift
+  \eqn{\mbox{\boldmath$x$\unboldmath}(\mbox{\boldmath$s$\unboldmath})^\mathrm{T}
+  \mbox{\boldmath$\beta$\unboldmath},}{}
+  
+  \item \code{"terms"}: the model terms.  The argument \code{terms}
+  can then be used to select the terms (default
+  all terms) and \code{se.fit} controls whether standard errors of the
+  terms are computed (default \code{TRUE}).
+  
+\end{itemize}
+
+
+\subsubsection{Further control}\label{sec:control-predict-misc}
+
+Use the argument \code{control} along with the function
+\code{control.predict.georob()} to further control what
+\code{predict.georob()} actually does:
+
+
+\paragraph{Covariance matrices} 
+The argument \code{full.covmat} of \code{control.predict.georob()}
+controls whether the full covariance matrices of prediction errors,
+fitted trend, etc.\ are computed (\code{TRUE}) or only the vector with
+their variances (\code{FALSE}, default).
+%
+
+\paragraph{Computing auxiliary items for log-normal kriging}
+Use the argument \code{extended.output = TRUE} of
+\code{control.predict.georob()} to compute all quantities required for
+the (approximately) unbiased back-transformation of kriging
+predictions of log-transformed data to the original scale of the
+measurements by \code{lgnpp()} (see
+section~\ref{sec:krig-details-lognormal}).  In more detail, the
+following items are computed:
+
+\begin{itemize}
+  
+  \item \code{trend}: the fitted values,
+  \eqn{\mbox{\boldmath$x$\unboldmath}(\mbox{\boldmath$s$\unboldmath})\mathrm{^T}\widehat{\mbox{\boldmath$\beta$\unboldmath}}}{},
+  
+  \item \code{var.pred}: the variances of the kriging predictions,
+  \eqn{\mathrm{Var}_{\hat{\theta}}[\widehat{Y}(\mbox{\boldmath$s$\unboldmath})]}{}
+  or
+  \eqn{\mathrm{Var}_{\hat{\theta}}[\widehat{Z}(\mbox{\boldmath$s$\unboldmath})]}{},
+  
+  \item \code{cov.pred.target}: the covariances between the
+  predictions and the prediction targets,\\{}
+  \eqn{\mathrm{Cov}_{\hat{\theta}}[\widehat{Y}(\mbox{\boldmath$s$\unboldmath}),Y(\mbox{\boldmath$s$\unboldmath})]}{}
+  or
+  \eqn{\mathrm{Cov}_{\hat{\theta}}[\widehat{Z}(\mbox{\boldmath$s$\unboldmath}),Z(\mbox{\boldmath$s$\unboldmath})]}{},
+  
+  
+  \item \code{var.target}: the variances of the prediction targets
+  \eqn{\mathrm{Var}_{\hat{\theta}}[Y(\mbox{\boldmath$s$\unboldmath})]}{}
+  or
+  \eqn{\mathrm{Var}_{\hat{\theta}}[Z(\mbox{\boldmath$s$\unboldmath})]}{}.
+  
+  
+\end{itemize}
+
+Note that the component \code{var.pred} is also present if \code{type}
+is equal to \code{"trend"}, irrespective of the choice for
+\code{extended.output}.  This component contains then the variances of
+the fitted values.
+
+
+
+\paragraph{Contents and structure of returned object}
+
+Depending on the values passed to \code{type}, \code{full.covmat} and
+\code{extended.output}, \code{predict.georob()} returns the following object:
+
+\begin{enumerate}
+  
+  \item If \code{type} is equal to \code{"terms"} then a vector, a
+  matrix, or a list with prediction results along with bounds and
+  standard errors, see \code{predict.lm()}.
+  
+  \item If \code{type} is not equal to \code{"terms"} and
+  \code{full.covmat} is \code{FALSE} then the result is an object of
+  the same class as \code{newdata} (data frame,
+  \code{{SpatialPointsDataFrame}},
+  \code{{SpatialPixelsDataFrame}}
+  \code{{SpatialGridDataFrame}}, \\{}
+  \code{{SpatialPolygonsDataFrame}}).
+  The data frame or the \code{data} slot of the
+  \code{Spatial{\itshape xxx\,}DataFrame} objects have the following components:
+  
+  \begin{itemize}
+    
+    \item the coordinates of the prediction points (only present if
+    \code{newdata} is a data frame).
+    
+    \item \code{pred}: the kriging predictions (or fitted values).
+    
+    \item \code{se}: the root mean squared prediction errors (kriging
+    standard errors).
+    
+    \item \code{lower}, \code{upper}: the limits of
+    tolerance/confidence intervals (the confidence level is set by the
+    argument \code{signif}) of \code{predict.georob()}),
+    
+    \item \code{trend}, \code{var.pred}, \code{cov.pred.target},
+    \code{var.target}: only present if \code{extended.output} is \code{TRUE},
+    see above.
+    
+  \end{itemize}
+  
+  \item If \code{type} is not equal to \code{"terms"} and
+  \code{full.covmat} is \code{TRUE} then \code{predict.georob()}
+  returns a list with the following components:
+  
+  \begin{itemize}
+    
+    \item \code{pred}: a data frame or a \code{Spatial{\itshape xxx\,}DataFrame}
+    object as described above for\\{} \code{full.covmat = FALSE}.
+    
+    \item \code{mse.pred}: the full covariance matrix of the
+    prediction errors,
+    \eqn{Y(\mbox{\boldmath$s$\unboldmath})-\widehat{Y}(\mbox{\boldmath$s$\unboldmath})}{}
+    or
+    \eqn{Z(\mbox{\boldmath$s$\unboldmath})-\widehat{Z}(\mbox{\boldmath$s$\unboldmath})}{}
+    see above.
+    
+    \item \code{var.pred}: the full covariance matrix of the kriging
+    predictions, see above.
+    
+    \item \code{cov.pred.target}: the full covariance matrix of the
+    predictions and the prediction targets, see above.
+    
+    \item \code{var.target}: the full covariance matrix of the
+    prediction targets, see above.
+        
+  \end{itemize}
+  
+\end{enumerate}
+
+\clearpage
+
+\bcf[1]
+
+\begin{center}
+  \includegraphics[width=0.8\textwidth]{0-block-discretization}
+\end{center}
+
+\ecf{Approximation of four blocks $B_{1}$, \ldots, $B_{4}$ by
+a group of 16 pixels $PX_{1}$ \ldots, $PX_{16}$.  The original
+geometry of blocks with the grid of the pixels is shown on the
+left and the approximation on the
+right.}{block-discretization}
+
+
+\subsubsection{Block kriging}\label{sec:block-kriging}
+
+\code{georob.predict()} uses functions of the package
+\pkg{constrainedKriging} \citep{Hofer-Papritz-2011} for efficiently
+computing the required integrals of the covariance function.
+%
+The target blocks are approximated for this by sets of
+\emph{rectangular pixels} arranged on a regular lattice
+(Figure~\ref{fig:block-discretization}).  The integrals can then be
+computed very efficiently because the PDF of the distance between two
+points, that are uniformly distributed in two rectangles on a regular
+lattice, can be computed by closed-form expressions
+\citep{Clifford-2005}.
+%
+Also the PDF of the distance between a fixed point and a point
+uniformed distributed in a rectangle is available in closed form
+\citep{Hofer-Papritz-2011}.
+%
+Hence, for a two-dimensional study region, only 1-dimensional
+integrals of the covariance function must be evaluated numerically
+instead of 2- and 4-dimensional integrals \citep[see][for
+details]{Hofer-Papritz-2011}.
+
+\smallskip
+
+The arguments \code{pwidth} and \code{pheight} of
+\code{control.predict.georob()} define the dimension of the pixel used
+for the approximation of the blocks, and \code{napp} defines how many
+repetitions of the approximation by randomly placed grid of pixels
+should be averaged (see help page of the function \code{preCKrige} of
+package \pkg{constrainedKriging} for more details).
+
+\smallskip
+
+For the time being \pkg{constrainedKriging} does not integrate the
+following (generalized) covariances : \code{RMaskey}, \code{RMdagum},
+\code{RMdewijsian}, \code{RMfbm} and \code{RMgenfbm}.  Hence, these
+models cannot be used for block kriging.
+
+
+\subsubsection{Parallelized computations}\label{sec:kriging-parallelized-computations}
+
+\code{predict.georob()} computes
+its results in parallel.  The parallelization is controlled by the
+arguments \code{mmax} and \code{ncores} of
+\code{control.predict.georob()} (and \code{pcmp} along with the
+function \code{control.pcmp()}, see section~\ref{sec:parallization}):
+% 
+% \begin{ldescription}
+%   
+%   \item[\code{mmax}] integer equal to the maximum number (default
+%   \code{10000}) of prediction items, computed in a sub-task, see
+%   below.
+%   
+%   \item[\code{ncores}] positive integer controlling how many cores are
+%   used for parallelized computations, see below.
+%   
+% \end{ldescription}
+% 
+If there are \eqn{m}{} items to compute, the task is split into
+\code{ceiling(m/mmax)} sub-tasks that are then distributed to
+\code{ncores} CPUs.  Evidently, \code{ncores = 1} suppresses parallel
+execution.  By default, the function uses all available CPUs as
+returned by \code{{detectCores()}}.  Note that if \code{full.covmat} is
+\code{TRUE} \code{mmax} must exceed \eqn{m}{} (and parallel execution
+is not possible).
+
+\smallskip
+
+
+
+
+
+
+\subsection{Lognormal kriging}\label{sec:krig-details-lognormal}
+
+The function \code{lgnpp()} back-transforms point or block kriging
+predictions of a log-transformed response variable computed by
+\code{predict.georob()}.  Alternatively, the function averages
+log-normal point kriging predictions for a block and approximates the
+mean squared prediction error of the block mean.
+%
+The items required for the back-transformation are computed by
+\code{predict.georob()} if the argument \code{control =
+control.georob.predict(extended.output = TRUE)} is used, see
+section~\ref{sec:predict-georob}.
+
+% In more
+% detail, the following items are then computed:
+% 
+% \begin{itemize}
+%   
+%   
+%   \item \code{trend}: the fitted values,
+%   \eqn{\mbox{\boldmath$x$\unboldmath}(\mbox{\boldmath$s$\unboldmath})\mathrm{^T}\widehat{\mbox{\boldmath$\beta$\unboldmath}}}{},
+%   
+%   \item \code{var.pred}: the variances of the kriging predictions, 
+%   \eqn{\mathrm{Var}_{\hat{\theta}}[\widehat{Y}(\mbox{\boldmath$s$\unboldmath})]}{} or 
+%   \eqn{\mathrm{Var}_{\hat{\theta}}[\widehat{Z}(\mbox{\boldmath$s$\unboldmath})]}{},
+%   
+%   \item \code{cov.pred.target}: the covariances between the predictions and the
+%   prediction targets,\\{}
+%   \eqn{\mathrm{Cov}_{\hat{\theta}}[\widehat{Y}(\mbox{\boldmath$s$\unboldmath}),Y(\mbox{\boldmath$s$\unboldmath})]}{} or 
+%   \eqn{\mathrm{Cov}_{\hat{\theta}}[\widehat{Z}(\mbox{\boldmath$s$\unboldmath}),Z(\mbox{\boldmath$s$\unboldmath})]}{},
+%   
+%   
+%   \item \code{var.target}: the variances of the prediction targets
+%   \eqn{\mathrm{Var}_{\hat{\theta}}[Y(\mbox{\boldmath$s$\unboldmath})]}{} or 
+%   \eqn{\mathrm{Var}_{\hat{\theta}}[Z(\mbox{\boldmath$s$\unboldmath})]}{}.
+%   
+%   
+% \end{itemize}
+% 
+% 
+% Note that the component \code{var.pred} is also  present if 
+% \code{type} is equal to \code{"trend"}, irrespective of the choice for \code{extended.output}.  
+% This component contains then the variances of the fitted values.
+
+
+\smallskip
+
+\code{lgnpp()} then performs the following three tasks:
+
+%
+\subsubsection{Back-transformation of point kriging predictions of a log-transformed response}\label{sec:krig-details-lognormal-point}
+
+The usual, marginally unbiased back-transformation for log-normal point
+kriging is used:
+
+\begin{equation}\label{eq:point-lk-predictor}
+  \widehat{U}(\mbox{\boldmath$s$\unboldmath}) = \exp( \widehat{Z}(\mbox{\boldmath$s$\unboldmath}) + 
+  1/2 (  \mathrm{Var}_{\hat{\theta}}[ Z(\mbox{\boldmath$s$\unboldmath})]
+  - \mathrm{Var}_{\hat{\theta}}[\widehat{Z}(\mbox{\boldmath$s$\unboldmath})])), 
+\end{equation}
+%
+\begin{eqnarray}\label{eq:point-lk-msep}
+  \lefteqn{\mathrm{Cov}_{\hat{\theta}}[
+  U(\mbox{\boldmath$s$\unboldmath}_i) - \widehat{U}(\mbox{\boldmath$s$\unboldmath}_i),
+  U(\mbox{\boldmath$s$\unboldmath}_j) - \widehat{U}(\mbox{\boldmath$s$\unboldmath}_j) 
+  ] = \mu_{\hat{\theta}}(\mbox{\boldmath$s$\unboldmath}_i) \mu_{\hat{\theta}}(\mbox{\boldmath$s$\unboldmath}_j)
+  \big\{
+  \exp(\mathrm{Cov}_{\hat{\theta}}[Z(\mbox{\boldmath$s$\unboldmath}_i),Z(\mbox{\boldmath$s$\unboldmath}_j)])} \hspace{2cm}\nonumber \\
+   &&  \quad\quad 
+   -2\exp(\mathrm{Cov}_{\hat{\theta}}[\widehat{Z}(\mbox{\boldmath$s$\unboldmath}_i),Z(\mbox{\boldmath$s$\unboldmath}_j)]) 
+    +\exp(\mathrm{Cov}_{\hat{\theta}}[\widehat{Z}(\mbox{\boldmath$s$\unboldmath}_i),\widehat{Z}(\mbox{\boldmath$s$\unboldmath}_j)])
+  \big\},
+\end{eqnarray}
+where \eqn{\widehat{Z}}{} and \eqn{\widehat{U}}{} denote the
+log- and back-transformed predictions of the signal,
+and
+%
+\begin{equation}\label{eq:point-lk-mean}
+  \mu_{\hat{\theta}}(\mbox{\boldmath$s$\unboldmath}) \approx 
+      \exp(\mbox{\boldmath$x$\unboldmath}(\mbox{\boldmath$s$\unboldmath})\mathrm{^T}\widehat{\mbox{\boldmath$\beta$\unboldmath}} 
+      + 1/2 \mathrm{Var}_{\hat{\theta}}[Z(\mbox{\boldmath$s$\unboldmath})]).    
+\end{equation}
+%
+The expressions for the required covariance terms can be found in the
+Appendices of \citet{Nussbaum-etal-2012,Nussbaum-etal-2014b}.  
+%
+Instead of the signal \eqn{Z(\mbox{\boldmath$s$\unboldmath})}{},
+predictions of the log-transformed response
+\eqn{Y(\mbox{\boldmath$s$\unboldmath})}{} or the estimated trend
+\eqn{\mbox{\boldmath$x$\unboldmath}(\mbox{\boldmath$s$\unboldmath})^\mathrm{T}\widehat{\mbox{\boldmath$\beta$\unboldmath}}}{}
+of the log-transformed data can be back-transformed.  The above
+transformations are used if the \code{object} passed as first argument
+to \code{lgnpp()} contains point kriging predictions and if the
+argument \code{is.block = FALSE} and the argument \code{all.pred} is
+missing.
+
+
+%
+\subsubsection{Back-transformation of block kriging predictions of a log-transformed response}\label{sec:krig-details-lognormal-block-permanence}
+
+Block kriging predictions of a log-transformed response variable are
+back-transformed by the approximately unbiased transformation proposed
+by \citet[Appendix~C]{Cressie-2006}
+
+\begin{equation}\label{eq:block-lk-predictor}
+  \widehat{U}(A) = \exp( \widehat{Z}(A) + 1/2 \{
+    \mathrm{Var}_{\hat{\theta}}[Z(\mbox{\boldmath$s$\unboldmath})] + \widehat{\mbox{\boldmath$\beta$\unboldmath}}\mathrm{^T}
+    \mbox{\boldmath$M$\unboldmath}(A) \widehat{\mbox{\boldmath$\beta$\unboldmath}} -
+    \mathrm{Var}_{\hat{\theta}}[\widehat{Z}(A)]  
+    \}),
+\end{equation}
+%
+\begin{eqnarray}\label{eq-msep-block-lk-predictor}
+\mathrm{E}_{\hat{\theta}}[\{U(A) - \widehat{U}(A))^2] & = & \mu_{\hat{\theta}}(A)^2  \big\{
+    \exp(\mathrm{Var}_{\hat{\theta}}[Z(A)]) \nonumber \\
+    &&  - 2 \, \exp(\mathrm{Cov}_{\hat{\theta}}[\widehat{Z}(A),Z(A)]) + \exp(\mathrm{Var}_{\hat{\theta}}[\widehat{Z}(A)])
+    \big\}
+\end{eqnarray}
+
+where \eqn{\widehat{Z}(A)}{} and \eqn{\widehat{U}(A)}{} are the log- and
+back-transformed predictions of the block mean \eqn{U(A)}{}, respectively,
+\eqn{\mbox{\boldmath$M$\unboldmath}(A)}{} is the spatial
+covariance matrix of the covariates
+
+\begin{equation}  \label{eq:spatial-covariance-covariates}
+\mbox{\boldmath$M$\unboldmath}(A) = 1/|A| \int_A 
+  ( \mbox{\boldmath$x$\unboldmath}(\mbox{\boldmath$s$\unboldmath}) - \mbox{\boldmath$x$\unboldmath}(A) )
+  ( \mbox{\boldmath$x$\unboldmath}(\mbox{\boldmath$s$\unboldmath}) - \mbox{\boldmath$x$\unboldmath}(A) )\mathrm{^T} \,d\mbox{\boldmath$s$\unboldmath}
+\end{equation}
+
+within the block $A$, where 
+\begin{equation}  \label{eq:spatial-mean-covariates}
+\mbox{\boldmath$x$\unboldmath}(A) = 1/|A| \int_A \mbox{\boldmath$x$\unboldmath}(\mbox{\boldmath$s$\unboldmath}) \,d\mbox{\boldmath$s$\unboldmath}  
+\end{equation}
+  and 
+
+\begin{equation}  \label{eq:spatial-mean}
+  \mu_{\hat{\theta}}(A) \approx \exp(\mbox{\boldmath$x$\unboldmath}(A)\mathrm{^T}
+    \widehat{\mbox{\boldmath$\beta$\unboldmath}} + 1/2 \mathrm{Var}_{\hat{\theta}}[Z(A)]). 
+\end{equation}
+
+This back-transformation is based on the assumption that both the
+point data \eqn{U(\mbox{\boldmath$s$\unboldmath})}{} and the block
+means \eqn{U(A)}{} follow log-normal laws, which strictly cannot hold.
+But for small blocks the assumption works well as the bias and the
+loss of efficiency caused by this assumption are small
+\citep{Cressie-2006,Hofer-etal-2013}.
+
+\smallskip
+
+The above formulae are used by \code{lgnpp()} if \code{object}
+contains block kriging predictions in the form of a
+\code{\LinkA{SpatialPolygonsDataFrame}{SpatialPolygonsDataFrame}}.  To
+approximate \eqn{\mbox{\boldmath$M$\unboldmath}(A)}{M(A)}{}, one needs
+the covariates on a fine grid for the whole study domain in which the
+blocks lie.  The covariates are passed  to \code{lgnpp()} as argument \code{newdata}, where
+\code{newdata} can be any spatial data frame accepted by
+\code{predict.georob}.  For evaluating
+\eqn{\mbox{\boldmath$M$\unboldmath}(A)}{} the geometry of the blocks
+is taken from the \code{polygons} slot of the
+\code{SpatialPolygonsDataFrame} passed as \code{object} to
+\code{lgnpp()}.
+
+
+%
+\subsubsection{Back-transformation and averaging of point kriging predictions of a log-transformed response}\label{sec:krig-details-lognormal-block-averaging}
+
+\code{lgnpp()} allows as a further option to back-transform and
+\emph{average} point kriging predictions passed as \code{object} to
+the function \citep[optimal log-normal block kriging,
+see][]{Cressie-2006}.  One then assumes that the predictions in
+\code{object} refer to points that lie in \emph{a single} block.
+Hence, one uses the approximation
+
+\begin{equation}  \label{eq:discrete-approx-spatial-mean-1}
+\widehat{U}(A) \approx \frac{1}{K} \sum_{s_i \in A} \widehat{U}(\mbox{\boldmath$s$\unboldmath}_i)
+\end{equation}
+
+to predict the block mean \eqn{U(A)}{}, where \eqn{K}{} is the number
+of points in \eqn{A}{}.  The mean squared error of prediction can be
+approximated by
+
+\begin{equation}  \label{eq:discrete-approx-msep-block-mean-1}
+  \mathrm{E}_{\hat{\theta}}[\{U(A) - \widehat{U}(A)\}^2] \approx \frac{1}{K^2}
+    \sum_{s_i \in A} \sum_{s_j \in A} 
+    \mathrm{Cov}_{\hat{\theta}}[
+    U(\mbox{\boldmath$s$\unboldmath}_i) - \widehat{U}(\mbox{\boldmath$s$\unboldmath}_i),
+    U(\mbox{\boldmath$s$\unboldmath}_j) - \widehat{U}(\mbox{\boldmath$s$\unboldmath}_j) 
+    ].
+\end{equation}
+In most instances, the evaluation of the above double sum is not feasible
+because a large number of points is used to discretize the block \eqn{A}{}.
+\code{lgnpp()} then uses the following approximations to compute the
+mean squared error
+\citep[see][Appendices]{Nussbaum-etal-2012,Nussbaum-etal-2014b}:
+
+\begin{itemize}
+  
+  
+  \item Point prediction results are passed as \code{object} to \code{lgnpp()}
+  only for a \emph{random sample of points in \eqn{A}{}} (of size \eqn{k}{}),
+  for which the evaluation of the above double sum is feasible.
+  
+  \item The prediction results for the \emph{complete set of points}
+  within the block are passed as argument \code{all.pred} to
+  \code{lgnpp}.  These results are used to compute \eqn{\widehat{U}(A)}{}.
+  
+  \item The mean squared error is then approximated by  
+  
+  \begin{eqnarray}\label{eq:discrete-approx-msep-block-mean-2}
+    \lefteqn{\mathrm{E}_{\hat{\theta}}[\{U(A) - \widehat{U}(A)\}^2]  \approx
+    \frac{1}{K^2} \sum_{s_i \in A} \mathrm{E}_{\hat{\theta}}[ \{ U(\mbox{\boldmath$s$\unboldmath}_i) - \widehat{U}(\mbox{\boldmath$s$\unboldmath}_i)\}^2]}  \nonumber\\
+    && + \frac{K-1}{K k (k-1)} \sum_{s_i \in \mathrm{sample}}\sum_{s_j \in \mathrm{sample}, s_j \neq s_i}
+    \mathrm{Cov}_{\hat{\theta}}[
+    U(\mbox{\boldmath$s$\unboldmath}_i) - \widehat{U}(\mbox{\boldmath$s$\unboldmath}_i),
+    U(\mbox{\boldmath$s$\unboldmath}_j) - \widehat{U}(\mbox{\boldmath$s$\unboldmath}_j) 
+    ].
+  \end{eqnarray}
+  
+  The first term of the RHS (and \eqn{\widehat{U}(A)}{}) can be
+  computed from the point kriging results contained in
+  \code{all.pred}, and the double sum is evaluated from the full
+  covariance matrices of the predictions and the respective targets,
+  passed to \code{lgnpp()} as \code{object} (one has to use the
+  arguments \code{control=control.predict.georob(full.covmat=TRUE)}
+  for \code{predict.georob()} when computing the point kriging
+  predictions stored in \code{object}).
+  
+  \item If the prediction results are not available for the complete set
+  of points in \eqn{A}{} then \code{all.pred} may be equal to \eqn{K}{}.  The
+  block mean is then approximated by
+  
+  \begin{equation}  \label{eq:discrete-approx-spatial-mean-2}
+  \widehat{U}(A) \approx \frac{1}{k} \sum_{s_i \in \mathrm{sample}}
+  \widehat{U}(\mbox{\boldmath$s$\unboldmath}_i)
+  \end{equation}
+  
+  and the first term of the RHS of the expression for the mean squared
+  error by
+  
+  \begin{equation}  \label{eq:discrete-approx-msep-block-mean-3}
+    \frac{1}{kK} \sum_{s_i \in \mathrm{sample}} \mathrm{E}_{\hat{\theta}}[ \{
+  U(\mbox{\boldmath$s$\unboldmath}_i) -
+  \widehat{U}(\mbox{\boldmath$s$\unboldmath}_i)\}^2].
+  \end{equation}
+  
+  \item By drawing samples repeatedly and passing the related kriging
+  results as \code{object} to \code{lgnpp()}, one can reduce the error
+  of the approximation of the mean squared error.
+  
+  
+\end{itemize}
+
+\clearpage
+
+
+%% 
+ % Details model building and assessment
+ %%
+
+% material taken from
+% tools::Rd2latex("georobModelBuilding.Rd", "../../../vignettes/georobModelBuilding.tex", outputEncoding="macintosh")
+% tools::Rd2latex("S3methods.georob.Rd", "../../../vignettes/S3methods.georob.tex", outputEncoding="macintosh")
+% tools::Rd2latex("plot.georob.Rd", "../../../vignettes/plot.georob.tex", outputEncoding="macintosh")
+% tools::Rd2latex("profilelogLik.Rd", "../../../vignettes/profilelogLik.tex", outputEncoding="macintosh")
+% tools::Rd2latex("cv.georob.Rd", "../../../vignettes/cv.georob.tex", outputEncoding="macintosh")
+
+\section{Building models and assessing fitted models}\label{sec:model-building-assessment}
+
+%%%%%%%%%%%%%%%%%%%%%
+% model building
+
+\subsection{Model building} \label{sec:model-building}
+
+% step, drop1, add1
+
+\paragraph{Wald tests} The \code{waldtest} method for class
+\texttt{georob} can be used to test hypotheses about the fixed effects
+of a model.  Note that this function uses \emph{conditional} $F$- or
+$\chi^2$-tests \citep[section~2.4.2]{Pinheiro-Bates-2000}, i.e.\ it fixes
+the variogram parameters at the values of the more general model of
+each comparison (see help page of function \code{waldtest()} of
+package \pkg{lmtest} for details).
+
+\smallskip
+
+Besides \code{waldtest.georob()} the functions of the package
+\pkg{multcomp} can be used to test general linear hypotheses about the
+fixed effects of the model.
+
+
+\paragraph{Log-likelihood and AIC}
+
+The \code{deviance} method for class \code{georob} returns for
+Gaussian (RE)ML fits the \emph{residual deviance}
+%
+\deqn{(\mbox{\boldmath $Y -X
+\widehat{\beta}$})^{\mathrm{T}} (\widehat{\tau}^2
+\mbox{\boldmath$I$\unboldmath} +
+\mbox{\boldmath$\Gamma$\unboldmath}_{\widehat{\theta}})^{-1}
+(\mbox{\boldmath $Y -X \widehat{\beta}$}),}{} 
+%
+and the \code{logLik} and \code{extractAIC} methods extract for class
+\code{georob} the respective goodness-of-fit criteria, depending on
+the argument \code{REML} either for {ML} (default) or {REML}.
+
+\smallskip
+
+For a robust REML fit the deviance is not defined because there is no
+robustified log-likelihood.  \code{deviance.georob()} then computes
+(with a warning) the residual deviance of an equivalent Gaussian model
+with heteroscedastic nugget effect \eqn{\widehat{\tau}^2/\mbox{\boldmath
+$w$\unboldmath}}{}, where \eqn{\mbox{\boldmath $w$\unboldmath}}{} are
+the ``robustness weights'' \deqn{w_{i} =
+\psi_c(\widehat{\varepsilon}_i/\widehat{\tau})/(\widehat{\varepsilon}_i/\widehat{\tau}).}{}
+%
+For robust REML, \code{logLik()} and \code{extractAIC()} return the
+respective criteria also for the equivalent Gaussian model with
+heteroscedastic nugget effect.
+
+
+\paragraph{Stepwise selection of covariates}
+
+The \code{add1} and \code{drop1} methods for class \code{georob}
+compute all the single terms that can be added or dropped from the
+model according to their \code{scope} argument.  By default, the
+variogram parameters are kept fixed at the values fitted for
+\code{object}.  Use the argument \code{fixed = FALSE} if the variogram
+parameters should be re-estimate afresh for each evaluated term.  Then
+either the variogram parameters in \code{object\$initial.objects}
+(\code{use.fitted.param = FALSE}) or the fitted parameters of
+\code{object} (\code{use.fitted.param = TRUE}) are used as initial
+values.
+
+\smallskip
+
+The \code{step} method for class \code{georob}\footnote{%
+The package \pkg{georob} provides a
+generic \code{step} function and re-defines the function
+\code{step()} of the package \pkg{stats} as \code{default} method.}
+%
+allows even finer control whether the variogram parameters are kept
+fixed or re-estimated when evaluating single terms.  Two argument of
+\code{step.georob()} control the behaviour:
+
+\begin{ldescription}
+  
+  \item[\code{fixed.add1.drop1}] logical controlling whether the
+  variogram parameters are \emph{not} adjusted when \code{add}ing or
+  \code{drop}ping model terms by \code{add1.georob()} and
+  \code{drop1.georob()} (default \code{TRUE}).
+  
+  \item[\code{fixed.step}] logical controlling whether the variogram
+  parameters are \emph{not} adjusted after having called
+  \code{add1.georob()} and \code{drop1.georob()} in a cycle of
+  \code{step.georob()} (default \code{TRUE}).  For \code{fixed.step =
+  FALSE} the parameters are estimated afresh for the new model that
+  was chosen in the previous cycle.
+  
+\end{ldescription}
+
+Of course, model building based on AIC is only sound for Gaussian
+(RE)ML as there is no log-likelihood for robust REML. For robust REML
+fits \code{add1.georob()}, \code{drop1.georob()} and
+\code{step.georob()} use AIC values evaluated for an equivalent
+Gaussian model with heteroscedastic nugget effect, see above, and it
+is currently not known  whether this is a valid approach for model
+building.
+
+\smallskip
+
+A last remark: Use the argument \code{ncores} to let
+\code{add1.georob()} and \code{drop1.georob()} evaluate single
+terms in parallel.
+
+
+%%%%%%%%%%%%%%%%%%%%%
+% model assessment
+
+\subsection{Assessing fitted models}\label{sec:model-assessment}
+
+\subsubsection{Model diagnostics}\label{sec:model-diagnostics}
+
+The methods required for residual diagnostics (\code{fitted},
+\code{residuals}, \code{rstandard}, \code{ranef}) work for objects of
+class \code{georob} (either as \code{default} or specific
+\code{georob} method).
+
+\smallskip
+
+Note that the are two kind of residuals: \code{residuals.georob()}
+extracts either the estimated independent errors
+\eqn{\widehat{\varepsilon}(\mbox{\boldmath$s$\unboldmath})}{} or the
+sum of the latter quantities and the spatial random effects
+\eqn{\widehat{B}(\mbox{\boldmath$s$\unboldmath})}{} (regression
+residuals).  \code{rstandard.georob()} does the same but standardizes
+the residuals to unit variance.  \code{ranef.georob()} extracts
+\eqn{\widehat{B}(\mbox{\boldmath$s$\unboldmath})}{} with the option to
+standardize them as well (by argument \code{standard}).
+
+\smallskip
+
+Diagnostics plots are created by the \code{plot} method for class
+\code{georob}: Depending on the value of the argument \code{type} the
+following plots are created:
+
+\begin{itemize}
+
+\item \code{"variogram"}: the estimated variogram (default),
+
+\item \code{"covariance"}: the estimated covariance function,
+
+\item \code{"correlation"}: the estimated correlation function,
+
+\item \code{"scale-location"}: square root of absolute regression
+residuals plotted against fitted values (Scale-Location plot),
+
+\item \code{"ta"}: regression residuals plotted against fitted values
+(Tukey-Anscombe plot),
+
+\item \code{"qq.res"}: normal QQ plot of standardized errors
+\eqn{\hat{\varepsilon}}{},
+
+\item \code{"qq.ranef"}: normal QQ plot of standardized random
+effects \eqn{\hat{B}}{}.
+
+\end{itemize}
+
+
+\subsubsection{Log-likelihood profiles}\label{sec:likelihood-profiles}
+
+The function \code{profilelogLik()} computes for an array of fixed
+values of variogram parameters the profile log-likelihood by
+maximizing the (restricted) log-likelihood with respect to the
+remaining variogram parameters, the fixed and random effects.  Of
+course, the maximized profile log-likelihood values are meaningful
+only for Gaussian (RE)ML fits (for robust fits the calculated values
+refer to the equivalent Gaussian model with heteroscedastic nugget
+effect, see above).  Use the argument \code{ncores} to fit multiple
+models in parallel.  
+
+\smallskip
+
+\code{profilelogLik()} uses the function \code{{update}} to
+re-estimated the model with partly fixed variogram parameters.
+Therefore, any argument accepted by \code{{georob()}} (except
+\code{data}) can be changed when fitting the model.  Some of them
+(e.g. \code{verbose}) are explicit arguments of \code{profilelogLik},
+but also the remaining ones can be passed by \code{...} to the
+function.
+
+\smallskip
+
+\code{profilelogLik()} returns its results as a
+data frame.  Customary graphics functions can be used for display of
+log-likelihood profiles and dependence of estimated parameters on each
+other.
+
+
+%%%%%%%%%%%%%%%%%%%%%
+% model cross-validation
+
+\subsection{Cross-validation}\label{sec:cv}
+
+\subsubsection{Computing cross-validation predictions}\label{sec:computing-cv-predictions}
+
+The function \code{cv.georob()} assesses the goodness-of-fit of a
+spatial linear model by \var{K}-fold cross-validation.  In more
+detail, the model is fitted \var{K} times by robust (or Gaussian)
+(RE)ML, excluding each time \var{1/K}th of the data.  The fitted
+models are used to compute robust (or customary) external kriging
+predictions for the omitted observations.  If the response variable is
+log-transformed then the kriging predictions can be optionally
+transformed back to the original scale of the measurements.  Use the
+argument \code{lgn = TRUE} for this.
+
+Practitioners in geostatistics commonly cross-validate a fitted model
+without re-estimating the model parameters with the reduced data sets.
+This is clearly an unsound practice
+\citep[section~7.10]{Hastie-etal-2009}.  Therefore, the argument
+\code{re.estimate} should always be set to \code{TRUE}.  The
+alternative is provided only for historic reasons.  The argument
+\code{return.fit} and \code{reduced.output} control whether results of
+the model fit are returned by \code{cv.georob()}.
+
+\smallskip
+
+By default, \code{cv.georob()} fits the models in parallel to the
+cross-validation sets.  Use the argument \code{ncores} to control
+parallelized computations.
+
+\paragraph{Defining the cross-validation subsets}
+
+The argument \code{method} controls how the data set is partitioned
+into the $K$ subsets: For \code{method = "block"} (default) the
+function \code{kmeans()} is used to form geographically compact
+subsets of data locations and for \code{method = "random"} simple
+random sampling is used to form the subsets.  In analogy to the block
+bootstrap in time series analysis \citep{Kuensch-1989}, the first
+method should be preferred for model assessment, while the latter
+might be more informative for assessing prediction precision.  Instead
+of using \code{method} (along with the argument \code{seed}) to form
+the subsets, the argument \code{sets} can be used to pass the
+definition of a partition to \code{cv.georob()}.
+
+Irrespective of the method used to define the subsets, coincident
+sampling locations are assigned to the same subset, except when one
+uses the argument \code{duplicate.in.same.set = FALSE}.
+
+\paragraph{Further control}
+
+When the external drift model contains factors it may happen that
+observations are missing for some factor levels in some of the
+subsets.  The argument \code{mfl.action} controls what then happens:
+For \code{mfl.action = "stop"} \code{cv.georob()} stops with an error
+message.  For \code{mfl.action = "offset"} the effect of the
+respective factor (estimated with all the data) is treated as an
+\code{offset} term and \code{cv.georob()} estimates only the remaining
+terms of the external drift model.
+
+\smallskip
+
+\code{cv.georob()} uses the function \code{{update()}} to re-estimated
+the model with the subsets.  Therefore, any argument accepted by
+\code{georob()} except \code{data} can be changed when re-fitting the
+model.  Some of them (e.g. \code{formula}, \code{subset}, etc.)  are
+explicit arguments of \code{cv.georob()}, but also the remaining ones
+can be passed by \code{...} to the function.
+
+\smallskip
+
+Sometimes, the estimated variograms differ considerably between the
+cross-validation subsets.  Using common initial values for estimating
+the model is then numerically inefficient.  Therefore, the arguments
+\code{param} and \code{aniso} accept in addition to vectors of initial
+variogram parameters matrices with $K$ rows of initial values.  The
+$i$th row of the matrix then contains the initial variogram parameters
+that are used to fit the model to the $i$th cross-validation subset.
+
+
+\subsubsection{Criteria for assessing (cross-)validation prediction errors}\label{sec:validating-cv-predictions}
+
+The function \code{validate.predictions()} computes the items required
+to evaluate (and plot) the diagnostic criteria proposed by
+\citet{Gneiting-etal-2007} for assessing the \emph{calibration} and
+the \emph{sharpness} of probabilistic predictions of
+\mbox{(cross-)}validation data.  To this aim,
+\code{validate.predictions()} uses the assumption that the prediction
+errors
+\eqn{Y(\mbox{\boldmath$s$\unboldmath})-\widehat{Y}(\mbox{\boldmath$s$\unboldmath})}{}
+follow normal distributions with zero mean and standard deviations
+equal to the kriging standard errors.  This assumption is an
+approximation if the errors \eqn{\varepsilon}{\epsilon} come from a
+long-tailed distribution.  Furthermore, for the time being, the
+kriging variance of the \emph{response} \eqn{Y}{} is approximated by
+adding the estimated nugget \eqn{\widehat{\tau}^2}{} to the kriging
+variance of the signal \eqn{Z}{}.  This approximation likely
+underestimates the mean squared prediction error of the response if
+the errors come from a long-tailed distribution.  Hence, for robust
+kriging, the standard errors of the \mbox{(cross-)}validation errors
+are likely too small. 
+
+\smallskip
+
+Notwithstanding these difficulties and imperfections,
+\code{validate.predictions()} computes
+
+\begin{itemize}
+  
+  
+  \item the \emph{probability integral transform} (PIT),
+  
+  \begin{equation}\label{eq:cv-pit}
+    \mathrm{PIT}_i = F_i(y_i),
+  \end{equation}
+  
+  where \eqn{F_i(y_i)}{} denotes the (plug-in) predictive CDF evaluated
+  at \eqn{y_i}{}, the value of the \eqn{i}{}th
+  \mbox{(cross-)}validation datum,
+  
+  \item the \emph{average predictive CDF}  
+  
+  \begin{equation}\label{eq:cv-average-pred-dist}
+    \bar{F}_n(y)=1/n \sum_{i=1}^n F_i(y),
+  \end{equation}
+  
+  where \eqn{n}{} is the number of (cross-)validation observations and
+  the \eqn{F_i}{} are evaluated at \eqn{N}{} quantiles equal to the set
+  of distinct \eqn{y_i}{} (or a subset of size \eqn{N}{} of them),
+  
+  \item the \emph{Brier Score}  
+  
+  \begin{equation}\label{ea:cv-bs}
+    \mathrm{BS}(y) = 1/n \sum_{i=1}^n \left(F_i(y) - I(y_i \leq y)
+    \right)^2,
+  \end{equation}
+  
+  where \eqn{I(x)}{} is the indicator function for the event \eqn{x}{},
+  and the Brier score is again evaluated at the unique values of the
+  (cross-)validation observations (or a subset of size \eqn{N}{} of
+  them),
+  
+  \item the \emph{averaged continuous ranked probability score}, CRPS, a
+  strictly proper scoring criterion to rank predictions, which is
+  related to the Brier score by
+  
+  \begin{equation}\label{eq:cv-crps}
+    \mathrm{CRPS} = \int_{-\infty}^\infty \mathrm{BS}(y) \,dy.
+  \end{equation}
+  
+  
+\end{itemize}
+
+
+\citet{Gneiting-etal-2007} proposed the following plots to validate
+probabilistic predictions:
+
+\begin{itemize}
+
+
+\item A histogram (or a plot of the empirical CDF) of the PIT values.
+For ideal predictions, with observed coverages of prediction intervals
+matching nominal coverages, the PIT values have an uniform
+distribution.
+
+\item Plots of \eqn{\bar{F}_n(y)}{} and of the empirical CDF of
+the data, say \eqn{\widehat{G}_n(y)}{}, and of their
+difference, \eqn{\bar{F}_n(y)-\widehat{G}_n(y)}{}
+vs. \eqn{y}{}.  The forecasts are said to be \emph{marginally calibrated}
+if \eqn{\bar{F}_n(y)}{} and \eqn{\widehat{G}_n(y)}{}
+match.
+
+\item A plot of \eqn{\mathrm{BS}(y)}{} vs.  \eqn{y}{}.  Probabilistic
+predictions are said to be \emph{sharp} if the area under this curve,
+which equals CRPS, is minimized.
+
+
+\end{itemize}
+
+
+The \code{plot()} method for class \code{cv.georob} allows to create
+these plots, along with scatter-plots of observations and predictions,
+Tukey-Anscombe and normal QQ plots of the standardized prediction
+errors, and \code{summary.cv.georob()} computes the mean and
+dispersion statistics of the (standardized) \mbox{(cross-)}validation
+prediction errors.
+
+% (by a call to
+% \code{validate.prediction} with argument \code{statistic = "st"}, see
+% \emph{Value}) and the averaged continuous ranked probability score
+% (\code{crps}).  If present in the \code{cv.georob} object, the error
+% statistics are also computed for the errors of the unbiasedly
+% back-transformed predictions of a log-transformed response.  If \code{se}
+% is \code{TRUE} then these statistics are evaluated separately for the
+% \eqn{K}{} cross-validation subsets and the standard errors of the means of
+% these statistics are returned as well.
+% 
+% The \code{print} method for class \code{cv.georob} returns the mean
+% and dispersion statistics of the (standardized) prediction errors.
+% 
+% The method \code{rstudent} returns for class \code{cv.georob} the
+% standardized prediction errors.
+
+
+\bibliographystyle{natbib}\bibliography{georob}
+
+\end{document}
+
+
+
+
+
+
+

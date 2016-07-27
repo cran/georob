@@ -87,6 +87,8 @@ georob <-
   ## 2015-08-28 AP computation of hessian suppressed; correction of error when using georob.object;
   ##               control arguments hessian, initial.param, initial.fixef newly organized
   ## 2015-11-25 AP new way to control which variogram parameters are fitted
+  ## 2016-07-15 AP allowing use of lmrob for computing initial fixed effects for rank-deficient model matrix
+  ## 2016-07-20 AP changes for parallel computations
   
   ## check validity of tuning.psi
   
@@ -257,16 +259,17 @@ georob <-
   if( condnum <= control[["min.condnum"]] ){
     col.rank.XX[["deficient"]] <- TRUE
     col.rank.XX[["col.rank"]] <- sum( sv / min.max.sv[2] > control[["min.condnum"]] )
-    cat( 
-      "design matrix has not full column rank (condition number of X^T X: ", 
-      signif( condnum, 2 ), ")\ninitial values of fixed effects coefficients are computed by 'lm'\n\n"
-    )
-    control[["initial.fixef"]] <- "lm"
-    control[["initial.param"]]  <- FALSE
-    warning( 
-      "design matrix has not full column rank (condition number of X^T X: ", 
-      signif( condnum, 2 ), ")\ninitial values of fixed effects coefficients are computed by 'lm'"
-    )
+    if( control[["initial.fixef"]] == "rq" ){
+      cat( 
+        "design matrix has not full column rank (condition number of X^T X: ", 
+        signif( condnum, 2 ), ")\ninitial values of fixed effects coefficients are computed by 'lmrob' instead of 'rq'\n\n"
+      )
+      control[["initial.fixef"]] <- "lmrob"
+      warning( 
+        "design matrix has not full column rank (condition number of X^T X: ", 
+        signif( condnum, 2 ), ")\ninitial values of fixed effects coefficients are computed by 'lmrob' instead of 'rq'"
+      )
+    }
   }
   
   ## subtract offset
@@ -480,7 +483,7 @@ georob <-
         control.optim = control[["optim"]],
         control.nlminb = control[["nlminb"]],
         hessian = FALSE,
-        control.pmm = control[["pmm"]],
+        control.pcmp = control[["pcmp"]],
         verbose = verbose
       )
       
@@ -556,7 +559,7 @@ georob <-
     control.optim = control[["optim"]],
     control.nlminb = control[["nlminb"]],
     hessian = control[["hessian"]],
-    control.pmm = control[["pmm"]],
+    control.pcmp = control[["pcmp"]],
     verbose = verbose
   )
   
@@ -605,7 +608,7 @@ georob <-
 
 pmm <- 
   function( 
-    A, B, control = control.pmm() 
+    A, B, control = control.pcmp() 
   )
 {
   
@@ -614,14 +617,20 @@ pmm <-
   
   ## 2014-06-25 A. Papritz
   ## 2015-03-13 AP small changes in f.aux
+  ## 2016-07-20 AP arguments renamed, new control of recursive parallelization
   
   ## auxiliary function 
   
   f.aux <- function(i, s, e, A, B ) A %*% B[ , s[i]:e[i], drop = FALSE]
   
+  ## determine number of cores
+  
+  ncores <- control[["pmm.ncores"]]
+  if( !control[["allow.recursive"]] ) ncores <- 1L
+  
   ## determine columns indices of matrix blocks
   
-  k <- control[["f"]] * control[["ncores"]]
+  k <- control[["f"]] * ncores
   n <- NCOL(B)
   dn <- floor( n / k )
   s <- ( (0:(k-1)) * dn ) + 1
@@ -630,7 +639,7 @@ pmm <-
   
   ##
   
-  if( control[["ncores"]] > 1L ){
+  if( ncores > 1L ){
     
     if( identical( .Platform[["OS.type"]], "windows") ){
       
@@ -638,7 +647,7 @@ pmm <-
       
       if( !sfIsRunning() ){
         options( error = f.stop.cluster )
-        junk <- sfInit( parallel = TRUE, cpus = control[["ncores"]] )
+        junk <- sfInit( parallel = TRUE, cpus = ncores )
       }
       
       res <- sfLapply( 1:k, f.aux, s = s, e = e, A = A, B = B )
@@ -651,7 +660,7 @@ pmm <-
     } else {
       
       res <- mclapply( 
-        1:k, f.aux,s = s, e = e, A = A, B = B,  mc.cores = control[["ncores"]] 
+        1:k, f.aux,s = s, e = e, A = A, B = B, mc.cores = ncores
       )
       
     }
@@ -677,10 +686,10 @@ control.georob <-
     fwd.tf = fwd.transf(), 
     deriv.fwd.tf = dfwd.transf(), 
     bwd.tf = bwd.transf(),
-    safe.param = 1.e12,
+    #     safe.param = 1.e12,
     psi.func = c( "logistic", "t.dist", "huber" ),
-    tuning.psi.nr = 1000,
-    irwls.initial = TRUE,
+    #     tuning.psi.nr = 1000,
+    #     irwls.initial = TRUE,
     irwls.maxiter = 50, irwls.ftol = 1.e-5,
     force.gradient = FALSE,
     min.condnum = 1.e-12,
@@ -688,21 +697,21 @@ control.georob <-
     error.family.estimation    = c( "gaussian", "long.tailed" ),
     error.family.cov.effects   = c( "gaussian", "long.tailed" ),
     error.family.cov.residuals = c( "long.tailed", "gaussian" ),
-    cov.bhat = FALSE, full.cov.bhat = FALSE,
+    cov.bhat = TRUE, full.cov.bhat = FALSE,
     cov.betahat = TRUE, 
-    cov.bhat.betahat = FALSE,
+    #     cov.bhat.betahat = FALSE,
     cov.delta.bhat = TRUE, full.cov.delta.bhat = TRUE,
     cov.delta.bhat.betahat = TRUE,
     cov.ehat = TRUE, full.cov.ehat = FALSE,
     cov.ehat.p.bhat = FALSE, full.cov.ehat.p.bhat = FALSE,
-    aux.cov.pred.target = FALSE,
+    #     aux.cov.pred.target = FALSE,
     hessian = TRUE,
     rq = control.rq(),
     lmrob = lmrob.control(),
     nleqslv = control.nleqslv(),
     optim = control.optim(),
     nlminb = control.nlminb(),
-    pmm = control.pmm(),
+    pcmp = control.pcmp(),
     ...
   )
 {
@@ -726,6 +735,13 @@ control.georob <-
   ## 2015-07-17 AP nlminb optimizer added
   ## 2015-08-19 AP control about error families for computing covariances added
   ## 2015-08-28 AP control arguments hessian, initial.param, initial.fixef newly organized
+  ## 2016-07-15 AP some arguments hard coded
+  
+  irwls.initial <- TRUE
+  tuning.psi.nr <- 1000.
+  cov.bhat.betahat <- FALSE
+  aux.cov.pred.target <- FALSE
+  safe.param <- 1.e12
   
   if( 
     !( all( unlist( param.tf ) %in% names( fwd.tf ) ) &&
@@ -771,7 +787,7 @@ control.georob <-
     rq = rq, lmrob = lmrob, nleqslv = nleqslv, 
     optim = optim, 
     nlminb = nlminb,
-    pmm = pmm
+    pcmp = pcmp
   )
   
 }
@@ -984,10 +1000,10 @@ control.nlminb <-
 }
 
 ## ======================================================================
-control.pmm <-
+control.pcmp <-
   function( 
-    ncores = 1, max.ncores = detectCores(), 
-    f = 2, sfstop = FALSE, allow.recursive = TRUE, 
+    pmm.ncores = 1L, gcr.ncores = 1L, max.ncores = detectCores(), 
+    f = 2L, sfstop = FALSE, allow.recursive = TRUE, 
     ... 
   )
 {
@@ -997,11 +1013,13 @@ control.pmm <-
   ## 2014-07-29 AP
   ## 2015-06-30 AP function and arguments renamed
   ## 2015-07-29 AP changes for elimination of parallelized computation of gradient or estimating equations
+  ## 2016-07-20 AP renamed function, separate ncores arguments various parallelized computations
   
-  ncores <- min( ncores, max.ncores )
+  pmm.ncores <- min( pmm.ncores, max.ncores )
+  gcr.ncores <- min( gcr.ncores, max.ncores )
   
   list( 
-    ncores = ncores,  max.ncores = max.ncores, 
+    pmm.ncores = pmm.ncores, gcr.ncores = gcr.ncores, max.ncores = max.ncores, 
     f = f, sfstop = sfstop, 
     allow.recursive = allow.recursive
   )
@@ -1283,6 +1301,9 @@ function( object, values, use.fitted = TRUE, verbose = 0,
   
   ## 2015-03-18 A. Papritz
   ## 2015-04-08 AP changes in returned results
+  ## 2016-07-14 AP optimization
+  ## 2016-07-20 AP changes for parallel computations
+
   
   ## auxiliary function to fit model and return maximized (pseudo) log-likelihood
   
@@ -1296,35 +1317,7 @@ function( object, values, use.fitted = TRUE, verbose = 0,
     values <- values[i, ]
     if( length( fixed.param ) ) param[fixed.param] <- values[fixed.param]
     if( length( fixed.aniso ) ) aniso[fixed.aniso] <- values[fixed.aniso]
-    
-    ## set hessian equal to FALSE in control argument of georob call and update
-    ## call
-    
-    cl <- object[["call"]]
-    
-    if( "control" %in% names(cl) ){
-      
-      ## georob called with control argument
-    
-      cl.control <- as.list( cl[["control"]] )
-      cl <- cl[ -match( "control", names(cl) ) ]
-      if( "hessian" %in% names(cl.control) ){
-        cl.control["hessian"] <- list( hessian = FALSE )
-      } else {
-        cl.control <- c( cl.control, hessian = FALSE )
-      }
-      
-    } else {
-      
-      ## georob called without control argument
-      
-      cl.control <- list( as.symbol("control.georob"), hessian = FALSE )
-      
-    }
-    
-    object[["call"]] <- as.call(  c( as.list(cl), control = as.call(cl.control) ) )
-    object <- update( object )
-    
+        
     fit <- update( 
       object, data = data, param = param, fit.param = fit.param,
       aniso = aniso, fit.aniso = fit.aniso, verbose = verbose
@@ -1428,18 +1421,21 @@ function( object, values, use.fitted = TRUE, verbose = 0,
     cl.control <- as.list( cl[["control"]] )
     cl <- cl[ -match( "control", names(cl) ) ]
     cl.control <- cl.control[ !names( cl.control ) %in% c( 
-      "force.gradient", "cov.bhat", "cov.betahat", "cov.bhat.betahat", 
+      "force.gradient", "cov.bhat", "cov.betahat", 
+      #       "cov.bhat.betahat", 
       "cov.delta.bhat", "cov.delta.bhat.betahat", "cov.ehat", "cov.ehat.p.bhat",
-      "aux.cov.pred.target", "reparam"
+      #       "aux.cov.pred.target", 
+      "reparam", "hessian"
     )]
     cl.control <- c(
       cl.control,
       "force.gradient" = FALSE, 
-      "cov.bhat" = FALSE, "cov.betahat" = FALSE, "cov.bhat.betahat" = FALSE, 
+      "cov.bhat" = FALSE, "cov.betahat" = FALSE, 
+      #       "cov.bhat.betahat" = FALSE, 
       "cov.delta.bhat" = FALSE, "cov.delta.bhat.betahat" = FALSE,
       "cov.ehat" = FALSE,  "cov.ehat.p.bhat" = FALSE, 
-      "aux.cov.pred.target" = FALSE,
-      reparam = reparam
+      #       "aux.cov.pred.target" = FALSE,
+      reparam = reparam, hessian = FALSE
     )
     object[["call"]] <- as.call( c( as.list(cl), control = as.call(cl.control) ) )
     
@@ -1450,11 +1446,12 @@ function( object, values, use.fitted = TRUE, verbose = 0,
     cl.control <- list( 
       as.symbol("control.georob"),
       force.gradient = FALSE, cov.bhat = FALSE, 
-      cov.betahat = FALSE, cov.bhat.betahat = FALSE, 
+      cov.betahat = FALSE, 
+      #       cov.bhat.betahat = FALSE, 
       cov.delta.bhat = FALSE, cov.delta.bhat.betahat = FALSE,
       cov.ehat = FALSE,  cov.ehat.p.bhat = FALSE, 
-      aux.cov.pred.target = FALSE,
-      reparam = reparam
+      #       aux.cov.pred.target = FALSE,
+      reparam = reparam, hessian = FALSE
     )
   
   }
@@ -1499,7 +1496,7 @@ function( object, values, use.fitted = TRUE, verbose = 0,
       fixed.aniso = fixed.aniso, aniso = aniso, fit.aniso = fit.aniso,
       reparam = reparam, verbose = verbose,
       mc.cores = ncores,
-      mc.allow.recursive = FALSE
+      mc.allow.recursive = object[["control"]][["pcmp"]][["allow.recursive"]]
     )
     
   }

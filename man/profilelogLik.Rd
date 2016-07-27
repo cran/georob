@@ -8,8 +8,8 @@
 \title{Profile Likelihood}
 \description{
   The function \code{profilelogLik} computes for an array of fixed
-  variogram parameters the profile loglikelihood by maximizing the
-  (restricted) loglikelihood with respect to the remaining variogram
+  variogram parameters the profile log-likelihood by maximizing the
+  (restricted) log-likelihood with respect to the remaining variogram
   parameters, the fixed and random effects.  }
 
 \usage{
@@ -30,7 +30,7 @@
   
   \item{use.fitted}{logical scalar controlling whether the fitted variogram
   parameters of \code{object} should be used as initial values (default
-  \code{TRUE}) when maximizing the profile loglikelihood or the initial
+  \code{TRUE}) when maximizing the profile log-likelihood or the initial
   values used to generate \code{object}.}
   
   \item{verbose}{positive integer controlling logging of diagnostic
@@ -43,10 +43,10 @@
 \details{
 
   For robust REML fits \code{profilelogLik} returns (possibly with a
-  warning) the loglikelihood of the Gaussian (RE)ML fit of the equivalent
+  warning) the log-likelihood of the Gaussian (RE)ML fit of the equivalent
   Gaussian spatial linear model with heteroscedastic nugget.  
   
-  \bold{Note} that \emph{the dataframe passed as} \code{data}
+  \bold{Note} that \emph{the data frame passed as} \code{data}
   \emph{argument to} \code{georob} \emph{must exist in the user workspace
   when calling \code{profilelogLik}}.
   
@@ -57,18 +57,18 @@
   
   \code{profilelogLik} uses the function \code{\link[stats]{update}} to
   re-estimated the model with partly fixed variogram parameters.
-  Therefore, any argument accepted by \code{\link{georob}} can be changed
-  when re-fitting the model.  Some of them (e.g. \code{values},
-  \code{verbose})  are explicit arguments of \code{profilelogLik},
-  but also the remaining ones can be passed by \code{\ldots} to the
-  function.
+  Therefore, any argument accepted by \code{\link{georob}} except
+  \code{data} can be changed when re-fitting the model.  Some of them (e.g.
+  \code{verbose}) are explicit arguments of
+  \code{profilelogLik}, but also the remaining ones can be passed by
+  \code{\ldots} to the function.
 
 }
 
 \value{
   A \code{data.frame} with the columns of \code{values}, a column
-  \code{loglik} (contains the maximized [restricted] loglikelihood),
-  columns with the estiamted variogram and fixed effect parameters and the
+  \code{loglik} (contains the maximized [restricted] log-likelihood),
+  columns with the estimated variogram and fixed effect parameters and the
   column \code{converged} indicating whether convergence has occurred
   \code{converged ==1} when fitting the respective model.  }
 

@@ -17,7 +17,7 @@
 sample (empirical) variogram of a spatial variable by the method-of-moment
 and three robust estimators.  Both omnidirectional and direction-dependent
 variograms can be computed, the latter for observation locations in a
-three-dimensionsal domain.  There are \code{summary} and \code{plot}
+three-dimensional domain.  There are \code{summary} and \code{plot}
 methods for summarizing and displaying sample variograms.}
 
 
@@ -103,7 +103,7 @@ sample.variogram(object, ...)
   \code{c(0,180)}.}
   
   \item{max.lag}{positive numeric defining the largest lag distance for
-  which semivariances should be computed (default no restriction).}
+  which semi variances should be computed (default no restriction).}
   
   \item{estimator}{character keyword defining the estimator for computing
   the sample variogram.  Possible values are:
@@ -138,10 +138,10 @@ sample.variogram(object, ...)
   generated (\code{FALSE}, default) or whether the information should be
   added to the current plot (\code{TRUE}).}
 
-  \item{col}{the color of plotting symbols for distinguishing semivariances
+  \item{col}{the color of plotting symbols for distinguishing semi variances
   for angular classes in the \eqn{x}-\eqn{y}-plane.}
 
-  \item{pch}{the type of plotting symbols for distinguishing semivariances
+  \item{pch}{the type of plotting symbols for distinguishing semi variances
   for angular classes in the \eqn{x}-\eqn{z}-plane.}
 
   \item{cex}{character expansion factor for plotting symbols.}
@@ -190,7 +190,7 @@ with the following components:
   \code{lag.dist} \tab the mean lag distance of the lag class, \cr
   \code{xy.angle} \tab the angular class in the \eqn{x}-\eqn{y}-plane, \cr
   \code{xz.angle} \tab the angular class in the \eqn{x}-\eqn{z}-plane, \cr
-  \code{gamma} \tab the estimated semivariance of the lag class, \cr
+  \code{gamma} \tab the estimated semi-variance of the lag class, \cr
   \code{npairs} \tab the number of data pairs in the lag class, \cr
   \code{lag.x} \tab the \eqn{x}-component of the mean lag vector of the lag class, \cr
   \code{lag.x} \tab the \eqn{y}-component of the mean lag vector of the lag class, \cr

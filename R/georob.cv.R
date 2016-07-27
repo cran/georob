@@ -72,6 +72,8 @@ cv.georob <-
   ##               (variables: robust, se.signal, scld.res, resscl)
   ## 2015-08-28 AP computation of hessian suppressed
   ## 2015-11-26 AP catching errors occurring during parallel model fits
+  ## 2016-05-27 AP allow recursive calls of mclapply
+  ## 2016-07-20 AP changes for parallel computations
   
   
   ## auxiliary function that fits the model and computes the predictions of
@@ -432,7 +434,7 @@ cv.georob <-
           lgn = lgn, 
           verbose = verbose,
           mc.cores = ncores,
-          mc.allow.recursive = FALSE,
+          mc.allow.recursive = object[["control"]][["pcmp"]][["allow.recursive"]],
           ...
         ) 
         , silent = TRUE
@@ -578,6 +580,7 @@ plot.cv.georob <-
   ## 2015-03-12 AP adding smooth curve of types sc and lgn.sc
   ## 2015-06-25 AP new method to compute pit, mc, bs and crps (Gaussian and robust)
   ## 2016-02-29 AP minor changes for adding plots to existing graphics
+  ## 2016-07-25 AP added liner color and type for scatterplot smooths
   
   x <- x[["pred"]]
   
@@ -641,7 +644,8 @@ plot.cv.georob <-
       }
       
       if( smooth ){
-        lines( loess.smooth( x[["pred"]], x[["data"]], span = span ) )
+        lines( loess.smooth( x[["pred"]], x[["data"]], span = span ), 
+          col = col, lty = lty )
       }
       
       
@@ -665,7 +669,8 @@ plot.cv.georob <-
       }
       
       if( smooth ){
-        lines( loess.smooth( x[["lgn.pred"]], x[["lgn.data"]], span = span ) )
+        lines( loess.smooth( x[["lgn.pred"]], x[["lgn.data"]], span = span ), 
+          col = col, lty = lty )
       }
       
       
@@ -708,7 +713,7 @@ plot.cv.georob <-
       
       ##  histogramm of probability-integral-transformation
       
-      if( missing( main ) ) main <- "histogramm PIT-values"
+      if( missing( main ) ) main <- "histogram PIT-values"
       if( missing( xlab ) ) xlab <- "PIT"
       if( missing( ylab ) ) ylab <- "density"
       
@@ -743,7 +748,7 @@ plot.cv.georob <-
       matplot( 
         result[["y"]], 
         result[, c( "ghat", "fbar" )], type = "l",
-        col = c( "black", "red" ),
+        col = c( "orange", "black" ),
         lty = c( "solid", "dashed" ),
         main = main, xlab = xlab, ylab = ylab,
         ...
@@ -757,7 +762,7 @@ plot.cv.georob <-
       legend( 
         "topleft",
         lty = c("solid", "dashed", "dotted" ), 
-        col = c( "black", "red", "blue" ), bty = "n", cex = 1,
+        col = c( "orange", "black", "blue" ), bty = "n", cex = 1,
         legend = c(
           expression( paste( "empirical cdf ", hat(G) ) ),
           expression( paste( "mean predictive cdf ", bar(F) ) ),
@@ -1009,31 +1014,31 @@ print.summary.cv.georob <-
   
 }
 
-##  ###########################################################################
-
-rstudent.cv.georob <-
-  function( model, ... )
-{
-  
-  ## Function extracts studentized residuals from cv.georob object
-  
-  ## Arguments:
-  
-  ## model     cv.georob object
-  ## ...       further arguments (currently not used)
-  
-  ## 2011-10-13 A. Papritz
-  ## 2013-06-12 AP substituting [["x"]] for $x in all lists
-  
-  if( !identical( class( model )[1], "cv.georob" ) ) stop(
-    "model is not of class 'cv.georob'" 
-  )
-  
-  model <- model[["pred"]]
-  
-  ( model[["data"]] - model[["pred"]] ) / model[["se"]]
-  
-}
+# ##  ###########################################################################
+# 
+# rstudent.cv.georob <-
+#   function( model, ... )
+# {
+#   
+#   ## Function extracts studentized residuals from cv.georob object
+#   
+#   ## Arguments:
+#   
+#   ## model     cv.georob object
+#   ## ...       further arguments (currently not used)
+#   
+#   ## 2011-10-13 A. Papritz
+#   ## 2013-06-12 AP substituting [["x"]] for $x in all lists
+#   
+#   if( !identical( class( model )[1], "cv.georob" ) ) stop(
+#     "model is not of class 'cv.georob'" 
+#   )
+#   
+#   model <- model[["pred"]]
+#   
+#   ( model[["data"]] - model[["pred"]] ) / model[["se"]]
+#   
+# }
 
 # ##  ###########################################################################
 # 

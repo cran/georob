@@ -9,7 +9,7 @@
 \title{Names and Permissible Ranges of Variogram Parameters}
 
 \description{
-  Helper functions to query names and permissble ranges of variogram
+  Helper functions to query names and permissible ranges of variogram
   parameters.}
 
 \usage{
@@ -29,7 +29,7 @@ param.bounds(model, d)
   Either a character vector with the names of the additional variogram
   parameters such as the smoothness parameter of the Whittle-Matérn model
   (\code{param.names}) or a named list with the lower and upper bounds of
-  permissble parameter ranges.  
+  permissible parameter ranges.  
 }
 
 \author{

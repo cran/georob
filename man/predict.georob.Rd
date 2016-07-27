@@ -21,8 +21,8 @@ well as model terms for display by \code{\link[stats]{termplot}}.
     control = control.predict.georob(), verbose = 0, ...)
     
 control.predict.georob(full.covmat = FALSE, extended.output = FALSE, 
-    mmax = 10000, ncores = pmm[["max.ncores"]], pwidth = NULL, pheight = NULL, 
-    napp = 1, pmm = control.pmm())
+    mmax = 10000, ncores = pcmp[["max.ncores"]], pwidth = NULL, pheight = NULL, 
+    napp = 1, pcmp = control.pcmp())
 
 }
 
@@ -33,9 +33,13 @@ control.predict.georob(full.covmat = FALSE, extended.output = FALSE,
   \item{newdata}{an optional data frame, 
   \code{\link[sp]{SpatialPointsDataFrame}}, 
   \code{\link[sp]{SpatialPixelsDataFrame}}, 
-  \code{\link[sp]{SpatialGridDataFrame}} or 
-  \code{\link[sp]{SpatialPolygonsDataFrame}} in which to look for variables
-  with which to compute fitted values or kriging predictions.\cr If
+  \code{\link[sp]{SpatialGridDataFrame}}, 
+  \code{\link[sp]{SpatialPolygonsDataFrame}} or an (optioanal) object of class
+  \code{\link[sp]{SpatialPoints}}, 
+  \code{\link[sp]{SpatialPixels}} or
+  \code{\link[sp]{SpatialGrid}},   
+  in which to look for variables
+  with which to compute fitted values or kriging predictions, see Details.\cr If
   \code{newdata} is a \code{\link[sp]{SpatialPolygonsDataFrame}} then
   block kriging predictions are computed, otherwise point kriging
   predictions.}
@@ -77,11 +81,11 @@ control.predict.georob(full.covmat = FALSE, extended.output = FALSE,
   
   \item{locations}{an optional one-sided formula specifying what variables
   of \code{newdata} are the coordinates of the prediction points\cr
-  (default: \code{object[["locatons.objects"]]$locations}).}
+  (default: \code{object[["locations.objects"]]$locations}).}
   
   \item{control}{a list with the arguments \code{full.covmat},
   \code{extended.output}, \code{mmax}, \code{ncores}, \code{pwidth},
-  \code{pheight}, \code{napp} and \code{pmm} or a function such as
+  \code{pheight}, \code{napp} and \code{pcmp} or a function such as
   \code{control.predict.georob} that generates such a list.}
   
   \item{full.covmat}{logical controlling whether the full covariance matrix
@@ -100,12 +104,12 @@ control.predict.georob(full.covmat = FALSE, extended.output = FALSE,
   parallelized computations, see \emph{Details}.}
 
   \item{pwidth, pheight, napp}{numeric scalars, used to tune numeric
-  integration of semivariances for block kriging, see
+  integration of semi-variances for block kriging, see
   \code{\link[constrainedKriging]{preCKrige}}.}
   
-  \item{pmm}{a list of arguments passed to \code{\link{pmm}} or a
-  function such as \code{\link{control.pmm}} that generates such a list
-  (see \code{\link{control.pmm}} for allowed arguments).}
+  \item{pcmp}{a list of arguments passed to \code{\link{pmm}} or a
+  function such as \code{\link{control.pcmp}} that generates such a list
+  (see \code{\link{control.pcmp}} for allowed arguments).}
   
   \item{verbose}{positive integer controlling logging of diagnostic
   messages to the console.\cr  \code{verbose = 0} (default) largely suppresses
@@ -116,6 +120,16 @@ control.predict.georob(full.covmat = FALSE, extended.output = FALSE,
 }
 
 \details{
+  If \code{newdata} is an object of class \code{SpatialPoints},
+  \code{SpatialPixels} or \code{SpatialGrid} then the drift model may only
+  use the coordinates as covariates (universal kriging).  Furthermore the
+  names used for the coordinates in \code{newdata} must be the same as in
+  \code{data} when creating \code{object} (argument \code{locations} of
+  \code{predict.georob} should not be used).  Note that the result returned
+  by \code{predict.georob} is then an object of class
+  \code{SpatialPointsDataFrame}, \code{SpatialPixelsDataFrame} or
+  \code{SpatialGridDataFrame}.
+  
   The \code{predict} method for class \code{georob} uses the package
   \pkg{parallel} for parallelized computation of kriging predictions.  If
   there are \eqn{m} items to predict, the task is split into
@@ -168,12 +182,14 @@ control.predict.georob(full.covmat = FALSE, extended.output = FALSE,
   \code{extended.output}:
   
   
-  If \code{full.covmat} is \code{FALSE} then the result is an object of the same
+  If \code{full.covmat} is \code{FALSE} then the result is an object of a "similar"
   class as \code{newdata} (data frame,
   \code{\link[sp]{SpatialPointsDataFrame}},
   \code{\link[sp]{SpatialPixelsDataFrame}}
   \code{\link[sp]{SpatialGridDataFrame}}, \cr
-  \code{\link[sp]{SpatialPolygonsDataFrame}}).  The data frame or the
+  \code{\link[sp]{SpatialPolygonsDataFrame}}). 
+  
+  The data frame or the
   \code{data} slot of the \code{Spatial...DataFrame} objects
   have the following components:
   
@@ -260,8 +276,7 @@ data(meuse.blocks)
 
 r.logzn.rob <- georob(log(zinc) ~ sqrt(dist), data = meuse, locations = ~ x + y,
     variogram.model = "RMexp", param = c(variance = 0.15, nugget = 0.05, scale = 200),
-    tuning.psi = 1., control = control.georob(cov.bhat = TRUE, full.cov.bhat = TRUE,
-        cov.bhat.betahat = TRUE, aux.cov.pred.target = TRUE))
+    tuning.psi = 1., control = control.georob(cov.bhat = TRUE, full.cov.bhat = TRUE))
         
 ## point predictions of log(Zn)
 r.pred.points <- predict(r.logzn.rob, newdata = meuse.grid.pixdf, 

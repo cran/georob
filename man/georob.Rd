@@ -99,7 +99,7 @@ georob(formula, data, subset, weights, na.action, model = TRUE,
       \item{\code{scale}: range parameter (\eqn{\alpha}) of the variogram.}
      
       \item{names of additional variogram parameters such as the smoothness
-      parameter \eqn{\nu} of the Whittle-MatŽrn model (see
+      parameter \eqn{\nu} of the Whittle-MatÂŽrn model (see
       \code{\link[RandomFields]{RMmodel}} and
       \code{\link{param.names}}).}
        
@@ -123,21 +123,21 @@ georob(formula, data, subset, weights, na.action, model = TRUE,
     
       \item{\code{f1}: ratio \eqn{f_1} of lengths of second and first
         semi-principal axes of an ellipsoidal surface with constant
-        semivariance in \eqn{\mathrm{I}\!\mathrm{R}^3}{R^3} (default \code{f1 = 1}).}
+        semi-variance in \eqn{\mathrm{I}\!\mathrm{R}^3}{R^3} (default \code{f1 = 1}).}
       
       \item{\code{f2}: ratio \eqn{f_2} of lengths of third and first
-        semi-principal axes of the semivariance ellipsoid (default \code{f2 = 1}).}
+        semi-principal axes of the semi-variance ellipsoid (default \code{f2 = 1}).}
       
       \item{\code{omega}: azimuth in degrees of the first semi-principal axis 
-        of the semivariance ellipsoid (default \code{omega = 90}).}
+        of the semi-variance ellipsoid (default \code{omega = 90}).}
       
       \item{\code{phi}: 90 degrees minus altitude of the first semi-principal axis 
-        of the semivariance ellipsoid (default \code{phi = 90}).}
+        of the semi-variance ellipsoid (default \code{phi = 90}).}
      
       \item{\code{zeta}: angle in degrees between the second semi-principal
         axis and the direction of the line defined by the intersection
         between the \eqn{x}-\eqn{y}-plane and the plane orthogonal to the
-        first semi-principal axis of the semivariance ellipsoid through the
+        first semi-principal axis of the semi-variance ellipsoid through the
         origin (default \code{zeta = 0}).} 
     } 
   }
@@ -170,13 +170,13 @@ georob(formula, data, subset, weights, na.action, model = TRUE,
 }
 
 \details{\code{georob} fits a spatial linear model by robust or Gaussian RE(ML) 
-  (\cite{\enc{KŸnsch}{Kuensch} et al., 2011}, \cite{\enc{KŸnsch}{Kuensch}
+  (\cite{\enc{KÂŸnsch}{Kuensch} et al., 2011}, \cite{\enc{KÂŸnsch}{Kuensch}
   et al., in preparation}).  \code{\link{georobIntro}} describes the
   employed model and briefly sketches the robust REML estimation and the
-  robust external-drift kriging method.  Here, we describe further details
+  robust external drift kriging method.  Here, we describe further details
   of \code{georob}.
   
-  \subsection{Implemented variogram models}{
+  \subsection{Implemented variograms}{
   
     Currently, most basic variogram models provided by the
     package \pkg{RandomFields} can be fitted by
@@ -186,35 +186,30 @@ georob(formula, data, subset, weights, na.action, model = TRUE,
     parameters.  Initial values of these parameters (\code{param}) and
     fitting flags (\code{fit.param}) must be passed to \code{georob} by the
     same names as used by the functions \code{RM...} of the package
-    \pkg{RandomFields} (see \code{\link[RandomFields]{RMmodel}}.  Use the
+    \pkg{RandomFields} (see \code{\link[RandomFields]{RMmodel}}).  Use the
     function \code{\link{param.names}} to list additional parameters of a
     given variogram.model.
     
+    The arguments \code{fit.param} and \code{fit.aniso} are used to control
+    what variogram and anisotropy parameters are estimated and which are
+    kept at the constant initial values.  The functions
+    \code{\link{default.fit.param}} and \code{\link{default.fit.aniso}} set
+    reasonable default values for these arguments.  Note, as an aside, that
+    the function \code{\link{default.aniso}} sets (default) values of the
+    anisotropy parameters for an isotropic variogram.
+    
     }
     
-  \subsection{Estimation of variance of micro-scale variation}{
+  \subsection{Estimating parameters of power function variogram}{
   
-    Simultaneous estimation of the variance of the micro-scale variation
-    (\code{snugget}, \eqn{\sigma_\mathrm{n}^2}{sigma^2_n}), which appears
-    as seemingly uncorrelated with a given sampling design, and of the
-    variance (\code{nugget}, \eqn{\tau^2}) of the independent errors
-    requires that for some locations
-    \eqn{\mbox{\boldmath$s$\unboldmath}_i}{s_i} replicated observations are
-    available.  Locations less or equal than \code{zero.dist} apart are
-    thereby considered as being coincient (see
-    \code{\link{control.georob}}).
-    
-  }
-    
-  \subsection{Fitting intrinsic variogram models}{ 
-  
-    The intrinsic variogram model \code{RMfbm} is overparametrized when
+    The intrinsic variogram model \code{RMfbm} is over-parametrized when
     both the \code{variance} (plus possibly \code{snugget}) and the
-    \code{scale} are fitted.  Therefore, to estimate the parameters of this
-    model \code{scale} must be kept fixed at an arbitray value by using
-    \code{fit.param["scale"] = FALSE}.}
+    \code{scale} are estimated.  Therefore, to estimate the parameters of
+    this model, \code{scale} must be kept fixed at an arbitrary value by
+    using \code{fit.param["scale"] = FALSE}.}
     
-  \subsection{Fitting geometrically anisotropic variogram models}{
+    
+  \subsection{Estimating parameters of geometrically anisotropic variograms}{
   
     The subsection \strong{Model} of \code{\link{georobIntro}} describes
     how such models are parametrized and gives definitions the various
@@ -234,8 +229,24 @@ georob(formula, data, subset, weights, na.action, model = TRUE,
         define an isotropic variogram model.
       
       \item Valid ranges for the angles characterizing the orientation of
-      the semivariance ellipsoid are (in degrees): \eqn{\omega} [0, 180],
+      the semi-variance ellipsoid are (in degrees): \eqn{\omega} [0, 180],
       \eqn{\phi} [0, 180], \eqn{\zeta} [-90, 90].  } }
+  
+
+  \subsection{Estimating variance of micro-scale variation}{
+  
+    Simultaneous estimation of the variance of the micro-scale variation
+    (\code{snugget}, \eqn{\sigma_\mathrm{n}^2}{sigma^2_n}), appears seemingly
+    as spatially uncorrelated with a given sampling design, and of the
+    variance (\code{nugget}, \eqn{\tau^2}) of the independent errors
+    requires that for some locations
+    \eqn{\mbox{\boldmath$s$\unboldmath}_i}{s_i} replicated observations are
+    available.  Locations less or equal than \code{zero.dist} apart are
+    thereby considered as being coincident (see
+    \code{\link{control.georob}}).
+    
+  }
+
   
   \subsection{Constraining estimates of variogram parameters}{
   
@@ -246,25 +257,25 @@ georob(formula, data, subset, weights, na.action, model = TRUE,
     
     \enumerate{ 
       
-      \item \emph{Parameter transformations}: By default, all variance
+        \item \emph{Parameter transformations}: By default, all variance
         (\code{variance}, \code{snugget}, \code{nugget}), the range
-        \code{scale} and the anisotropy parameters \code{f1} and
-        \code{f2} are log-transformed before solving the estimating
-        equations or maximizing the restricted loglikelihood and this
-        warrants that the estimates are always positive (see
-        \code{\link{control.georob}} for controlling parameter
-        transformations).
+        \code{scale}, the anisotropy parameters \code{f1} and \code{f2} and
+        many of the additional parameters are log-transformed before
+        solving the estimating equations or maximizing the restricted
+        log-likelihood and this warrants that the estimates are always
+        positive (see \code{\link{control.georob}} for detailed explanations
+        how to control parameter transformations).
       
         \item \emph{Checking permissible ranges}: The additional parameters
         of the variogram models such as the smoothness parameter \eqn{\nu}
-        of the Whittle-MatŽrn model are forced to stay in the permissible
-        ranges by signalling an error to \code{nleqslv} or \code{optim} if
-        the current trial values are invalid. These functions then
-        graciously update the trial values of the parameters and carry
-        their task on.  However, it is clear that such a procedure likely
-        gets stuck at a point on the boundary of the parameter space and is
-        therefore just a workaround for avoiding runtime errors due to
-        invalid parameter values.
+        of the Whittle-MatÂŽrn model are forced to stay in the permissible
+        ranges by signalling an error to \code{nleqslv}, \code{nlminb} or
+        \code{optim} if the current trial values are invalid.  These
+        functions then graciously update the trial values of the parameters
+        and carry their task on.  However, it is clear that such a
+        procedure likely gets stuck at a point on the boundary of the
+        parameter space and is therefore just a workaround for avoiding
+        runtime errors due to invalid parameter values.
         
         \item \emph{Exploiting the functionality of \code{nlminb} and
         \code{optim}}: If a spatial model is fitted non-robustly, then the
@@ -297,7 +308,7 @@ georob(formula, data, subset, weights, na.action, model = TRUE,
     
       \item \eqn{ \widehat{\mbox{\boldmath$B$\unboldmath}}=
       \mbox{\boldmath$0$\unboldmath},}{hatB=0,} if this turns out to be
-      unfeasible, initial values can be passed to \code{georob} by the
+      infeasible, initial values can be passed to \code{georob} by the
       argument \code{bhat} of \code{\link{control.georob}}.
       
       \item \eqn{\widehat{\mbox{\boldmath$\beta$\unboldmath}}}{hat\beta} is
@@ -311,7 +322,7 @@ georob(formula, data, subset, weights, na.action, model = TRUE,
     Finding the roots of the robustified estimating equations of the
     variogram and anisotropy parameters is more sensitive to a good choice
     of initial values than maximizing the Gaussian (restricted)
-    loglikelihood with respect to the same parameters.  If the initial
+    log-likelihood with respect to the same parameters.  If the initial
     values for \code{param} and \code{aniso} are not sufficiently close to
     the roots of the system of nonlinear equations, then
     \code{\link[nleqslv]{nleqslv}} may fail to find them.      
@@ -353,7 +364,7 @@ georob(formula, data, subset, weights, na.action, model = TRUE,
     for the variance parameters \code{nugget} (\eqn{\tau^2}),
     \code{variance} (\eqn{\sigma^2}), and possibly \code{snugget}
     (\eqn{\sigma_{\mathrm{n}}^2}{\sigma_n^2}), for Gaussian (RE)ML the
-    variances can be reparametrized to
+    variances can be re-parametrized to
     
     \itemize{
       \item the signal variance 
@@ -367,14 +378,14 @@ georob(formula, data, subset, weights, na.action, model = TRUE,
     }
     
     \code{georob} maximizes then a (restricted) \emph{profile
-    loglikelihood} that depends only on \eqn{\eta}, \eqn{\xi},
+    log-likelihood} that depends only on \eqn{\eta}, \eqn{\xi},
     \eqn{\alpha}, \ldots, and \eqn{\sigma_Z^2} is estimated by an explicit
     expression that depends on these parameters (e.g. Diggle and Ribeiro,
-    2006, p.  113).  This is ususally more efficient than maximizing the
-    (restricted) loglikelihood with respect to the original variance
+    2006, p.  113).  This is usually more efficient than maximizing the
+    (restricted) log-likelihood with respect to the original variance
     parameters \eqn{\tau^2}, \eqn{\sigma_{\mathrm{n}}^2}{\sigma_n^2} and
     \eqn{\sigma^2}.  \code{georob} chooses the parametrization
-    automatically but the user can control it by the argument
+    automatically, but the user can control it by the argument
     \code{reparam} of the function \code{\link{control.georob}}.
   
   }
@@ -387,13 +398,14 @@ fit of a spatial linear model.  See
 \code{\link{georobObject}} for the components of the fit.
 
 }
+
 \references{
   Diggle, P. J. and Ribeiro, P. J. R. (2006) Model-based Geostatistics. Springer.
 
-  \enc{KŸnsch}{Kuensch}, H. R., Papritz, A., Schwierz, C. and Stahel, W. A. (in
+  \enc{KÂŸnsch}{Kuensch}, H. R., Papritz, A., Schwierz, C. and Stahel, W. A. (in
   preparation) Robust Geostatistics.
 
-  \enc{KŸnsch}{Kuensch}, H. R., Papritz, A., Schwierz, C. and Stahel, W. A. (2011) Robust
+  \enc{KÂŸnsch}{Kuensch}, H. R., Papritz, A., Schwierz, C. and Stahel, W. A. (2011) Robust
   estimation of the external drift and the variogram of spatial data.
   Proceedings of the ISI 58th World Statistics Congress of the International
   Statistical Institute.

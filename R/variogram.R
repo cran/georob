@@ -1454,7 +1454,7 @@ plot.georob <-
       if( missing( col ) ) col <- 1; if( missing( pch ) ) pch <- 1
       if( missing( xlab ) ) xlab <- "Fitted values"
       if( missing( ylab ) ) ylab <- "Sqrt of abs(Residuals)"
-      if( missing( main ) ) main <- "Sqrt of abs(Residuals) vs. Fitted Values"
+      if( missing( main ) ) main <- "Scale-Location"
       r <- sqrt( abs( residuals( x, level = level ) ) )
       if( !add ){
         plot( yh, r, col = col, pch = pch,
@@ -1482,7 +1482,7 @@ plot.georob <-
       if( missing( col ) ) col <- 1; if( missing( pch ) ) pch <- 1
       if( missing( xlab ) ) xlab <- "Theoretial quantiles"
       if( missing( ylab ) ) ylab <- "Standardized residuals"
-      if( missing( main ) ) main <- "Normal Q-Q standardized residuals"
+      if( missing( main ) ) main <- "Normal Q-Q residuals"
       r <- rstandard( x, level = level )
       tmp <- qqnorm( r, col = col, pch = pch,
         xlab = xlab, ylab = ylab, main = main, 
@@ -1501,7 +1501,7 @@ plot.georob <-
       if( missing( col ) ) col <- 1; if( missing( pch ) ) pch <- 1
       if( missing( xlab ) ) xlab <- "Theoretial quantiles"
       if( missing( ylab ) ) ylab <- "Standardized random effects"
-      if( missing( main ) ) main <- "Normal Q-Q standardized random effects"
+      if( missing( main ) ) main <- "Normal Q-Q random effects"
       tmp <- qqnorm( ranef( x, standard = TRUE ), 
         col = col, pch = pch,
         xlab = xlab, ylab = ylab, main = main, 

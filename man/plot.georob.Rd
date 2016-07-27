@@ -48,9 +48,9 @@ of residuals and random effects).
       \item \code{"correlation"}: the correlation function
       
       \item \code{"scale-location"}: square root of absolute regression
-      residals plotted against fitted values (Scale-Location plot)
+      residuals plotted against fitted values (Scale-Location plot)
 
-      \item \code{"ta"}: regression residals plotted against fitted values
+      \item \code{"ta"}: regression residuals plotted against fitted values
       (Tukey-Anscombe plot)
 
       \item \code{"qq.res"}: normal Q-Q plot of standardized errors
@@ -89,7 +89,7 @@ of residuals and random effects).
   with the default \code{c(0,180)}.}
   
   \item{max.lag}{positive numeric defining the largest lag distance for
-  which semivariances should be computed (default no restriction).}
+  which semi-variances should be computed (default no restriction).}
   
   \item{estimator}{character keyword defining the estimator for computing
   the sample variogram.  Possible values are:
@@ -147,15 +147,15 @@ of residuals and random effects).
   models (default: largest lag distance of current plot).}
 
   \item{n}{positive integer specifying the number of equally spaced lag
-  distances for which semivariances are evaluated in plotting variogram
+  distances for which semi-variances are evaluated in plotting variogram
   models (default \code{501}).}
 
   \item{xy.angle}{numeric (vector) with azimuth angles (in degrees,
   clockwise positive from north) in \eqn{x}-\eqn{y}-plane for which
-  semivariances should be plotted.}
+  semi-variances should be plotted.}
 
   \item{xz.angle}{numeric (vector) with angles in \eqn{x}-\eqn{z}-plane (in
-  degrees, clockwise positive from zenith to south) for which semivariances
+  degrees, clockwise positive from zenith to south) for which semi-variances
   should be plotted.}
 
   \item{col}{optional color of points and curves to distinguish items

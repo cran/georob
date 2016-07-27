@@ -48,22 +48,22 @@ default.fit.aniso(f1 = FALSE, f2 = FALSE, omega = FALSE,
   \code{\link[RandomFields]{RMmodel}} and \code{\link{param.names}}).}
 
   \item{f1}{ratio \eqn{f_1} of lengths of second and first semi-principal
-  axes of an ellipsoidal surface with constant semivariance in
+  axes of an ellipsoidal surface with constant semi-variance in
   \eqn{\mathrm{I}\!\mathrm{R}^3}{R^3} (default \code{f1 = 1}).}
   
   \item{f2}{ratio \eqn{f_2} of lengths of third and first semi-principal
-  axes of the semivariance ellipsoid (default \code{f2 = 1}).}
+  axes of the semi-variance ellipsoid (default \code{f2 = 1}).}
   
   \item{omega}{azimuth in degrees of the first semi-principal axis of the
-  semivariance ellipsoid (default \code{omega = 90}).}
+  semi-variance ellipsoid (default \code{omega = 90}).}
   
   \item{phi}{90 degrees minus altitude of the first semi-principal axis of
-  the semivariance ellipsoid (default \code{phi = 90}).}
+  the semi-variance ellipsoid (default \code{phi = 90}).}
   
   \item{zeta}{angle in degrees between the second semi-principal axis and
   the direction of the line defined by the intersection between the
   \eqn{x}-\eqn{y}-plane and the plane orthogonal to the first
-  semi-principal axis of the semivariance ellipsoid through the origin
+  semi-principal axis of the semi-variance ellipsoid through the origin
   (default \code{zeta = 0}).}
   
 }

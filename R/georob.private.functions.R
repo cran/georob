@@ -21,7 +21,7 @@ covariances.fixed.random.effects <-
     cov.ehat, full.cov.ehat,
     cov.ehat.p.bhat, full.cov.ehat.p.bhat,
     aux.cov.pred.target,
-    control.pmm,
+    control.pcmp,
     verbose
   )
 {
@@ -55,7 +55,8 @@ covariances.fixed.random.effects <-
   ## 2015-06-30 AP changes for improving efficiency
   ## 2015-07-17 AP TtT passed to function, new name for function
   ## 2015-08-19 AP changes for computing covariances under long-tailed distribution of epsilon
-  
+  ## 2016-07-20 AP changes for parallel computations
+
   family = match.arg( family )
   
   ## store flags for controlling output
@@ -161,7 +162,7 @@ covariances.fixed.random.effects <-
   ## factors to compute bhat and betahat from zhat
   
   if( any( c( cov.ystar, cov.bhat.b, cov.bhat.e, cov.bhat, cov.bhat.betahat ) ) ){
-    PaSa <- pmm( Palphaxi, Salphaxi, control.pmm )
+    PaSa <- pmm( Palphaxi, Salphaxi, control.pcmp )
   }
   
   if( any( c( cov.betahat.b, cov.betahat.e, cov.betahat, cov.bhat.betahat) ) ){
@@ -173,12 +174,12 @@ covariances.fixed.random.effects <-
   if( cov.ystar ){
     cov.ystar <- TtT * VTtT
     diag( cov.ystar ) <- diag( cov.ystar ) + (var.psi * nugget / exp.dpsi^2) * TtT
-    PaSa.cov.ystar <- pmm( PaSa, cov.ystar, control.pmm )
+    PaSa.cov.ystar <- pmm( PaSa, cov.ystar, control.pcmp )
   }
   
   ## covariance of bhat and betahat with B and epsilon
   
-  if( cov.bhat.b )    cov.bhat.b      <- pmm( PaSa, t( VTtT ), control.pmm )
+  if( cov.bhat.b )    cov.bhat.b      <- pmm( PaSa, t( VTtT ), control.pcmp )
   if( cov.bhat.e )    cov.bhat.e      <- (nugget / exp.dpsi * cov.psi.eps * PaSa)[, TT]
   if( cov.betahat.b ){
     cov.betahat.b <- tcrossprod( AaSa, VTtT )
@@ -197,7 +198,7 @@ covariances.fixed.random.effects <-
   if( cov.bhat ){
     t.cov.bhat <- if( full.cov.bhat )
     {
-      aux <- pmm( PaSa.cov.ystar, t(PaSa ), control.pmm )
+      aux <- pmm( PaSa.cov.ystar, t(PaSa ), control.pcmp )
       attr( aux, "struc" ) <- "sym"
       aux
     } else {
@@ -385,7 +386,7 @@ covariances.fixed.random.effects <-
     result.new[["cov.pred.target"]] <- pmm(
       rbind( cov.bhat.b, cov.betahat.b ),
       Valphaxi.objects[["Valphaxi.inverse"]] / eta / nugget,
-      control.pmm
+      control.pcmp
     )
   }
   
@@ -533,7 +534,7 @@ estimate.zhat <-
     maxit, ftol,
     nugget, eta, reparam,
     Valphaxi.inverse,
-    control.pmm,
+    control.pcmp,
     verbose
   )
 {
@@ -546,6 +547,7 @@ estimate.zhat <-
   ## 2015-06-30 AP new method to determine convergence
   ## 2015-07-17 AP computing residual sums of squares (UStar)
   ## 2015-07-17 AP Gaussian (RE)ML estimation for reparametrized variogram
+  ## 2016-07-20 AP changes for parallel computations
    
   ## function computes (1) estimates zhat, bhat, betahat by
   ## solving robustified estimating equations by IRWLS,
@@ -581,7 +583,7 @@ estimate.zhat <-
   colnames( result[["Palphaxi"]] ) <- rownames( XX )
   
   result[["Valphaxi.inverse.Palphaxi"]] <- pmm( 
-    Valphaxi.inverse, result[["Palphaxi"]], control.pmm 
+    Valphaxi.inverse, result[["Palphaxi"]], control.pcmp 
   )
   rownames( result[["Valphaxi.inverse.Palphaxi"]] )      <- rownames( XX )
   colnames( result[["Valphaxi.inverse.Palphaxi"]] )      <- rownames( XX )
@@ -730,7 +732,7 @@ f.aux.gcr <-
   function( 
     lag.vectors, variogram.model, param, xi, aniso, 
     irf.models = control.georob()[["irf.models"]],
-    control.pmm, verbose
+    control.pcmp, verbose
   )
 {
   
@@ -748,6 +750,7 @@ f.aux.gcr <-
   ## 2014-08-18 AP changes for parallelized computations
   ## 2015-07-17 AP new name of function, Gaussian (RE)ML estimation for reparametrized variogram
   ## 2015-07-23 AP Valpha (correlation matrix without spatial nugget) no longer stored
+  ## 2016-07-20 AP changes for parallel computations
   
   result <- list( error = TRUE )
   
@@ -783,9 +786,14 @@ f.aux.gcr <-
     }
   }
   
+  ## determine number of cores
+  
+  ncores <- control.pcmp[["gcr.ncores"]]
+  if( !control.pcmp[["allow.recursive"]] ) ncores <- 1L
+  
   ## definition of junks to be evaluated in parallel
   
-  k <- control.pmm[["f"]] * control.pmm[["ncores"]]
+  k <- control.pcmp[["f"]] * ncores
   n <- NROW(lag.vectors)
   dn <- floor( n / k )
   s <- ( (0:(k-1)) * dn ) + 1
@@ -794,13 +802,13 @@ f.aux.gcr <-
   
   ## compute generalized correlations in parallel
   
-  if( control.pmm[["ncores"]] > 1L ){
+  if( ncores > 1L ){
     
     if( identical( .Platform[["OS.type"]], "windows") ){
       
       if( !sfIsRunning() ){
         options( error = f.stop.cluster )
-        junk <- sfInit( parallel = TRUE, cpus = control.pmm[["ncores"]] )
+        junk <- sfInit( parallel = TRUE, cpus = ncores )
         #         junk <- sfLibrary( RandomFields, verbose = FALSE )
         junk <- sfLibrary( georob, verbose = FALSE )
       }
@@ -810,7 +818,7 @@ f.aux.gcr <-
         1:k, f.aux, s = s, e = e, lag.vectors = lag.vectors, model.list = model.list 
       )
       
-      if( control.pmm[["sfstop"]] ){
+      if( control.pcmp[["sfstop"]] ){
         junk <- sfStop()
         options( error = NULL )
       }
@@ -819,7 +827,7 @@ f.aux.gcr <-
       
       Valpha <- mclapply( 
         1:k, f.aux, s = s, e = e, lag.vectors = lag.vectors, model.list = model.list,  
-        mc.cores = control.pmm[["ncores"]] 
+        mc.cores = ncores 
       )
       
     }
@@ -900,7 +908,7 @@ likelihood.calculations <-
     psi.function, tuning.psi, tuning.psi.nr, ml.method, 
     irwls.initial, irwls.maxiter, irwls.ftol,
     compute.zhat = TRUE,
-    control.pmm, 
+    control.pcmp, 
     verbose
   )
 {
@@ -926,6 +934,7 @@ likelihood.calculations <-
   ## 2015-07-17 AP new name of function, Gaussian (RE)ML estimation for reparametrized variogram
   ## 2015-07-23 AP changes for avoiding computation of Valphaxi object if not needed
   ## 2015-12-02 AP reparametrized variogram parameters renamed
+  ## 2016-07-20 AP changes for parallel computations
 
   ##  function transforms (1) the variogram parameters back to their
   ##  original scale; computes (2) the correlation matrix, its inverse
@@ -1121,7 +1130,7 @@ likelihood.calculations <-
       lag.vectors = lag.vectors, variogram.model = variogram.model,
       param = lik.item[["param"]][!names(lik.item[["param"]]) %in% c( "variance", "snugget", "nugget")],
       xi = lik.item[["xi"]],
-      aniso = lik.item[["aniso"]], control.pmm = control.pmm,
+      aniso = lik.item[["aniso"]], control.pcmp = control.pcmp,
       verbose = verbose
     )
     
@@ -1156,7 +1165,7 @@ likelihood.calculations <-
     irwls.maxiter, irwls.ftol,
     lik.item[["param"]]["nugget"], lik.item[["eta"]], reparam,
     lik.item[["Valphaxi"]][["Valphaxi.inverse"]],
-    control.pmm,
+    control.pcmp,
     verbose
   )
   
@@ -1178,7 +1187,7 @@ likelihood.calculations <-
       XX = XX, col.rank.XX = col.rank.XX, min.condnum = min.condnum,
       Vi = lik.item[["Valphaxi"]][["Valphaxi.inverse"]], 
       eta = lik.item[["eta"]], 
-      ml.method = ml.method, control.pmm = control.pmm
+      ml.method = ml.method, control.pcmp = control.pcmp
     )
     
     if( !t.Q[["error"]] ){
@@ -2243,7 +2252,7 @@ estimating.equations.theta <-
     force.gradient,
     expectations,
     error.family.estimation,
-    control.pmm, 
+    control.pcmp, 
     verbose
   )
 {
@@ -2267,6 +2276,7 @@ estimating.equations.theta <-
   ## 2015-07-27 AP changes to further improve efficiency
   ## 2015-07-29 AP changes for elimination of parallelized computation of gradient or estimating equations
   ## 2015-08-19 AP control about error families for computing covariances added  
+  ## 2016-07-20 AP changes for parallel computations
 
   ##  get lik.item
   
@@ -2279,7 +2289,7 @@ estimating.equations.theta <-
     psi.function, tuning.psi, tuning.psi.nr, ml.method, 
     irwls.initial, irwls.maxiter, irwls.ftol,
     compute.zhat = TRUE, 
-    control.pmm = control.pmm,
+    control.pcmp = control.pcmp,
     verbose = verbose
   )
   
@@ -2339,7 +2349,7 @@ estimating.equations.theta <-
       cov.ehat = FALSE, full.cov.ehat = FALSE,
       cov.ehat.p.bhat = FALSE, full.cov.ehat.p.bhat = FALSE,
       aux.cov.pred.target = FALSE,
-      control.pmm = control.pmm,
+      control.pcmp = control.pcmp,
       verbose = verbose
     )
     
@@ -2359,7 +2369,7 @@ estimating.equations.theta <-
         
     Valphaxii.cov.bhat <- pmm( 
       lik.item[["Valphaxi"]][["Valphaxi.inverse"]], r.cov[["cov.bhat"]], 
-      control.pmm
+      control.pcmp
     )
     
     ##  computation of estimating equations for all elements of adjustable.param
@@ -2376,7 +2386,7 @@ estimating.equations.theta <-
       r.cov = r.cov, lik.item = lik.item,
       TtT = TtT, 
       lag.vectors = lag.vectors, variogram.model = variogram.model, 
-      control.pmm = control.pmm, verbose = verbose
+      control.pcmp = control.pcmp, verbose = verbose
     )
     
     eeq.exp <- t.eeq["eeq.exp", ]
@@ -2449,7 +2459,7 @@ negative.loglikelihood <-
     psi.function, 
     tuning.psi, tuning.psi.nr, ml.method, reparam,
     irwls.initial, irwls.maxiter, irwls.ftol,
-    control.pmm, 
+    control.pcmp, 
     verbose,
     ...
   )
@@ -2469,6 +2479,8 @@ negative.loglikelihood <-
   ## 2015-03-16 AP elimination of unused variables
   ## 2015-07-17 AP new name of function, Gaussian (RE)ML estimation for reparametrized variogram
   ## 2015-07-27 AP correcting error in likelihood for original parametrization (reparam == FALSE)
+  ## 2016-07-20 AP changes for parallel computations
+
   #     sel <- !c( param.name, aniso.name ) %in% names( fixed.param )
   #     names( adjustable.param ) <- c( param.name, aniso.name )[sel]
   
@@ -2484,7 +2496,7 @@ negative.loglikelihood <-
     psi.function, tuning.psi, tuning.psi.nr, ml.method, 
     irwls.initial, irwls.maxiter, irwls.ftol,
     compute.zhat = TRUE, 
-    control.pmm = control.pmm,
+    control.pcmp = control.pcmp,
     verbose
   )
   
@@ -2588,7 +2600,7 @@ gradient.negative.loglikelihood <-
     tuning.psi, tuning.psi.nr, ml.method, 
     irwls.initial, irwls.maxiter, irwls.ftol,
     force.gradient,
-    control.pmm,
+    control.pcmp,
     verbose
   )
 {
@@ -2609,6 +2621,8 @@ gradient.negative.loglikelihood <-
   ## 2015-07-17 AP new name of function, Gaussian (RE)ML estimation for reparametrized variogram
   ## 2015-07-29 AP changes for elimination of parallelized computation of gradient or estimating equations
   ## 2015-12-02 AP reparametrized variogram parameters renamed
+  ## 2016-07-20 AP changes for parallel computations
+
   ##  get lik.item
   
   lik.item <- likelihood.calculations(
@@ -2620,7 +2634,7 @@ gradient.negative.loglikelihood <-
     psi.function, tuning.psi, tuning.psi.nr, ml.method, 
     irwls.initial, irwls.maxiter, irwls.ftol,
     compute.zhat = TRUE,
-    control.pmm = control.pmm,
+    control.pcmp = control.pcmp,
     verbose
   )
   
@@ -2676,7 +2690,7 @@ gradient.negative.loglikelihood <-
       bh        <- lik.item[["zhat"]][["bhat"]]
       bhVaxi    <- lik.item[["zhat"]][["Valphaxi.inverse.bhat"]]
       if( !identical( names( adjustable.param ), "nugget" ) ){
-        Qst11Vai  <- pmm( Qsi[1:n, 1:n], Valphaxii, control.pmm )
+        Qst11Vai  <- pmm( Qsi[1:n, 1:n], Valphaxii, control.pcmp )
       } else {
         Qst11Vai  <- NULL
       }
@@ -2690,7 +2704,7 @@ gradient.negative.loglikelihood <-
       bh     <- lik.item[["zhat"]][["bhat"]]
       bhVi   <- lik.item[["zhat"]][["Valphaxi.inverse.bhat"]] / t.param["variance"]
       if( !identical( names( adjustable.param ), "nugget" ) ){
-        Qt11Vi <- pmm( Qi[1:n, 1:n], Vi, control.pmm )
+        Qt11Vi <- pmm( Qi[1:n, 1:n], Vi, control.pcmp )
       } else {
         Qt11Vi <- NULL
       }
@@ -2717,7 +2731,7 @@ gradient.negative.loglikelihood <-
         lag.vectors = lag.vectors, variogram.model = variogram.model,
         param.tf = param.tf, deriv.fwd.tf = deriv.fwd.tf, 
         ml.method = ml.method, 
-        control.pmm = control.pmm, verbose = verbose
+        control.pcmp = control.pcmp, verbose = verbose
       )
       
     } else {
@@ -2735,7 +2749,7 @@ gradient.negative.loglikelihood <-
         lag.vectors = lag.vectors, variogram.model = variogram.model,
         param.tf = param.tf, deriv.fwd.tf = deriv.fwd.tf, 
         ml.method = ml.method, 
-        control.pmm = control.pmm, verbose = verbose
+        control.pcmp = control.pcmp, verbose = verbose
       )
       
     }
@@ -2865,7 +2879,7 @@ georob.fit <-
     control.optim, 
     control.nlminb,
     hessian,
-    control.pmm,
+    control.pcmp,
     verbose
   )
 {
@@ -2916,6 +2930,8 @@ georob.fit <-
   ##               control about error families for computing covariances added
   ## 2015-12-02 AP catching error in computation of covariances
   ## 2016-01-26 AP refined check of initial values of variogram parameters
+  ## 2016-07-20 AP changes for parallel computations
+  ## 2016-07-22 AP corrected names of gradient components
   
   ##  ToDos:
   
@@ -3305,7 +3321,7 @@ georob.fit <-
         NROW( XX ), 
         length( georob.object[["Valphaxi.objects"]][["Valphaxi"]][["diag"]] ) )
     )
-   ){
+  ){
     lik.item[["Valphaxi"]]  <- expand( georob.object[["Valphaxi.objects"]] )
   } 
   
@@ -3451,7 +3467,7 @@ georob.fit <-
         force.gradient = force.gradient,
         expectations = expectations,
         error.family.estimation = error.family.estimation,
-        control.pmm = control.pmm,
+        control.pcmp = control.pcmp,
         verbose = verbose
       ) 
       
@@ -3504,7 +3520,7 @@ georob.fit <-
         force.gradient = force.gradient,
         expectations = expectations,
         error.family.estimation = error.family.estimation,
-        control.pmm = control.pmm,
+        control.pcmp = control.pcmp,
         verbose = verbose
       )
       
@@ -3561,7 +3577,7 @@ georob.fit <-
           irwls.initial = irwls.initial,
           irwls.maxiter = irwls.maxiter,
           irwls.ftol = irwls.ftol,
-          control.pmm = control.pmm,
+          control.pcmp = control.pcmp,
           verbose = verbose,
           force.gradient = force.gradient
         )
@@ -3606,7 +3622,7 @@ georob.fit <-
           irwls.initial = irwls.initial,
           irwls.maxiter = irwls.maxiter,
           irwls.ftol = irwls.ftol,
-          control.pmm = control.pmm,
+          control.pcmp = control.pcmp,
           verbose = verbose,
           force.gradient = force.gradient
         )
@@ -3644,7 +3660,7 @@ georob.fit <-
         irwls.maxiter = irwls.maxiter,
         irwls.ftol = irwls.ftol,
         force.gradient = force.gradient,
-        control.pmm = control.pmm,
+        control.pcmp = control.pcmp,
         verbose = verbose
       )
       
@@ -3683,7 +3699,7 @@ georob.fit <-
         irwls.initial = irwls.initial,
         irwls.maxiter = irwls.maxiter,
         irwls.ftol = irwls.ftol,
-        control.pmm = control.pmm,
+        control.pcmp = control.pcmp,
         verbose = verbose
       )
       
@@ -3716,7 +3732,7 @@ georob.fit <-
         irwls.maxiter = irwls.maxiter,
         irwls.ftol = irwls.ftol,
         force.gradient = force.gradient,
-        control.pmm = control.pmm,
+        control.pcmp = control.pcmp,
         verbose = verbose
       )
       
@@ -3726,6 +3742,14 @@ georob.fit <-
       
     }
     
+  }
+  
+  ## set the correct parameter names
+  
+  if( reparam ){
+    tmp <- names( r.gradient )
+    tmp <- gsub( "snugget", "xi", gsub( "nugget", "eta", tmp, fixed = TRUE ), fixed = TRUE )
+    names( r.gradient ) <- tmp  
   }
   
   ##  get the other fitted items
@@ -3805,7 +3829,7 @@ georob.fit <-
         irwls.initial = irwls.initial,
         irwls.maxiter = irwls.maxiter,
         irwls.ftol = irwls.ftol,
-        control.pmm = control.pmm,
+        control.pcmp = control.pcmp,
         verbose = 0,
         force.gradient = force.gradient
       )    
@@ -3853,7 +3877,7 @@ georob.fit <-
       cov.ehat = FALSE, full.cov.ehat = FALSE, 
       cov.ehat.p.bhat = FALSE, full.cov.ehat.p.bhat = FALSE,
       aux.cov.pred.target = aux.cov.pred.target,
-      control.pmm = control.pmm,
+      control.pcmp = control.pcmp,
       verbose = verbose
     )
     
@@ -3895,7 +3919,7 @@ georob.fit <-
         cov.ehat = cov.ehat, full.cov.ehat = full.cov.ehat, 
         cov.ehat.p.bhat = cov.ehat.p.bhat, full.cov.ehat.p.bhat = full.cov.ehat.p.bhat,
         aux.cov.pred.target = FALSE,
-        control.pmm = control.pmm,
+        control.pcmp = control.pcmp,
         verbose = verbose
       )
     )
@@ -4144,7 +4168,7 @@ f.aux.eeq <- function(
   bh, bhVaxi,
   r.cov, lik.item,
   TtT, 
-  lag.vectors, variogram.model, control.pmm, verbose
+  lag.vectors, variogram.model, control.pcmp, verbose
 ){
   
   ##  auxiliary function to compute robustified estimating equations
@@ -4154,6 +4178,7 @@ f.aux.eeq <- function(
   ## 2015-03-03 AP changes to optimize computing effort
   ## 2015-07-17 AP new function interface and improved efficiency of computation
   ## 2015-07-27 AP changes to further improve efficiency
+  ## 2016-07-20 AP changes for parallel computations
   
   switch(
     x,
@@ -4227,15 +4252,15 @@ f.aux.eeq <- function(
         aniso = aniso,
         verbose = verbose
       )
-      #       aux <- pmm( dVa, lik.item[["Valphaxi"]][["Valphaxi.inverse"]], control.pmm )
+      #       aux <- pmm( dVa, lik.item[["Valphaxi"]][["Valphaxi.inverse"]], control.pcmp )
       #       eeq.exp <- sum(
-      #         pmm( lik.item[["Valphaxi"]][["Valphaxi.inverse"]], aux, control.pmm ) * r.cov[["cov.bhat"]]
+      #         pmm( lik.item[["Valphaxi"]][["Valphaxi.inverse"]], aux, control.pcmp ) * r.cov[["cov.bhat"]]
       #       )
       #       eeq.emp <- sum( 
       #         lik.item[["zhat"]][["Valphaxi.inverse.bhat"]] * drop( dVa %*% lik.item[["zhat"]][["Valphaxi.inverse.bhat"]] )
       #       )
       
-      aux <- pmm( dVa, Valphaxii, control.pmm )
+      aux <- pmm( dVa, Valphaxii, control.pcmp )
       eeq.exp <- sum( aux * Valphaxii.cov.bhat ) * param["variance"]
       eeq.emp <- sum( bhVaxi * drop( dVa %*% bhVaxi ) ) * param["variance"]
     }
@@ -4258,7 +4283,7 @@ f.aux.gradient.nll <- function(
   lag.vectors, variogram.model,
   param.tf, deriv.fwd.tf, 
   ml.method,
-  control.pmm, verbose
+  control.pcmp, verbose
 ){
   
   ##  auxiliary function to compute gradient of (restricted) log-likelihood
@@ -4269,6 +4294,7 @@ f.aux.gradient.nll <- function(
   ## 2015-07-17 AP new parametrization of loglikelihood
   ## 2015-07-17 AP new function interface, improve efficiency
   ## 2015-07-27 AP changes to further improve efficiency
+  ## 2016-07-20 AP changes for parallel computations
   
   t.q <- NROW(Vi)
   
@@ -4392,7 +4418,7 @@ f.aux.gradient.nll <- function(
         verbose = verbose
       )
       
-      dVaVi <- pmm( dVa, Vi, control.pmm ) 
+      dVaVi <- pmm( dVa, Vi, control.pcmp ) 
       
       ##  derivate of U
       
@@ -4436,7 +4462,7 @@ f.aux.gradient.npll <- function(
   lag.vectors, variogram.model,
   param.tf, deriv.fwd.tf, 
   ml.method,
-  control.pmm, verbose
+  control.pcmp, verbose
 ){
   
   ##  auxiliary function to compute gradient of (restricted) profile
@@ -4445,6 +4471,7 @@ f.aux.gradient.npll <- function(
   
   ## 2015-07-17 A. Papritz
   ## 2015-07-27 AP changes to improve efficiency
+  ## 2016-07-20 AP changes for parallel computations
   
   t.q <- t.qmp <- NROW(XX)
   if( identical( ml.method, "REML" ) ){
@@ -4525,7 +4552,7 @@ f.aux.gradient.npll <- function(
         verbose = verbose
       )
       
-      dVaVai <- pmm( dVa, Valphaxii, control.pmm )  ### !!!dVaVai not symmetric!!!!
+      dVaVai <- pmm( dVa, Valphaxii, control.pcmp )  ### !!!dVaVai not symmetric!!!!
       
       ## partial derivative of log(Ustar) (up to factor (1-xi))
 
@@ -4561,7 +4588,7 @@ f.aux.Qstar <- function(
   XX, col.rank.XX, min.condnum, 
   Vi, 
   eta, 
-  ml.method, control.pmm 
+  ml.method, control.pcmp 
 ){
   
   ## auxiliary function to compute matrix Qstar used for Gaussian
@@ -4569,6 +4596,7 @@ f.aux.Qstar <- function(
   
   ## 2014-07-29 A. Papritz
   ## 2015-07-17 AP new function interface and new name
+  ## 2016-07-20 AP changes for parallel computations
   
   result <- list( error = TRUE, log.det.Qstar = NULL, Qstar.inverse = NULL )
   
@@ -4599,7 +4627,7 @@ f.aux.Qstar <- function(
     result[["log.det.Qstar"]] <- sum( log( s[["d"]][sel] ) )
     s[["d"]] <- ifelse( sel,  1. / s[["d"]], 0. )
     result[["Qstar.inverse"]] <- pmm(
-      s[["v"]], s[["d"]] * t( s[["u"]] ), control.pmm
+      s[["v"]], s[["d"]] * t( s[["u"]] ), control.pcmp
     )
     
   } else {
@@ -4626,7 +4654,7 @@ f.aux.Qstar <- function(
 ################################################################################
 
 f.aux.Valphaxi <- function(
-  lag.vectors, variogram.model, param, xi, aniso, control.pmm, verbose
+  lag.vectors, variogram.model, param, xi, aniso, control.pcmp, verbose
 ){
   
   ## auxiliary function to compute generalized correlation matrix and
@@ -4634,6 +4662,7 @@ f.aux.Valphaxi <- function(
   
   ## 2014-07-29 A. Papritz
   ## 2015-07-23 AP Valpha (correlation matrix without spatial nugget) no longer stored
+  ## 2016-07-20 AP changes for parallel computations
   
   result <- list( 
     error = TRUE, gcr.constant = NULL, Valphaxi = NULL, 
@@ -4643,7 +4672,7 @@ f.aux.Valphaxi <- function(
   cormat <- f.aux.gcr(
     lag.vectors = lag.vectors, variogram.model = variogram.model, 
     param = param, xi = xi, aniso = aniso, 
-    control.pmm = control.pmm,
+    control.pcmp = control.pcmp,
     verbose = verbose
   )
   if( cormat[["error"]] ) return( result )

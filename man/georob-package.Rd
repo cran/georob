@@ -107,8 +107,8 @@
     is a matrix that is used to model geometrically anisotropic auto-correlation.
     In more detail, 
     \eqn{\mbox{\boldmath$A$\unboldmath}}{A} 
-    maps an arbitrary point on an ellipsoidal surface with constant semivariance in 
-    \eqn{ \mathrm{I}\!\mathrm{R}^d}{R^d},
+    maps an arbitrary point on an ellipsoidal surface with constant semi-variance in 
+    \eqn{ \mathrm{I}\!\mathrm{R}^3}{R^3},
     centred on the origin, and having lengths of semi-principal axes, 
     \eqn{\mbox{\boldmath$p$\unboldmath}_1}{p_1}, 
       \eqn{\mbox{\boldmath$p$\unboldmath}_2}{p_2}, 
@@ -145,7 +145,7 @@
         defined by the intersection between the
         \eqn{x}-\eqn{y}-plane and the plane orthogonal to 
         \eqn{\mbox{\boldmath$p$\unboldmath}_1}{p_1} running through the origin
-        (\eqn{\zeta} is measured from \eqn{y^\prime}{y'} positive counterclockwise in degrees).
+        (\eqn{\zeta} is measured from \eqn{y^\prime}{y'} positive counter-clockwise in degrees).
       }
     }
     
@@ -193,12 +193,15 @@
         Cov[Y, Y^T] = \tau^2 I + \Gamma_\theta.
       }
       
-      \item  Depending on the context, the term \dQuote{variogram parameters}
-      denotes sometimes all parameters of a geometrically anisotropic
-      variogram model, but in places only the parameters of an isotropic
-      variogram model, i.e. \eqn{\sigma^2, \ldots, \alpha, \ldots} and
-      \eqn{f_1, \ldots, \zeta} are denoted by the term \dQuote{anisotropy
-      parameters}. 
+      \item Depending on the context, the term \dQuote{variogram
+      parameters} denotes sometimes all parameters of a geometrically
+      anisotropic variogram model, but in places only the parameters of an
+      isotropic variogram model, i.e. \eqn{\sigma^2, \ldots, \alpha,
+      \ldots} and \eqn{f_1, \ldots, \zeta} are denoted by the term
+      \dQuote{anisotropy parameters}.  In the sequel
+      \eqn{\mbox{\boldmath$\theta$\unboldmath}}{\theta} is used to denote all
+      variogram and anisotropy parameters except the nugget effect
+      \eqn{\tau^2}.
       
     }
    
@@ -212,9 +215,9 @@
     \eqn{\mbox{\boldmath$B$\unboldmath}}{B} at the data locations 
     \eqn{\mbox{\boldmath$s$\unboldmath}_i}{s_i}
     and the model parameters 
-    \eqn{\mbox{\boldmath$\beta$\unboldmath}}{\beta} and
+    \eqn{\mbox{\boldmath$\beta$\unboldmath}}{\beta}, \eqn{\tau^2} and
     \eqn{\mbox{\boldmath$\theta$\unboldmath}^\mathrm{T} = 
-      (\sigma^2, \sigma_{\mathrm{n}}^2, \tau^2, \alpha, \ldots,  f_{1}, f_{2}, 
+      (\sigma^2, \sigma_{\mathrm{n}}^2, \alpha, \ldots,  f_{1}, f_{2}, 
         \omega, \phi, \zeta)
     }{\theta^T = 
       (\sigma^2, \sigma^2_n, \tau^2, \alpha, f_1, f_2, 
@@ -224,10 +227,10 @@
     robust restricted maximum likelihood (REML) or 
     Gaussian maximum likelihood (ML). Here \var{\ldots} 
     denote further parameters of the variogram such as the smoothness parameter
-    of the Whittle-\enc{MatŽrn}{Matern} model.
+    of the Whittle-\enc{MatÂŽrn}{Matern} model.
     
     In brief, the robust REML method is based on the insight that for
-    given \eqn{\mbox{\boldmath$\theta$\unboldmath}}{\theta} the
+    given \eqn{\mbox{\boldmath$\theta$\unboldmath}}{\theta} and \eqn{\tau^2} the
     kriging predictions (= BLUP) of
     \eqn{\mbox{\boldmath$B$\unboldmath}}{B} and the generalized least
     squares (GLS = ML) estimates of
@@ -255,9 +258,9 @@
     \eqn{\mbox{\boldmath$\beta$\unboldmath}}{\beta} e.g.
     \cite{Harville (1977)}.
     %
-    Hence, the BLUP of \eqn{\mbox{\boldmath$B$\unboldmath}}{B} 
-    and ML estimates of \eqn{\mbox{\boldmath$\beta$\unboldmath}}{\beta} and 
-    \eqn{\mbox{\boldmath$\theta$\unboldmath}}{\theta}
+    Hence, the BLUP of \eqn{\mbox{\boldmath$B$\unboldmath}}{B}, 
+    ML estimates of \eqn{\mbox{\boldmath$\beta$\unboldmath}}{\beta}, 
+    \eqn{\mbox{\boldmath$\theta$\unboldmath}}{\theta} and \eqn{\tau^2}
     are obtained by maximizing 
     \deqn{
       - \log(\det(
@@ -284,32 +287,33 @@
     jointly with respect to 
     \eqn{\mbox{\boldmath$B$\unboldmath}}{B},
     \eqn{\mbox{\boldmath$\beta$\unboldmath}}{\beta}, 
-    \eqn{\mbox{\boldmath$\theta$\unboldmath}}{\theta}.
+    \eqn{\mbox{\boldmath$\theta$\unboldmath}}{\theta} and  \eqn{\tau^2}
+    or by solving the respective estimating equations.
     
-    The respective estimating equations can then by robustified by 
+    The estimating equations can then by robustified by 
     \itemize{
       \item replacing the standardized residuals, say
         \eqn{\varepsilon_i/\tau}{\epsilon_i/\tau},
-        by a bounded or redescending \eqn{\psi}-function, 
+        by a bounded or re-descending \eqn{\psi}-function, 
         \eqn{\psi_c(\varepsilon_i/\tau)}{\psi_c(\epsilon_i/\tau)},
         of them (e.g. Marona et al, 2006, chap. 2) and by
-      \item introducting suitable bias correction terms for Fisher consistency at 
+      \item introducing suitable bias correction terms for Fisher consistency at 
         the Gaussian model,
     }
-    see \cite{\enc{KŸnsch}{Kuensch} et al. (2011)} for details. 
+    see \cite{\enc{KÂŸnsch}{Kuensch} et al. (2011)} for details. 
     The robustified estimating equations
     are solved numerically by a combination of iterated re-weighted least squares
     (IRWLS) to estimate \eqn{\mbox{\boldmath$B$\unboldmath}}{B} and
     \eqn{\mbox{\boldmath$\beta$\unboldmath}}{\beta} for given 
-    \eqn{\mbox{\boldmath$\theta$\unboldmath}}{\theta}
+    \eqn{\mbox{\boldmath$\theta$\unboldmath}}{\theta} and \eqn{\tau^2}
     and nonlinear root finding by the function 
     \code{\link[nleqslv]{nleqslv}} of the \R package \pkg{nleqslv}
-    to get \eqn{\mbox{\boldmath$\theta$\unboldmath}}{\theta}.
+    to get \eqn{\mbox{\boldmath$\theta$\unboldmath}}{\theta} and  \eqn{\tau^2}.
     The robustness of the procedure is controlled by the tuning parameter \eqn{c}
     of the \eqn{\psi_c}-function. For \eqn{c \ge 1000}{c>=1000} the algorithm computes
     Gaussian (RE)ML estimates and customary plug-in kriging predictions. 
     Instead of solving the Gaussian (RE)ML estimating equations, our software then
-    maximizes the Gaussian (restricted) loglikelihood using  \code{\link[stats]{nlminb}} or
+    maximizes the Gaussian (restricted) log-likelihood using  \code{\link[stats]{nlminb}} or
     \code{\link[stats]{optim}}.
         
     \pkg{georob} uses variogram models implemented in the \R package
@@ -338,8 +342,8 @@
   %     prediction
   
   \subsection{Prediction}{ 
-    Robust plug-in external-drift point kriging predictions 
-    can be computed for an unsampled location 
+    Robust plug-in external drift point kriging predictions 
+    can be computed for an non-sampled location 
     \eqn{\mbox{\boldmath$s$\unboldmath}_0}{s_0}
     from the covariates
     \eqn{\mbox{\boldmath$x$\unboldmath}(\mbox{\boldmath$s$\unboldmath}_0)}{
@@ -373,11 +377,11 @@
     Kriging variances can be computed as well, based on approximated covariances of 
     \eqn{\widehat{\mbox{\boldmath$B$\unboldmath}}}{hatB} and 
     \eqn{\widehat{\mbox{\boldmath$\beta$\unboldmath}}}{hat\beta}
-    (see \cite{KŸnsch et al., 2011}, and appendices of
+    (see \cite{KÂŸnsch et al., 2011}, and appendices of
     \cite{Nussbaum et al., 2012}, for details).
     
     The package \pkg{georob} provides in addition software for computing
-    robust external-drift \emph{block} kriging predictions.  The required
+    robust external drift \emph{block} kriging predictions.  The required
     integrals of the generalized covariance function are computed by
     functions of the \R package \pkg{constrainedKriging}.
   }
@@ -397,7 +401,8 @@
       fits such  models efficiently by Gaussian (RE)ML --- \code{\link{profilelogLik}} and 
       \code{\link{control.georob}}).
       \item Extracting estimated model components (see \code{\link{residuals.georob}}, 
-      \code{\link{rstandard.georob}}, \cr \code{\link{rstudent.georob}}, 
+      \code{\link{rstandard.georob}}, \cr 
+      % \code{\link{rstudent.georob}}, 
       \code{\link{ranef.georob}}).
       \item Robustly estimating sample variograms and for fitting 
       variogram model functions to them (see 
@@ -408,13 +413,13 @@
       \code{\link{add1.georob}}, \code{\link{drop1.georob}}, 
       \code{\link{extractAIC.georob}}, \cr \code{\link{logLik.georob}}, 
       \code{\link{deviance.georob}}). 
-      For  a robust fit, the loglikelihood is not defined.  The function then
-      computes the (restricted) loglikelihood of an equivalent Gaussian model with
+      For  a robust fit, the log-likelihood is not defined.  The function then
+      computes the (restricted) log-likelihood of an equivalent Gaussian model with
       heteroscedastic nugget (see \code{\link{deviance.georob}} for details).
       \item Assessing the goodness-of-fit and predictive power of the model by 
       \var{K}-fold cross-validation (see \code{\link{cv.georob}} and 
       \code{\link{validate.predictions}}).
-      \item Computing robust external-drift point and block kriging 
+      \item Computing robust external drift point and block kriging 
       predictions (see \code{\link{predict.georob}}, \code{\link{control.predict.georob}}).
       \item Unbiased back-transformation of both point and block
       kriging predictions of log-transformed data to the original scale of
@@ -436,10 +441,10 @@
   (WSL), pp. 51. 
   \url{http://e-collection.library.ethz.ch/eserv/eth:6027/eth-6027-01.pdf}
 
-  \enc{KŸnsch}{Kuensch}, H. R., Papritz, A., Schwierz, C. and Stahel, W. A. (in
+  \enc{KÂŸnsch}{Kuensch}, H. R., Papritz, A., Schwierz, C. and Stahel, W. A. (in
   preparation) Robust Geostatistics.
 
-  \enc{KŸnsch}{Kuensch}, H. R., Papritz, A., Schwierz, C. and Stahel, W. A. (2011) Robust
+  \enc{KÂŸnsch}{Kuensch}, H. R., Papritz, A., Schwierz, C. and Stahel, W. A. (2011) Robust
   estimation of the external drift and the variogram of spatial data.
   Proceedings of the ISI 58th World Statistics Congress of the International
   Statistical Institute.

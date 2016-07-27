@@ -20,7 +20,7 @@
 \alias{resid.georob}
 \alias{residuals.georob}
 \alias{rstandard.georob}
-\alias{rstudent.georob}
+% \alias{rstudent.georob}
 \alias{summary.georob}
 \alias{vcov.georob}
 
@@ -29,8 +29,8 @@
 \description{This page documents the methods \code{fixef},
   \code{fixed.effects}, \code{model.frame},
   \code{model.matrix}, \code{nobs}, \code{print}, \code{ranef},
-  \code{random.effects}, \code{resid}, \code{residuals}, \code{rstandard},
-  \code{rstudent}, \code{summary} and \code{vcov} for the
+  \code{random.effects}, \code{resid}, \code{residuals}, \code{rstandard}, % \code{rstudent}, 
+  \code{summary} and \code{vcov} for the
   class \code{georob}.  }
 
 \usage{
@@ -61,8 +61,6 @@
     level = 1, ...)
     
 \method{rstandard}{georob}(model, level = 1, ...)
-
-\method{rstudent}{georob}(model, ...)
 
 \method{summary}{georob}(object, correlation = FALSE, signif = 0.95, ...)
 
@@ -195,3 +193,7 @@ par(old.par)
 \keyword{models}
 \keyword{spatial}
 \keyword{robust}
+
+% \method{rstudent}{georob}(model, ...)
+
+

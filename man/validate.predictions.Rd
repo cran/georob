@@ -6,7 +6,7 @@
 \alias{validate.predictions}
 \alias{plot.cv.georob}
 \alias{print.cv.georob}
-\alias{rstudent.cv.georob}
+% \alias{rstudent.cv.georob}
 \alias{summary.cv.georob}
 \alias{print.summary.cv.georob}
 
@@ -31,7 +31,7 @@ validate.predictions(data, pred, se.pred,
  
 \method{print}{cv.georob}(x, digits = max(3, getOption("digits") - 3), ...)   
  
-\method{rstudent}{cv.georob}(model, ...)   
+% \method{rstudent}{cv.georob}(model, ...)   
  
 \method{summary}{cv.georob}(object, se = FALSE, ...)   
 }
@@ -87,8 +87,10 @@ validate.predictions(data, pred, se.pred,
   %   \item{scld.res}{numeric vector with scaled residuals of fitted
   %   \code{georob} object used to compute the predictions, see
   %   \emph{Details}.}
+  %   
+  %   \item{x, model, object}{objects of class \code{cv.georob}.}
   
-  \item{x, model, object}{objects of class \code{cv.georob}.}
+    \item{x, object}{objects of class \code{cv.georob}.}
   
   \item{digits}{positive integer indicating the number of decimal digits to print.}
 
@@ -97,10 +99,10 @@ validate.predictions(data, pred, se.pred,
   
     \itemize{
     
-      \item \code{"sc"}: a scatterplot of the (possibly log-transformed) response
+      \item \code{"sc"}: a scatter-plot of the (possibly log-transformed) response
       vs.  the respective predictions (default).
       
-      \item \code{"lgn.sc"}: a scatterplot of the untransformed response
+      \item \code{"lgn.sc"}: a scatter-plot of the untransformed response
       against back-\cr transformed predictions of the log-transformed response.
       
       \item \code{"ta"}: Tukey-Anscombe plot (plot of standardized prediction
@@ -111,7 +113,7 @@ validate.predictions(data, pred, se.pred,
       \item \code{"hist.pit"}: histogram of probability integral transform, see
       \emph{Details}.
       
-      \item \code{"ecdf.pit"}: empirical cdf of probability integral
+      \item \code{"ecdf.pit"}: empirical CDF of probability integral
       transform, see \emph{Details}.
       
       \item \code{"mc"}: a marginal calibration plot, see \emph{Details},
@@ -128,7 +130,7 @@ validate.predictions(data, pred, se.pred,
 
   \item{span}{smoothness parameter for loess (see \code{\link[stats]{loess.smooth}}).}
 
-  \item{add}{logical controlling wether the current high-level plot is
+  \item{add}{logical controlling whether the current high-level plot is
   added to an existing graphics without cleaning the frame before (default:
   \code{FALSE}).}
   
@@ -151,11 +153,22 @@ validate.predictions(data, pred, se.pred,
   \code{validate.predictions} computes the items required to evaluate (and
   plot) the diagnostic criteria proposed by Gneiting et al.  (2007) for
   assessing the \emph{calibration} and the \emph{sharpness} of
-  probabilistic predictions.  To this aim, \code{validate.predictions} uses
-  the assumption that the prediction errors
+  probabilistic predictions of (cross-)validation data.  To this aim,
+  \code{validate.predictions} uses the assumption that the prediction
+  errors
   \eqn{Y(\mbox{\boldmath$s$\unboldmath})-\widehat{Y}(\mbox{\boldmath$s$\unboldmath})}{Y(s)-hatY(s)}
   follow normal distributions with zero mean and standard deviations equal
-  to the kriging standard errors.  This assumption is used to compute
+  to the kriging standard errors.  This assumption is an approximation if
+  the errors \eqn{\varepsilon}{\epsilon} come from a long-tailed
+  distribution.  Furthermore, for the time being, the kriging variance of
+  the \emph{response} \eqn{Y} is approximated by adding the estimated
+  nugget \eqn{\widehat{\tau}^2}{hat\tau^2} to the kriging variance of the
+  signal \eqn{Z}.  This approximation likely underestimates the mean
+  squared prediction error of the response if the errors come from a
+  long-tailed distribution.  Hence, for robust kriging, the standard errors of
+  the (cross-)validation errors are likely too small.
+  
+  Notwithstanding these difficulties and imperfections, \code{validate.predictions} computes
   
   \itemize{
   
@@ -163,10 +176,10 @@ validate.predictions(data, pred, se.pred,
     
     \deqn{\mathrm{PIT}_i = F_i(y_i),}{PIT_i = F_i(y_i),}
     
-    where \eqn{F_i(y_i)} denotes the predictive CDF evaluted at \eqn{y_i},
-    the value of the \eqn{i}th (cross-)validation datum,
+    where \eqn{F_i(y_i)} denotes the (plug-in) predictive CDF evaluated at
+    \eqn{y_i}, the value of the \eqn{i}th (cross-)validation datum,
     
-    \item the \emph{average predictive CDF} 
+    \item the \emph{average predictive CDF} (plug-in) 
     
     \deqn{\bar{F}_n(y)=1/n \sum_{i=1}^n F_i(y),}{barF_n(y)=1/n \sum_{i=1}^n F_i(y),} 
     
@@ -174,7 +187,7 @@ validate.predictions(data, pred, se.pred,
     \eqn{F_i} are evaluated at \eqn{N} quantiles equal to the set of
     distinct \eqn{y_i} (or a subset of size \eqn{N} of them),
     
-    \item the \emph{Brier Score}
+    \item the \emph{Brier Score} (plug-in) 
     
     \deqn{\mathrm{BS}(y) = 1/n \sum_{i=1}^n \left(F_i(y) - I(y_i \leq y) \right)^2,}{BS(y) = 1/n \sum_{i=1}^n (F_i(y) - I(y_i \leq y) )^2,}
     
@@ -195,9 +208,10 @@ validate.predictions(data, pred, se.pred,
   
   \itemize{
   
-    \item A histogram of the PIT values.  For ideal predictions, with
-    observed coverages of prediction intervals matching  nominal
-    coverages, the PIT values have an uniform distribution.
+    \item A histogram (or a plot of the empirical CDF) of the PIT values.
+    For ideal predictions, with observed coverages of prediction intervals
+    matching nominal coverages, the PIT values have an uniform
+    distribution.
   
    \item Plots of \eqn{\bar{F}_n(y)}{barF_n(y)} and of the empirical CDF of
    the data, say \eqn{\widehat{G}_n(y)}{hat{G}_n(y)}, and of their
@@ -213,7 +227,7 @@ validate.predictions(data, pred, se.pred,
   }
   
   The \code{plot} method for class \code{cv.georob} allows to create
-  these plots, along with scatterplots of observations and predictions, 
+  these plots, along with scatter-plots of observations and predictions, 
   Tukey-Anscombe and normal QQ plots of the standardized prediction
   errors.
   
@@ -230,10 +244,10 @@ validate.predictions(data, pred, se.pred,
   
   The \code{print} method for class \code{cv.georob} returns the mean
   and dispersion statistics of the (standardized) prediction errors.
-  
-  The method \code{rstudent} returns for class \code{cv.georob} the
-  standardized prediction errors.
-  
+%   
+%   The method \code{rstudent} returns for class \code{cv.georob} the
+%   standardized prediction errors.
+%   
 }
 
 
@@ -272,10 +286,10 @@ validate.predictions(data, pred, se.pred,
     \code{fbar} \tab  the average predictive distribution \eqn{\bar{F}_n(y)}{barF_n(y)}\cr
     \code{bs} \tab the Brier score \eqn{\mathrm{BS}(y)}{BS(y)}\cr }
   }
-  
-  The function \code{rstudent.cv.georob} returns a numeric vector with
-  the standardized cross-validation prediction errors.
-  
+%   
+%   The function \code{rstudent.cv.georob} returns a numeric vector with
+%   the standardized cross-validation prediction errors.
+%   
 }
 
 

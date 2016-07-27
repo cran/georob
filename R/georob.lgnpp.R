@@ -535,7 +535,7 @@ lgnpp <-
         
       }
       
-      t.result <- c( pred = t.mean, mse = t.mse )
+      t.result <- c( pred = t.mean, se = sqrt(t.mse) )
       
       if( extended.output ){
         attr( t.result, "mse.lgn.pred" ) <- t.cov.errors

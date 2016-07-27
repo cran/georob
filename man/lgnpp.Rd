@@ -5,13 +5,13 @@
 \name{lgnpp}
 \alias{lgnpp}
 
-\title{Unbiased Back-Transformations for Lognormal Kriging}
+\title{Unbiased Back-Transformations for Log-normal Kriging}
 
 \description{
   The function \code{lgnpp} back-transforms point or block kriging
   predictions of a log-transformed response variable computed by
   \code{\link{predict.georob}}.  Alternatively, the function averages
-  lognormal point kriging predictions for a block and approximates the mean
+  log-normal point kriging predictions for a block and approximates the mean
   squared prediction error of the block mean.}
 
 
@@ -53,7 +53,7 @@ lgnpp(object, newdata, locations, is.block = FALSE, all.pred = NULL,
   \subsection{1. Back-transformation of point kriging predictions of a
   log-transformed response}{
  
-    The usual, marginally unbiased back-transformation for lognormal point
+    The usual, marginally unbiased back-transformation for log-normal point
     kriging is used:
  
     \deqn{\widehat{U}(\mbox{\boldmath$s$\unboldmath}) = \exp( \widehat{Z}(\mbox{\boldmath$s$\unboldmath}) + 
@@ -85,7 +85,7 @@ lgnpp(object, newdata, locations, is.block = FALSE, all.pred = NULL,
     and
     
     \deqn{\mu_{\hat{\theta}}(\mbox{\boldmath$s$\unboldmath}) \approx 
-      \exp(\mbox{\boldmath$x$\unboldmath}(\mbox{\boldmath$s$\unboldmath})\mathrm{^T}\widehat{\beta} 
+      \exp(\mbox{\boldmath$x$\unboldmath}(\mbox{\boldmath$s$\unboldmath})\mathrm{^T}\widehat{\mbox{\boldmath$\beta$\unboldmath}} 
       + 1/2 \mathrm{Var}_{\hat{\theta}}[Z(\mbox{\boldmath$s$\unboldmath})]).    
     }{\mu(s) = exp( x(s)^T hat\beta + 1/2 Var[Z(s)]).}
     
@@ -109,50 +109,51 @@ lgnpp(object, newdata, locations, is.block = FALSE, all.pred = NULL,
   
   Block kriging predictions of a log-transformed response variable are
   back-transformed by the approximately unbiased transformation proposed
-  by Cressie (2006)
+  by Cressie (2006, Appendix C)
   
-  \deqn{\widehat{U}(B) = \exp( \widehat{Z}(B) + 1/2 \{
+  \deqn{\widehat{U}(A) = \exp( \widehat{Z}(A) + 1/2 \{
     \mathrm{Var}_{\hat{\theta}}[Z(\mbox{\boldmath$s$\unboldmath})] + \widehat{\mbox{\boldmath$\beta$\unboldmath}}\mathrm{^T}
-    \mbox{\boldmath$M$\unboldmath}(B) \widehat{\mbox{\boldmath$\beta$\unboldmath}} -
-    \mathrm{Var}_{\hat{\theta}}[\widehat{Z}(B)]  
+    \mbox{\boldmath$M$\unboldmath}(A) \widehat{\mbox{\boldmath$\beta$\unboldmath}} -
+    \mathrm{Var}_{\hat{\theta}}[\widehat{Z}(A)]  
     \}),
   }{
-    hatU(B) = exp( hatS(B) + 1/2 \{Var[Z(s)] + hat\beta^T M(B) hat\beta - Var[hatS(B)]\}),
+    hatU(A) = exp( hatS(A) + 1/2 \{Var[Z(s)] + hat\beta^T M(A) hat\beta - Var[hatS(A)]\}),
   }
   
-  \deqn{\mathrm{E}_{\hat{\theta}}[\{U(B) - \widehat{U}(B))^2] = \mu_{\hat{\theta}}(B)^2 \{
-    \exp(\mathrm{Var}_{\hat{\theta}}[Z(B)]) - 2 \exp(\mathrm{Cov}_{\hat{\theta}}[\widehat{Z}(B),Z(B)]) + \exp(\mathrm{Var}_{\hat{\theta}}[\widehat{Z}(B)])
+  \deqn{\mathrm{E}_{\hat{\theta}}[\{U(A) - \widehat{U}(A))^2] = \mu_{\hat{\theta}}(A)^2 \{
+    \exp(\mathrm{Var}_{\hat{\theta}}[Z(A)]) - 2 \exp(\mathrm{Cov}_{\hat{\theta}}[\widehat{Z}(A),Z(A)]) + \exp(\mathrm{Var}_{\hat{\theta}}[\widehat{Z}(A)])
     \}
   }{
-    E[ \{ U(B)- hatU(B) \}^2 ] = \mu(B)^2 \{
-    \exp(Var[Z(B)]) - 2 \exp(Cov[Z(B),hatS(B)]) + \exp(Var[hatS(B)]) \}
+    E[ \{ U(A)- hatU(A) \}^2 ] = \mu(A)^2 \{
+    \exp(Var[Z(A)]) - 2 \exp(Cov[Z(A),hatS(A)]) + \exp(Var[hatS(A)]) \}
   }
   
-  where \eqn{\widehat{Z}(B)} and \eqn{\widehat{U}(B)} are the log- and
-  back-transformed predictions of the block mean \eqn{U(B)}, respectively,
-  \eqn{\mbox{\boldmath$M$\unboldmath}(B)}{M(B)} is the spatial
+  where \eqn{\widehat{Z}(A)} and \eqn{\widehat{U}(A)} are the log- and
+  back-transformed predictions of the block mean \eqn{U(A)}, respectively,
+  \eqn{\mbox{\boldmath$M$\unboldmath}(A)}{M(A)} is the spatial
   covariance matrix of the covariates
   
-  \deqn{ \mbox{\boldmath$M$\unboldmath}(B) = 1/|B| \int_B 
-  ( \mbox{\boldmath$x$\unboldmath}(\mbox{\boldmath$s$\unboldmath}) - \mbox{\boldmath$x$\unboldmath}(B) )
-  ( \mbox{\boldmath$x$\unboldmath}(\mbox{\boldmath$s$\unboldmath}) - \mbox{\boldmath$x$\unboldmath}(B) )\mathrm{^T} \,d\mbox{\boldmath$s$\unboldmath}
-  }{M(B) = 1/|B| int_B (x(s)-x(B) (x(s)-x(B))^T) ds}
+  \deqn{ \mbox{\boldmath$M$\unboldmath}(A) = 1/|A| \int_A 
+  ( \mbox{\boldmath$x$\unboldmath}(\mbox{\boldmath$s$\unboldmath}) - \mbox{\boldmath$x$\unboldmath}(A) )
+  ( \mbox{\boldmath$x$\unboldmath}(\mbox{\boldmath$s$\unboldmath}) - \mbox{\boldmath$x$\unboldmath}(A) )\mathrm{^T} \,d\mbox{\boldmath$s$\unboldmath}
+  }{M(A) = 1/|A| int_B (x(s)-x(A) (x(s)-x(A))^T) ds}
   
-  with 
-  \deqn{ \mbox{\boldmath$x$\unboldmath}(B) = 1/|B| \int_B \mbox{\boldmath$x$\unboldmath}(\mbox{\boldmath$s$\unboldmath}) \,d\mbox{\boldmath$s$\unboldmath}  
-  }{x(B) = 1/|B| int_B x(s) ds}
+  within the block \eqn{A} where 
+  
+  \deqn{ \mbox{\boldmath$x$\unboldmath}(A) = 1/|A| \int_A \mbox{\boldmath$x$\unboldmath}(\mbox{\boldmath$s$\unboldmath}) \,d\mbox{\boldmath$s$\unboldmath}  
+  }{x(A) = 1/|A| int_B x(s) ds}
   
   and 
   
-  \deqn{ \mu_{\hat{\theta}}(B) \approx \exp(\mbox{\boldmath$x$\unboldmath}(B)\mathrm{^T}
-    \widehat{\mbox{\boldmath$\beta$\unboldmath}} + 1/2 \mathrm{Var}_{\hat{\theta}}[Z(B)]). 
+  \deqn{ \mu_{\hat{\theta}}(A) \approx \exp(\mbox{\boldmath$x$\unboldmath}(A)\mathrm{^T}
+    \widehat{\mbox{\boldmath$\beta$\unboldmath}} + 1/2 \mathrm{Var}_{\hat{\theta}}[Z(A)]). 
   }{
-    \mu(B) = exp( x(B)^T hat\beta + 1/2 Var[Z(B)]).
+    \mu(A) = exp( x(A)^T hat\beta + 1/2 Var[Z(A)]).
   }
   
   This back-transformation is based on the assumption that both the point data
   \eqn{U(\mbox{\boldmath$s$\unboldmath})}{U(s)} and the block means
-  \eqn{U(B)} follow  lognormal laws, which strictly cannot hold.  But
+  \eqn{U(A)} follow  log-normal laws, which strictly cannot hold.  But
   for small blocks the assumption works well as the bias and the loss of
   efficiency caused by this assumption are small (Cressie, 2006;
   Hofer et al., 2013). 
@@ -160,11 +161,12 @@ lgnpp(object, newdata, locations, is.block = FALSE, all.pred = NULL,
   The above formulae are used by \code{lgnpp} if \code{object} contains
   block kriging predictions in the form of a
   \code{\link{SpatialPolygonsDataFrame}}.  To approximate
-  \eqn{\mbox{\boldmath$M$\unboldmath}(B)}{M(B)}, one needs the covariates
-  on a fine grid within the block \eqn{B}.  The covariates are passed to
-  \code{lgnpp} as argument \code{newdata}, where \code{newdata} can be any
-  spatial data frame accepted by \code{predict.georob}.  For evaluating
-  \eqn{\mbox{\boldmath$M$\unboldmath}(B)}{M(B)} the geometry of the blocks
+  \eqn{\mbox{\boldmath$M$\unboldmath}(A)}{M(A)}{}, one needs the covariates
+  on a fine grid for the whole study domain in which the blocks lie.  The
+  covariates are passed \code{lgnpp} as argument \code{newdata}, where
+  \code{newdata} can be any spatial data frame accepted by
+  \code{predict.georob}.  For evaluating
+  \eqn{\mbox{\boldmath$M$\unboldmath}(A)}{M(A)} the geometry of the blocks
   is taken from the \code{polygons} slot of the
   \code{SpatialPolygonsDataFrame} passed as \code{object} to \code{lgnpp}.
   
@@ -175,49 +177,50 @@ lgnpp(object, newdata, locations, is.block = FALSE, all.pred = NULL,
   
   \code{lgnpp} allows as a further option to back-transform and
   \emph{average} point kriging predictions passed as \code{object} to the
-  function.  One then assumes that the predictions refer to points
-  that lie in \emph{a single} block.  Hence, one uses the approximation
+  function.  One then assumes that the predictions in \code{object} refer
+  to points that lie in \emph{a single} block.  Hence, one uses the
+  approximation
   
-  \deqn{\widehat{U}(B) \approx \frac{1}{K} \sum_{s_i \in B} \widehat{U}(\mbox{\boldmath$s$\unboldmath}_i)
-  }{hatU(B) = 1/K sum_{s_i in B} hatU(s_i)}
+  \deqn{\widehat{U}(A) \approx \frac{1}{K} \sum_{s_i \in A} \widehat{U}(\mbox{\boldmath$s$\unboldmath}_i)
+  }{hatU(A) = 1/K sum_{s_i in A} hatU(s_i)}
   
-  to predict the block mean \eqn{U(B)}, where \eqn{K} is the number of
-  points in \eqn{B}. The mean squared error can be approximated by
+  to predict the block mean \eqn{U(A)}, where \eqn{K} is the number of
+  points in \eqn{A}. The mean squared prediction error can be approximated by
   
-  \deqn{\mathrm{E}_{\hat{\theta}}[\{U(B) - \widehat{U}(B)\}^2] \approx \frac{1}{K^2}
-    \sum_{s_i \in B} \sum_{s_j \in B} 
+  \deqn{\mathrm{E}_{\hat{\theta}}[\{U(A) - \widehat{U}(A)\}^2] \approx \frac{1}{K^2}
+    \sum_{s_i \in A} \sum_{s_j \in A} 
     \mathrm{Cov}_{\hat{\theta}}[
     U(\mbox{\boldmath$s$\unboldmath}_i) - \widehat{U}(\mbox{\boldmath$s$\unboldmath}_i),
     U(\mbox{\boldmath$s$\unboldmath}_j) - \widehat{U}(\mbox{\boldmath$s$\unboldmath}_j) 
     ].
-    }{E[\{U(B) - hatU(B)\}^2] = 1/K^2 sum_{s_i in B} sum_{s_j in B} 
+    }{E[\{U(A) - hatU(A)\}^2] = 1/K^2 sum_{s_i in A} sum_{s_j in A} 
     Cov[ U(s_i)-hatU(s_i), U(s_j)-hatU(s_j)].  
   }
     
  In most instances, the evaluation of the above double sum is not feasible
- because a large number of points is used to discretize the block \eqn{B}.
- lgnpp then uses the following approximation for the mean squared error
- (see also Appendix E of Nussbaum et al., 2012):
+ because a large number of points is used to discretize the block \eqn{A}.
+ \code{lgnpp} then uses the following approximations to compute the mean
+ squared error (see also Appendix E of Nussbaum et al., 2012):
   
   \itemize{
   
-    \item Prediction results are passed as \code{object} to \code{lgnpp}
-    only for a \emph{random sample of points in \eqn{B}} (of size \eqn{k}),
+    \item Point prediction results are passed as \code{object} to \code{lgnpp}
+    only for a \emph{random sample of points in \eqn{A}} (of size \eqn{k}),
     for which the evaluation of the above double sum is feasible.
     
     \item The prediction results for the \emph{complete set of points}
     within the block are passed as argument \code{all.pred} to
-    \code{lgnpp}.  These results are used to compute \eqn{\widehat{U}(B)}{U(B)}.
+    \code{lgnpp}.  These results are used to compute \eqn{\widehat{U}(A)}{U(A)}.
     
     \item The mean squared error is then approximated by  
     
     \deqn{
-      \mathrm{E}_{\hat{\theta}}[\{U(B) - \widehat{U}(B)\}^2] \approx 
-      \frac{1}{K^2} \sum_{s_i \in B} \mathrm{E}_{\hat{\theta}}[ \{ U(\mbox{\boldmath$s$\unboldmath}_i) - \widehat{U}(\mbox{\boldmath$s$\unboldmath}_i)\}^2]
-    }{E[\{U(B) - hatU(B)\}^2] = 1/K^2 sum_{s_i in B} E[ \{ U(s_i) - hatU(s_i)\}^2] }
+      \mathrm{E}_{\hat{\theta}}[\{U(A) - \widehat{U}(A)\}^2] \approx 
+      \frac{1}{K^2} \sum_{s_i \in A} \mathrm{E}_{\hat{\theta}}[ \{ U(\mbox{\boldmath$s$\unboldmath}_i) - \widehat{U}(\mbox{\boldmath$s$\unboldmath}_i)\}^2]
+    }{E[\{U(A) - hatU(A)\}^2] = 1/K^2 sum_{s_i in A} E[ \{ U(s_i) - hatU(s_i)\}^2] }
     
     \deqn{+ \frac{K-1}{K k (k-1)} \sum_{s_i \in \mathrm{sample}}\sum_{s_j \in \mathrm{sample}, s_j \neq s_i}
-%     \mathrm{Cov}_{\hat{\theta}}[
+    \mathrm{Cov}_{\hat{\theta}}[
     U(\mbox{\boldmath$s$\unboldmath}_i) - \widehat{U}(\mbox{\boldmath$s$\unboldmath}_i),
     U(\mbox{\boldmath$s$\unboldmath}_j) - \widehat{U}(\mbox{\boldmath$s$\unboldmath}_j) 
     ].
@@ -225,18 +228,22 @@ lgnpp(object, newdata, locations, is.block = FALSE, all.pred = NULL,
       Cov[ U(s_i)-hatU(s_i), U(s_j)-hatU(s_j)]
     }
     
-    The first term of the RHS can be computed from the point kriging
-    results contained in \code{all.pred}, and the double sum is evaluated
-    from the full covariance matrices of the predictions and the respective
-    targets, passed to \code{lgnpp} as \code{object}.
+    The first term of the RHS (and \eqn{\widehat{U}(A)}{hatU(A)}) can be
+    computed from the point kriging results contained in \code{all.pred},
+    and the double sum is evaluated from the full covariance matrices of
+    the predictions and the respective targets, passed to \code{lgnpp} as
+    \code{object} (one has to use the arguments
+    \code{control=control.predict.georob(full.covmat=TRUE)} for
+    \code{\link{predict.georob}} when computing the point kriging
+    predictions stored in \code{object}).
     
     \item If the prediction results are not available for the complete set
-    of points in \eqn{B} then \code{all.pred} may be equal to \eqn{K}.  The
+    of points in \eqn{A} then \code{all.pred} may be equal to \eqn{K}.  The
     block mean is then approximated by
     
-    \deqn{\widehat{U}(B) \approx \frac{1}{k} \sum_{s_i \in \mathrm{sample}}
-    \widehat{U}(\mbox{\boldmath$s$\unboldmath}_i) }{hatU(B) = sum_{s_i in
-    B} hatU(s_i)}
+    \deqn{\widehat{U}(A) \approx \frac{1}{k} \sum_{s_i \in \mathrm{sample}}
+    \widehat{U}(\mbox{\boldmath$s$\unboldmath}_i) }{hatU(A) = sum_{s_i in
+    A} hatU(s_i)}
     
     and the first term of the RHS of the expression for the mean squared
     error by
@@ -282,7 +289,7 @@ lgnpp(object, newdata, locations, is.block = FALSE, all.pred = NULL,
     \item \code{mean}: the back-transformed block kriging estimate, see
     \emph{Details}.
       
-    \item \code{mse}: the (approximated) block kriging variance, see
+    \item \code{se}: the (approximated) block kriging standard error, see
     \emph{Details}.
   }
   
@@ -331,8 +338,7 @@ data(meuse.blocks)
 
 r.logzn.rob <- georob(log(zinc) ~ sqrt(dist), data = meuse, locations = ~ x + y,
     variogram.model = "RMexp", param = c(variance = 0.15, nugget = 0.05, scale = 200),
-    tuning.psi = 1., control = control.georob(cov.bhat = TRUE, full.cov.bhat = TRUE,
-        cov.bhat.betahat = TRUE, aux.cov.pred.target = TRUE))
+    tuning.psi = 1., control = control.georob(cov.bhat = TRUE, full.cov.bhat = TRUE))
         
 ## point predictions of log(Zn)
 r.pred.points <- predict(r.logzn.rob, newdata = meuse.grid.pixdf, 

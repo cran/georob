@@ -24,11 +24,11 @@
 \alias{f.stop.cluster}
 \alias{georob.fit}
 \alias{getCall.georob}
-\alias{gradient.negative.loglikelihood}
+\alias{gradient.negative.log-likelihood}
 \alias{K}
 \alias{lmrob.control}
 \alias{likelihood.calculations}
-\alias{negative.loglikelihood}
+\alias{negative.log-likelihood}
 \alias{partial.derivatives.variogram}
 % \alias{ppd.resp.rob}
 % \alias{qpd.resp.rob}
@@ -65,11 +65,11 @@ The internal unexported functions
   \item{\code{f.stop.cluster}}
   \item{\code{georob.fit}}
   \item{\code{getCall.georob}}
-  \item{\code{gradient.negative.loglikelihood}}
+  \item{\code{gradient.negative.log-likelihood}}
   \item{\code{K}}
   \item{\code{likelihood.calculations}}
   \item{\code{lmrob.control}}
-  \item{\code{negative.loglikelihood}}
+  \item{\code{negative.log-likelihood}}
   \item{\code{partial.derivatives.variogram}}
 %   \item{\code{ppd.resp.rob}}
 %   \item{\code{qpd.resp.rob}}

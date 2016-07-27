@@ -14,9 +14,9 @@
   \var{1/K}th of the data.  The re-fitted models are used to compute robust
   (or customary) external kriging predictions for the omitted observations.
   If the response variable is log-transformed then the kriging predictions
-  can be optionally transformed back to the orginal scale of the
+  can be optionally transformed back to the original scale of the
   measurements.  S3methods for evaluating and plotting diagnostic summaries
-  of the cross-validation errors are decribed for the function
+  of the cross-validation errors are described for the function
   \code{\link{validate.predictions}}.
   }
   
@@ -39,11 +39,11 @@
   \code{\link{georobObject}}.}
 
   \item{formula}{an optional formula for the regression model passed by
-  \code{\link[stats]{update}} to \code{\link{georob}}, see \emph{Details}.}
+  \code{\link[stats]{update}} to \code{\link{georob}}.}
   
   
   \item{subset}{an optional vector specifying a subset of observations
-    to be used in the fitting process, see \emph{Details}.}
+    to be used in the fitting process.}
     
   \item{method}{keyword, controlling whether subsets are formed by
   partitioning data set into \code{block}s by \code{\link[stats]{kmeans}}
@@ -76,7 +76,7 @@
   
   \item{param}{an optional named numeric vector or a matrix or data frame
   with variogram parameters passed by \code{\link[stats]{update}} to
-  \code{\link{georob}}, see \emph{Details}.  If \code{param} is a matrix
+  \code{\link{georob}}.  If \code{param} is a matrix
   (or a data frame) then it must have \code{nset} rows and
   \code{length(object[["param"]])} columns with initial values of variogram
   parameters for the \code{nset} cross-validation sets and
@@ -84,8 +84,7 @@
   
   \item{fit.param}{an optional named logical vector or a matrix or data
   frame defining which variogram parameters should be adjusted when passed
-  by \code{\link[stats]{update}} to \code{\link{georob}}, see
-  \emph{Details}.  If \code{fit.param} is a matrix (or a data frame) then
+  by \code{\link[stats]{update}} to \code{\link{georob}}.  If \code{fit.param} is a matrix (or a data frame) then
   it must have \code{nset} rows and \code{length(object[["param"]])} columns
   with variogram parameter fitting flags for the \code{nset}
   cross-validation sets and \code{colnames(param)} must match
@@ -93,7 +92,7 @@
   
   \item{aniso}{an optional named numeric vector or a matrix or data frame
   with anisotropy parameters passed by \code{\link[stats]{update}} to
-  \code{\link{georob}}, see \emph{Details}.  If \code{aniso} is a matrix
+  \code{\link{georob}}.  If \code{aniso} is a matrix
   (or a data frame) then it must have \code{nset} rows and
   \code{length(object[["aniso"]][["aniso"]])} columns with initial values
   of anisotropy parameters for the \code{nset} cross-validation sets and
@@ -102,12 +101,11 @@
   
   \item{fit.aniso}{an optional named logical vector or a matrix or data
   frame defining which anisotropy parameters should be adjusted when passed
-  by \code{\link[stats]{update}} to \code{\link{georob}}, see
-  \emph{Details}.  If \code{fit.aniso} is a matrix (or a data frame) then
-  it must have \code{nset} rows and
-  \code{length(object[["aniso"]][["aniso"]])} columns with anisotropy
-  parameter fitting flags for the \code{nset} cross-validation sets and
-  \code{colnames(aniso)} must match
+  by \code{\link[stats]{update}} to \code{\link{georob}}.  If
+  \code{fit.aniso} is a matrix (or a data frame) then it must have
+  \code{nset} rows and \code{length(object[["aniso"]][["aniso"]])} columns
+  with anisotropy parameter fitting flags for the \code{nset}
+  cross-validation sets and \code{colnames(aniso)} must match
   \code{names(object[["aniso"]][["aniso"]])}.}
   
   \item{return.fit}{logical controlling whether information about the fit
@@ -133,7 +131,7 @@
   
   \item{verbose}{positive integer controlling logging of diagnostic
   messages to the console during model fitting.  Passed by
-  \code{\link[stats]{update}} to \code{\link{georob}}, see \emph{Details}.}
+  \code{\link[stats]{update}} to \code{\link{georob}}.}
     
   \item{\dots}{additional arguments passed by \code{\link[stats]{update}}
   to \code{\link{georob}}, see \emph{Details}.}
@@ -141,7 +139,7 @@
 }
 
 \details{
-  \bold{Note} that \emph{the dataframe passed as} \code{data}
+  \bold{Note} that \emph{the data frame passed as} \code{data}
   \emph{argument to} \code{georob} \emph{must exist in the user workspace
   when calling \code{cv.georob}}.  
   
@@ -152,10 +150,10 @@
   
   \code{cv.georob} uses the function \code{\link[stats]{update}} to
   re-estimated the model with the reduced data sets.  Therefore, any
-  argument accepted by \code{\link{georob}} can be changed when re-fitting
-  the model.  Some of them (e.g. \code{formula}, \code{subset}, etc.)  are
-  explicit arguments of \code{cv.georob}, but also the remaining ones can
-  be passed by \code{\dots} to the function.  
+  argument accepted by \code{\link{georob}} except \code{data} can be
+  changed when re-fitting the model.  Some of them (e.g. \code{formula},
+  \code{subset}, etc.)  are explicit arguments of \code{cv.georob}, but
+  also the remaining ones can be passed by \code{\dots} to the function.
   
   Practitioners in geostatistics commonly cross-validate a fitted model
   without re-estimating the model parameters with the reduced data sets.
@@ -185,7 +183,7 @@
   
   \item{lgn.data}{the untransformed response.}
   
-  \item{lgn.pred}{the unbiasedly back-transformed predictions of a
+  \item{lgn.pred}{the unbiased back-transformed predictions of a
   log-transformed response.}
   
   \item{lgn.se}{the kriging standard errors of the back-transformed

@@ -20,7 +20,7 @@
 \value{
   A \code{georob} object is a list with following components:
    
-  \item{loglik}{the maximized (restricted) Gaussian loglikelihood of a
+  \item{loglik}{the maximized (restricted) Gaussian log-likelihood of a
   non-robust (RE)ML fit or \code{NA} for a robust fit if 
   \code{tuning.psi} is less than \code{tuning.psi.nr}.}
    
@@ -57,7 +57,7 @@
   }
   
   \item{gradient}{a named numeric vector with the estimating equations
-  (robust REML) or the gradient of the maximized (restricted) loglikelihood
+  (robust REML) or the gradient of the maximized (restricted) log-likelihood
   (Gaussian (RE)ML) evaluated at the solution .}
 
   \item{tuning.psi}{the value of the tuning constant \eqn{c} of the
@@ -84,7 +84,7 @@
     \psi(hat\epsilon_i/hat\tau) / (hat\epsilon_i/hat\tau)}.}
     
   \item{converged}{logical indicating whether numerical maximization of
-  the (restricted) loglikelihood by \code{nlminb} or \code{optim} or root
+  the (restricted) log-likelihood by \code{nlminb} or \code{optim} or root
   finding by \code{nleqslv} converged.}
     
   \item{convergence.code}{a diagnostic integer issued by
@@ -97,7 +97,7 @@
     \itemize{
 
       \item the number of function and gradient evaluations when maximizing
-      the (restricted) Gaussian loglikelihood by \code{\link[stats]{nlminb}}
+      the (restricted) Gaussian log-likelihood by \code{\link[stats]{nlminb}}
       or \code{\link[stats]{optim}}, or
       
       \item the number of function and Jacobian evaluations when solving
@@ -124,10 +124,6 @@
       \eqn{\widehat{\mbox{\boldmath$B$\unboldmath}}}{hatB}.
       
       \item \code{cov.betahat}: the covariances of 
-      \eqn{\widehat{\mbox{\boldmath$\beta$\unboldmath}}}{hat\beta}.
-      
-      \item \code{cov.bhat.betahat}: the covariances of 
-      \eqn{\widehat{\mbox{\boldmath$B$\unboldmath}}}{hatB} and
       \eqn{\widehat{\mbox{\boldmath$\beta$\unboldmath}}}{hat\beta}.
       
       \item \code{cov.delta.bhat}: the covariances of 
@@ -159,7 +155,9 @@
   \item{expectations}{a named numeric vector with the expectations of
   \eqn{\partial \psi_c(x)/\partial x}{d\psi_c'(x)/dx} (\code{dpsi}) and
   \eqn{\psi_c^2(x)} (\code{psi2}) with respect to a standard normal
-  distribution.}
+  distribution (\code{exp.gauss}) and the long-tailed distribution of
+  \eqn{\varepsilon}{\epsilon} (\code{exp.f0}) implied by the choice of the
+  \eqn{\psi_c}-function.}
      
   \item{Valphaxi.objects}{a list of matrices in \emph{compressed form} with
   (among others) the following components:
@@ -296,3 +294,9 @@
 \keyword{models}
 \keyword{spatial}
 \keyword{robust}
+
+
+%       \item \code{cov.bhat.betahat}: the covariances of 
+%       \eqn{\widehat{\mbox{\boldmath$B$\unboldmath}}}{hatB} and
+%       \eqn{\widehat{\mbox{\boldmath$\beta$\unboldmath}}}{hat\beta}.
+      

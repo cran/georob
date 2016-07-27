@@ -22,7 +22,7 @@ export(
   control.nleqslv,                  # ok
   control.nlminb,                   # ok
   control.optim,                    # ok
-  control.pmm,                      # ok
+  control.pcmp,                     # ok
   control.predict.georob,           # ok
   control.rq,                       # ok
   cv,                               # ok
@@ -44,7 +44,6 @@ export(
   param.transf,                     # ok
   pmm,                              # ok
   profilelogLik,                    # ok
-  pmm,                              # ok
   random.effects,                   # ok export of generic random.effects{nlme}
   ranef,                            # ok export of generic ranef{nlme}
   sample.variogram,                 # ok
@@ -85,8 +84,8 @@ export(
 #   resid.georob,                   # ok
 #   residuals.georob,               # ok
 #   rstandard.georob,               # ok
-#   rstudent.cv.georob,             # ok
-#   rstudent.georob,                # ok
+###   rstudent.cv.georob,             # eliminated
+###   rstudent.georob,                # eliminated
 #   step.default,                   # ok
 #   step.georob,                    # ok
 #   sample.variogram.default,       # ok
@@ -165,8 +164,8 @@ S3method( ranef, georob )
 S3method( resid, georob )
 S3method( residuals, georob )
 S3method( rstandard, georob )
-S3method( rstudent, cv.georob )
-S3method( rstudent, georob )
+# S3method( rstudent, cv.georob )
+# S3method( rstudent, georob )
 S3method( sample.variogram, default )
 S3method( sample.variogram, formula )
 S3method( sample.variogram, georob )

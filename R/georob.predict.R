@@ -3,21 +3,23 @@
 control.predict.georob <-
 function( 
   full.covmat = FALSE, extended.output = FALSE,
-  mmax = 10000,  ncores = pmm[["max.ncores"]],
+  mmax = 10000,  ncores = pcmp[["max.ncores"]],
   pwidth = NULL, pheight = NULL, napp = 1,
-  pmm = control.pmm()
+  pcmp = control.pcmp()
 ){
 
   ## auxiliary function to set meaningful default values for predict.georob
   
   ## 2014-07-29 A. Papritz
+  ## 2016-07-20 AP changes for parallel computations
+
   
   list(
     full.covmat = full.covmat, 
     extended.output = extended.output,
     mmax = mmax, ncores = ncores,
     pwidth = pwidth, pheight = pheight, napp = napp,
-    pmm = pmm
+    pcmp = pcmp
   
   )
 
@@ -76,6 +78,9 @@ function(
   ##               (variables: rp.response, se.signal, scld.res, resscl)
   ## 2015-08-27 AP correcting error in processing output
   ## 2015-11-30 AP catching errors occurring during parallel computations
+  ## 2016-07-20 AP changes for parallel computations
+  ## 2016-07-22 AP SpatialPoints, SpatialPixels and SpatialGrid as newdata objects
+
 
   
   ##  ##############################################################################
@@ -151,6 +156,17 @@ function(
     "predicting terms for newdata not yet implemented"        
   )
   
+  if( class( newdata ) %in% c( "SpatialPoints", "SpatialPixels", "SpatialGrid" ) ){
+    t.formula <- as.formula( paste( as.character( formula( object ) )[-2], collapse = "" ) )
+    tmp <- try( 
+      get_all_vars( t.formula, as.data.frame( coordinates( newdata ) ) ),
+      silent = TRUE
+    )
+    if( identical( class( tmp ), "try-error" ) ) stop(
+      "'newdata' is a SpatialPoints, SpatialPixels or SpatialGrid object\n but drift covariates are not functions of coordinates"  
+    )
+  }
+  
   ## extract fixed effects terms of object
   
   tt <- terms( object )
@@ -199,6 +215,7 @@ function(
   cov.delta.bhat   <- is.null( object[["cov"]][["cov.delta.bhat"]] ) ||
     !is.matrix( object[["cov"]][["cov.delta.bhat"]] )
   cov.delta.bhat.betahat <- is.null( object[["cov"]][["cov.delta.bhat.betahat"]] )
+  
   cov.bhat    <- control[["extended.output"]] & (
     is.null( object[["cov"]][["cov.bhat"]] ) || !is.matrix( object[["cov"]][["cov.bhat"]] )
   )
@@ -230,7 +247,7 @@ function(
       cov.ehat = FALSE, full.cov.ehat = FALSE,
       cov.ehat.p.bhat = FALSE, full.cov.ehat.p.bhat = FALSE,
       aux.cov.pred.target = cov.p.t,
-      control.pmm = control[["pmm"]],
+      control.pcmp = control[["pcmp"]],
       verbose = verbose
     )
     
@@ -471,7 +488,7 @@ function(
             var.target <- V[object[["Tmat"]], object[["Tmat"]]]
             cov.pred.target <- pmm( 
               (cov.p.t[1:n,] + X %*% cov.p.t[-(1:n),]), 
-              V, control = control[["pmm"]]
+              V, control = control[["pcmp"]]
             )
             cov.pred.target <- cov.pred.target[object[["Tmat"]], object[["Tmat"]]]
             if( !control[["full.covmat"]] ){
@@ -593,6 +610,12 @@ function(
       "data.frame" = model.frame( 
         Terms, newdata, na.action = na.pass, xlev = object[["xlevels"]] 
       ),
+      "SpatialPoints" = ,
+      "SpatialPixels" = ,
+      "SpatialGrid" = model.frame(
+        Terms, as.data.frame( coordinates( newdata ) ), na.action = na.pass, 
+        xlev = object[["xlevels"]] 
+      ),
       "SpatialPointsDataFrame" = ,
       "SpatialPixelsDataFrame" = ,
       "SpatialGridDataFrame" = ,
@@ -639,6 +662,9 @@ function(
           Terms.loc, newdata, na.action = na.pass 
         )
       ),
+      "SpatialPoints" = ,
+      "SpatialPixels" = ,
+      "SpatialGrid" = ,
       "SpatialPointsDataFrame" = ,
       "SpatialPixelsDataFrame" = ,
       "SpatialGridDataFrame" = coordinates( newdata ),
@@ -663,17 +689,15 @@ function(
     
     ncores <- min( n.part, control[["ncores"]] )
     
-    parallel <- ncores > 1
-    
-    ncores.available <- control[["pmm"]][["max.ncores"]]
+    ncores.available <- control[["pcmp"]][["max.ncores"]]
     if( sfIsRunning() ) sfStop()
     
-    control.pmm <- control[["pmm"]]
-    control.pmm[["ncores"]] <- min(
-      control.pmm[["ncores"]],
+    control.pcmp <- control[["pcmp"]]
+    control.pcmp[["pmm.ncores"]] <- min(
+      control.pcmp[["pmm.ncores"]],
       max( 1L, floor( (ncores.available - ncores) / ncores ) )
     )
-    if( parallel && !control.pmm[["allow.recursive"]] ) control.pmm[["ncores"]] <- 1L
+    if( ncores > 1 && !control.pcmp[["allow.recursive"]] ) control.pcmp[["pmm.ncores"]] <- 1L
 
     if( control[["full.covmat"]] && n.part > 1 ) stop(
       "full covariance matrix of prediction errors cannot ",
@@ -692,14 +716,14 @@ function(
       type,
       locations.coords, betahat, bhat, response, 
       #       rp.response, scld.res,
-      pred.X, pred.coords, offset, newdata, 
+      pred.X, pred.coords, offset, newdata, mf.newdata,
       variogram.model, param, aniso,
       cov.delta.bhat.betahat.l, cov.betahat.l, cov.bhat.betahat, cov.p.t, 
       gcr.constant, Valphaxi, Valphaxi.inverse,
       pwidth, pheight, napp,
       signif,
       extended.output, full.covmat, 
-      control.pmm,
+      control.pcmp,
       verbose
     ){
       
@@ -710,7 +734,12 @@ function(
       
       pred.X <- pred.X[ rs[i]:re[i], , drop = FALSE]
       offset <- offset[ rs[i]:re[i] ]
-      newdata <- newdata[ rs[i]:re[i], ]
+      if( class(newdata) %in% c( "SpatialPoints", "SpatialPixels", "SpatialGrid" ) ){
+        newdata <- mf.newdata[ rs[i]:re[i], ]
+      } else{
+        newdata <- newdata[ rs[i]:re[i], ]
+      }
+      
       if( !is.null( pred.coords ) ) {
         pred.coords <- pred.coords[ rs[i]:re[i], , drop = FALSE]
       }
@@ -736,7 +765,7 @@ function(
         signif = signif,
         extended.output = extended.output,
         full.covmat = full.covmat,
-        control.pmm = control.pmm
+        control.pcmp = control.pcmp
       )
       
       return( result )              
@@ -744,7 +773,7 @@ function(
     
     ## compute the predictions for all the parts 
     
-    if( parallel ){
+    if( ncores > 1L ){
       
       if( .Platform[["OS.type"]] == "windows" ){
         
@@ -756,7 +785,7 @@ function(
         
 #         junk <- clusterExport( 
 #           cl, 
-#           c( "pmm", "RFoptions", "RFvariogram", "f.stop.cluster" ) 
+#           c( "pcmp", "RFoptions", "RFvariogram", "f.stop.cluster" ) 
 #         )
 #         junk <- clusterEvalQ( cl, require( snowfall, quietly = TRUE ) )
         junk <- clusterEvalQ( cl, require( georob, quietly = TRUE ) )
@@ -777,7 +806,8 @@ function(
             response = model.response( model.frame( object ) ),
             #           rp.response = rp.response,
             #           scld.res = scld.res,
-            pred.X = pred.X, pred.coords = pred.coords, offset = offset, newdata = newdata,
+            pred.X = pred.X, pred.coords = pred.coords, offset = offset, 
+            newdata = newdata, mf.newdata = mf.newdata,
             variogram.model = object[["variogram.model"]],
             param = object[["param"]],
             aniso = object[["aniso"]],
@@ -792,7 +822,7 @@ function(
             signif = signif,
             extended.output = control[["extended.output"]], 
             full.covmat = control[["full.covmat"]],
-            control.pmm = control.pmm,
+            control.pcmp = control.pcmp,
             verbose = verbose
           )
         )
@@ -822,7 +852,8 @@ function(
             response = model.response( model.frame( object ) ),
             #           rp.response = rp.response,
             #           scld.res = scld.res,
-            pred.X = pred.X, pred.coords = pred.coords, offset = offset, newdata = newdata,
+            pred.X = pred.X, pred.coords = pred.coords, offset = offset, 
+            newdata = newdata, mf.newdata = mf.newdata,
             variogram.model = object[["variogram.model"]],
             param = object[["param"]],
             aniso = object[["aniso"]],
@@ -837,9 +868,10 @@ function(
             signif = signif,
             extended.output = control[["extended.output"]], 
             full.covmat = control[["full.covmat"]],
-            control.pmm = control.pmm,
+            control.pcmp = control.pcmp,
             verbose = verbose,
-            mc.cores = ncores 
+            mc.cores = ncores,
+            mc.allow.recursive = control.pcmp[["allow.recursive"]]
           )
         )
         
@@ -869,7 +901,8 @@ function(
         response = model.response( model.frame( object ) ),
         #         rp.response = rp.response,
         #         scld.res = scld.res,
-        pred.X = pred.X, pred.coords = pred.coords, offset = offset, newdata = newdata,
+        pred.X = pred.X, pred.coords = pred.coords, offset = offset, 
+        newdata = newdata, mf.newdata = mf.newdata,
         variogram.model = object[["variogram.model"]],
         param = object[["param"]],
         aniso = object[["aniso"]],
@@ -884,7 +917,7 @@ function(
         signif = signif,
         extended.output = control[["extended.output"]], 
         full.covmat = control[["full.covmat"]],
-        control.pmm = control.pmm,
+        control.pcmp = control.pcmp,
         verbose = verbose
       )
       
@@ -944,9 +977,9 @@ function(
       
       if( class( newdata ) != "data.frame" ){
         coordinates( t.pred ) <- locations
-        if( class( newdata ) != "SpatialPointsDataFrame" ){
+        if( !( class( newdata ) %in% c( "SpatialPoints", "SpatialPointsDataFrame" ) ) ){
           gridded( t.pred ) <- TRUE
-          if( class( newdata ) != "SpatialPixelsDataFrame" ){
+          if( !( class( newdata ) %in% c( "SpatialPixels", "SpatialPixelsDataFrame" ) ) ){
             fullgrid( t.pred ) <- TRUE
           }
         }
@@ -1034,7 +1067,7 @@ f.robust.uk <- function(
   pwidth, pheight, napp,
   signif,
   extended.output, full.covmat,
-  control.pmm
+  control.pcmp
 ){ ## f.robust.uk
   
   ## function computes robust (or Gaussian) universal point or block
@@ -1043,6 +1076,8 @@ f.robust.uk <- function(
   ## 2011-07-29 A. Papritz
   ## 2012-05-04 AP modifications for lognormal block kriging
   ## 2015-06-24 AP modifications for robust prediction of response
+  ## 2016-07-20 AP changes for parallel computations
+
   
   n <- length( bhat )
   
@@ -1060,10 +1095,10 @@ f.robust.uk <- function(
     ex <- rep( FALSE, NROW(pred.X) )
   }
   
-  ## compute trend surface prediction
-  
   if( any( !ex ) ){
     
+    ## compute trend surface prediction
+  
     t.pred <- t.trend <- drop( pred.X[!ex, , drop = FALSE ] %*% betahat ) + offset[!ex]
     
     if( !identical( type, "trend" ) ){
@@ -1367,9 +1402,9 @@ f.robust.uk <- function(
       ## compute uk predictions
       
       # gammaVi <- gamma %*% Valphaxi.objects[["Valphaxi.inverse"]] / sum( param[c("variance", "snugget")] )
-      #       gammaVi <- pmm( gamma, Valphaxi.objects[["Valphaxi.inverse"]], control = control.pmm ) / 
+      #       gammaVi <- pmm( gamma, Valphaxi.objects[["Valphaxi.inverse"]], control = control.pcmp ) / 
       #         sum( param[c("variance", "snugget")] )
-      gammaVi <- pmm( gamma, Valphaxi.inverse, control = control.pmm ) / 
+      gammaVi <- pmm( gamma, Valphaxi.inverse, control = control.pcmp ) / 
         sum( param[c("variance", "snugget")] )
       t.pred <- t.pred + drop( gammaVi %*% bhat )
       
@@ -1380,10 +1415,10 @@ f.robust.uk <- function(
       #           - pred.X[!ex, , drop = FALSE ] %*% cov.delta.bhat.betahat.l[-(1:n), -(1:n)]
       #         )
       aux <- cbind(
-        pmm( gammaVi, cov.delta.bhat.betahat.l[1:n, 1:n], control = control.pmm ) - 
+        pmm( gammaVi, cov.delta.bhat.betahat.l[1:n, 1:n], control = control.pcmp ) - 
         pmm( 
           pred.X[!ex, , drop = FALSE ], cov.delta.bhat.betahat.l[-(1:n), 1:n], 
-          control = control.pmm 
+          control = control.pcmp 
         ),
         - pred.X[!ex, , drop = FALSE ] %*% cov.delta.bhat.betahat.l[-(1:n), -(1:n)]
       )
@@ -1391,7 +1426,7 @@ f.robust.uk <- function(
       if( full.covmat ){
         #           t.mse.pred <- tcrossprod( aux ) + t.var.target - gammaVi %*% t( gamma )
         t.mse.pred <- tcrossprod( aux ) + t.var.target - pmm( 
-          gammaVi, t( gamma ), control = control.pmm
+          gammaVi, t( gamma ), control = control.pcmp
         )
       } else {
         t.mse.pred <- rowSums( aux^2 ) + t.var.target - rowSums( gammaVi * gamma )
@@ -1438,13 +1473,13 @@ f.robust.uk <- function(
         #           t.cov.pred.target <- aux %*% cov.p.t %*% t( gamma )
         t.var.pred <- pmm( 
           aux, 
-          pmm( cov.bhat.betahat, t( aux ), control = control.pmm ), 
-          control = control.pmm
+          pmm( cov.bhat.betahat, t( aux ), control = control.pcmp ), 
+          control = control.pcmp
         )
         t.cov.pred.target <- pmm(
           aux,
-          pmm( cov.p.t, t( gamma ), control = control.pmm ),
-          control = control.pmm 
+          pmm( cov.p.t, t( gamma ), control = control.pcmp ),
+          control = control.pcmp 
         )
         
         if( !full.covmat ){
