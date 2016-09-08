@@ -12,8 +12,8 @@
   \var{K}-fold cross-validation.  In more detail, the model is re-fitted
   \var{K} times by robust (or Gaussian) (RE)ML, excluding each time
   \var{1/K}th of the data.  The re-fitted models are used to compute robust
-  (or customary) external kriging predictions for the omitted observations.
-  If the response variable is log-transformed then the kriging predictions
+  (or customary) external Kriging predictions for the omitted observations.
+  If the response variable is log-transformed then the Kriging predictions
   can be optionally transformed back to the original scale of the
   measurements.  S3methods for evaluating and plotting diagnostic summaries
   of the cross-validation errors are described for the function
@@ -22,13 +22,15 @@
   
 \usage{
 \method{cv}{georob}(object, formula = NULL, subset = NULL, 
-    method = c("block", "random"), nset = 10, 
-    seed = NULL, sets = NULL, duplicates.in.same.set = TRUE, 
-    re.estimate = TRUE, param = object[["param"]], 
-    fit.param = object[["initial.objects"]][["fit.param"]],
-    aniso = object[["aniso"]][["aniso"]], 
-    fit.aniso = object[["initial.objects"]][["fit.aniso"]],
-    return.fit = FALSE, reduced.output = TRUE, lgn = FALSE, 
+    method = c("block", "random"), nset = 10, seed = NULL, 
+    sets = NULL, duplicates.in.same.set = TRUE, re.estimate = TRUE, 
+    param = object[["variogram.object"]][[1]][["param"]],
+    fit.param = object[["variogram.object"]][[1]][["fit.param"]],
+    aniso = object[["variogram.object"]][[1]][["aniso"]],
+    fit.aniso = object[["variogram.object"]][[1]][["fit.aniso"]],
+    variogram.object = NULL,
+    use.fitted.param = TRUE, return.fit = FALSE, 
+    reduced.output = TRUE, lgn = FALSE, 
     mfl.action = c("offset", "stop"),
     ncores = min(nset, detectCores()), verbose = 0, ...)
 }
@@ -69,44 +71,101 @@
   partitioning the data (default \code{TRUE}).}
   
   \item{re.estimate}{logical controlling whether the model is re-fitted to
-  the reduced data sets before computing the kriging predictions
+  the reduced data sets before computing the Kriging predictions
   (\code{TRUE}, default) or whether the model passed in \code{object} is
   used to compute the predictions for the omitted observations, see
   \emph{Details}.}
   
-  \item{param}{an optional named numeric vector or a matrix or data frame
-  with variogram parameters passed by \code{\link[stats]{update}} to
-  \code{\link{georob}}.  If \code{param} is a matrix
-  (or a data frame) then it must have \code{nset} rows and
-  \code{length(object[["param"]])} columns with initial values of variogram
-  parameters for the \code{nset} cross-validation sets and
-  \code{colnames(param)} must match \code{names(object[["param"]])}.}
+  \item{param}{a named numeric vector or a matrix or data frame with
+  initial values of variogram parameters passed by
+  \code{\link[stats]{update}} to \code{\link{georob}}.  If \code{param} is
+  a matrix (or a data frame) then it must have \code{nset} rows and
+  \code{length(object[["variogram.object"]][[1]][["param"]])} columns with
+  initial values of variogram parameters for the \code{nset}
+  cross-validation sets, and \code{colnames(param)} must match
+  \code{names(object[["variogram.object"]][[1]][["param"]])}.}
   
-  \item{fit.param}{an optional named logical vector or a matrix or data
-  frame defining which variogram parameters should be adjusted when passed
-  by \code{\link[stats]{update}} to \code{\link{georob}}.  If \code{fit.param} is a matrix (or a data frame) then
-  it must have \code{nset} rows and \code{length(object[["param"]])} columns
+  \item{fit.param}{a named logical vector or a matrix or data frame
+  defining which variogram parameters should be adjusted by
+  \code{\link[stats]{update}}.  If \code{fit.param} is a matrix (or a data
+  frame) then it must have \code{nset} rows and
+  \code{length(object[["variogram.object"]][[1]][["fit.param"]])} columns
   with variogram parameter fitting flags for the \code{nset}
-  cross-validation sets and \code{colnames(param)} must match
-  \code{names(object[["param"]])}.}
+  cross-validation sets, and \code{colnames(param)} must match
+  \code{names(object[["variogram.object"]][[1]][["fit.param"]])}.}
   
-  \item{aniso}{an optional named numeric vector or a matrix or data frame
-  with anisotropy parameters passed by \code{\link[stats]{update}} to
-  \code{\link{georob}}.  If \code{aniso} is a matrix
-  (or a data frame) then it must have \code{nset} rows and
-  \code{length(object[["aniso"]][["aniso"]])} columns with initial values
-  of anisotropy parameters for the \code{nset} cross-validation sets and
-  \code{colnames(aniso)} must match
-  \code{names(object[["aniso"]][["aniso"]])}.}
+  \item{aniso}{a named numeric vector or a matrix or data frame with
+  initial values of anisotropy parameters passed by
+  \code{\link[stats]{update}} to \code{\link{georob}}.  If \code{aniso} is
+  a matrix (or a data frame) then it must have \code{nset} rows and
+  \code{length(object[["variogram.object"]][[1]][["aniso"]])} columns with
+  initial values of anisotropy parameters for the \code{nset}
+  cross-validation sets, and \code{colnames(aniso)} must match
+  \code{names(object[["variogram.object"]][[1]][["aniso"]])}.}
   
-  \item{fit.aniso}{an optional named logical vector or a matrix or data
-  frame defining which anisotropy parameters should be adjusted when passed
-  by \code{\link[stats]{update}} to \code{\link{georob}}.  If
-  \code{fit.aniso} is a matrix (or a data frame) then it must have
-  \code{nset} rows and \code{length(object[["aniso"]][["aniso"]])} columns
+  \item{fit.aniso}{a named logical vector or a matrix or data frame
+  defining which anisotropy parameters should be adjusted by
+  \code{\link[stats]{update}}.  If \code{fit.aniso} is a matrix (or a data
+  frame) then it must have \code{nset} rows and
+  \code{length(object[["variogram.object"]][[1]][["fit.aniso"]])} columns
   with anisotropy parameter fitting flags for the \code{nset}
-  cross-validation sets and \code{colnames(aniso)} must match
-  \code{names(object[["aniso"]][["aniso"]])}.}
+  cross-validation sets, and \code{colnames(param)} must match
+  \code{names(object[["variogram.object"]][[1]][["fit.aniso"]])}.}
+  
+  \item{variogram.object}{an optional list that gives initial values of for
+  fitting a possibly nested variogram model for the cross-validation sets.
+  Each component is a list with the following components:
+  
+  \itemize{
+
+      \item{param}: an optional named numeric vector or a matrix or data
+      frame with initial values of variogram parameters passed by
+      \code{\link[stats]{update}} to \code{\link{georob}}.  If \code{param}
+      is a matrix (or a data frame) then it must have \code{nset} rows and
+      \code{length(object[["variogram.object"]][[i]][["param"]])} columns
+      with initial values of variogram parameters for the \code{nset}
+      cross-validation sets (\var{i} is the \var{i}th variogram structure),
+      and \code{colnames(param)} must match
+      \code{names(object[["variogram.object"]][[i]][["param"]])}.
+      
+      \item{fit.param}: an optional named logical vector or a matrix or data frame
+      defining which variogram parameters should be adjusted by
+      \code{\link[stats]{update}}.  If \code{fit.param} is a matrix (or a
+      data frame) then it must have \code{nset} rows and
+      \code{length(object[["variogram.object"]][[i]][["fit.param"]])}
+      columns with variogram parameter fitting flags for the \code{nset}
+      cross-validation sets (\var{i} is the \var{i}th variogram structure),
+      and \code{colnames(param)} must match
+      \code{names(object[["variogram.object"]][[i]][["fit.param"]])}.
+      
+      \item{aniso}: an optional named numeric vector or a matrix or data frame with
+      initial values of anisotropy parameters passed by
+      \code{\link[stats]{update}} to \code{\link{georob}}.  If \code{aniso}
+      is a matrix (or a data frame) then it must have \code{nset} rows and
+      \code{length(object[["variogram.object"]][[i]][["aniso"]])} columns
+      with initial values of anisotropy parameters for the \code{nset}
+      cross-validation sets (\var{i} is the \var{i}th variogram structure),
+      and \code{colnames(aniso)} must match
+      \code{names(object[["variogram.object"]][[i]][["aniso"]])}.
+      
+      \item{fit.aniso}: an optional named logical vector or a matrix or
+      data frame defining which anisotropy parameters should be adjusted by
+      \code{\link[stats]{update}}.  If \code{fit.aniso} is a matrix (or a
+      data frame) then it must have \code{nset} rows and
+      \code{length(object[["variogram.object"]][[i]][["fit.aniso"]])}
+      columns with anisotropy parameter fitting flags for the \code{nset}
+      cross-validation sets(\var{i} is the \var{i}th variogram structure),
+      and \code{colnames(param)} must match
+      \code{names(object[["variogram.object"]][[i]][["fit.aniso"]])}.
+  
+    }
+  
+  }
+  
+  \item{use.fitted.param}{logical scalar controlling whether fitted values
+  of \code{param} (and \code{aniso} are used as initial values when
+  variogram parameters are fitted for the cross-validation sets (default
+  \code{TRUE}).}
   
   \item{return.fit}{logical controlling whether information about the fit
   should be returned when re-estimating the model with the reduced data
@@ -117,7 +176,7 @@
   (\code{FALSE}) or only some components (\code{TRUE}, default, see
   \emph{Value}).  Ignored if \code{return.fit = FALSE}.}
   
-  \item{lgn}{logical controlling whether kriging predictions of a
+  \item{lgn}{logical controlling whether Kriging predictions of a
   log-transformed response should be transformed back to the original scale
   of the measurements (default \code{FALSE}).}
   
@@ -175,9 +234,9 @@
   
   \item{data}{the values of the (possibly log-transformed) response.}
   
-  \item{pred}{the kriging predictions.}
+  \item{pred}{the Kriging predictions.}
   
-  \item{se}{the kriging standard errors.}
+  \item{se}{the Kriging standard errors.}
   
   If \code{lgn = TRUE} then \code{pred} has the additional variables:
   
@@ -186,7 +245,7 @@
   \item{lgn.pred}{the unbiased back-transformed predictions of a
   log-transformed response.}
   
-  \item{lgn.se}{the kriging standard errors of the back-transformed
+  \item{lgn.se}{the Kriging standard errors of the back-transformed
   predictions of a log-transformed response.}
   
   The second component \code{fit} contains either the full outputs of
@@ -214,7 +273,7 @@ Springer-Verlag.
   \code{\link{validate.predictions}} for computing statistics of the cross-validation errors;
   \code{\link{georob}} for (robust) fitting of spatial linear models;
   \code{\link{georobObject}} for a description of the class \code{georob};
-  \code{\link{predict.georob}} for computing robust kriging predictions.
+  \code{\link{predict.georob}} for computing robust Kriging predictions.
 }
 
 

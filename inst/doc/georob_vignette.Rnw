@@ -4,7 +4,10 @@
 %                                                                                        %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% 2016-02-xx A. Papritz
+% 2016-05-27 A. Papritz
+
+% 2016-07-26 AP Version f\"{u}r georob_0.2-4.tar.gz
+% 2016-08-22 AP Version f\"{u}r georob_0.3-0.tar.gz
 
 % cd R.user.home/georob/vignettes/
 % R CMD Sweave georob_vignette.Rnw;  R CMD Stangle georob_vignette.Rnw; pdflatex georob_vignette.tex; open georob_vignette.pdf;
@@ -118,11 +121,16 @@ Analyses with the R package \pkg{georob}}
 <<preliminaries,echo=FALSE,results=hide,eval=TRUE>>=
 options(
   SweaveHooks=list(
-    fig=function() par(
-      mar=c(3.1, 3.1, 2.1, 2.1), mgp = c(1.5, 0.25, 0), tcl = -0.25
-    )),
+    fig=function(){
+      par(
+        mar=c(3.1, 3.1, 2.1, 2.1), mgp = c(1.5, 0.25, 0), tcl = -0.25
+      )
+    }
+  ),
   width=80, str=strOptions(strict.width="cut"),
-  digits=5)
+  digits=5
+)
+grDevices::pdf.options( useDingbats = FALSE )
 t.t <- (1:9)
 t.tick.locations <- c(
   t.t*0.0001, t.t*0.001, t.t*0.01, t.t*0.1, t.t, t.t*10, t.t*100, t.t*1000,
@@ -135,6 +143,8 @@ t.tick.labels <- as.character(
     t.tl*10000,  t.tl*100000,  t.tl*1000000
   )
 )
+# my.ncores <- parallel::detectCores()     # <<- Anpassen!!
+my.ncores <- 1     # <<- Anpassen!!
 @
 
 \sloppy
@@ -163,7 +173,7 @@ tasks:
   Gaussian (restricted) maximum likelihood ([RE]ML).
   
   \item It computes from a fitted model object customary and robust
-  external drift point and block kriging predictions.
+  external drift point and block Kriging predictions.
 \end{itemize}
 
 \citet{Kuensch-etal-2011} and \citet{Kuensch-etal-in-prep} explain the theoretical
@@ -178,7 +188,7 @@ Gaussian and robust analyses of geostatistical data.  It contains a
 short summary of the modelling approach, illustrates the use of the
 software with two examples and explains in some depth selected aspects
 of (i) (robust) parameter estimation (ii) computing predictions by
-(robust) kriging and (iii) model building.
+(robust) Kriging and (iii) model building.
 
 
 
@@ -197,7 +207,7 @@ This section presents briefly
   \item the modelling assumptions and model parametrization,
     
   \item  sketches how model parameters are estimated robustly and how
-  robust kriging predictions are computed, and 
+  robust Kriging predictions are computed, and 
   
   \item summarizes the main functionality of the package.
 \end{itemize}
@@ -262,8 +272,8 @@ is denoted by
   \sigma_{\mathrm{n}}^2\mbox{\boldmath$I$\unboldmath} +
   \sigma^2\mbox{\boldmath$V$\unboldmath}_\alpha = 
   \sigma^2_Z \, \mbox{\boldmath$V$\unboldmath}_{\alpha,\xi} = 
-  \sigma^2_Z \, (\xi \, \mbox{\boldmath$I$\unboldmath} + 
-  (1-\xi)\, \mbox{\boldmath$V$\unboldmath}_\alpha ),
+  \sigma^2_Z \, ((1-\xi) \, \mbox{\boldmath$I$\unboldmath} + 
+  \xi\, \mbox{\boldmath$V$\unboldmath}_\alpha ),
 \end{equation}
 %
 where 
@@ -275,7 +285,7 @@ that cannot be resolved with the chosen sampling design,
 \eqn{B(\mbox{\boldmath$s$\unboldmath})}{},  
 \eqn{\sigma_Z^2=\sigma_{\mathrm{n}}^2+\sigma^2}{} 
 is the signal variance, and 
-\eqn{\xi=\sigma_{\mathrm{n}}^2/\sigma_Z^2}{}. 
+\eqn{\xi=\sigma^2/\sigma_Z^2}{}. 
 To estimate both 
 \eqn{\sigma_{\mathrm{n}}^2}{} and \eqn{\tau^2}{} (and not only their sum), one needs
 replicated measurements for some of the 
@@ -352,7 +362,7 @@ of the Whittle-Mat\'ern model.
 
 In brief, the robust REML method is based on the insight that for
 given \eqn{\mbox{\boldmath$\theta$\unboldmath}}{} and \eqn{\tau^2}{} the
-kriging predictions (= BLUP) of
+Kriging predictions (= BLUP) of
 \eqn{\mbox{\boldmath$B$\unboldmath}}{} and the generalized least
 squares (GLS = ML) estimates of
 \eqn{\mbox{\boldmath$\beta$\unboldmath}}{} can be obtained
@@ -434,7 +444,7 @@ and non-linear root finding by the function
 to get \eqn{\mbox{\boldmath$\theta$\unboldmath}}{} and  \eqn{\tau^2}{}.
 The robustness of the procedure is controlled by the tuning parameter \eqn{c}{}
 of the \eqn{\psi_c}{}-function. For \eqn{c \ge 1000}{} the algorithm computes
-Gaussian (RE)ML estimates and customary plug-in kriging predictions. 
+Gaussian (RE)ML estimates and customary plug-in Kriging predictions. 
 Instead of solving the Gaussian (RE)ML estimating equations, our software then
 maximizes the Gaussian (restricted) log-likelihood using  \code{nlminb()} or
 \code{optim()}.
@@ -456,7 +466,7 @@ an increase in computing time when \eqn{\nu}{} is estimated.
 
 \subsection{Prediction}\label{sec:intro-prediction}
  
-Robust plug-in external drift point kriging predictions 
+Robust plug-in external drift point Kriging predictions 
 can be computed for an unsampled location 
 \eqn{\mbox{\boldmath$s$\unboldmath}_0}{}
 from the covariates
@@ -492,7 +502,7 @@ Kriging variances can be computed as well, based on approximated covariances of
 \citealp{Nussbaum-etal-2012,Nussbaum-etal-2014b}, for details).
 
 The package \pkg{georob} provides in addition software for computing
-robust external drift \emph{block} kriging predictions.  The required
+robust external drift \emph{block} Kriging predictions.  The required
 integrals of the (generalized) covariance function are computed by
 functions of the \R{} package \pkg{constrainedKriging}
 \citep{Hofer-Papritz-2011}.
@@ -541,11 +551,11 @@ analyses.
   \code{cv.georob()} and
   \code{validate.predictions()}).
   
-  \item Computing robust external drift point and block kriging
+  \item Computing robust external drift point and block Kriging
   predictions (see \code{predict.georob()},
   \code{control.predict.georob()}).
   
-  \item Unbiased back-transformation of both point and block kriging
+  \item Unbiased back-transformation of both point and block Kriging
   predictions of log-transformed data to the original scale of the
   measurements (see \code{lgnpp()}).
   
@@ -564,9 +574,9 @@ analyses.
 
 \section{Model-based Gaussian analysis of \texttt{zinc}, data set \code{meuse}}\label{sec:meuse}
 
-<<meuse-zinc-load,eval=TRUE,echo=FALSE,eval=FALSE>>=
-if(file.exists("r_meuse_zinc_objects.RData")) load("r_meuse_zinc_objects.RData")
-@
+% <<meuse-zinc-load,eval=TRUE,echo=FALSE>>=
+% if(file.exists("r_meuse_zinc_objects.RData")) load("r_meuse_zinc_objects.RData")
+% @
 
 The package \pkg{sp} provides this data set.  According to the help
 page, it ``gives locations and topsoil heavy metal concentrations,
@@ -763,7 +773,7 @@ r.prfl.m0.spher.reml.scale <- profilelogLik(r.georob.m0.spher.reml,
 %
 <<meuse-zinc-proflik-reml-scale-1b,echo=FALSE>>=
 r.prfl.m0.spher.reml.scale <- profilelogLik(r.georob.m0.spher.reml,
-  values=data.frame(scale=seq(500, 5000, by=50)), ncores=1)
+  values=data.frame(scale=seq(500, 5000, by=50)), ncores=my.ncores)
 @
 %
 \bcf
@@ -892,9 +902,9 @@ r.cv.m1.spher.reml <- cv(r.georob.m1.spher.reml, seed=3245, lgn=TRUE)
 @
 %
 <<meuse-zinc-cv-2,echo=FALSE>>=
-r.cv.m0.spher.reml <- cv(r.georob.m0.spher.reml, seed=3245, lgn=TRUE, ncores=1)
+r.cv.m0.spher.reml <- cv(r.georob.m0.spher.reml, seed=3245, lgn=TRUE, ncores=my.ncores)
 r.georob.m1.spher.reml <- update(r.georob.m0.spher.reml, .~.-ffreq)
-r.cv.m1.spher.reml <- cv(r.georob.m1.spher.reml, seed=3245, lgn=TRUE, ncores=1)
+r.cv.m1.spher.reml <- cv(r.georob.m1.spher.reml, seed=3245, lgn=TRUE, ncores=my.ncores)
 @
 %
 <<meuse-zinc-cv-summary,eval=TRUE>>=
@@ -965,9 +975,9 @@ assumptions.
 %
 
 
-\subsection{Computing kriging predictions}\label{sec:lognormal-edk}
+\subsection{Computing Kriging predictions}\label{sec:lognormal-edk}
 
-\subsubsection{Lognormal point kriging}\label{sec:meuse-point-kriging}
+\subsubsection{Lognormal point Kriging}\label{sec:meuse-point-Kriging}
 
 The data set \code{meuse.grid} (provided also by package \pkg{sp})
 contains the covariates
@@ -980,23 +990,23 @@ coordinates(meuse.grid) <- ~x+y
 gridded(meuse.grid) <- TRUE
 @
 %
-for computing kriging predictions of \code{log(zinc)} and transforming
+for computing Kriging predictions of \code{log(zinc)} and transforming
 them back to the original scale of the measurements by
 %
-<<meuse-zinc-meuse-point-kriging,eval=TRUE>>=
+<<meuse-zinc-meuse-point-Kriging,eval=TRUE>>=
 r.pk <- predict(r.georob.m0.spher.reml, newdata=meuse.grid,
   control=control.predict.georob(extended.output=TRUE))
 r.pk <- lgnpp(r.pk)
 @
 %
-<<meuse-zinc-meuse-point-kriging-lgn,eval=TRUE>>=
+<<meuse-zinc-meuse-point-Kriging-lgn,eval=TRUE>>=
 str(r.pk)
 @
 %
 Note that 
 \begin{itemize}
   \item \code{meuse.grid} was converted to a
-  \code{SpatialPixelsDataFrame} object prior to kriging.
+  \code{SpatialPixelsDataFrame} object prior to Kriging.
 
 
   \item The argument
@@ -1013,7 +1023,7 @@ easily plot prediction results:
 %
 \bcf[1]
 %
-<<meuse-zinc-point-kriging-plot,fig=TRUE,width=9,height=3.5,results=hide,eval=TRUE>>=
+<<meuse-zinc-point-Kriging-plot,fig=TRUE,width=9,height=3.5,results=hide,eval=TRUE>>=
 brks <- c(25, 50, 75, 100, 150, 200, seq(500, 3500,by=500))
 pred <- spplot(r.pk, zcol="lgn.pred", at=brks, main="prediction")
 lwr <- spplot(r.pk, zcol="lgn.lower", at=brks, main="lower bound 95% PI")
@@ -1023,34 +1033,34 @@ plot(lwr, position=c(1/3, 0, 2/3, 1), more=TRUE)
 plot(upr, position=c(2/3, 0, 1, 1), more=FALSE)
 @ 
 %
-\ecf{Lognormal point kriging prediction of \code{zinc} (left:
+\ecf{Lognormal point Kriging prediction of \code{zinc} (left:
 prediction; middle and right: lower and upper bounds of pointwise 95\%
-prediction intervals).}{meuse-zinc-point-kriging-plot}
+prediction intervals).}{meuse-zinc-point-Kriging-plot}
 %
 
-\subsubsection{Lognormal block kriging}\label{sec:meuse-block-kriging}
+\subsubsection{Lognormal block Kriging}\label{sec:meuse-block-Kriging}
 
 If \code{newdata} is a \code{SpatialPolygonsDataFrame} then
-\code{predict.georob()} computes block kriging predictions.  We
+\code{predict.georob()} computes block Kriging predictions.  We
 illustrate this here with the \code{SpatialPolygonsDataFrame}
 \code{meuse.blocks} that is provided by the package
 \pkg{constrainedKriging}:
 %
-<<meuse-zinc-block-kriging,eval=TRUE>>=
+<<meuse-zinc-block-Kriging,eval=TRUE>>=
 data(meuse.blocks, package="constrainedKriging")
 str(meuse.blocks, max=2)
 @
 %
 \code{meuse.blocks} contains  \code{dist} as only covariate for the
 blocks, therefore, we use the model \code{log(zinc)\~{}sqrt(dist)} for
-computing the block kriging predictions of \code{log(zinc)}:
+computing the block Kriging predictions of \code{log(zinc)}:
 %
-<<meuse-zinc-meuse-block-kriging-1a,eval=FALSE>>=
+<<meuse-zinc-meuse-block-Kriging-1a,eval=FALSE>>=
 r.bk <- predict(r.georob.m1.spher.reml, newdata=meuse.blocks,
   control=control.predict.georob(extended.output=TRUE, pwidth=25, pheight=25, mmax=25))
 @
 %
-<<meuse-zinc-meuse-block-kriging-1b,echo=FALSE>>=
+<<meuse-zinc-meuse-block-Kriging-1b,echo=FALSE>>=
 r.bk <- predict(r.georob.m1.spher.reml, newdata=meuse.blocks,
   control=control.predict.georob(extended.output=TRUE, pwidth=25, pheight=25))
 @
@@ -1059,7 +1069,7 @@ and transform the predictions back by the approximately unbiased
 back-transformation proposed by \citet{Cressie-2006} (see
 section~\ref{eq:spatial-covariance-covariates}):
 %
-<<meuse-zinc-meuse-block-kriging-2>>=
+<<meuse-zinc-meuse-block-Kriging-2>>=
 r.bk <- lgnpp(r.bk, newdata=meuse.grid)
 @
 %
@@ -1068,11 +1078,11 @@ Note the following points:
   \item \code{pwidth} and \code{pheight} are the dimensions of the
   pixels used for efficiently computing ``block-block-'' and
   ``point-block- averages'' of the covariance function, see
-  section~\ref{sec:block-kriging}).
+  section~\ref{sec:block-Kriging}).
   
-  \item \code{mmax} controls parallelization when computing kriging
+  \item \code{mmax} controls parallelization when computing Kriging
   predictions, see
-  section~\ref{sec:kriging-parallelized-computations}.
+  section~\ref{sec:Kriging-parallelized-computations}.
 
   \item \code{newdata} is used to pass point support covariates to
   \code{lgnpp()}, from which the spatial covariances of the
@@ -1085,7 +1095,7 @@ We display the prediction results again by \code{spplot()}:
 %
 \bcf[1]
 %
-<<meuse-zinc-block-kriging-plot,fig=TRUE,width=9,height=3.5,results=hide,eval=TRUE>>=
+<<meuse-zinc-block-Kriging-plot,fig=TRUE,width=9,height=3.5,results=hide,eval=TRUE>>=
 brks <- c(25, 50, 75, 100, 150, 200, seq(500, 3500,by=500))
 pred <- spplot(r.bk, zcol="lgn.pred", at=brks, main="prediction")
 lwr <- spplot(r.bk, zcol="lgn.lower", at=brks, main="lower bound 95% PI")
@@ -1095,10 +1105,10 @@ plot(lwr, position=c(1/3, 0, 2/3, 1), more=TRUE)
 plot(upr, position=c(2/3, 0, 1, 1), more=FALSE)
 @ 
 %
-\ecf{Lognormal block kriging prediction of \code{zinc} computed under
+\ecf{Lognormal block Kriging prediction of \code{zinc} computed under
 the assumption of permanence of log-normality (left: prediction; middle
 and right: lower and upper bounds of pointwise 95\% prediction
-intervals).}{meuse-zinc-block-kriging-plot}
+intervals).}{meuse-zinc-block-Kriging-plot}
 %
 
 The assumption that both point values and block means follow
@@ -1111,7 +1121,7 @@ allows to compute this as well.  We illustrate this here by predicting
 the spatial mean over two larger square blocks:
 %
 \bcf[0.4]
-<<meuse-zinc-block-kriging-blocks,fig=TRUE,width=4,height=5,results=hide,eval=TRUE>>=
+<<meuse-zinc-block-Kriging-blocks,fig=TRUE,width=4,height=5,results=hide,eval=TRUE>>=
 ## define blocks
 tmp <- data.frame(x=c(179100, 179900), y=c(330200, 331000))
 blks <- SpatialPolygons(sapply(1:nrow(tmp), function(i, x){  
@@ -1129,14 +1139,14 @@ plot(geometry(blks), add=TRUE, col=2)
 @
 %
 \ecf{Point prediction grid and position of 2 target blocks for computing
-optimal log-normal block predictor.}{meuse-zinc-block-kriging-blocks}
+optimal log-normal block predictor.}{meuse-zinc-block-Kriging-blocks}
 %
 
-We first compute block-kriging predictions of \code{log(zinc)} and
+We first compute block-Kriging predictions of \code{log(zinc)} and
 back-transform them as before under the permanence of log-normality
 assumption:
 %
-<<meuse-zinc-block-kriging-3>>=
+<<meuse-zinc-block-Kriging-3>>=
 r.blks <- predict(r.georob.m1.spher.reml, newdata=blks, 
   control=control.predict.georob(extended.output=TRUE, pwidth=800, pheight=800))
 r.blks <- lgnpp(r.blks, newdata=meuse.grid)
@@ -1153,7 +1163,7 @@ prediction errors for this we must re-compute the points predictions
 of \code{log(zinc)} with the additional \code{control} argument
 \code{full.covmat=TRUE}:
 %
-<<<meuse-zinc-block-kriging-4a>>=
+<<<meuse-zinc-block-Kriging-4a>>=
 t.pk <- predict(r.georob.m0.spher.reml, newdata=as.data.frame(meuse.grid),
   control=control.predict.georob(extended.output=TRUE, full.covmat=TRUE))
 str(t.pk)
@@ -1194,7 +1204,7 @@ predictions and targets.
 Then we back-transform the predictions and
 average them separately for the two blocks:
 %
-<<meuse-zinc-block-kriging-5>>=
+<<meuse-zinc-block-Kriging-5>>=
 ## index defining to which block the points predictions belong
 ind <- over(geometry(meuse.grid), geometry(blks))
 ind <- tapply(1:nrow(meuse.grid), factor(ind), function(x) x)
@@ -1212,7 +1222,7 @@ colnames(tmp) <- c("opt.pred", "opt.se")
 r.blks <- cbind( r.blks, tmp)
 @
 %
-<<meuse-zinc-block-kriging-6,eval=TRUE>>=
+<<meuse-zinc-block-Kriging-6,eval=TRUE>>=
 r.blks@data[, c("lgn.pred", "opt.pred", "lgn.se", "opt.se")]
 @
 %
@@ -1227,10 +1237,10 @@ simulation study, we prefer the optimal prediction results.
 palette("default")
 @
 
-<<meuse-zinc-cleanup-2,echo=FALSE,eval=FALSE>>=
-save(list=ls(pattern="^r\\."), file="r_meuse_zinc_objects.RData")
-rm(list=ls(pattern="^r\\."))
-@
+% <<meuse-zinc-cleanup-2,echo=FALSE>>=
+% save(list=ls(pattern="^r\\."), file="r_meuse_zinc_objects.RData")
+% rm(list=ls(pattern="^r\\."))
+% @
 
 
 \clearpage
@@ -1242,9 +1252,10 @@ rm(list=ls(pattern="^r\\."))
 
 \section{Robust analysis of \code{coalash} data}\label{sec:coalash}
 
-<<ash-load,eval=TRUE,echo=FALSE,eval=FALSE>>=
-if(file.exists("r_coalash_objects.RData")) load("r_coalash_objects.RData")
-@
+% <<ash-load,eval=TRUE,echo=FALSE>>=
+% if(file.exists("r_coalash_objects.RData")) load("r_coalash_objects.RData")
+% @
+% 
 This data set reports measurements of ash content [\% mass] in a
 coal seam in Pennsylvania \citep{Gomez-Hazen-1970}.  A subset of the
 data was analysed by \citet[section~2.2]{Cressie-1993a}
@@ -1591,8 +1602,10 @@ and compare the Gaussian and robust REML estimates of the variogram:
 plot(r.georob.m1.exp.c1000, lag.dist.def=1, max.lag=10, estimator="matheron")
 plot(r.georob.m1.exp.c2, lag.dist.def=1, max.lag=10, estimator="qn", add = TRUE, 
   col="blue")
-legend("bottomright", lt=1, col=c("black","blue"), 
-  legend =c("Gaussian REML (c=1000)", "robust REML (c=2)"), bty="n")
+plot(update(r.georob.m1.exp.c2, subset=-50), lag.dist.def=1, max.lag=10, estimator="qn", 
+  add = TRUE, col="orange")
+legend("bottomright", lt=1, col=c("black","blue", "orange"), 
+  legend =c("Gaussian REML", "robust REML", "Gaussian REML without outlier (5,6)" ), bty="n")
 @
 %
 \ecf{Gaussian and robust REML estimate of exponential
@@ -1600,7 +1613,7 @@ variogram.}{coalash-gaussian-robust-reml-variogram}
 %
 % Note that by default for Gaussian REML, \code{georob()} maximizes a
 % restricted profile loglikelihood that only depends on
-% \eqn{\xi=\sigma_{\mathrm{n}}^2/\sigma_Z^2}{}, \eqn{\eta = \sigma_Z^2 /
+% \eqn{\xi=\sigma^2/\sigma_Z^2}{}, \eqn{\eta = \sigma_Z^2 /
 % \tau^2} and $\alpha$ with respect to these parameters, and the
 % variance of the signal
 % \eqn{\sigma_Z^2=\sigma_{\mathrm{n}}^2+\sigma^2}{} is estimated by an
@@ -1608,9 +1621,10 @@ variogram.}{coalash-gaussian-robust-reml-variogram}
 % \citep[e.g.][p.~113]{Diggle-Ribeiro-2007}, see help page of
 % \code{georob()}.
 %
-The outliers inflate mostly the nugget (by $\approx$ 20~\%) and less
-so the signal variance and range parameter (by $\approx$ 10~\%).  The
-estimated drift coefficients hardly differ.
+The outliers inflate mostly the nugget effect (by $\approx$ 20~\%) and less
+so the signal variance and range parameter (by $\approx$ 10~\%).  When
+we eliminate the severest outlier at (5,6) then the Gaussian and robust REML
+estimates of the variogram hardly differ. 
 
 \smallskip
 
@@ -1677,15 +1691,15 @@ whole data set as initial values (see argument \code{initial.param} of
 section~\ref{sec:est-details-initial-values}):
 
 <<ash-cv-georob-gaussian-robust-1,eval=FALSE>>=
-r.cv.georob.m1.exp.c2 <- cv(r.georob.m1.exp.c2, seed=1, param=r.georob.m1.exp.c2$param,
+r.cv.georob.m1.exp.c2 <- cv(r.georob.m1.exp.c2, seed=1,
   control=control.georob(initial.param=FALSE))
 r.cv.georob.m1.exp.c1000 <- cv(r.georob.m1.exp.c1000, seed=1)
 @
 % %
 <<ash-cv-georob-gaussian-robust-2,echo=FALSE>>=
-r.cv.georob.m1.exp.c2 <- cv(r.georob.m1.exp.c2, seed=1, param=r.georob.m1.exp.c2$param,
-  control=control.georob(initial.param=FALSE), ncores=1)
-r.cv.georob.m1.exp.c1000 <- cv(r.georob.m1.exp.c1000, seed=1, ncores=1)
+r.cv.georob.m1.exp.c2 <- cv(r.georob.m1.exp.c2, seed=1, 
+  control=control.georob(initial.param=FALSE), ncores=my.ncores)
+r.cv.georob.m1.exp.c1000 <- cv(r.georob.m1.exp.c1000, seed=1, ncores=my.ncores)
 @
 % %
 % <<ash-results-save-3,echo=FALSE>>=
@@ -1724,8 +1738,8 @@ the robust fit.
 
 For robust REML, the standard errors of the cross-validation errors
 are likely too small.  This is due to the fact that for the time
-being, the kriging variance of the \emph{response} $Y$ is approximated
-by adding the estimated nugget $\widehat{\tau}^2$ to the kriging
+being, the Kriging variance of the \emph{response} $Y$ is approximated
+by adding the estimated nugget $\widehat{\tau}^2$ to the Kriging
 variance of the signal $Z$.  This approximation likely underestimates
 the mean squared prediction error of the response if the errors come
 from a long-tailed distribution.  Hence, the summary statistics of the
@@ -1782,15 +1796,15 @@ interpretation of these plots]{Gneiting-etal-2007}.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%
-% kriging coalash data
+% Kriging coalash data
 
-\subsection{Computing robust kriging predictions}\label{sec:coalash-kriging}
+\subsection{Computing robust Kriging predictions}\label{sec:coalash-Kriging}
 
-% point kriging
+% point Kriging
 
-\subsubsection{Point kriging}\label{sec:coalash-point-kriging}
+\subsubsection{Point Kriging}\label{sec:coalash-point-Kriging}
 
-For point kriging  we must first generate a fine-meshed
+For point Kriging  we must first generate a fine-meshed
 grid of predictions points (optionally with the covariates for the
 drift) that is passed as argument \code{newdata} to
 \code{predict.georob()}.  \code{newdata} can be an customary
@@ -1800,9 +1814,9 @@ drift) that is passed as argument \code{newdata} to
 provided by the package \pkg{sp}.  If \code{newdata} is a
 \code{SpatialPoints}, \code{SpatialPixels} or a
 \code{SpatialGrid} object then the drift model may only use the coordinates
-as covariates (universal kriging), as we do it here.
+as covariates (universal Kriging), as we do it here.
 %
-<<ash-kriging-grid,eval=TRUE>>=
+<<ash-Kriging-grid,eval=TRUE>>=
 coalash.grid <- expand.grid(x=seq(-1, 17, by=0.1),
   y=seq( -1, 24, by=0.1))
 coordinates( coalash.grid) <- ~x+y  # convert to SpatialPoints
@@ -1812,16 +1826,16 @@ str(coalash.grid, max=2)
 @
 %
 
-Computing (robust) plug-in kriging predictions is then straightforward:
+Computing (robust) plug-in Kriging predictions is then straightforward:
 %
-<<ash-pkriging-1,eval=FALSE>>=
+<<ash-pKriging-1,eval=FALSE>>=
 r.pk.m1.exp.c2 <- predict(r.georob.m1.exp.c2, newdata=coalash.grid)
 r.pk.m1.exp.c1000 <- predict(r.georob.m1.exp.c1000, newdata=coalash.grid)
 @
 % %
-<<ash-pkriging-2,echo=FALSE>>=
-r.pk.m1.exp.c2 <- predict(r.georob.m1.exp.c2, newdata=coalash.grid, control=control.predict.georob(ncores=1))
-r.pk.m1.exp.c1000 <- predict(r.georob.m1.exp.c1000, newdata=coalash.grid, control=control.predict.georob(ncores=1))
+<<ash-pKriging-2,echo=FALSE>>=
+r.pk.m1.exp.c2 <- predict(r.georob.m1.exp.c2, newdata=coalash.grid, control=control.predict.georob(ncores=my.ncores))
+r.pk.m1.exp.c1000 <- predict(r.georob.m1.exp.c1000, newdata=coalash.grid, control=control.predict.georob(ncores=my.ncores))
 @
 % %
 % <<ash-results-save-4,echo=FALSE>>=
@@ -1836,58 +1850,58 @@ package \pkg{sp} as well:
 %
 \bcf[1]
 %
-<<ash-pkriging-plot-robust-gaussian-1,fig=TRUE,width=9.96,height=9.96,eval=TRUE>>=
+<<ash-pKriging-plot-robust-gaussian-1,fig=TRUE,width=9.96,height=9.96,eval=TRUE>>=
 pred.rob <- spplot(r.pk.m1.exp.c2, "pred", at=seq(8, 12, by=0.25), 
-  main="robust kriging prediction", scales=list(draw=TRUE))
+  main="robust Kriging prediction", scales=list(draw=TRUE))
 pred.gauss <- spplot(r.pk.m1.exp.c1000, "pred", at=seq(8, 12, by=0.25), 
-  main="Gaussian kriging prediction", scales=list(draw=TRUE))
+  main="Gaussian Kriging prediction", scales=list(draw=TRUE))
 se.rob <- spplot(r.pk.m1.exp.c2, "se", at=seq(0.35, 0.65, by=0.025), 
-  main="standard error robust kriging", scales=list(draw=TRUE))
+  main="standard error robust Kriging", scales=list(draw=TRUE))
 se.gauss <- spplot(r.pk.m1.exp.c1000, "se", at=seq(0.35, 0.65, by=0.025), 
-  main="standard error Gaussian kriging", scales=list(draw=TRUE))
+  main="standard error Gaussian Kriging", scales=list(draw=TRUE))
 plot(pred.rob, pos=c(0, 0.5, 0.5, 1), more=TRUE)
 plot(pred.gauss, pos=c(0.5, 0.5, 1, 1), more=TRUE)
 plot(se.rob, pos=c(0, 0, 0.5, 0.5), more=TRUE)
 plot(se.gauss, pos=c(0.5, 0, 1, 0.5), more=FALSE)
 @
 %
-\ecf{Robust (left) and Gaussian (right) point kriging predictions (top) and
-kriging standard errors (bottom).}{coalash-pkriging-robust-gaussian}
+\ecf{Robust (left) and Gaussian (right) point Kriging predictions (top) and
+Kriging standard errors (bottom).}{coalash-pKriging-robust-gaussian}
 %
 By default, \code{predict.georob()} predicts the \emph{signal}
 $Z(\mb{s})$, but predictions of the \emph{response} $Y(\mb{s})$ or
 estimates of \emph{model terms} and \emph{trend} (drift) can be
 computed as well (see argument \code{type} of \code{predict.georob()}
-and section~\ref{sec:prediction-targets}).  Apart from kriging
+and section~\ref{sec:prediction-targets}).  Apart from Kriging
 predictions and standard errors, bounds (\code{lower}, \code{upper})
 of point-wise 95\%-prediction intervals (plug-in) are computed for
 assumed Gaussian predictive distributions.
 
 \smallskip
 
-The kriging predictions visibly differ around the outlier at (5,6) and
-the kriging standard errors are larger for Gaussian kriging because
+The Kriging predictions visibly differ around the outlier at (5,6) and
+the Kriging standard errors are larger for Gaussian Kriging because
 the outliers inflated the non-robustly estimated sill of the variogram
 (Figure~\ref{fig:coalash-gaussian-robust-reml-variogram}).
 %
 To see the effects of outliers more clearly, we plot the relative
-difference of  Gaussian and robust kriging predictions and the ratio
-of the respective kriging variances:
+difference of  Gaussian and robust Kriging predictions and the ratio
+of the respective Kriging variances:
 %
 \bcf[1]
 %
-<<ash-pkriging-plot-robust-gaussian-2,results=hide,fig=TRUE,width=9.96,height=4.98,eval=TRUE>>=
+<<ash-pKriging-plot-robust-gaussian-2,results=hide,fig=TRUE,width=9.96,height=4.98,eval=TRUE>>=
 library(lattice)
 # rel. difference of predictions
 r.pk.m1.exp.c2$reldiff.pred <- (r.pk.m1.exp.c1000$pred -
   r.pk.m1.exp.c2$pred) / r.pk.m1.exp.c2$pred * 100
 reldiff.pred <- spplot(r.pk.m1.exp.c2, "reldiff.pred", at=-1:7, 
-  main="Gaussian - robust kriging predictions", scales=list(draw=TRUE))
-# ratio kriging variances
+  main="Gaussian - robust Kriging predictions", scales=list(draw=TRUE))
+# ratio Kriging variances
 r.pk.m1.exp.c2$ratio.msep <- r.pk.m1.exp.c1000$se^2 / 
   r.pk.m1.exp.c2$se^2 * 100
 ratio.msep <- spplot(r.pk.m1.exp.c2, "ratio.msep",  at=105:115, 
-  main="ratio of Gaussian to robust kriging variances",scales=list(draw=TRUE))
+  main="ratio of Gaussian to robust Kriging variances",scales=list(draw=TRUE))
 plot(reldiff.pred, pos=c(0, 0, 0.5, 1), more=TRUE)
 #  add bubble plot of centred data colored by "robustness" weights
 rw <- cut(r.georob.m1.exp.c2$rweights, seq(0.2, 1, by = 0.2))
@@ -1903,28 +1917,28 @@ trellis.unfocus()
 plot(ratio.msep, pos=c(0.5, 0, 1, 1), more=FALSE)
 @
 %
-\ecf{Relative differences of Gaussian and robust point kriging predictions
-(\%, left) and ratio of Gaussian to robust point kriging variances (\%,
+\ecf{Relative differences of Gaussian and robust point Kriging predictions
+(\%, left) and ratio of Gaussian to robust point Kriging variances (\%,
 right).  The area of the ``bubbles'' in the left panel is proportional
 to the moduli of centred ash content and their color codes the
 ``robustness'' weights of robust
-REML.}{coalash-diff-kriging-gaussian-robusts}
+REML.}{coalash-diff-Kriging-gaussian-robusts}
 %
-The kriging predictions differ by more than $\pm$ 1~\% around
+The Kriging predictions differ by more than $\pm$ 1~\% around
 observations with robustness weights $\leq 0.6$, and the efficiency of
-the Gaussian relative to robust kriging varies between 106--114~\%.
+the Gaussian relative to robust Kriging varies between 106--114~\%.
 
-% block kriging
+% block Kriging
 
-\subsubsection{Block kriging}\label{sec:coalash-block-kriging}
+\subsubsection{Block Kriging}\label{sec:coalash-block-Kriging}
 
 First, we must define the blocks (and the covariates) for which
 predictions should be computed.  The package \pkg{georob} computes
-block kriging predictions for \code{newdata} objects of class
+block Kriging predictions for \code{newdata} objects of class
 \code{SpatialPolygonsDataFrame}s provided by \pkg{sp}:
 %
 \bcf[0.4]
-<<ash-kriging-polygons,fig=TRUE,height=6,width=4,eval=TRUE>>=
+<<ash-Kriging-polygons,fig=TRUE,height=6,width=4,eval=TRUE>>=
 tmp <- expand.grid(x = seq(2.5, 16.5, by=4), y=seq(2, 22, by=4))
 rownames(tmp) <- paste("block", rownames(tmp), sep="")
 # create SpatialPolygonsDataFrame
@@ -1939,7 +1953,7 @@ summary(coalash.polygons)
 plot(coalash.polygons, col="grey", axes=TRUE); points(y~x, coalash)
 @
 %
-\ecf{Geometry of blocks for which kriging predictions are
+\ecf{Geometry of blocks for which Kriging predictions are
 computed (dots are data locations).}{coalash-block-geometry}
 %
 Note that coordinates of the  block centres are the covariates for the
@@ -1950,7 +1964,7 @@ Block-block- and point-block-means of the semi-variance are computed by
 \pkg{constrainedKriging} and \pkg{spatialCovariance}
 \citep[see section~\protect\ref{sec:predict-georob} and][]{Hofer-Papritz-2011,Clifford-2005}:
 %
-<<ash-bkriging-1,eval=TRUE>>=
+<<ash-bKriging-1,eval=TRUE>>=
 r.bk.m1.exp.c2 <- predict(r.georob.m1.exp.c2, newdata=coalash.polygons,
   control=control.predict.georob(pwidth=4, pheight=4, full.covmat=TRUE))
 r.bk.m1.exp.c1000 <- predict(r.georob.m1.exp.c1000, newdata=coalash.polygons,
@@ -1971,23 +1985,23 @@ effect that the full covariance matrix of the predictions errors of
 the block means is computed (and stored as list component
 \code{mse.pred} in \code{r.bk.m1.exp.c2}):
 %
-<<ash-str-bkriging,eval=TRUE>>=
+<<ash-str-bKriging,eval=TRUE>>=
 str(r.bk.m1.exp.c2, max=2)
 @
 %
-We can compute from these covariances the kriging variances of the
+We can compute from these covariances the Kriging variances of the
 spatial means over groups of block, in particular of the spatial mean
 over the whole domain:
 %
-<<ash-gkriging,eval=TRUE>>=
+<<ash-gKriging,eval=TRUE>>=
 c(pred=mean(r.bk.m1.exp.c2$pred$pred),
   se=sqrt(sum(r.bk.m1.exp.c2$mse.pred))/24)
 @
 %
 which is of course the same as predicting the mean over the whole
-domain by block kriging:
+domain by block Kriging:
 %
-<<ash-bkriging-2,eval=TRUE>>=
+<<ash-bKriging-2,eval=TRUE>>=
 coalash.domain <- rbind(c(0.5,0), c(16.5,0), c(16.5,24), c(0.5,24), c(0.5,0))
 coalash.domain <- SpatialPolygonsDataFrame(
   SpatialPolygons(list(Polygons(list(Polygon(coalash.domain)), ID= "domain"))), 
@@ -1997,39 +2011,36 @@ slot(predict(r.georob.m1.exp.c2, newdata=coalash.domain,
 @
 
 We conclude this section by graphs of the robust and Gaussian block
-kriging predictions:
+Kriging predictions:
 %
 \bcf[1]
 %
-<<ash-bkriging-plot-robust-gaussian-1,fig=TRUE,width=9.96,height=9.96,eval=TRUE>>=
+<<ash-bKriging-plot-robust-gaussian-1,fig=TRUE,width=9.96,height=9.96,eval=TRUE>>=
 pred.rob <- spplot(r.bk.m1.exp.c2$pred, "pred", at=seq(8, 11, by=0.25), 
-  main="robust kriging prediction", scales=list(draw=TRUE))
+  main="robust Kriging prediction", scales=list(draw=TRUE))
 pred.gauss <- spplot(r.bk.m1.exp.c1000$pred, "pred", at=seq(8, 11, by=0.25), 
-  main="Gaussian kriging prediction", scales=list(draw=TRUE))
+  main="Gaussian Kriging prediction", scales=list(draw=TRUE))
 se.rob <- spplot(r.bk.m1.exp.c2$pred, "se", at=seq(0.15, 0.45, by=0.025), 
-  main="standard error robust kriging", scales=list(draw=TRUE))
+  main="standard error robust Kriging", scales=list(draw=TRUE))
 se.gauss <- spplot(r.bk.m1.exp.c1000$pred, "se", at=seq(0.15, 0.45, by=0.025), 
-  main="standard error Gaussian kriging", scales=list(draw=TRUE))
+  main="standard error Gaussian Kriging", scales=list(draw=TRUE))
 plot(pred.rob, pos=c(0, 0.5, 0.5, 1), more=TRUE)
 plot(pred.gauss, pos=c(0.5, 0.5, 1, 1), more=TRUE)
 plot(se.rob, pos=c(0, 0, 0.5, 0.5), more=TRUE)
 plot(se.gauss, pos=c(0.5, 0, 1, 0.5), more=FALSE)
 @
 %
-\ecf{Robust (left) and Gaussian (right) block kriging predictions (top) and
-kriging standard errors (bottom).}{coalash-kriging-robust-gaussian}
+\ecf{Robust (left) and Gaussian (right) block Kriging predictions (top) and
+Kriging standard errors (bottom).}{coalash-Kriging-robust-gaussian}
 %
 The outlier at (5,6) also affects the the prediction of the block
-means and robust block kriging is again more efficient than Gaussian
-block kriging.
+means and robust block Kriging is again more efficient than Gaussian
+block Kriging.
 
-<<ash-results-save-1,echo=FALSE>>=
-save(list=ls(pattern="^r\\."), file="r_coalash_objects.RData")
-@
-%
-<<ash-rm,eval=TRUE,echo=FALSE,eval=FALSE>>=
-rm(list=ls(pattern="^r\\."))
-@
+% <<ash-results-save-1,echo=FALSE>>=
+% save(list=ls(pattern="^r\\."), file="r_coalash_objects.RData")
+% rm(list=ls(pattern="^r\\."))
+% @
 
 \clearpage
 
@@ -2227,8 +2238,8 @@ variances can be re-parametrized to
 \item the inverse relative nugget 
 \eqn{\eta = \sigma_Z^2 / \tau^2}{} and
 
-\item the relative spatial nugget 
-\eqn{\xi = \sigma_{\mathrm{n}}^2/\sigma_Z^2}{}.
+\item the relative auto-correlated signal variance
+\eqn{\xi = \sigma^2/\sigma_Z^2}{}.
 
 \end{itemize}
 
@@ -2405,6 +2416,35 @@ possibly \code{aniso}) must be provided to \code{georob()}.
 % the latter case, the PDF of \eqn{\varepsilon}{} is assumed to be
 % proportional to \eqn{1/\tau \, \exp(-\rho_c(\varepsilon/\tau))}{}, where
 % \eqn{\psi_c(x)=\rho_c'(x)}{}.
+
+
+\subsection{Estimating parameters of ``nested'' variogram models}\label{sec:nested-variograms}
+
+As a further option, \code{georob()} allows to estimate parameters of
+so-called ``nested'' variogram models.  For this one assumes that the
+signal process $Z(\mb{s})$ is the sum of several independent
+auto-correlated Gaussian processes $B_{k}(\mb{s})$
+%
+\begin{equation}
+  B(\mb{s}) = \sum_{k=1}^{K} B_{k}(\mb{s}), 
+\end{equation}
+%
+each characterized by a parametric variogram function with parameters
+($\sigma^2_{Z,k}$, $\mb{\theta}_{k}$), see equation
+\ref{eq:covariance-matrix-signal}.
+%
+Initial values for nested variogram models are passed to
+\code{georob()} by the argument \code{variogram.object}, which must be
+a list of length $K$.  The $k$th component of \code{variogram.object}
+is itself a list with the mandatory components \code{variogram.model}
+and \code{param} and the optional components \code{fit.param},
+\code{aniso} and \code{fit.aniso}.  Note that sensible defaults are
+used if the optional components are missing.  Note further that
+\code{nugget} and \code{snugget} may be specified for all $k$ model
+strctures but these variances are summed-up and assigned to the first
+model structure ($k=1$) and all \code{nugget} and \code{snugget} are
+set to zero for $k > 1$.
+
 
 \subsection{Controlling \code{georob()} by the function \code{control.georob()}}\label{sec:control-georob}
 
@@ -2643,7 +2683,7 @@ parallel:
   \code{add1.georob()}, \code{drop1.georob()} and
   \code{step.georob()} (section~\ref{sec:model-building});
  
-  \item \label{item:parallel-predict} computing kriging predictions by
+  \item \label{item:parallel-predict} computing Kriging predictions by
   \code{predict.georob()} (section~\ref{sec:predict-georob});
   
   \item \label{item:parallel-pmm} matrix multiplication by function \code{pmm()};
@@ -2712,7 +2752,7 @@ multiplication, and one should therefore use the default argument
 
 
 %% 
- % Details kriging
+ % Details Kriging
  %%
 
 % material taken from
@@ -2720,13 +2760,13 @@ multiplication, and one should therefore use the default argument
 % tools::Rd2latex("lgnpp.Rd", "../../../vignettes/lgnpp.tex", outputEncoding="macintosh")
 % tools::Rd2latex("validate.predictions.Rd", "../../../vignettes/validate.predictions.tex", outputEncoding="macintosh")
 
-\section{Details about kriging}\label{sec:krig-details}
+\section{Details about Kriging}\label{sec:krig-details}
 
 
 \subsection{Functionality of \texttt{predict.georob()}}\label{sec:predict-georob}
 
 The \code{predict} method of class \code{georob} computes customary or
-robust external drift point or block plug-in kriging predictions (see
+robust external drift point or block plug-in Kriging predictions (see
 equation \ref{eq:robust-edk}).  
 %
 Data about the prediction targets are passed as argument
@@ -2738,9 +2778,9 @@ either an ordinary \strong{data frame}, a \strong{SpatialPoints-},
 latter provided by the package \pkg{sp}.  If \code{newdata} is a
 \code{SpatialPoints}, \code{SpatialPixels} or a
 \code{SpatialGrid} then the drift model may only use the coordinates
-as covariates (universal kriging).  If \code{newdata} is a
-\code{SpatialPolygonsDataFrame} then block kriging predictions are
-computed, otherwise point kriging predictions.
+as covariates (universal Kriging).  If \code{newdata} is a
+\code{SpatialPolygonsDataFrame} then block Kriging predictions are
+computed, otherwise point Kriging predictions.
 
 
 \subsubsection{Prediction targets}\label{sec:prediction-targets}
@@ -2791,10 +2831,10 @@ fitted trend, etc.\ are computed (\code{TRUE}) or only the vector with
 their variances (\code{FALSE}, default).
 %
 
-\paragraph{Computing auxiliary items for log-normal kriging}
+\paragraph{Computing auxiliary items for log-normal Kriging}
 Use the argument \code{extended.output = TRUE} of
 \code{control.predict.georob()} to compute all quantities required for
-the (approximately) unbiased back-transformation of kriging
+the (approximately) unbiased back-transformation of Kriging
 predictions of log-transformed data to the original scale of the
 measurements by \code{lgnpp()} (see
 section~\ref{sec:krig-details-lognormal}).  In more detail, the
@@ -2805,7 +2845,7 @@ following items are computed:
   \item \code{trend}: the fitted values,
   \eqn{\mbox{\boldmath$x$\unboldmath}(\mbox{\boldmath$s$\unboldmath})\mathrm{^T}\widehat{\mbox{\boldmath$\beta$\unboldmath}}}{},
   
-  \item \code{var.pred}: the variances of the kriging predictions,
+  \item \code{var.pred}: the variances of the Kriging predictions,
   \eqn{\mathrm{Var}_{\hat{\theta}}[\widehat{Y}(\mbox{\boldmath$s$\unboldmath})]}{}
   or
   \eqn{\mathrm{Var}_{\hat{\theta}}[\widehat{Z}(\mbox{\boldmath$s$\unboldmath})]}{},
@@ -2858,9 +2898,9 @@ Depending on the values passed to \code{type}, \code{full.covmat} and
     \item the coordinates of the prediction points (only present if
     \code{newdata} is a data frame).
     
-    \item \code{pred}: the kriging predictions (or fitted values).
+    \item \code{pred}: the Kriging predictions (or fitted values).
     
-    \item \code{se}: the root mean squared prediction errors (kriging
+    \item \code{se}: the root mean squared prediction errors (Kriging
     standard errors).
     
     \item \code{lower}, \code{upper}: the limits of
@@ -2889,7 +2929,7 @@ Depending on the values passed to \code{type}, \code{full.covmat} and
     \eqn{Z(\mbox{\boldmath$s$\unboldmath})-\widehat{Z}(\mbox{\boldmath$s$\unboldmath})}{}
     see above.
     
-    \item \code{var.pred}: the full covariance matrix of the kriging
+    \item \code{var.pred}: the full covariance matrix of the Kriging
     predictions, see above.
     
     \item \code{cov.pred.target}: the full covariance matrix of the
@@ -2917,7 +2957,7 @@ left and the approximation on the
 right.}{block-discretization}
 
 
-\subsubsection{Block kriging}\label{sec:block-kriging}
+\subsubsection{Block Kriging}\label{sec:block-Kriging}
 
 \code{georob.predict()} uses functions of the package
 \pkg{constrainedKriging} \citep{Hofer-Papritz-2011} for efficiently
@@ -2954,10 +2994,10 @@ package \pkg{constrainedKriging} for more details).
 For the time being \pkg{constrainedKriging} does not integrate the
 following (generalized) covariances : \code{RMaskey}, \code{RMdagum},
 \code{RMdewijsian}, \code{RMfbm} and \code{RMgenfbm}.  Hence, these
-models cannot be used for block kriging.
+models cannot be used for block Kriging.
 
 
-\subsubsection{Parallelized computations}\label{sec:kriging-parallelized-computations}
+\subsubsection{Parallelized computations}\label{sec:Kriging-parallelized-computations}
 
 \code{predict.georob()} computes
 its results in parallel.  The parallelization is controlled by the
@@ -2991,12 +3031,12 @@ is not possible).
 
 
 
-\subsection{Lognormal kriging}\label{sec:krig-details-lognormal}
+\subsection{Lognormal Kriging}\label{sec:krig-details-lognormal}
 
-The function \code{lgnpp()} back-transforms point or block kriging
+The function \code{lgnpp()} back-transforms point or block Kriging
 predictions of a log-transformed response variable computed by
 \code{predict.georob()}.  Alternatively, the function averages
-log-normal point kriging predictions for a block and approximates the
+log-normal point Kriging predictions for a block and approximates the
 mean squared prediction error of the block mean.
 %
 The items required for the back-transformation are computed by
@@ -3013,7 +3053,7 @@ section~\ref{sec:predict-georob}.
 %   \item \code{trend}: the fitted values,
 %   \eqn{\mbox{\boldmath$x$\unboldmath}(\mbox{\boldmath$s$\unboldmath})\mathrm{^T}\widehat{\mbox{\boldmath$\beta$\unboldmath}}}{},
 %   
-%   \item \code{var.pred}: the variances of the kriging predictions, 
+%   \item \code{var.pred}: the variances of the Kriging predictions, 
 %   \eqn{\mathrm{Var}_{\hat{\theta}}[\widehat{Y}(\mbox{\boldmath$s$\unboldmath})]}{} or 
 %   \eqn{\mathrm{Var}_{\hat{\theta}}[\widehat{Z}(\mbox{\boldmath$s$\unboldmath})]}{},
 %   
@@ -3041,10 +3081,10 @@ section~\ref{sec:predict-georob}.
 \code{lgnpp()} then performs the following three tasks:
 
 %
-\subsubsection{Back-transformation of point kriging predictions of a log-transformed response}\label{sec:krig-details-lognormal-point}
+\subsubsection{Back-transformation of point Kriging predictions of a log-transformed response}\label{sec:krig-details-lognormal-point}
 
 The usual, marginally unbiased back-transformation for log-normal point
-kriging is used:
+Kriging is used:
 
 \begin{equation}\label{eq:point-lk-predictor}
   \widehat{U}(\mbox{\boldmath$s$\unboldmath}) = \exp( \widehat{Z}(\mbox{\boldmath$s$\unboldmath}) + 
@@ -3083,15 +3123,15 @@ predictions of the log-transformed response
 \eqn{\mbox{\boldmath$x$\unboldmath}(\mbox{\boldmath$s$\unboldmath})^\mathrm{T}\widehat{\mbox{\boldmath$\beta$\unboldmath}}}{}
 of the log-transformed data can be back-transformed.  The above
 transformations are used if the \code{object} passed as first argument
-to \code{lgnpp()} contains point kriging predictions and if the
+to \code{lgnpp()} contains point Kriging predictions and if the
 argument \code{is.block = FALSE} and the argument \code{all.pred} is
 missing.
 
 
 %
-\subsubsection{Back-transformation of block kriging predictions of a log-transformed response}\label{sec:krig-details-lognormal-block-permanence}
+\subsubsection{Back-transformation of block Kriging predictions of a log-transformed response}\label{sec:krig-details-lognormal-block-permanence}
 
-Block kriging predictions of a log-transformed response variable are
+Block Kriging predictions of a log-transformed response variable are
 back-transformed by the approximately unbiased transformation proposed
 by \citet[Appendix~C]{Cressie-2006}
 
@@ -3142,7 +3182,7 @@ loss of efficiency caused by this assumption are small
 \smallskip
 
 The above formulae are used by \code{lgnpp()} if \code{object}
-contains block kriging predictions in the form of a
+contains block Kriging predictions in the form of a
 \code{\LinkA{SpatialPolygonsDataFrame}{SpatialPolygonsDataFrame}}.  To
 approximate \eqn{\mbox{\boldmath$M$\unboldmath}(A)}{M(A)}{}, one needs
 the covariates on a fine grid for the whole study domain in which the
@@ -3156,11 +3196,11 @@ is taken from the \code{polygons} slot of the
 
 
 %
-\subsubsection{Back-transformation and averaging of point kriging predictions of a log-transformed response}\label{sec:krig-details-lognormal-block-averaging}
+\subsubsection{Back-transformation and averaging of point Kriging predictions of a log-transformed response}\label{sec:krig-details-lognormal-block-averaging}
 
 \code{lgnpp()} allows as a further option to back-transform and
-\emph{average} point kriging predictions passed as \code{object} to
-the function \citep[optimal log-normal block kriging,
+\emph{average} point Kriging predictions passed as \code{object} to
+the function \citep[optimal log-normal block Kriging,
 see][]{Cressie-2006}.  One then assumes that the predictions in
 \code{object} refer to points that lie in \emph{a single} block.
 Hence, one uses the approximation
@@ -3211,12 +3251,12 @@ mean squared error
   \end{eqnarray}
   
   The first term of the RHS (and \eqn{\widehat{U}(A)}{}) can be
-  computed from the point kriging results contained in
+  computed from the point Kriging results contained in
   \code{all.pred}, and the double sum is evaluated from the full
   covariance matrices of the predictions and the respective targets,
   passed to \code{lgnpp()} as \code{object} (one has to use the
   arguments \code{control=control.predict.georob(full.covmat=TRUE)}
-  for \code{predict.georob()} when computing the point kriging
+  for \code{predict.georob()} when computing the point Kriging
   predictions stored in \code{object}).
   
   \item If the prediction results are not available for the complete set
@@ -3237,7 +3277,7 @@ mean squared error
   \widehat{U}(\mbox{\boldmath$s$\unboldmath}_i)\}^2].
   \end{equation}
   
-  \item By drawing samples repeatedly and passing the related kriging
+  \item By drawing samples repeatedly and passing the related Kriging
   results as \code{object} to \code{lgnpp()}, one can reduce the error
   of the approximation of the mean squared error.
   
@@ -3461,9 +3501,9 @@ The function \code{cv.georob()} assesses the goodness-of-fit of a
 spatial linear model by \var{K}-fold cross-validation.  In more
 detail, the model is fitted \var{K} times by robust (or Gaussian)
 (RE)ML, excluding each time \var{1/K}th of the data.  The fitted
-models are used to compute robust (or customary) external kriging
+models are used to compute robust (or customary) external Kriging
 predictions for the omitted observations.  If the response variable is
-log-transformed then the kriging predictions can be optionally
+log-transformed then the Kriging predictions can be optionally
 transformed back to the original scale of the measurements.  Use the
 argument \code{lgn = TRUE} for this.
 
@@ -3542,15 +3582,15 @@ the \emph{sharpness} of probabilistic predictions of
 errors
 \eqn{Y(\mbox{\boldmath$s$\unboldmath})-\widehat{Y}(\mbox{\boldmath$s$\unboldmath})}{}
 follow normal distributions with zero mean and standard deviations
-equal to the kriging standard errors.  This assumption is an
+equal to the Kriging standard errors.  This assumption is an
 approximation if the errors \eqn{\varepsilon}{\epsilon} come from a
 long-tailed distribution.  Furthermore, for the time being, the
-kriging variance of the \emph{response} \eqn{Y}{} is approximated by
-adding the estimated nugget \eqn{\widehat{\tau}^2}{} to the kriging
+Kriging variance of the \emph{response} \eqn{Y}{} is approximated by
+adding the estimated nugget \eqn{\widehat{\tau}^2}{} to the Kriging
 variance of the signal \eqn{Z}{}.  This approximation likely
 underestimates the mean squared prediction error of the response if
 the errors come from a long-tailed distribution.  Hence, for robust
-kriging, the standard errors of the \mbox{(cross-)}validation errors
+Kriging, the standard errors of the \mbox{(cross-)}validation errors
 are likely too small. 
 
 \smallskip

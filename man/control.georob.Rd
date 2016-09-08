@@ -35,7 +35,7 @@ control.georob(ml.method = c("REML", "ML"), reparam = TRUE,
     min.condnum = 1.e-12, zero.dist = sqrt(.Machine[["double.eps"]]),
     error.family.estimation = c("gaussian", "long.tailed"),
     error.family.cov.effects = c("gaussian", "long.tailed"),
-    error.family.cov.residuals = c("long.tailed", "gaussian"),
+    error.family.cov.residuals = c("gaussian", "long.tailed"),
     cov.bhat = TRUE, full.cov.bhat = FALSE, cov.betahat = TRUE, 
     cov.delta.bhat = TRUE, full.cov.delta.bhat = TRUE,
     cov.delta.bhat.betahat = TRUE,
@@ -448,7 +448,7 @@ qqnorm(ranef(r.logzn.rob, standard = TRUE)); abline(0, 1)
   \code{\link{georob}} for (robust) fitting of spatial linear models;
   \code{\link{georobObject}} for a description of the class \code{georob};
   \code{\link{plot.georob}} for display of RE(ML) variogram estimates;
-  \code{\link{predict.georob}} for computing robust kriging predictions; and finally
+  \code{\link{predict.georob}} for computing robust Kriging predictions; and finally
   \code{\link{georobMethods}} for further methods for the class \code{georob}.
 }
 
@@ -509,7 +509,7 @@ qqnorm(ranef(r.logzn.rob, standard = TRUE)); abline(0, 1)
 %   or \code{optim}.}
 % 
 %   \item{aux.cov.pred.target}{logical controlling whether a covariance term
-%   required for the back-transformation of kriging predictions of
+%   required for the back-transformation of Kriging predictions of
 %   log-transformed data is returned (default \code{FALSE}).}
 %       
 %   \item{cov.bhat.betahat}{logical controlling whether the covariance matrix

@@ -8,10 +8,10 @@
 \title{Unbiased Back-Transformations for Log-normal Kriging}
 
 \description{
-  The function \code{lgnpp} back-transforms point or block kriging
+  The function \code{lgnpp} back-transforms point or block Kriging
   predictions of a log-transformed response variable computed by
   \code{\link{predict.georob}}.  Alternatively, the function averages
-  log-normal point kriging predictions for a block and approximates the mean
+  log-normal point Kriging predictions for a block and approximates the mean
   squared prediction error of the block mean.}
 
 
@@ -22,7 +22,7 @@ lgnpp(object, newdata, locations, is.block = FALSE, all.pred = NULL,
 }
 
 \arguments{
-  \item{object}{an object with kriging predictions of a log-transformed
+  \item{object}{an object with Kriging predictions of a log-transformed
   response variable as obtained by
   \code{\link{predict}(\var{georob-object, ...})}.}
   
@@ -36,7 +36,7 @@ lgnpp(object, newdata, locations, is.block = FALSE, all.pred = NULL,
   \item{is.block}{an optional logical (default \code{FALSE}) specifying
   whether point predictions contained in \code{object} are considered to
   belong to a single block and should be averaged after
-  back-transformation.  Ignored if \code{object} contains block kriging
+  back-transformation.  Ignored if \code{object} contains block Kriging
   predictions, see \emph{Details}.}
   
   \item{all.pred}{an optional positive integer or an object as obtained by
@@ -50,11 +50,11 @@ lgnpp(object, newdata, locations, is.block = FALSE, all.pred = NULL,
 \details{
  The function \code{lgnpp} performs three tasks:
  
-  \subsection{1. Back-transformation of point kriging predictions of a
+  \subsection{1. Back-transformation of point Kriging predictions of a
   log-transformed response}{
  
     The usual, marginally unbiased back-transformation for log-normal point
-    kriging is used:
+    Kriging is used:
  
     \deqn{\widehat{U}(\mbox{\boldmath$s$\unboldmath}) = \exp( \widehat{Z}(\mbox{\boldmath$s$\unboldmath}) + 
       1/2 (  \mathrm{Var}_{\hat{\theta}}[ Z(\mbox{\boldmath$s$\unboldmath})]
@@ -98,16 +98,16 @@ lgnpp(object, newdata, locations, is.block = FALSE, all.pred = NULL,
     hat\beta} of the log-transformed data can be back-transformed (see
     \code{\link{georobIntro}}).  The
     above transformations are used if \code{object}
-    contains point kriging predictions (see \code{predict.georob},
+    contains point Kriging predictions (see \code{predict.georob},
     \emph{Value}) and if \code{is.block = FALSE} and \code{all.pred} is
     missing.
     
   }
  
-  \subsection{2. Back-transformation of block kriging predictions of a
+  \subsection{2. Back-transformation of block Kriging predictions of a
   log-transformed response}{
   
-  Block kriging predictions of a log-transformed response variable are
+  Block Kriging predictions of a log-transformed response variable are
   back-transformed by the approximately unbiased transformation proposed
   by Cressie (2006, Appendix C)
   
@@ -159,7 +159,7 @@ lgnpp(object, newdata, locations, is.block = FALSE, all.pred = NULL,
   Hofer et al., 2013). 
   
   The above formulae are used by \code{lgnpp} if \code{object} contains
-  block kriging predictions in the form of a
+  block Kriging predictions in the form of a
   \code{\link{SpatialPolygonsDataFrame}}.  To approximate
   \eqn{\mbox{\boldmath$M$\unboldmath}(A)}{M(A)}{}, one needs the covariates
   on a fine grid for the whole study domain in which the blocks lie.  The
@@ -172,11 +172,11 @@ lgnpp(object, newdata, locations, is.block = FALSE, all.pred = NULL,
   
   }
  
-  \subsection{3. Back-transformation and averaging of point kriging predictions
+  \subsection{3. Back-transformation and averaging of point Kriging predictions
   of a log-transformed response}{
   
   \code{lgnpp} allows as a further option to back-transform and
-  \emph{average} point kriging predictions passed as \code{object} to the
+  \emph{average} point Kriging predictions passed as \code{object} to the
   function.  One then assumes that the predictions in \code{object} refer
   to points that lie in \emph{a single} block.  Hence, one uses the
   approximation
@@ -229,12 +229,12 @@ lgnpp(object, newdata, locations, is.block = FALSE, all.pred = NULL,
     }
     
     The first term of the RHS (and \eqn{\widehat{U}(A)}{hatU(A)}) can be
-    computed from the point kriging results contained in \code{all.pred},
+    computed from the point Kriging results contained in \code{all.pred},
     and the double sum is evaluated from the full covariance matrices of
     the predictions and the respective targets, passed to \code{lgnpp} as
     \code{object} (one has to use the arguments
     \code{control=control.predict.georob(full.covmat=TRUE)} for
-    \code{\link{predict.georob}} when computing the point kriging
+    \code{\link{predict.georob}} when computing the point Kriging
     predictions stored in \code{object}).
     
     \item If the prediction results are not available for the complete set
@@ -253,7 +253,7 @@ lgnpp(object, newdata, locations, is.block = FALSE, all.pred = NULL,
       \widehat{U}(\mbox{\boldmath$s$\unboldmath}_i)\}^2].
     }{ 1(k K) sum_{s_i in sample} E[ \{ U(s_i) - hatU(s_i)\}^2]. }
     
-    \item By drawing samples repeatedly and passing the related kriging
+    \item By drawing samples repeatedly and passing the related Kriging
     results as \code{object} to \code{lgnpp}, one can reduce the error of
     the approximation of the mean squared error.
     
@@ -265,12 +265,12 @@ lgnpp(object, newdata, locations, is.block = FALSE, all.pred = NULL,
   If \code{is.block} is \code{FALSE} and \code{all.pred} is equal to
   \code{NULL} an updated object of the same class as \code{object} (see
   section \emph{Value} of \code{\link{predict.georob}}).  The data frame
-  with the point or block kriging predictions is complemented by
+  with the point or block Kriging predictions is complemented by
   \code{lgnpp} with the following new components:
   
   \itemize{
   
-    \item \code{lgn.pred}: the back-transformed kriging predictions of a
+    \item \code{lgn.pred}: the back-transformed Kriging predictions of a
     log-transformed response.
     
     \item \code{lgn.se}: the standard  errors of the
@@ -286,10 +286,10 @@ lgnpp(object, newdata, locations, is.block = FALSE, all.pred = NULL,
   
   \itemize{ 
     
-    \item \code{mean}: the back-transformed block kriging estimate, see
+    \item \code{mean}: the back-transformed block Kriging estimate, see
     \emph{Details}.
       
-    \item \code{se}: the (approximated) block kriging standard error, see
+    \item \code{se}: the (approximated) block Kriging standard error, see
     \emph{Details}.
   }
   
@@ -303,7 +303,7 @@ lgnpp(object, newdata, locations, is.block = FALSE, all.pred = NULL,
   
   Hofer, C., Borer, F., Bono, R., Kayser, A. and Papritz, A. 2013. Predicting
   topsoil heavy metal content of parcels of land: An empirical validation
-  of customary and constrained lognormal block kriging and conditional
+  of customary and constrained lognormal block Kriging and conditional
   simulations. \emph{Geoderma}, \bold{193--194}, 200--212.
 
   Nussbaum, M., Papritz, A., Baltensweiler, A. and Walthert, L. (2012)
@@ -321,7 +321,7 @@ lgnpp(object, newdata, locations, is.block = FALSE, all.pred = NULL,
 \seealso{
   \code{\link{georobIntro}} for a description of the model and a brief summary of the algorithms; 
   \code{\link{georob}} for (robust) fitting of spatial linear models;
-  \code{\link{predict.georob}} for computing robust kriging predictions.
+  \code{\link{predict.georob}} for computing robust Kriging predictions.
 }
 
 \examples{

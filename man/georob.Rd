@@ -22,7 +22,8 @@ georob(formula, data, subset, weights, na.action, model = TRUE,
         "RMgneiting", "RMlgd", "RMmatern", "RMpenta", "RMqexp", 
         "RMspheric", "RMstable", "RMwave", "RMwhittle"), 
     param, fit.param = default.fit.param()[names(param)],
-	aniso = default.aniso(), fit.aniso = default.fit.aniso(),
+	  aniso = default.aniso(), fit.aniso = default.fit.aniso(),
+    variogram.object = NULL,
     tuning.psi = 2, control = control.georob(),
     verbose = 0, ...)
 }
@@ -148,6 +149,35 @@ georob(formula, data, subset, weights, na.action, model = TRUE,
   (\code{TRUE}) and which are kept fixed at their initial values
   (\code{FALSE}) when fitting the model.}
     
+  \item{variogram.object}{an optional list that defines a possibly nested
+  variogram model.  Each component is itself a list with the following
+  components:
+  
+  \itemize{
+  
+      \item{variogram.model}: a mandatory character keyword defining the
+      variogram model, see respective argument above.
+      
+      \item{param}: a mandatory named numeric vector with initial values of
+      the variogram parameters, see respective argument above.
+      
+      \item{fit.param}: an optional named logical vector defining which
+      parameters are adjusted, see respective argument above.
+    
+      \item{aniso}: an optional named numeric vector with initial values
+      for fitting geometrically anisotropic variogram models, see
+      respective argument above.
+      
+      \item{fit.param}: an optional named logical vector defining which
+      anisotropy parameters are adjusted, see respective argument above.
+  
+  } 
+  
+  Note that the arguments \code{variogram.model}, \code{param},
+  \code{fit.param}, \code{aniso} and \code{fit.aniso} are ignored when
+  \code{variogram.object} is passed to \code{georob}. }
+  
+    
   \item{tuning.psi}{positive numeric.  The tuning constant \eqn{c} of the
     \eqn{\psi_c}-function of the robust REML algorithm.}
     
@@ -173,7 +203,7 @@ georob(formula, data, subset, weights, na.action, model = TRUE,
   (\cite{\enc{K혺nsch}{Kuensch} et al., 2011}, \cite{\enc{K혺nsch}{Kuensch}
   et al., in preparation}).  \code{\link{georobIntro}} describes the
   employed model and briefly sketches the robust REML estimation and the
-  robust external drift kriging method.  Here, we describe further details
+  robust external drift Kriging method.  Here, we describe further details
   of \code{georob}.
   
   \subsection{Implemented variograms}{
@@ -373,8 +403,8 @@ georob(formula, data, subset, weights, na.action, model = TRUE,
       \item the inverse relative nugget 
       \eqn{\eta = \sigma_Z^2 / \tau^2} and
       
-      \item the relative spatial nugget 
-      \eqn{\xi = \sigma_{\mathrm{n}}^2/\sigma_Z^2}{\xi = \sigma_n^2 / \sigma_Z^2}.
+      \item the relative auto-correlated signal variance
+      \eqn{\xi = \sigma^2/\sigma_Z^2}{\xi = \sigma^2 / \sigma_Z^2}.
     }
     
     \code{georob} maximizes then a (restricted) \emph{profile
@@ -402,10 +432,10 @@ fit of a spatial linear model.  See
 \references{
   Diggle, P. J. and Ribeiro, P. J. R. (2006) Model-based Geostatistics. Springer.
 
-  \enc{K혺nsch}{Kuensch}, H. R., Papritz, A., Schwierz, C. and Stahel, W. A. (in
+  \enc{K웢sch}{Kuensch}, H. R., Papritz, A., Schwierz, C. and Stahel, W. A. (in
   preparation) Robust Geostatistics.
 
-  \enc{K혺nsch}{Kuensch}, H. R., Papritz, A., Schwierz, C. and Stahel, W. A. (2011) Robust
+  \enc{K웢sch}{Kuensch}, H. R., Papritz, A., Schwierz, C. and Stahel, W. A. (2011) Robust
   estimation of the external drift and the variogram of spatial data.
   Proceedings of the ISI 58th World Statistics Congress of the International
   Statistical Institute.
@@ -414,7 +444,7 @@ fit of a spatial linear model.  See
 
 \author{
    Andreas Papritz \email{andreas.papritz@env.ethz.ch}\cr
-  \url{http://www.step.ethz.ch/people/scientific-staff/andreas-papritz}\cr
+  \url{http://www.step.ethz.ch/people/scientific-staff/andreas-papritz.html}\cr
   with contributions  by Cornelia Schwierz.
 }
 
@@ -424,7 +454,7 @@ fit of a spatial linear model.  See
   \code{\link{plot.georob}} for display of RE(ML) variogram estimates;
   \code{\link{control.georob}} for controlling the behaviour of \code{georob};
   \code{\link{cv.georob}} for assessing the goodness of a fit by \code{georob}; 
-  \code{\link{predict.georob}} for computing robust kriging predictions; and finally
+  \code{\link{predict.georob}} for computing robust Kriging predictions; and finally
   \code{\link{georobModelBuilding}} for stepwise building models of class \code{georob};
   \code{\link{georobMethods}} for further methods for the class \code{georob}.
 }

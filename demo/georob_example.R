@@ -14,9 +14,9 @@ data( meuse.grid )
 
 set.seed( 1 )
 meuse2 <- rbind( meuse, meuse )
-meuse2[1:nrow( meuse ), "zinc"] <- exp( 
-  log( meuse2[1:nrow( meuse ), "zinc"] ) + 
-  rnorm( nrow( meuse ), sd = sqrt( 0.05) ) 
+meuse2[1:nrow(meuse), "zinc"] <- exp( 
+  log( meuse2[1:nrow(meuse), "zinc"] ) + 
+  rnorm( nrow(meuse), sd = sqrt( 0.05) ) 
 )
 
 ## 
@@ -59,21 +59,6 @@ r.logzn.reml2 <- georob(
 summary( r.logzn.reml2 )
 plot( r.logzn.reml2, lag.dist.def = seq( 0, 2000, by = 100 ) )
 
-
-# robust REML Fit, data set with replicated observations
-r.logzn.rob2 <- georob(
-  formula = my.formula,
-  data = meuse2, 
-  locations = ~ x + y,
-  variogram.model = "RMexp",
-  param = c( variance = 0.15, nugget = 0.02, scale = 208, snugget = 0.05 ),
-  fit.param = c( variance = TRUE, nugget = TRUE, scale = TRUE, snugget = TRUE ),
-  tuning.psi = 2,
-  control = control.georob( initial.param = FALSE ),
-  verbose = 2
-)
-summary( r.logzn.rob2 )
-lines( r.logzn.rob2, col = "blue" )
 
 
 ## 
@@ -146,10 +131,10 @@ summary( r.cv.georob.rob )
 # display of measured values vs. cross-validation predictions
 
 # log scale
-with( r.cv.georob.rob$pred, plot( data~pred ) ); abline( 0, 1)
+plot( r.cv.georob.rob, "sc" )
 
 # original scale
-with( r.cv.georob.rob$pred, plot( lgn.data~lgn.pred ) ); abline( 0, 1)
+plot( r.cv.georob.rob, "lgn.sc"); abline( 0, 1)
 
 #  Brier Score
 plot( r.cv.georob.reml, "bs" )
@@ -292,7 +277,7 @@ r.irf0.iso <- georob(pressure ~ 1, data = d.wolfcamp, locations = ~ x + y,
     variogram.model = "RMfbm",
     param = c( variance = 10, nugget = 1500, scale = 1, alpha = 1.5 ),
     fit.param = c( variance = TRUE, nugget = TRUE, scale = FALSE, alpha = TRUE),
-    tuning.psi = 1000)
+    tuning.psi = 1000, verbose = 2)
   
 summary(r.irf0.iso)
 
@@ -303,7 +288,7 @@ r.irf0.aniso <- georob(pressure ~ 1, data = d.wolfcamp, locations = ~ x + y,
     fit.param = c( variance = TRUE, nugget = TRUE, scale = FALSE, alpha = TRUE),
     aniso = c( f1 = 0.51, f2 = 1, omega = 148, phi = 90, zeta = 0 ),
     fit.aniso = c( f1 = TRUE, f2 = FALSE, omega = TRUE, phi = FALSE, zeta = FALSE ), 
-    tuning.psi = 1000)
+    tuning.psi = 1000, verbose = 2)
 summary(r.irf0.aniso)
 
 plot(r.irf0.iso, lag.dist.def = seq(0, 200, by = 7.5))
@@ -329,7 +314,7 @@ r.sv.iso <- sample.variogram(wolfcamp$data,
 r.irf0.iso <- fit.variogram.model(r.sv.iso, variogram.model = "RMfbm",
     param = c(variance = 100, nugget = 1000, scale = 1., alpha = 1),
     fit.param = c( variance = TRUE, nugget = TRUE, scale = FALSE, alpha = TRUE ),
-    method = "Nelder-Mead", hessian = FALSE, 
+    method = "Nelder-Mead", hessian = T, 
     control = list(maxit = 5000), verbose = 0)  
 summary(r.irf0.iso, correlation = TRUE)
 

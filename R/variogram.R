@@ -29,7 +29,7 @@ sample.variogram.georob <- function(
   
   ## preparing response vector and matrix of coordinates
   
-  x <- residuals( object, level = 0 )
+  x <- residuals( object, level = 0L )
   locations <- object[["locations.objects"]][["coordinates"]]
   
   ##computing sample.variogram
@@ -76,7 +76,7 @@ sample.variogram.formula <- function(
   
   extended.formula <- update( 
     object,
-    paste( as.character( object )[2], as.character( locations )[2], sep = " ~ " )
+    paste( as.character( object )[2L], as.character( locations )[2L], sep = " ~ " )
   )
   
   ## setting-up model frame
@@ -149,30 +149,30 @@ sample.variogram.default <-
   
   # pad missing coordinates
   
-  if( ( ndim <- NCOL( locations ) ) < 3 ){
+  if( ( ndim <- NCOL( locations ) ) < 3L ){
     locations <- cbind( 
       locations, 
-      matrix( 0., nrow = NROW( locations ), ncol = 3 - NCOL( locations ) )
+      matrix( 0., nrow = NROW( locations ), ncol = 3L - NCOL( locations ) )
     )
   }
   colnames( locations ) <- c( "x", "y", "z" )
   
   # compute lag vectors for all pairs of coordinates
   
-  indices.pairs <- combn( NROW( locations ), 2 )
-  lag.vectors <- locations[ indices.pairs[2,], ] - locations[ indices.pairs[1,], ]
+  indices.pairs <- combn( NROW( locations ), 2L )
+  lag.vectors <- locations[ indices.pairs[2L,], ] - locations[ indices.pairs[1L,], ]
   
   # reflect lag vectors onto half circle
   
-  neg.x <- lag.vectors[, 1] < 0.
+  neg.x <- lag.vectors[, 1L] < 0.
   
-  lag.vectors[neg.x, 1] <- -lag.vectors[neg.x, 1]
-  lag.vectors[neg.x, 2] <- -lag.vectors[neg.x, 2]
-  lag.vectors[neg.x, 3] <- -lag.vectors[neg.x, 3]
+  lag.vectors[neg.x, 1L] <- -lag.vectors[neg.x, 1L]
+  lag.vectors[neg.x, 2L] <- -lag.vectors[neg.x, 2L]
+  lag.vectors[neg.x, 3L] <- -lag.vectors[neg.x, 3L]
   
   # compute pairwise differences of responses
   
-  t.diff <- object[indices.pairs[2,]] - object[indices.pairs[1,]]
+  t.diff <- object[indices.pairs[2L,]] - object[indices.pairs[1L,]]
   
   # compute Euclidean distances
   
@@ -180,13 +180,13 @@ sample.variogram.default <-
   
   # compute angles in xy- and xz-planes
   
-  xy.angle <- -( atan2( lag.vectors[,2], lag.vectors[,1] ) - pi/2. ) / d2r
-  xz.angle <- -( atan2( lag.vectors[,3], lag.vectors[,1] ) - pi/2. ) / d2r
+  xy.angle <- -( atan2( lag.vectors[,2L], lag.vectors[,1L] ) - pi/2. ) / d2r
+  xz.angle <- -( atan2( lag.vectors[,3L], lag.vectors[,1L] ) - pi/2. ) / d2r
 
   # define lag class upper limits
   
-  if( length( lag.dist.def ) == 1 ) {
-    t.lag.limits <- seq( 0, max( c( t.dist ) ) + lag.dist.def, by = lag.dist.def )
+  if( length( lag.dist.def ) == 1L ) {
+    t.lag.limits <- seq( 0., max( c( t.dist ) ) + lag.dist.def, by = lag.dist.def )
   } else {
     t.lag.limits <- lag.dist.def
   }
@@ -204,22 +204,22 @@ sample.variogram.default <-
   
   n <- length( xy.angle.def )
   d <- diff( xy.angle.def )
-  xy.angle.mid.class <- 0.5 * ( xy.angle.def[-1] + xy.angle.def[-n] )
+  xy.angle.mid.class <- 0.5 * ( xy.angle.def[-1L] + xy.angle.def[-n] )
   if( 
-    n > 2 &&
-    identical( xy.angle.def[1], 0. ) && 
+    n > 2L &&
+    identical( xy.angle.def[1L], 0. ) && 
     identical( xy.angle.def[n], 180. ) &&
-    !all( d[1] == d[-1] )
+    !all( d[1L] == d[-1L] )
   ){
     
-    nb <- 2
+    nb <- 2L
     right <- TRUE
     include.lowest <- TRUE
-    dig.lab <- 3
-    breaks <- c( -diff( xy.angle.def[(n-1):n] ), xy.angle.def[2] )
+    dig.lab <- 3L
+    breaks <- c( -diff( xy.angle.def[(n-1L):n] ), xy.angle.def[2L] )
     
-    for (dig in dig.lab:max(12, dig.lab)) {
-      ch.br <- formatC(breaks, digits = dig, width = 1)
+    for (dig in dig.lab:max(12L, dig.lab)) {
+      ch.br <- formatC(breaks, digits = dig, width = 1L)
       if (ok <- all(ch.br[-1L] != ch.br[-nb])) 
       break
     }
@@ -246,29 +246,29 @@ sample.variogram.default <-
     }
     sel <- as.integer( xy.angle.class ) == nlevels( xy.angle.class )
     xy.angle[sel] <- xy.angle[sel] - 180.
-    levels( xy.angle.class )[c( 1, nlevels( xy.angle.class )) ] <- labels
-    xy.angle.mid.class[1] <- xy.angle.mid.class[1] - (180. - xy.angle.mid.class[n-1])
-    xy.angle.mid.class <- xy.angle.mid.class[-(n-1)]
+    levels( xy.angle.class )[c( 1L, nlevels( xy.angle.class )) ] <- labels
+    xy.angle.mid.class[1L] <- xy.angle.mid.class[1L] - (180. - xy.angle.mid.class[n-1L])
+    xy.angle.mid.class <- xy.angle.mid.class[-(n-1L)]
   }
   
   # xz-plane
   
   n <- length(xz.angle.def)
   d <- diff( xz.angle.def )
-  xz.angle.mid.class <- 0.5 * ( xz.angle.def[-1] + xz.angle.def[-n] )
+  xz.angle.mid.class <- 0.5 * ( xz.angle.def[-1L] + xz.angle.def[-n] )
   if( 
-    n > 2 &&
-    identical( xz.angle.def[1], 0. ) && 
+    n > 2L &&
+    identical( xz.angle.def[1L], 0. ) && 
     identical( xz.angle.def[n], 180. ) &&
-    !all( d[1] == d[-1] )
+    !all( d[1L] == d[-1L] )
   ){
     
-    nb <- 2
+    nb <- 2L
     right <- TRUE
     include.lowest <- TRUE
-    dig.lab <- 3
-    breaks <- c( -diff( xz.angle.def[(n-1):n] ), xz.angle.def[2] )
-    for (dig in dig.lab:max(12, dig.lab)) {
+    dig.lab <- 3L
+    breaks <- c( -diff( xz.angle.def[(n-1L):n] ), xz.angle.def[2L] )
+    for (dig in dig.lab:max(12L, dig.lab)) {
       ch.br <- formatC(breaks, digits = dig, width = 1)
       if (ok <- all(ch.br[-1L] != ch.br[-nb])) 
       break
@@ -296,9 +296,9 @@ sample.variogram.default <-
     }
     sel <- as.integer( xz.angle.class ) == nlevels( xz.angle.class )
     xz.angle[sel] <- xz.angle[sel] - 180.
-    levels( xz.angle.class )[c( 1, nlevels( xz.angle.class )) ] <- labels
-    xz.angle.mid.class[1] <- xz.angle.mid.class[1] - (180. - xz.angle.mid.class[n-1])
-    xz.angle.mid.class <- xz.angle.mid.class[-(n-1)]
+    levels( xz.angle.class )[c( 1L, nlevels( xz.angle.class )) ] <- labels
+    xz.angle.mid.class[1L] <- xz.angle.mid.class[1L] - (180. - xz.angle.mid.class[n-1L])
+    xz.angle.mid.class <- xz.angle.mid.class[-(n-1L)]
   }
   
   t.classes <- list( t.lag.class, xy.angle.class, xz.angle.class )
@@ -349,7 +349,7 @@ sample.variogram.default <-
       t.gamma <- as.vector( tapply( 
           t.diff, 
           t.classes, 
-          mad, center = 0 
+          mad, center = 0. 
         ))
       
     } else {
@@ -383,7 +383,7 @@ sample.variogram.default <-
   
   # collect results
   
-  t.sel <- t.lag.npairs > 0 & lag.mean <= max.lag
+  t.sel <- t.lag.npairs > 0L & lag.mean <= max.lag
   r.result <- data.frame(
     lag.dist = lag.mean[ t.sel],
     xy.angle = factor( xy.angle.centre[ t.sel ], levels = levels( xy.angle.class ) ),
@@ -482,9 +482,10 @@ plot.sample.variogram <-
     x,
     type = "p", add = FALSE, 
     xlim = c( 0., max( x[["lag.dist"]] ) ),
-    ylim = c( 0, 1.1 * max( x[["gamma"]] ) ),
+    ylim = c( 0., 1.1 * max( x[["gamma"]] ) ),
     col,
     pch,
+    lty,
     cex = 0.8,
     xlab = "lag distance", ylab = "semivariance",
     annotate.npairs = FALSE,
@@ -501,6 +502,7 @@ plot.sample.variogram <-
   ## 2012-12-21 AP correction for using col and pch
   ## 2013-05-12 AP correction for using ...
   ## 2013-06-12 AP substituting [["x"]] for $x in all lists
+  ## 2016-08-24 AP new argument lty
   
   if( !add ) plot( 
     gamma ~ lag.dist, x, type = "n",
@@ -508,18 +510,19 @@ plot.sample.variogram <-
   )
   
   if( missing( col ) ){
-    col <- 1:nlevels( x[["xy.angle"]] )
+    col <- 1L:nlevels( x[["xy.angle"]] )
   } else if( length( col ) < nlevels( x[["xy.angle"]] ) ) stop(
     "number of colors less than number of directions in x-y-plane for which semivariances were computed"
   )
   if( missing( pch ) ){
-    pch <- 1:nlevels( x[["xz.angle"]] )
+    pch <- 1L:nlevels( x[["xz.angle"]] )
   } else if( length( pch ) < nlevels( x[["xz.angle"]] ) ) stop(
     "number of colors less than number of directions in x-z-plane for which semivariances were computed"
   )
+  if( missing( lty ) ) lty <- "solid"
   
   tapply( 
-    1:nrow( x ),
+    1L:NROW( x ),
     list( x[["xy.angle"]], x[["xz.angle"]] ),
     function( i, x, type, col, pch, cex ){
       points( 
@@ -527,7 +530,7 @@ plot.sample.variogram <-
         type = type,
         col = col[as.numeric(x[i, "xy.angle"])],
         pch = pch[as.numeric(x[i, "xz.angle"])], 
-        cex = cex
+        lty = lty, cex = cex
       )
       
     },
@@ -545,16 +548,16 @@ plot.sample.variogram <-
     legend(
       x = legend.pos, bty = "n", 
       col = c( 
-        1:nlevels( x[["xy.angle"]] ), 
-        if( nlevels( x[["xz.angle"]] ) > 1 ) rep( 1, nlevels( x[["xz.angle"]] ) ) 
+        1L:nlevels( x[["xy.angle"]] ), 
+        if( nlevels( x[["xz.angle"]] ) > 1L ) rep( 1L, nlevels( x[["xz.angle"]] ) ) 
       ),
       pch = c( 
-        rep( 1, nlevels( x[["xy.angle"]] ) ), 
-        if( nlevels( x[["xz.angle"]] ) > 1 ) 1:nlevels( x[["xz.angle"]] ) 
+        rep( 1L, nlevels( x[["xy.angle"]] ) ), 
+        if( nlevels( x[["xz.angle"]] ) > 1L ) 1L:nlevels( x[["xz.angle"]] ) 
       ),
       legend = c( 
         paste( "xy.angle:", levels( x[["xy.angle"]] ) ), 
-        if( nlevels( x[["xz.angle"]] ) > 1 ) paste( "xz.angle:", levels( x[["xz.angle"]] ) )
+        if( nlevels( x[["xz.angle"]] ) > 1L ) paste( "xz.angle:", levels( x[["xz.angle"]] ) )
       ),
       pt.cex = cex
     )
@@ -577,7 +580,8 @@ fit.variogram.model <-
       "RMwave", "RMwhittle"
     ), 
     param, fit.param = default.fit.param()[names(param)],
-	aniso = default.aniso(), fit.aniso = default.fit.aniso(),
+	  aniso = default.aniso(), fit.aniso = default.fit.aniso(),
+    variogram.object = NULL,
     max.lag = max( sv[["lag.dist"]] ),
     min.npairs = 30,
     weighting.method = c( "cressie", "equal", "npairs" ),
@@ -596,118 +600,242 @@ fit.variogram.model <-
   ## 2015-04-07 AP changes for fitting anisotropic variograms
   ## 2015-11-27 AP checking mandatory arguments, issuing warnings
   ## 2016-02-08 AP correcting error in setting default values for fit.param
+  ## 2016-08-18 AP changes for nested variogram models
   
   ## auxiliary function called by optim to compute objective function
   
   f.aux <- 
     function( 
-      adjustable.param, envir, variogram.model, fixed.param, param.name, aniso.name,
-      isotropic, param.tf, bwd.tf, lag.vectors, gamma, npairs, 
+      adjustable.param.aniso, 
+      envir, 
+      fixed.param.aniso, name.param.aniso, tf.param.aniso,
+      bwd.tf, lag.vectors, gamma, npairs, 
       weighting.method, d2r, verbose
     )
   {
     
-    ## transform variogram and anisotropy parameters back to original scale
+    ## load variogram.item object
     
-    param <- c( adjustable.param, fixed.param )[param.name]
+    variogram.item <- get( "variogram.item", pos = as.environment( envir ) )
     
-    param <- sapply(
-      param.name,
+    #   print(str(variogram.item[c("variogram.object", "eta", "xi")]))
+    
+    ##  transform variogram parameters back to original scale
+    
+    param.aniso <- c( adjustable.param.aniso, fixed.param.aniso )[name.param.aniso]
+    
+    param.aniso <- sapply(
+      name.param.aniso,
       function( x, bwd.tf, param.tf, param ) bwd.tf[[param.tf[x]]]( param[x] ),
       bwd.tf = bwd.tf,
-      param.tf = param.tf,
-      param = param
+      param.tf = tf.param.aniso,
+      param = param.aniso
     )
-    names( param ) <- param.name
+    names( param.aniso ) <- name.param.aniso
     
-    aniso <- c( adjustable.param, fixed.param )[aniso.name]
+    ## correct parameters names and determine model component
     
-    aniso <- sapply(
-      aniso.name,
-      function( x, bwd.tf, param.tf, param ) bwd.tf[[param.tf[x]]]( param[x] ),
-      bwd.tf = bwd.tf,
-      param.tf = param.tf,
-      param = aniso
+    tmp <- strsplit( names(param.aniso), control.georob()[["sepstr"]], fixed = TRUE )
+    
+    name.param.aniso <- names( param.aniso ) <- names( tf.param.aniso ) <- sapply(
+      tmp, function(x) x[1L]
     )
-    names( aniso ) <- aniso.name
+    
+    cmp <- sapply( tmp, function(x) as.integer(x[2L]) )
+    
+    ## build temporary variogram.object with new parameter values
+    
+    variogram.object <- tapply(
+      param.aniso,
+      factor( cmp ),
+      function( x ) list(
+        param = x[-((length(x)-4L):length(x))],
+        aniso = x[((length(x)-4L):length(x))]
+      ), simplify = FALSE
+    )
+    
+    variogram.object <- lapply(
+      1L:length(variogram.object),
+      function( i, x, variogram.item ){
+        c(
+          variogram.item[["variogram.object"]][[i]][c("variogram.model", "isotropic")],
+          x[[i]]
+        )
+      }, x = variogram.object, variogram.item = variogram.item
+    )
+    
+    ## check whether variogram parameters are within reasonable bounds and
+    ## return an error otherwise
+    
+    if( length( param.aniso ) && any( param.aniso > control.georob()[["safe.param"]] ) ){
+      
+      lapply(
+        1L:length(variogram.object),
+        function( i, x, d2r ){
+          
+          x <- x[[i]]
+          
+          t.param <- x[["param"]]
+          
+          if( !x[["isotropic"]] ) t.param <- c(
+            t.param, x[["aniso"]] / c( rep( 1., 2L), rep( d2r, 3L ) )
+          )
+          cat( "\n\n                      ",
+            format( names( t.param ), width = 14L, justify = "right" ),
+            "\n", sep = ""
+          )
+          cat( "  Variogram parameters",
+            format(
+              signif( t.param, digits = 7L ),
+              scientific = TRUE, width = 14L
+            ), "\n" , sep = ""
+          )
+          
+        }, x = variogram.object, d2r = d2r
+      )
+      
+      return( NA_real_ )
+      
+    }
     
     ## check whether extra variogram parameters are within allowed bounds and
     ## return an error otherwise
     
-    ep <- param.names( model = variogram.model )
-    param.bounds <- param.bounds( variogram.model, NCOL( lag.vectors ) )
-    ep.param <- param[ep]
-    
-    if( !is.null( param.bounds ) ) t.bla <- sapply(
-      1:length( ep.param ),
-      function( i, param, bounds ){
-        if( param[i] < bounds[[i]][1] || param[i] > bounds[[i]][2] ) cat(
-          "value of parameter '", names( param[i] ), "' outside of allowed range", sep = "" 
+    lapply(
+      1L:length(variogram.object),
+      function( i, x, lag.vectors ){
+        x <- x[[i]]
+        ep <- param.names( model = x[["variogram.model"]] )
+        param.bounds <- param.bounds( x[["variogram.model"]], attr( lag.vectors, "ndim.coords" ) )
+        ep.param <- x[["param"]][ep]
+        if( !is.null( param.bounds ) ) t.bla <- sapply(
+          1L:length( ep.param ),
+          function( i, param, bounds ){
+            if( param[i] < bounds[[i]][1L] || param[i] > bounds[[i]][2L] ) cat(
+              "value of parameter '", names( param[i] ), "' outside of allowed range\n\n", sep = ""
+            )
+            return( NA_real_ )
+          },
+          param = ep.param,
+          bounds = param.bounds
         )
-        return( NA_real_ )
-      }, 
-      param = ep.param,
-      bounds = param.bounds
+      }, x = variogram.object, lag.vectors = lag.vectors
     )
     
-    ## update param.aniso.item
+    ##  update variogram and parameters
     
-    param.aniso.item <- get( "param.aniso.item", pos = as.environment( envir ) )
-    
-    param.aniso.item[["param"]] <- param
-    param.aniso.item[["aniso"]][["aniso"]] <- aniso
-    param.aniso.item[["aniso"]][["sincos"]] <- list(
-      co = unname( cos( aniso["omega"] ) ),
-      so = unname( sin( aniso["omega"] ) ),
-      cp = unname( cos( aniso["phi"] ) ),
-      sp = unname( sin( aniso["phi"] ) ),
-      cz = unname( cos( aniso["zeta"] ) ),
-      sz = unname( sin( aniso["zeta"] ) )
-    )
-    param.aniso.item[["aniso"]][["rotmat"]] <- with( 
-      param.aniso.item[["aniso"]][["sincos"]],
-      rbind(
-        c(             sp*so,             sp*co,       cp ),
-        c( -cz*co + sz*cp*so,  co*sz*cp + cz*so,   -sp*sz ),
-        c( -co*sz - cz*cp*so, -cz*co*cp + sz*so,    cz*sp )
-      )
-    )
-    param.aniso.item[["aniso"]][["sclmat"]] <- with(
-      param.aniso.item[["aniso"]],
-      1. / c( 1., aniso[ c("f1", "f2") ] )
-    )
-    
-    ## output parameters
-    
-    t.param <- param
-    if( !isotropic ) t.param <- c( 
-      t.param, param.aniso.item[["aniso"]][["aniso"]] / c( rep( 1., 2 ), rep( d2r, 3 ) )
-    )
-    if( verbose > 0 ) {
-      cat(
-        format(
-          signif( t.param[names( adjustable.param)], digits = 7 ),
-          scientific = TRUE, width = 14 ),
-        sep = ""
-      )
-    }
-    
-    ## compute the semivariance
+    variogram.item[["variogram.object"]] <- lapply(
+      1L:length(variogram.object),
+      function( i, x, vo, n ){
+        vo <- vo[[i]]
+        vo[["param"]] <- x[[i]][["param"]]
+        vo[["aniso"]] <- aniso <- x[[i]][["aniso"]]
+        vo[["sincos"]] <- list(
+          co = unname( cos( aniso["omega"] ) ),
+          so = unname( sin( aniso["omega"] ) ),
+          cp = unname( cos( aniso["phi"] ) ),
+          sp = unname( sin( aniso["phi"] ) ),
+          cz = unname( cos( aniso["zeta"] ) ),
+          sz = unname( sin( aniso["zeta"] ) )
+        )
         
-    t.model <- f.aux.gamma(
-      lag.vectors, 
-      variogram.model, param, param.aniso.item[["aniso"]] 
+        if( n <= 3L ){
+          
+          vo[["rotmat"]] <- with(
+            vo[["sincos"]],
+            rbind(
+              c(             sp*so,             sp*co,       cp ),
+              c( -cz*co + sz*cp*so,  co*sz*cp + cz*so,   -sp*sz ),
+              c( -co*sz - cz*cp*so, -cz*co*cp + sz*so,    cz*sp )
+            )[ 1L:n, 1L:n, drop = FALSE ]
+          )
+          
+          vo[["sclmat"]] <- 1. / c( 1., aniso[ c("f1", "f2") ] )[ 1L:n ]
+          
+        } else {  # only isotropic case for n > 3
+          
+          vo[["rotmat"]] <- diag( n )
+          vo[["sclmat"]] <- rep( 1., n )
+          
+        }
+        
+        vo
+      }, 
+      x = variogram.object, vo = variogram.item[["variogram.object"]], 
+      n = attr( lag.vectors, "ndim.coords" )
     )
     
-    if( identical( class( t.model ), "try-error" ) || any( is.na( t.model ) ) ){
-      warning( "there were errors: call function with argument 'verbose' > 1" )
-      if( verbose > 1 ) cat( "\nan error occurred when computing semivariances\n" )
-      return( NA )
+    ##  print updated variogram parameters
+    
+    if( verbose > 1. ) {
+      
+      lapply(
+        1L:length(variogram.object),
+        function( i, x, d2r, reparam ){
+          
+          x <- x[[i]]
+          
+          t.param <- x[["param"]]
+                    
+          if( !x[["isotropic"]] ) t.param <- c(
+            t.param, x[["aniso"]] / c( rep( 1., 2L), rep( d2r, 3L ) )
+          )
+          tmp <- names( t.param )
+          if( identical( i, length(variogram.object) ) ) tmp <- c( tmp, "SSE" )
+          cat( "\n\n                      ",
+            format( 
+              tmp, 
+              width = 14L, justify = "right" ),
+            "\n", sep = ""
+          )
+          cat( "  Variogram parameters",
+            format(
+              signif( t.param, digits = 7L ),
+              scientific = TRUE, width = 14L
+            ), 
+            if( identical( i, length(variogram.object) ) ) "" else "\n" , sep = ""
+          )
+          
+        }, x = variogram.object, d2r = d2r, reparam = FALSE
+      )
+      
     }
     
+    ## compute the generalized covariance of signal
+    
+    Valpha <- f.aux.gcr( 
+      lag.vectors = lag.vectors,
+      variogram.object = variogram.item[["variogram.object"]], symmetric = FALSE,
+      control.pcmp = control.pcmp(max.ncores=1L), verbose = verbose
+    )
+    
+    if( any( sapply( Valpha, function(x) x[["error"]] ) ) ){
+      warning( "there were errors: call function with argument 'verbose' > 1" )
+      if( verbose > 1. ) cat( "\nan error occurred when computing semivariances\n" )
+      return( NA_real_ )
+    }
+    
+    ## compute semivariance of signal and sum up
+    
+    t.model <- rowSums( sapply(
+        1L:length(Valpha), 
+        function( i, x, variogram.object ){
+          x <- Valpha[[i]]
+          -( x[["Valpha"]] - x[["gcr.constant"]] ) * variogram.object[[i]][["param"]]["variance"]
+        }, x = Valpha, variogram.object = variogram.item[["variogram.object"]]
+      ))
+    
+    ## add nugget
+    
+    sel <- sqrt( rowSums( lag.vectors^2 ) ) > 0.
+    t.model[sel] <- t.model[sel] + sum( 
+      variogram.item[["variogram.object"]][[1L]][["param"]][c("nugget", "snugget")] 
+    )
+    
+        
     ## compute weights
     
-    t.weights <- rep( 1., nrow( lag.vectors ) )
+    t.weights <- rep( 1., NROW( lag.vectors ) )
     if( weighting.method != "equal" ) t.weights <- npairs
     if( weighting.method == "cressie" ) t.weights <- t.weights / t.model^2
     
@@ -716,22 +844,22 @@ fit.variogram.model <-
     t.res <- gamma - t.model
     sse <- sum( t.weights * t.res^2 )
     
-    if( verbose > 0 ) cat(
+    if( verbose > 0. ) cat(
       format(
-        signif( sse, digits = 7 ),
-        scientific = TRUE, width = 14
+        signif( sse, digits = 7L ),
+        scientific = TRUE, width = 14L
       ), "\n", sep = ""
     )
     
     ## store copies of model semivariance, residuals and weights
     
-    param.aniso.item[["fitted"]] <- t.model
-    param.aniso.item[["residuals"]] <- t.res
-    param.aniso.item[["weights"]] <- t.weights
+    variogram.item[["fitted"]] <- t.model
+    variogram.item[["residuals"]] <- t.res
+    variogram.item[["weights"]] <- t.weights
     
-    ## store param.aniso.item
+    ## store variogram.item
     
-    assign( "param.aniso.item", param.aniso.item, pos = as.environment( envir ) )
+    assign( "variogram.item", variogram.item, pos = as.environment( envir ) )
     
     return( sse )
     
@@ -741,7 +869,7 @@ fit.variogram.model <-
   
   ## check whether all mandatory arguments have been provided
   
-  if( missing( sv ) || missing( param ) ) stop( 
+  if( missing( sv ) ) stop( 
     "some mandatory arguments are missing" 
   )
   
@@ -751,324 +879,508 @@ fit.variogram.model <-
   
   cl <- match.call()
 
-  variogram.model <- match.arg( variogram.model )  
   weighting.method = match.arg( weighting.method )
   
-  ## match names of param, aniso, fit.param, fit.aniso
+  ## setup or check contents of variogram.object
   
-  tmp <- names( param )
-  tmp <- sapply(tmp, function(x, choices){
-      match.arg(x, choices)
-    },
-    choices = names( default.fit.param() )
+  if( is.null( variogram.object ) ){
+    
+    ## match variogram model
+    
+    variogram.model <- match.arg( variogram.model )  
+        
+    ## match names of param, aniso, fit.param, fit.aniso
+    ## !! CARE: code works only if fit.param has not been used before (lazy evaluation)
+  
+    if( !missing( param ) ){
+      tmp <- names( param )
+      tmp <- sapply(tmp, function(x, choices){
+          match.arg(x, choices)
+        },
+        choices = names( default.fit.param() )
+      )
+      names( param ) <- tmp
+    }
+    
+    if( !missing( fit.param ) ){
+      tmp <- names( fit.param )
+      tmp <- sapply(tmp, function(x, choices){
+          match.arg(x, choices)
+        },
+        choices = names( default.fit.param() )
+      )
+      names( fit.param ) <- tmp
+      fit.param <- fit.param[names( fit.param ) %in% names( param )]
+    }
+    
+    if( !missing( aniso ) ){
+      tmp <- names( aniso )
+      tmp <- sapply(tmp, function(x, choices){
+          match.arg(x, choices)
+        },
+        choices = names( default.aniso() )
+      )
+      names( aniso ) <- tmp
+    }
+    
+    if( !missing( fit.aniso ) ){
+      tmp <- names( fit.aniso )
+      tmp <- sapply(tmp, function(x, choices){
+          match.arg(x, choices)
+        },
+        choices = names( default.aniso() )
+      )
+      names( fit.aniso ) <- tmp
+    }
+    
+    ## create variogram.object
+    
+    variogram.object <- list(
+      list( 
+        variogram.model = variogram.model,
+        param = param, fit.param = fit.param,
+        aniso = aniso, fit.aniso = fit.aniso
+      )
+    )
+  
+  } else {
+    
+    if( !missing( param ) ) cat( 
+      "\n information on initial parameters in 'param' ignored because 'variogram.object' specified\n\n"
+    )
+    if( !missing( fit.param ) ) cat( 
+      "\n information on initial parameters in 'fit.param' ignored because 'variogram.object' specified\n\n"
+    )
+    if( !missing( aniso ) ) cat( 
+      "\n information on initial parameters in 'aniso' ignored because 'variogram.object' specified\n\n"
+    )
+    if( !missing( fit.aniso ) ) cat( 
+      "\n information on initial parameters in 'fit.aniso' ignored because 'variogram.object' specified\n\n"
+    )
+    
+    variogram.object <- lapply(
+      variogram.object,
+      function( y, vm ){
+            
+        ## match names of components
+        
+        tmp <- names( y )
+        tmp <- sapply(tmp, function(x, choices){
+            match.arg(x, choices)
+          },
+          choices = c( "variogram.model", "param", "fit.param", "aniso", "fit.aniso" )
+        )
+        names( y ) <- tmp
+        
+        ## check whether component variogram.model and param are present
+        
+        if( is.null( y[["variogram.model"]] ) ) stop(
+          "'variogram.model' missing in some component of variogram.object"       
+        )
+        if( is.null( y[["param"]] ) ) stop(
+          "'param' missing in some component of variogram.object"       
+        )
+        
+        ## match variogram.model
+        
+        y[["variogram.model"]] <- match.arg( y[["variogram.model"]], vm )
+        
+                
+        ## match names of param, aniso, fit.param, fit.aniso and set
+        ## default values if missing
+        
+        tmp <- names( y[["param"]] )
+        tmp <- sapply(tmp, function(x, choices){
+            match.arg(x, choices)
+          },
+          choices = names( default.fit.param() )
+        )
+        names( y[["param"]] ) <- tmp
+        
+        if( is.null( y[["fit.param"]] ) ){
+          y[["fit.param"]] <- default.fit.param()
+        } else {
+          tmp <- names( y[["fit.param"]] )
+          tmp <- sapply(tmp, function(x, choices){
+              match.arg(x, choices)
+            },
+            choices = names( default.fit.param() )
+          )
+          names( y[["fit.param"]] ) <- tmp
+        }
+        y[["fit.param"]] <- y[["fit.param"]][names(y[["fit.param"]] ) %in% names( y[["param"]] )]
+        
+        if( is.null( y[["aniso"]] ) ){
+          y[["aniso"]] <- default.aniso()
+        } else {
+          tmp <- names( y[["aniso"]] )
+          tmp <- sapply(tmp, function(x, choices){
+              match.arg(x, choices)
+            },
+            choices = names( default.aniso() )
+          )
+          names( y[["aniso"]] ) <- tmp
+        }
+        
+        if( is.null( y[["fit.aniso"]] ) ){
+          y[["fit.aniso"]] <- default.fit.aniso()
+        } else {
+          tmp <- names( y[["fit.aniso"]] )
+          tmp <- sapply(tmp, function(x, choices){
+              match.arg(x, choices)
+            },
+            choices = names( default.aniso() )
+          )
+          names( y[["fit.aniso"]] ) <- tmp
+        }
+        y
+      }, vm = variogram.model
+    )
+  }
+  
+  ## process contents of variogram.object
+
+   variogram.object <- lapply(
+    variogram.object,
+    function( x, TT, d2r, n ){
+
+      ## create local copies of objects
+
+      variogram.model <- x[["variogram.model"]]
+      param <- x[["param"]]
+      fit.param <- x[["fit.param"]]
+      aniso <- x[["aniso"]]
+      fit.aniso <- x[["fit.aniso"]]
+
+      ##  check whether fitting of chosen variogram model is implemented and
+      ##  return names of extra parameters (if any)
+
+      ep <- param.names( model = variogram.model )
+
+      ## check names of initial variogram parameters and flags for fitting
+
+      param.name <- c( "variance", "snugget", "nugget", "scale", ep )
+
+      if( !all( param.name[-(2L:3L)]  %in% names( param ) ) ) stop(
+        "no initial values provided for parameter(s) '",
+        paste( (param.name[-(2L:3L)])[ !(param.name[-(2L:3L)]) %in% names( param ) ], collapse= ", "), "'"
+      )
+
+      if( !all( param.name[-(2L:3L)]  %in% names( fit.param ) ) ) stop(
+        "no fitting flagss provided for parameter(s) '",
+        paste( (param.name[-(2L:3L)])[ !(param.name[-(2L:3L)]) %in% names( fit.param ) ], collapse= ", "), "'"
+      )
+
+      if( length( param ) != length( fit.param ) ||
+        !all( names( fit.param ) %in% names( param ) )
+      ) stop(
+        "names of variogram parameters and control flags for fitting do not match"
+      )
+
+      if( !all( is.numeric( param ) ) ) stop(
+        "initial values of variogram parameters must be of mode 'numeric'"
+      )
+      if( !all( is.logical( fit.param ) ) ) stop(
+        "fitting control flags of variogram parameters must be of mode 'logical'"
+      )
+
+      ##  rearrange initial variogram parameters
+
+      param <- param[param.name[param.name %in% names(param)]]
+      fit.param <- fit.param[param.name[param.name %in% names(param)]]
+
+      ## check whether intitial values of variogram parameters are valid
+
+      if( param["variance"] < 0. ) stop("initial value of 'variance' must be >= 0" )
+      if( !is.na(param["snugget"]) && param["snugget"] < 0. )  stop("initial value of 'snugget' must be >= 0" )
+      if( !is.na(param["nugget"]) && param["nugget"] <= 0. ) stop("initial value of 'nugget' must be > 0" )
+      if( param["scale"] < 0. ) stop("initial value of 'scale' must be >= 0" )
+
+      param.bounds <- param.bounds( variogram.model, n )
+      ep.param <- param[ep]
+
+      if( !is.null( param.bounds ) ) t.bla <- sapply(
+        1L:length( ep.param ),
+        function( i, param, bounds ){
+          if( param[i] < bounds[[i]][1L] || param[i] > bounds[[i]][2L] ) stop(
+            "initial value of parameter '", names( param[i] ), "' outside of allowed range"
+          )
+        },
+        param = ep.param,
+        bounds = param.bounds
+      )
+
+      ##  rearrange and check flags controlling variogram parameter fitting
+
+      if(
+        variogram.model %in% (t.models <- c( "RMfbm" ) ) && all(
+          fit.param[c( "variance", "scale" ) ]
+        )
+
+      ) stop(
+        "'variance', 'scale' cannot be fitted simultaneously for variograms ",
+        paste( t.models, collapse = " or "), "; \n  'scale' parameter must be fixed"
+      )
+
+      ## check names of initial anisotropy parameters and flags for fitting
+
+      aniso.name <- c( "f1", "f2", "omega", "phi", "zeta" )
+
+      #       if( !all( names( aniso ) %in% aniso.name ) ) stop(
+      #         "error in names of initial values of anisotropy parameters"
+      #       )
+
+      if( !all( aniso.name  %in% names( aniso ) ) ) stop(
+        "no initial values provided for parameter(s) '",
+        aniso.name[ !aniso.name %in% names( aniso ) ], "'"
+      )
+
+      if( length( aniso ) != length( fit.aniso ) ||
+        !all( names( fit.aniso ) %in% names( aniso ) )
+      ) stop(
+        "names of anisotropy parameters and control flags for fitting do not match"
+      )
+
+      if( !all( is.numeric( aniso ) ) ) stop(
+        "initial values of anisotropy parameters must be of mode 'numeric'"
+      )
+      if( !all( is.logical( fit.aniso ) ) ) stop(
+        "fitting control flags of anisotropy parameters must be of mode 'logical'"
+      )
+
+      ##  rearrange initial anisotropy parameters
+
+      aniso <- aniso[aniso.name]
+      fit.aniso <- fit.aniso[aniso.name]
+
+      ## check whether intitial values of anisotropy parameters are valid
+
+      if( aniso["f1"] < 0. ||  aniso["f1"] > 1. ) stop(
+        "initial value of parameter 'f1' must be in [0, 1]"
+      )
+      if( aniso["f2"] < 0. ||  aniso["f1"] > 1. ) stop(
+        "initial value of parameter 'f2' must be in [0, 1]"
+      )
+      if( aniso["omega"] < 0. ||  aniso["omega"] > 180. ) stop(
+        "initial value of parameter 'omega' must be in [0, 180]"
+      )
+      if( aniso["phi"] < 0. ||  aniso["phi"] > 180. ) stop(
+        "initial value of parameter 'phi' must be in [0, 180]"
+      )
+      if( aniso["zeta"] < -90. ||  aniso["zeta"] > 90. ) stop(
+        "initial value of parameter 'zeta' must be in [-90, 90]"
+      )
+
+
+      ## check whether variogram is isotropic
+
+      if( identical( aniso, default.aniso() ) ){
+        isotropic <- TRUE
+      } else {
+        isotropic <- FALSE
+      }      
+
+      ## adjust default initial values of anisotropy parameters if these are
+      ## fitted
+
+      if( fit.aniso["omega"] && identical( aniso["f1"], 1. ) ){
+        aniso["f1"] <- aniso["f1"] - sqrt( .Machine$double.eps )
+      }
+
+      if( fit.aniso["phi"] ){
+        if( identical( aniso["f1"], 1. ) ) aniso["f1"] <- aniso["f1"] - sqrt( .Machine$double.eps )
+        if( identical( aniso["f2"], 1. ) ) aniso["f2"] <- aniso["f2"] - sqrt( .Machine$double.eps )
+      }
+      if( fit.aniso["zeta"] && identical( aniso["f2"], 1. ) ){
+        aniso["f2"] <- aniso["f2"] - sqrt( .Machine$double.eps )
+      }
+
+
+      ##  convert angles to radian
+
+      aniso[c("omega", "phi", "zeta" )] <- aniso[c("omega", "phi", "zeta" )] * d2r
+
+      ## complement aniso components with sin/cos terms, rotation and scaling matrices
+
+      sincos <- list(
+        co = unname( cos( aniso["omega"] ) ),
+        so = unname( sin( aniso["omega"] ) ),
+        cp = unname( cos( aniso["phi"] ) ),
+        sp = unname( sin( aniso["phi"] ) ),
+        cz = unname( cos( aniso["zeta"] ) ),
+        sz = unname( sin( aniso["zeta"] ) )
+      )
+
+      if( n <= 3L ){
+
+        rotmat <- with(
+          sincos,
+          rbind(
+            c(             sp*so,             sp*co,       cp ),
+            c( -cz*co + sz*cp*so,  co*sz*cp + cz*so,   -sp*sz ),
+            c( -co*sz - cz*cp*so, -cz*co*cp + sz*so,    cz*sp )
+          )[ 1L:n, 1L:n, drop = FALSE ]
+        )
+
+        sclmat <- 1. / c( 1., aniso[ c("f1", "f2") ] )[ 1L:n ]
+
+      } else {  # only isotropic case for n > 3
+
+        rotmat <- diag( n )
+        sclmat <- rep( 1., n )
+
+      }
+
+      ## return all items
+
+      list(
+        variogram.model = variogram.model,
+        param = param, fit.param = fit.param,
+        isotropic = isotropic,
+        aniso = aniso, fit.aniso = fit.aniso,
+        sincos = sincos, rotmat = rotmat, sclmat = sclmat
+      )
+
+    }, d2r = d2r, n = attr( sv, "ndim" )
   )
-  names( param ) <- tmp
-  
-  if( !missing( fit.param ) ){
-    tmp <- names( fit.param )
-    tmp <- sapply(tmp, function(x, choices){
-        match.arg(x, choices)
-      },
-      choices = names( default.fit.param() )
-    )
-    names( fit.param ) <- tmp
-    fit.param <- fit.param[names( fit.param ) %in% names( param )]
+
+  #   print(str(variogram.object))
+
+  ## set consistent values for nugget and snugget of nested variogram models
+
+  ## no nugget and snugget in any model component
+
+ is.na.nugget <- sapply( variogram.object, function( x ) is.na( x[["param"]]["nugget"] ) )
+  if( all( is.na.nugget ) ) stop(
+    "one of the variogram components must contain a 'nugget' effect"
+  )
+
+  is.na.snugget <- sapply( variogram.object, function( x ) is.na( x[["param"]]["snugget"] ) )
+  if( all( is.na.snugget ) ){
+    param <- variogram.object[[1L]][["param"]]
+    fit.param <- variogram.object[[1L]][["fit.param"]]
+    param <- c( param[1L], snugget = 0., param[-1L] )
+    fit.param <- c( fit.param[1L], snugget = FALSE, fit.param[-1L] )
+    variogram.object[[1L]][["param"]] <- param
+    variogram.object[[1L]][["fit.param"]] <- fit.param
   }
-  
-  if( !missing( aniso ) ){
-    tmp <- names( aniso )
-    tmp <- sapply(tmp, function(x, choices){
-        match.arg(x, choices)
-      },
-      choices = names( default.aniso() )
-    )
-    names( aniso ) <- tmp
-  }
-  
-  if( !missing( fit.aniso ) ){
-    tmp <- names( fit.aniso )
-    tmp <- sapply(tmp, function(x, choices){
-        match.arg(x, choices)
-      },
-      choices = names( default.aniso() )
-    )
-    names( fit.aniso ) <- tmp
-  }
+
+  ## nugget and snugget are combined and shifted to first model component
+
+  tmp <- names(variogram.object[[1L]][["param"]])
+  tmp <- tmp[!tmp %in% c("variance", "snugget", "nugget")]
+
+  variogram.object[[1L]][["param"]]["nugget"] <- sum(
+    sapply( variogram.object, function(x) x[["param"]]["nugget"] ),
+    na.rm = TRUE
+  )
+  variogram.object[[1L]][["fit.param"]]["nugget"] <- any(
+    sapply( variogram.object, function(x) x[["fit.param"]]["nugget"] ),
+    na.rm = TRUE
+  )
+  variogram.object[[1L]][["param"]]["snugget"] <- sum(
+    sapply( variogram.object, function(x) x[["param"]]["snugget"] ),
+    na.rm = TRUE
+  )
+  variogram.object[[1L]][["fit.param"]]["snugget"] <- any(
+    sapply( variogram.object, function(x) x[["fit.param"]]["snugget"] ),
+    na.rm = TRUE
+  )
+
+  ## rearrage order of parameters in first component
+
+  variogram.object[[1L]][["param"]] <-  variogram.object[[1L]][["param"]][c("variance", "snugget", "nugget", tmp)]
+  variogram.object[[1L]][["fit.param"]] <-  variogram.object[[1L]][["fit.param"]][c("variance", "snugget", "nugget", tmp)]
 
   ## set snugget to zero if snugget has not been specified or if there are
   ## no replicated observations
+
+  variogram.object[[1L]][["param"]]["nugget"] <- sum(  variogram.object[[1L]][["param"]][c("nugget", "snugget") ])
+  variogram.object[[1L]][["fit.param"]]["nugget"] <- any(  variogram.object[[1L]][["fit.param"]][c("nugget", "snugget") ])
+  variogram.object[[1L]][["param"]]["snugget"] <- 0.
+  variogram.object[[1L]][["fit.param"]]["snugget"] <- FALSE
   
-  if( !"snugget" %in% names( param ) ){
-    param["snugget"] <- 0.
-    fit.param["snugget"] <- FALSE
-  }
-  
-  ##  check whether fitting of chosen variogram model is implemented and
-  ##  return names of extra parameters (if any)
-  
-  ep <- param.names( model = variogram.model )
-  
-  ## check names of initial variogram parameters and flags for fitting
-  
-  param.name <- c( "variance", "snugget", "nugget", "scale", ep )
-  
-  if( !all( names( param ) %in% param.name ) ) stop( 
-    "error in names of initial values of variogram parameters" 
-  )
-  
-  if( !all( param.name  %in% names( param ) ) ) stop( 
-    "no initial values provided for parameter(s) '", 
-    param.name[ !param.name %in% names( param ) ], "'"
-  )
-  
-  if( !all( names( fit.param ) %in% param.name ) ) stop( 
-    "error in names of control flags for fitting variogram parameters" 
-  )
-  
-  if( length( param ) != length( fit.param ) || 
-    !all( names( fit.param ) %in% names( param ) )
-  ) stop( 
-    "names of variogram parameters and control flags for fitting do not match" 
-  )
-  
-  if( !all( is.numeric( param ) ) ) stop(
-    "initial values of variogram parameters must be of mode 'numeric'"
-  )
-  if( !all( is.logical( fit.param ) ) ) stop(
-    "fitting control flags of variogram parameters must be of mode 'logical'"
-  )
-  
-  ##  rearrange initial variogram parameters
-  
-  param <- param[param.name]
-  
-  ## check whether intitial values of variogram parameters are valid
-  
-  if( param["variance"] < 0. ) stop("initial value of 'variance' must be positive" )
-  if( param["snugget"] < 0. )  stop("initial value of 'snugget' must be positive" )
-  if( param["nugget"] < 0. ) stop("initial value of 'nugget' must be positive" )
-  if( param["scale"] <= 0. ) stop("initial value of 'scale' must be positive" )
-  
-  param.bounds <- param.bounds( variogram.model, attr( sv, "ndim" ) )
-  ep.param <- param[ep]
-  
-  if( !is.null( param.bounds ) ) t.bla <- sapply(
-    1:length( ep.param ),
-    function( i, param, bounds ){
-      if( param[i] < bounds[[i]][1] || param[i] > bounds[[i]][2] ) stop(
-        "initial value of parameter '", names( param[i] ), "' outside of allowed range" 
+  ## eliminate nugget and snugget from second and following components
+
+  if( length( variogram.object ) > 1L ){
+
+    variogram.object <- c(
+      variogram.object[1L],
+      lapply( variogram.object[-1L], function(x){
+          sel <- names( x[["param"]] )[!names(x[["param"]]) %in% c( "snugget", "nugget" )]
+          x[["param"]] <- x[["param"]][sel]
+          x[["fit.param"]] <- x[["fit.param"]][sel]
+          x
+        }
       )
-    }, 
-    param = ep.param,
-    bounds = param.bounds
-  )
-  
-  
-  ##  rearrange and check flags controlling variogram parameter fitting 
-  
-  fit.param <- fit.param[param.name]
-  
-  if( 
-    variogram.model %in% (t.models <- c( "RMfbm" ) ) && 
-    ( 
-      all( fit.param[c( "variance", "snugget", "scale" ) ] ) ||
-      all( fit.param[c( "variance", "scale" ) ] ) 
     )
-  ) stop( 
-    "'variance', 'scale' (and 'snugget') cannot be fitted simultaneously for variograms ",
-    paste( t.models, collapse = " or "), "; \n  'scale' parameter must be fixed"
-  )
-  
-  ##  preparation for variogram parameter transformations
-  
-  all.param.tf <- param.transf()
-  fwd.tf       <- fwd.transf()  
-  bwd.tf       <- bwd.transf()  
-  
-  t.sel <- match( param.name, names( all.param.tf ) )
-  
-  if( any( is.na( t.sel ) ) ){
-    stop( "transformation undefined for some variogram parameters" )
-  } else {
-    param.tf <- all.param.tf[t.sel]
-  }
-  param.tf <- sapply(
-    param.tf,
-    function( x ) if( length(x) > 1L ) x[variogram.model] else x
-  )
-  names( param.tf ) <- param.name 
-  
-  ##  transform initial variogram parameters
-  
-  transformed.param <- sapply(
-    param.name,
-    function( x, fwd.tf, param.tf, param ) fwd.tf[[param.tf[x]]]( param[x] ),
-    fwd.tf = fwd.tf,
-    param.tf = param.tf,
-    param = param
-  )
-  
-  names( transformed.param ) <- param.name 
-  
-  ## check whether isotropic variogram is fitted
-  
-  isotropic <- missing( aniso ) && missing( fit.aniso )
-  
-  ## check names of initial anisotropy parameters and flags for fitting
-  
-  aniso.name <- c( "f1", "f2", "omega", "phi", "zeta" )
-  
-  if( !all( names( aniso ) %in% aniso.name ) ) stop( 
-    "error in names of initial values of anisotropy parameters" 
-  )
-  
-  if( !all( aniso.name  %in% names( aniso ) ) ) stop( 
-    "no initial values provided for parameter(s) '", 
-    aniso.name[ !aniso.name %in% names( aniso ) ], "'"
-  )
-  
-  if( !all( names( fit.aniso ) %in% aniso.name ) ) stop( 
-    "error in names of control flags for fitting  anisotropy parameters"
-  )
-  
-  if( length( aniso ) != length( fit.aniso ) || 
-    !all( names( fit.aniso ) %in% names( aniso ) )
-  ) stop( 
-    "names of anisotropy parameters and control flags for fitting do not match" 
-  )
-  
-  if( !all( is.numeric( aniso ) ) ) stop(
-    "initial values of anisotropy parameters must be of mode 'numeric'"
-  )
-  if( !all( is.logical( fit.aniso ) ) ) stop(
-    "fitting control flags of anisotropy parameters must be of mode 'logical'"
-  )
-  
-  ##  rearrange initial anisotropy parameters
-  
-  aniso <- aniso[aniso.name]
-  
-  ## check whether intitial values of anisotropy parameters are valid
-  
-  if( aniso["f1"] < 0. ||  aniso["f1"] > 1. ) stop(
-    "initial value of parameter 'f1' must be in [0, 1]" 
-  )
-  if( aniso["f2"] < 0. ||  aniso["f1"] > 1. ) stop(
-    "initial value of parameter 'f2' must be in [0, 1]" 
-  )
-  if( aniso["omega"] < 0. ||  aniso["omega"] > 180. ) stop(
-    "initial value of parameter 'omega' must be in [0, 180]" 
-  )
-  if( aniso["phi"] < 0. ||  aniso["phi"] > 180. ) stop(
-    "initial value of parameter 'phi' must be in [0, 180]" 
-  )
-  if( aniso["zeta"] < -90. ||  aniso["zeta"] > 90. ) stop(
-    "initial value of parameter 'zeta' must be in [-90, 90]" 
-  )
 
-  ## adjust default initial values of anisotropy parameters if these are
-  ## fitted
-  
-  if( fit.aniso["omega"] && identical( aniso["f1"], 1. ) ) aniso["f1"] <- aniso["f1"] - sqrt( .Machine$double.eps )
-  if( fit.aniso["phi"] ){
-    if( identical( aniso["f1"], 1. ) ) aniso["f1"] <- aniso["f1"] - 0.0001
-    if( identical( aniso["f2"], 1. ) ) aniso["f2"] <- aniso["f2"] - 0.0001
   }
-  if( fit.aniso["zeta"] && identical( aniso["f2"], 1. ) ) aniso["f2"] <- aniso["f2"] - 0.0001
+  
+  ## adjust zero initial values of variance and scale parameters if they
+  ## are fitted
 
-  ##  rearrange and check flags controlling anisotropy parameter fitting 
-  
-  fit.aniso <- fit.aniso[aniso.name]
-  
-  ##  preparation for anisotropy parameter transformations
-  
-  t.sel <- match( aniso.name, names( all.param.tf ) )
-  
-  if( any( is.na( t.sel ) ) ){
-    stop( "transformation undefined for some anisotropy parameters" )
-  } else {
-    aniso.tf <- all.param.tf[t.sel]
-  }
-  aniso.tf <- sapply(
-    aniso.tf,
-    function( x ) if( length(x) > 1L ) x[variogram.model] else x
+  variogram.object <- lapply(
+    variogram.object,
+    function(x){
+      sel <- names(x[["param"]]) %in% c("variance", "snugget", "nugget", "scale") &
+        x[["fit.param"]] & x[["param"]] <= 0.
+      x[["param"]][sel] <- sqrt( .Machine$double.eps )
+      x
+    }
   )
-  names( aniso.tf ) <- aniso.name 
   
-  ##  convert angles from degrees to radian
+  ## transform variogram parameters
+
+  param.tf <-  param.transf()
+  fwd.tf <- fwd.transf()
+  bwd.tf <- bwd.transf()
   
-  aniso[c("omega", "phi", "zeta" )] <- aniso[c("omega", "phi", "zeta" )] * d2r
-  
-  ##  transform initial anisotropy parameters
-  
-  transformed.aniso <- sapply(
-    aniso.name,
-    function( x, fwd.tf, param.tf, param ){
-      fwd.tf[[param.tf[x]]]( param[x] )
-    },
-    fwd.tf = fwd.tf,
-    param.tf = aniso.tf,
-    param = aniso
-  )
-  names( transformed.aniso ) <- aniso.name 
-  
-  param.tf <- c( param.tf, aniso.tf )
-  
-  ## scaling factor for parameters
-  
+  tmp <- f.aux.tf.param.fwd( variogram.object, param.tf, fwd.tf )
+
+  transformed.param.aniso <- tmp[["transformed.param.aniso"]]
+  tf.param.aniso <- tmp[["tf.param.aniso"]]
+  fit.param.aniso <- tmp[["fit.param.aniso"]]
+
   ## select lag distances that are used for fitting
   
   t.lag.select <- sv[["lag.dist"]] <= max.lag & sv[["npairs"]] >= min.npairs
   
-  if( verbose > 0 ) cat( 
-    format(
-      c( param.name[fit.param], aniso.name[fit.aniso], "sse" ),
-      width = 14, justify= "right"
-    ), "\n", sep = ""
-  )
-  
   ##  create environment to store items required to compute likelihood and
   ##  estimating equations that are provided by
   ##  likelihood.calculations
-  
+
   envir <- new.env()
-  
-  ##  initialize values of variogram parameters stored in the environment
-  
-  param.aniso.item <- list(
-    param = rep( -1., length( param.name ) ),
-    aniso = list(
-      isotropic = isotropic,
-      aniso = rep( -1., length( aniso.name ) ),
-      fit.aniso = fit.aniso
-    )
-  )  
-  assign( "param.aniso.item", param.aniso.item, pos = as.environment( envir ) )
+  variogram.item <- list()
+
+  ##  initialize values of variogram object item stored in the environment
+
+  variogram.item[["variogram.object"]] <- lapply(
+    variogram.object,
+    function(x) x[c("variogram.model", "param", "isotropic",
+      "aniso", "sincos", "sclmat", "rotmat")]
+  )
+
+  assign( "variogram.item", variogram.item, pos = as.environment( envir ) )
   
   ## fit the model
   
+  lag.vectors <- as.matrix( 
+    sv[t.lag.select, c( "lag.x", "lag.y", "lag.z" )[1L:attr( sv, "ndim")]] 
+  )
+  attr( lag.vectors, "ndim.coords" ) <- attr( sv, "ndim")
+  
   r.fit <- optim(
-    par = c( 
-      transformed.param[ fit.param ], 
-      transformed.aniso[ fit.aniso ] 
-    ),
+    par = transformed.param.aniso[fit.param.aniso],
     fn = f.aux,
     hessian = hessian,
     ...,
     envir = envir,
-    variogram.model = variogram.model,
-    fixed.param = c( 
-      transformed.param[ !fit.param ], 
-      transformed.aniso[ !fit.aniso ]
-    ),
-    param.name = param.name, 
-    aniso.name = aniso.name,
-    isotropic = isotropic,
-    param.tf = param.tf,
+    fixed.param.aniso = transformed.param.aniso[!fit.param.aniso],
+    name.param.aniso = names(transformed.param.aniso),
+    tf.param.aniso = tf.param.aniso,
     bwd.tf = bwd.tf,
-    lag.vectors = as.matrix(
-      sv[t.lag.select, c( "lag.x", "lag.y", "lag.z" )]
-    ),
+    lag.vectors = lag.vectors,
     gamma = sv[["gamma"]][t.lag.select],
     npairs = sv[["npairs"]][t.lag.select],
     weighting.method = weighting.method,
@@ -1076,39 +1388,54 @@ fit.variogram.model <-
     verbose = verbose
   )
   
-  ## get param.aniso.item
+  ## get variogram.item
   
-  param.aniso.item <- get( "param.aniso.item", pos = as.environment( envir ) )
-  param.aniso.item[["aniso"]][["aniso"]] <- 
-    param.aniso.item[["aniso"]][["aniso"]] / c( rep( 1., 2 ), rep( d2r, 3 ) )
+  variogram.item <- get( "variogram.item", pos = as.environment( envir ) )
   
+  ## convert angles to degree and add fit.param and fit.aniso
+  
+  variogram.item[["variogram.object"]] <- lapply(
+    1L:length(variogram.item[["variogram.object"]]),
+    function( i, x, vo, d2r ){
+      x <- x[[i]]
+      x[["aniso"]] <- x[["aniso"]]  / c( rep( 1., 2L ), rep( d2r, 3L ) )
+      x <- c( x, 
+        fit.param = list( vo[[i]][["fit.param"]] ), 
+        fit.aniso = list( vo[[i]][["fit.aniso"]] )
+      )
+      x[c(
+        "variogram.model", "param", "fit.param", 
+        "isotropic", "aniso", "fit.aniso", "sincos", "rotmat", "sclmat"
+      )]
+    }, x = variogram.item[["variogram.object"]], vo = variogram.object, d2r = d2r
+  )
+    
   ## collect results
   
   r.result <- list(
     sse = r.fit[["value"]],
-    variogram.model = variogram.model,
-    param = param.aniso.item[["param"]], fit.param = fit.param,
-    aniso = param.aniso.item[["aniso"]],
+    variogram.object = variogram.item[["variogram.object"]],
     param.tf = param.tf,
     fwd.tf = fwd.tf,
     bwd.tf = bwd.tf,
-    converged = if( sum( c( fit.param, fit.aniso ) ) == 0 ){ 
+    converged = if( sum( fit.param.aniso ) == 0L ){ 
       NA
     } else {
-      r.fit[["convergence"]] == 0
+      r.fit[["convergence"]] == 0L
     },
     convergence.code = r.fit[["convergence"]],      
     iter = r.fit[["counts"]],
     call = cl,
-    residuals = param.aniso.item[["residuals"]],
-    fitted = param.aniso.item[["fitted"]],
-    weights = param.aniso.item[["weights"]]
+    residuals = variogram.item[["residuals"]],
+    fitted = variogram.item[["fitted"]],
+    weights = variogram.item[["weights"]]
   )
   if( hessian ) r.result[["hessian"]] <- r.fit[["hessian"]]
   
   class( r.result ) <- "fitted.variogram"
   
-  attr( r.result, "lag.dist.def" )      <- attr( sv, "lag.dist.def" )
+  attr( r.result, "ndim" )               <- attr( sv, "ndim" )
+  attr( r.result, "lag.dist.def" )       <- attr( sv, "lag.dist.def" )
   attr( r.result, "xy.angle.mid.class" ) <- attr( sv, "xy.angle.mid.class" )
   attr( r.result, "xz.angle.mid.class" ) <- attr( sv, "xz.angle.mid.class" )
   
@@ -1128,39 +1455,50 @@ print.fitted.variogram <-
   ## 2012-04-13 A. Papritz
   ## 2012-12-18 AP invisible(x)
   ## 2013-06-12 AP substituting [["x"]] for $x in all lists
+  ## 2016-08-18 AP changes for nested variogram models
+  
+  ## print variogram parameters
   
   cat("\n")
-  cat( "Variogram: ", x[["variogram.model"]], "\n" )
-  param <- x[["param"]]
-  names( param ) <- ifelse(
-    x[["fit.param"]],
-    names( param ),
-    paste( names( param ), "(fixed)", sep = "" )
-  )
-  print( 
-    format( param, digits = digits ), print.gap = 2, 
-    quote = FALSE
-  )
   
-  ## print anisotropy parameters
-  
-  if( !x[["aniso"]][["isotropic"]] ){
-    
-    cat("\n")
-    cat( "Anisotropy parameters: ", "\n" )
-#     aniso <- x[["aniso"]][["aniso"]] * c( rep(1, 2), rep( 180./pi, 3 ) )
-    aniso <- x[["aniso"]][["aniso"]]
-    names( aniso ) <- ifelse(
-      x[["aniso"]][["fit.aniso"]],
-      names( aniso ),
-      paste( names( aniso ), "(fixed)", sep = "" )
-    )
-    print( 
-      format( aniso, digits = digits ), print.gap = 2, 
-      quote = FALSE
-    )
-    
-  }
+  lapply( 
+    x[["variogram.object"]], 
+    function(x){
+      
+      cat( "Variogram: ", x[["variogram.model"]], "\n" )
+      
+      param <- x[["param"]]
+      names( param ) <- ifelse(
+        x[["fit.param"]],
+        names( param ),
+        paste( names( param ), "(fixed)", sep = "" )
+      )
+      print( 
+        format( param, digits = digits, 
+          width = 16L, justify = "right" ), print.gap = 2L, 
+        quote = FALSE
+      )
+      
+      cat("\n")
+      
+      if( !x[["isotropic"]] ){
+        
+        aniso <- x[["aniso"]]
+        names( aniso ) <- ifelse(
+          x[["fit.aniso"]],
+          names( aniso ),
+          paste( names( aniso ), "(fixed)", sep = "" )
+        )
+        
+        print( 
+          format( aniso, digits = digits, 
+            width = 16L, justify = "right" ), print.gap = 2L, 
+          quote = FALSE
+        )
+        cat("\n")
+      }
+    }
+  )
   
   invisible( x )
   
@@ -1181,24 +1519,24 @@ summary.fitted.variogram <-
   ## 2012-12-10 A. Papritz
   ## 2013-06-12 AP substituting [["x"]] for $x in all lists
   ## 2015-04-07 AP changes for fitting anisotropic variograms
+  ## 2016-08-18 AP changes for nested variogram models
 
   ans <- object[c(
     "call", "residuals", "weights", "converged", "convergence.code", 
-    "iter", "sse", "variogram.model", "fit.param"
+    "iter", "sse", "variogram.object"
   )]
   
-  if( !object[["aniso"]][["isotropic"]] ) ans[["fit.param"]] <- c( 
-    ans[["fit.param"]], object[["aniso"]][["fit.aniso"]]
+  ans[["param.aniso"]] <- lapply(
+    ans[["variogram.object"]],
+    function(object){
+      res <- as.matrix( object[["param"]], ncol = 1L )
+      if( !object[["isotropic"]] ) res <- rbind( 
+        res, as.matrix( object[["aniso"]], ncol = 1L )
+      )
+      colnames( res ) <- "Estimate"
+      res
+    }
   )
-      
-  ans[["param"]] <- as.matrix( object[["param"]], ncol = 1 )
-  
-  if( !object[["aniso"]][["isotropic"]] ) ans[["param"]] <- rbind( 
-    ans[["param"]],
-    as.matrix( object[["aniso"]][["aniso"]], ncol = 1 )
-  )
-  
-  colnames( ans[["param"]] ) <- "Estimate"
   
   ## compute confidence intervals of variogram parameters from observed
   ## Fisher information matrix (Gaussian REML only)
@@ -1208,65 +1546,116 @@ summary.fitted.variogram <-
     ## initialization
     
     cor.tf.param <- cov.tf.param <- matrix( 
-      NA, nrow = nrow( object[["hessian"]] ), ncol = nrow( object[["hessian"]] ),
+      NA, nrow = NROW( object[["hessian"]] ), ncol = NROW( object[["hessian"]] ),
       dimnames = dimnames( object[["hessian"]] )
     )
     
-    se <- rep( NA, nrow( object[["hessian"]] ) )
-    names( se ) <- rownames( object[["hessian"]])
-    
-    ci <- matrix( NA, nrow = nrow( ans[["param"]] ), ncol = 2 )
-    colnames( ci ) <- c( "Lower", "Upper" )
-    rownames( ci ) <- rownames( ans[["param"]] )
+#     se <- rep( NA_real_, NROW( object[["hessian"]] ) )
+#     names( se ) <- rownames( object[["hessian"]])
+#     
+#     ci <- matrix( NA_real_, nrow = NROW( object[["hessian"]] ), ncol = 2L )
+#     colnames( ci ) <- c( "Lower", "Upper" )
+#     rownames( ci ) <- rownames( object[["hessian"]] )
     
     ## select parameters that are not on boundary of parameter space
     
-    sr  <- !apply( object[["hessian"]], 1, function( x ) all( is.na( x ) ) )
+    sr  <- !apply( object[["hessian"]], 1L, function( x ) all( is.na( x ) ) )
     
-    if( sum( sr ) > 0 ){
+    if( sum( sr ) > 0L ){
       
-      t.chol <- try( chol( object[["hessian"]][sr, sr] ), silent = TRUE )
+      t.chol <- try( chol( object[["hessian"]][sr, sr, drop = FALSE] ), silent = TRUE )
       
       if( !identical( class( t.chol ), "try-error" ) ){
         
         ## compute covariance matrix of fitted transformed parameters
         
-        cov.tf.param[sr, sr] <- chol2inv( t.chol )
+        cov.tf.param <- chol2inv( t.chol )
+        dimnames( cov.tf.param ) <- dimnames( t.chol )
         
         ## correlation matrix and standard errors of fitted transformed
         ## parameters
         
-        cor.tf.param[sr, sr] <- cov2cor( cov.tf.param[sr, sr] )
-        
-        se[sr] <- sqrt( diag( cov.tf.param )[sr] )
-        
-        ## compute confidence interval on original scale of parameters
-        
-        sel.names <- names( object[["param"]][object[["fit.param"]]] )
-        if( !object[["aniso"]][["isotropic"]] ) sel.names <- c( 
-          sel.names,
-          names( object[["aniso"]][["aniso"]][object[["aniso"]][["fit.aniso"]]] )
+        if( correlation ){
+          ans[["cor.tf.param"]] <- cov2cor( cov.tf.param )
+          colnames( ans[["cor.tf.param"]] ) <- rownames( ans[["cor.tf.param"]] ) <-
+            gsub( ".__...__.", ".", colnames( ans[["cor.tf.param"]] ), fixed = TRUE )
+        }
+          
+        se <- sqrt( diag( cov.tf.param ) )
+                
+        tmp <- f.aux.tf.param.fwd( 
+          ans[["variogram.object"]], object[["param.tf"]],
+          object[["fwd.tf"]]
         )
-        sel.names <- sel.names[sr]
         
-        ci[sel.names, ] <- t( 
-          sapply(
-            sel.names,
-            function( x, param, se, param.tf, trafo.fct, inv.trafo.fct ){
-              inv.trafo.fct[[param.tf[x]]]( 
-                trafo.fct[[param.tf[x]]]( param[x] ) + 
-                c(-1, 1) * se[x] * qnorm( (1-signif)/2., lower.tail = FALSE ) 
-              )
-            },
-            param         = c( object[["param"]], object[["aniso"]][["aniso"]] ),
-            se            = se,
-            param.tf      = object[["param.tf"]],
-            trafo.fct     = object[["fwd.tf"]],
-            inv.trafo.fct = object[["bwd.tf"]]
-          )
+        param <- tmp[["transformed.param.aniso"]][tmp[["fit.param.aniso"]]]
+        param <- param[names(param) %in% names(se)]
+        
+        param.tf <- tmp[["tf.param.aniso"]][names(param)]
+
+        se <- se[match( names(se), names(param))]
+        
+        ## confidence intervals
+        
+        ci <- t( sapply(
+            1L:length(se),
+            function( i, m, se, signif ){
+              m[i] + c(-1., 1.) * se[i] * qnorm( (1.-signif)/2., lower.tail = FALSE ) 
+            }, m = param, se = se, signif = signif
+          ))
+        colnames( ci ) <- c("Lower", "Upper")
+        rownames( ci ) <- names( se )
+
+        ci <- apply(
+          ci, 2L,
+          function( x, nme, bwd.tf, param.tf ){
+            sapply( nme,
+              function( x, bwd.tf, param.tf, param ) bwd.tf[[param.tf[x]]]( param[x] ),
+              bwd.tf = bwd.tf, param.tf = param.tf, param = x
+            )
+          }, nme = names(se), bwd.tf = object[["bwd.tf"]],
+          param.tf = param.tf
         )
-        ans[["param"]] <- cbind( ans[["param"]], ci )
-        if( correlation ) ans[["cor.tf.param"]] <- cor.tf.param
+        
+        colnames( ci ) <- c("Lower", "Upper")
+        rownames( ci ) <- names( se )
+        
+        ## convert to list
+        
+        tmp <- strsplit( rownames(ci), ".__...__.", fixed = TRUE )
+        name.tmp <- rownames(ci) <- sapply( tmp, function(x) x[1L] )
+        cmp <- sapply( tmp, function(x) x[2L] )
+        
+        ci <- tapply( 
+          1L:NROW(ci), factor( cmp ), 
+          function( i, ci ){
+            ci[i, , drop = FALSE]
+          }, ci = ci, simplify = FALSE
+        ) 
+        
+        ## merge into ans[["param.aniso"]]
+        
+        ans[["param.aniso"]] <- lapply(
+          1L:length(ans[["param.aniso"]]),
+          function( i, pa, ci ){
+            pa <- pa[[i]]
+            if( i <= length(ci) ){
+              ci <- ci[[i]]
+            } else {
+              ci <- matrix( rep( NA_real_, 2. * NROW( pa ) ), ncol = 2L )
+              rownames( ci ) <- rownames(pa)
+            }
+            
+            pa <- cbind( pa, Lower = rep( NA_real_, NROW(pa) ),
+              Upper = rep( NA_real_, NROW(pa) ) )
+            i <- match( rownames( ci ), rownames( pa ) )
+            pa[i, 2L:3L] <- ci
+            tmp <- rownames( pa )
+            tmp[is.na(pa[, 2L])] <- paste( tmp[is.na(pa[, 2L])], "(fixed)", sep="" )
+            rownames(pa) <- tmp
+            pa
+          }, pa = ans[["param.aniso"]], ci = ci
+        )
         
       } else {
         warning(
@@ -1298,6 +1687,7 @@ print.summary.fitted.variogram <-
   ## 2012-12-18 AP invisible(x)
   ## 2013-06-12 AP substituting [["x"]] for $x in all lists
   ## 2015-04-07 AP changes for fitting anisotropic variograms
+  ## 2016-08-18 AP changes for nested variogram models
   
   cat("\nCall:")
   cat( paste( deparse(x[["call"]]), sep = "\n", collapse = "\n"),  "\n", sep = "" )
@@ -1314,8 +1704,8 @@ print.summary.fitted.variogram <-
       )
     } else {
       cat(
-        "\nConvergence in", x[["iter"]][1], "function and", 
-        x[["iter"]][2], "Jacobian/gradient evaluations\n"
+        "\nConvergence in", x[["iter"]][1L], "function and", 
+        x[["iter"]][2L], "Jacobian/gradient evaluations\n"
       )
     }
     
@@ -1332,29 +1722,37 @@ print.summary.fitted.variogram <-
   rq <- structure( quantile(resid), names = nam )
   print( rq, digits = digits, ...)
   
-  cat( "\nVariogram: ", x[["variogram.model"]], "\n" )
-  rownames( x[["param"]] ) <- ifelse(
-    x[["fit.param"]],
-    rownames( x[["param"]] ),
-    paste( rownames( x[["param"]] ), "(fixed)", sep = "" )
-  )
-  printCoefmat(
-    x[["param"]], digits = digits, signif.stars = FALSE, ...
-  )
+  lapply(
+    1L:length(x[["param.aniso"]]),
+    function(i, x, vo){
+      x <- x[[i]]
+      tmp <- x[ ,1L]
+      tmp <- tmp[!is.na(tmp) & tmp > 0. ]
+      t.digits <- -floor( log10( min( tmp ) ) )
+      cat( "\nVariogram: ", vo[[i]][["variogram.model"]], "\n" )
+      printCoefmat(
+        x, digits = max( digits, t.digits) , signif.stars = FALSE, ...
+      )
+      #       print(format(
+#         signif( x, digits = 7L ), width = 16L, scientific = TRUE, justify = "left"), quote = FALSE, ...
+#       )
+    }, x = x[["param.aniso"]], vo = x[["variogram.object"]]
+  )  
   
   if( !is.null( x[["cor.tf.param"]] ) ){
     
     correl <- x[["cor.tf.param"]]
     p <- NCOL(correl)
-    if( p > 1 ){
+    if( p > 1L ){
       cat("\nCorrelation of (transformed) variogram parameters:\n")
-      correl <- format(round(correl, 2), nsmall = 2, 
+      correl <- format(round(correl, 2L), nsmall = 2L, 
         digits = digits)
       correl[!lower.tri(correl)] <- ""
-      print(correl[-1, -p, drop = FALSE], quote = FALSE)
+      print(correl[-1L, -p, drop = FALSE], quote = FALSE)
     }
     
   }
+  
     
   invisible( x )
 }
@@ -1387,6 +1785,7 @@ plot.georob <-
   ## 2013-06-12 AP substituting [["x"]] for $x in all lists
   ## 2014-05-08 AP changes for plotting covariances and correlations
   ## 2015-11-27 AP changes for Tukey-Anscombe, QQnorm plots and for plotting variograms
+  ## 2016-08-19 AP changes for nested variogram models
   
   x[["na.action"]] <- NULL
   
@@ -1397,7 +1796,7 @@ plot.georob <-
   
   n <- length(x[["fitted.values"]])
   if (is.null(id.n)){
-    id.n <- 0
+    id.n <- 0L
   } else {
     id.n <- as.integer(id.n)
     if(id.n < 0L || id.n > n) stop(gettextf("'id.n' must be in {1,..,%d}", n), domain = NA)
@@ -1411,7 +1810,7 @@ plot.georob <-
     ##     show.rs <- sort.list(abs(rs), decreasing = TRUE)[iid]
     text.id <- function(x, y, ind, adj.x = TRUE) {
       labpos <-
-      if(adj.x) label.pos[1+as.numeric(x > mean(range(x)))] else 3
+      if(adj.x) label.pos[1L+as.numeric(x > mean(range(x)))] else 3L
       text(x, y, labels.id[ind], cex = cex.id, xpd = TRUE,
         pos = labpos, offset = 0.25)
     }
@@ -1424,7 +1823,7 @@ plot.georob <-
       
       ## Tukey-Anscombe plot
       
-      if( missing( col ) ) col <- 1; if( missing( pch ) ) pch <- 1
+      if( missing( col ) ) col <- 1L; if( missing( pch ) ) pch <- 1L
       if( missing( xlab ) ) xlab <- "Fitted values"
       if( missing( ylab ) ) ylab <- "Residuals"
       if( missing( main ) ) main <- "Residuals vs. Fitted"
@@ -1437,9 +1836,9 @@ plot.georob <-
         points( yh, r, col = col, pch = pch, ... )
       }
       if( smooth ){
-        lines( loess.smooth( yh, r, ... ), col = "red", lty = 1, ... )
+        lines( loess.smooth( yh, r, ... ), col = "red", lty = 1L, ... )
       }
-      if(id.n > 0){   ## adapted from plot.lmrob()
+      if(id.n > 0L){   ## adapted from plot.lmrob()
         show.r <- sort.list(abs(r), decreasing = TRUE)[iid]
         y.id <- r[show.r]
         y.id[y.id < 0] <- y.id[y.id < 0] - strheight(" ")/3
@@ -1451,7 +1850,7 @@ plot.georob <-
       
       ## scale.location plot
       
-      if( missing( col ) ) col <- 1; if( missing( pch ) ) pch <- 1
+      if( missing( col ) ) col <- 1L; if( missing( pch ) ) pch <- 1L
       if( missing( xlab ) ) xlab <- "Fitted values"
       if( missing( ylab ) ) ylab <- "Sqrt of abs(Residuals)"
       if( missing( main ) ) main <- "Scale-Location"
@@ -1464,9 +1863,9 @@ plot.georob <-
         points( yh, r, col = col, pch = pch, ... )
       }
       if( smooth ){
-        lines( loess.smooth( yh, r, ... ), col = "red", lty = 1 )
+        lines( loess.smooth( yh, r, ... ), col = "red", lty = 1L )
       }
-      if(id.n > 0) {   ## adapted from plot.lmrob()
+      if(id.n > 0L) {   ## adapted from plot.lmrob()
         show.r <- sort.list(abs(r), decreasing = TRUE)[iid]
         y.id <- r[show.r]
         y.id[y.id < 0] <- y.id[y.id < 0] - strheight(" ")/3
@@ -1479,7 +1878,7 @@ plot.georob <-
       ## qqnorm of standardized residuals (eps or eps + b, depending of
       ## value of level passed in ...)
       
-      if( missing( col ) ) col <- 1; if( missing( pch ) ) pch <- 1
+      if( missing( col ) ) col <- 1L; if( missing( pch ) ) pch <- 1L
       if( missing( xlab ) ) xlab <- "Theoretial quantiles"
       if( missing( ylab ) ) ylab <- "Standardized residuals"
       if( missing( main ) ) main <- "Normal Q-Q residuals"
@@ -1489,7 +1888,7 @@ plot.georob <-
         plot.it = !add, ...
       )
       if( add ) points( y~x, tmp, col = col, pch = pch, ... )
-      if(id.n > 0){   ## adapted from plot.lmrob()
+      if(id.n > 0L){   ## adapted from plot.lmrob()
         show.r <- sort.list(abs(r), decreasing = TRUE)[iid]
         text.id(tmp$x[show.r], tmp$y[show.r], show.r)
       }
@@ -1498,7 +1897,7 @@ plot.georob <-
       
       ## qqnorm of standardized random effects
       
-      if( missing( col ) ) col <- 1; if( missing( pch ) ) pch <- 1
+      if( missing( col ) ) col <- 1L; if( missing( pch ) ) pch <- 1L
       if( missing( xlab ) ) xlab <- "Theoretial quantiles"
       if( missing( ylab ) ) ylab <- "Standardized random effects"
       if( missing( main ) ) main <- "Normal Q-Q random effects"
@@ -1531,12 +1930,12 @@ plot.georob <-
         )
         
         if( missing( col ) ){
-          col <- 1:nlevels( r.sv[["xy.angle"]] )
+          col <- 1L:nlevels( r.sv[["xy.angle"]] )
         } else if( length( col ) < nlevels( r.sv[["xy.angle"]] ) ) stop(
           "number of colors less than number of directions in x-y-plane for which semivariances are computed"
         )
         if( missing( pch ) ){
-          pch <- 1:nlevels( r.sv[["xz.angle"]] )
+          pch <- 1L:nlevels( r.sv[["xz.angle"]] )
         } else if( length( pch ) < nlevels( r.sv[["xz.angle"]] ) ) stop(
           "number of colors less than number of directions in x-z-plane for which semivariances are computed"
         )
@@ -1561,10 +1960,15 @@ plot.georob <-
           xmax <- sqrt( max( rowSums( x[["locations.objects"]][["lag.vectors"]]^2 ) ) )
         }
         
+        sill <- sum( unlist( lapply( 
+            x[["variogram.object"]], 
+            function(x) x[["param"]][names(x[["param"]]) %in% c("variance", "snugget", "nugget")]
+            )))
+        
         ymax <- 1.1 * switch(
           what,
           correlation = 1.,
-          sum( x[["param"]][c("variance", "snugget", "nugget")] )
+          sill
         )
         
         ## see sample.variogram.default
@@ -1576,41 +1980,41 @@ plot.georob <-
         
         n <- length( xy.angle.def )
         d <- diff( xy.angle.def )
-        xy.angle.mid.class <- 0.5 * ( xy.angle.def[-1] + xy.angle.def[-n] )
+        xy.angle.mid.class <- 0.5 * ( xy.angle.def[-1L] + xy.angle.def[-n] )
         if( 
-          n > 2 &&
-          identical( xy.angle.def[1], 0. ) && 
+          n > 2L &&
+          identical( xy.angle.def[1L], 0. ) && 
           identical( xy.angle.def[n], 180. ) &&
-          !all( d[1] == d[-1] )
+          !all( d[1L] == d[-1L] )
         ){
           
-          xy.angle.mid.class[1] <- xy.angle.mid.class[1] - (180. - xy.angle.mid.class[n-1])
-          xy.angle.mid.class <- xy.angle.mid.class[-(n-1)]
+          xy.angle.mid.class[1L] <- xy.angle.mid.class[1L] - (180. - xy.angle.mid.class[n-1L])
+          xy.angle.mid.class <- xy.angle.mid.class[-(n-1L)]
         }
         
         # xz-plane
         
         n <- length(xz.angle.def)
         d <- diff( xz.angle.def )
-        xz.angle.mid.class <- 0.5 * ( xz.angle.def[-1] + xz.angle.def[-n] )
+        xz.angle.mid.class <- 0.5 * ( xz.angle.def[-1L] + xz.angle.def[-n] )
         if( 
-          n > 2 &&
-          identical( xz.angle.def[1], 0. ) && 
+          n > 2L &&
+          identical( xz.angle.def[1L], 0. ) && 
           identical( xz.angle.def[n], 180. ) &&
-          !all( d[1] == d[-1] )
+          !all( d[1L] == d[-1L] )
         ){
           
-          xz.angle.mid.class[1] <- xz.angle.mid.class[1] - (180. - xz.angle.mid.class[n-1])
-          xz.angle.mid.class <- xz.angle.mid.class[-(n-1)]
+          xz.angle.mid.class[1L] <- xz.angle.mid.class[1L] - (180. - xz.angle.mid.class[n-1L])
+          xz.angle.mid.class <- xz.angle.mid.class[-(n-1L)]
         }
                 
-        if( missing( col ) ) col <- 1:length( xy.angle.mid.class )
-        if( missing( pch ) ) pch <- 1:length( xz.angle.mid.class )
+        if( missing( col ) ) col <- 1L:length( xy.angle.mid.class )
+        if( missing( pch ) ) pch <- 1L:length( xz.angle.mid.class )
         if( missing( xlab ) ) xlab <- "lag distance"
         if( missing( ylab ) ) ylab <- what
         
         if( !add ){
-          plot( c(0, xmax), c(0, ymax ), xlab = xlab, 
+          plot( c(0., xmax), c(0., ymax ), xlab = xlab, 
             ylab = ylab, type = "n", ... )
         }
         
@@ -1637,13 +2041,13 @@ plot.georob <-
 
  ##############################################################################
 
-lines.georob <- lines.fitted.variogram <- 
+lines.georob <- 
   function( 
     x, 
     what = c("variogram", "covariance", "correlation"),
     from = 1.e-6, to, n = 501, 
-    xy.angle = 90,
-    xz.angle = 90,
+    xy.angle = 90.,
+    xz.angle = 90.,
     col = 1:length( xy.angle ), pch = 1:length( xz.angle ), lty = "solid", ...
   )
 {
@@ -1653,16 +2057,18 @@ lines.georob <- lines.fitted.variogram <-
   ## 2012-12-12 A. Papritz
   ## 2013-06-12 AP substituting [["x"]] for $x in all lists
   ## 2014-05-08 AP changes for plotting covariances and correlations
-  
+  ## 2016-08-19 AP changes for nested variogram models
+    
   d2r <- pi / 180.
   
   what <- match.arg( what )
   
+  tmp <- sapply( x[["variogram.object"]], function(x) x[["variogram.model"]] )
   if( 
-    x[["variogram.model"]] %in% control.georob()[["irf.models"]] && 
+    any( tmp  %in% control.georob()[["irf.models"]] ) && 
     what != "variogram" 
   ) stop(
-    "stationary covariance and correlation does not exist for intrinsic variogram model 'RMfbm'"  
+    "stationary covariance and correlation does not exist for intrinsic variogram models"  
   )
   
   ## generate grid of angle classes
@@ -1675,8 +2081,8 @@ lines.georob <- lines.fitted.variogram <-
   ## set up lag distances
   
   if( missing( to ) ){
-    u <- par( "usr" )[1:2]
-    to <- (u[2] + 0.04/1.04*u[1]) / (1.04 - 0.04^2/1.04)
+    u <- par( "usr" )[1L:2L]
+    to <- (u[2L] + 0.04/1.04*u[1L]) / (1.04 - 0.04^2/1.04)
   }
   
   lag.class <- seq( from, to, length = n )
@@ -1684,7 +2090,7 @@ lines.georob <- lines.fitted.variogram <-
   ## determine number of dimensions
   
   if( identical( class( x ), "fitted.variogram" ) ){
-    ndim <- 3
+    ndim <- attr( x, "ndim" )
   } else {
     ndim <- NCOL( x[["locations.objects"]][["coordinates"]] )
   }
@@ -1692,17 +2098,17 @@ lines.georob <- lines.fitted.variogram <-
   ## loop over all angles
   
   t.bla <- lapply(
-    1:NROW( angle ),
+    1L:NROW( angle ),
     function( 
       i, what, angle, lag.class, 
-      variogram.model, param, aniso, 
+      variogram.object, 
       nxy, nxz, ndim, col, pch, lty, ...
     ){
       
       ## generate lag vectors
       
       t.aux <- lag.class * sin( angle[i, "xz"] )
-      lag.vector <- cbind(
+      lag.vectors <- cbind(
         t.aux * sin( angle[i, "xy"] ),
         t.aux * cos( angle[i, "xy"] ),
         lag.class * cos( angle[i, "xz"] )
@@ -1710,25 +2116,49 @@ lines.georob <- lines.fitted.variogram <-
       
       ## drop unneeded components
       
-      lag.vector <- lag.vector[, 1:ndim, drop = FALSE ]
+      lag.vectors <- lag.vectors[, 1L:ndim, drop = FALSE ]
+      attr( lag.vectors, "ndim.coords" ) <- NCOL( lag.vectors )
       
-      ## compute semivariance
+      ## compute the generalized covariance
       
-      r.gamma <- f.aux.gamma(
-        lag.vector, variogram.model, param, aniso
+      Valpha <- f.aux.gcr( 
+        lag.vectors = lag.vectors,
+        variogram.object = x[["variogram.object"]], symmetric = FALSE,
+        control.pcmp = control.pcmp(max.ncores=1L), ...
       )
       
-      if( identical( class( r.gamma ), "try-error" ) || any( is.na( r.gamma ) ) ){
-        stop( "\nan error occurred when computing semivariances\n" )
-      }
+      if( any( sapply( Valpha, function(x) x[["error"]] ) ) ) stop( 
+        "\nan error occurred when computing semivariances\n" 
+      )
       
+      ## compute semivariance of signal and sum up
+      
+      r.gamma <- rowSums( sapply(
+          1L:length(Valpha), 
+          function( i, x, variogram.object ){
+            x <- Valpha[[i]]
+            -( x[["Valpha"]] - x[["gcr.constant"]] ) * variogram.object[[i]][["param"]]["variance"]
+          }, x = Valpha, variogram.object = x[["variogram.object"]]
+        ))
+      
+      ## add nugget
+      
+      sel <- sqrt( rowSums( lag.vectors^2 ) ) > 0.
+      r.gamma[sel] <- r.gamma[sel] + sum( 
+        x[["variogram.object"]][[1L]][["param"]][c("nugget", "snugget")] 
+      )
+            
       ## plot semivariance
       
-      sel.pch <- ((i-1) %/% nxy) + 1
-      sel.col <- i - (sel.pch-1) * nxy
-      type <- if( nxz > 1 ) "o" else "l"
+      sel.pch <- ((i-1L) %/% nxy) + 1L
+      sel.col <- i - (sel.pch-1L) * nxy
+      type <- if( nxz > 1L ) "o" else "l"
       
-      sill <- sum( param[c("variance", "snugget", "nugget")])
+      sill <- sum( unlist( lapply( 
+            x[["variogram.object"]], 
+            function(x) x[["param"]][names(x[["param"]]) %in% c("variance", "snugget", "nugget")]
+          )))
+      
       r.gamma <- switch(
         what,
         variogram = r.gamma,
@@ -1744,9 +2174,7 @@ lines.georob <- lines.fitted.variogram <-
     what = what,
     angle = angle,
     lag.class = lag.class,
-    variogram.model = x[["variogram.model"]],
-    param = x[["param"]],
-    aniso = x[["aniso"]],
+    variogram.object = x[["variogram.object"]],
     nxy = length( xy.angle ),
     nxz = length( xz.angle ),
     ndim = ndim,
@@ -1756,3 +2184,5 @@ lines.georob <- lines.fitted.variogram <-
   invisible( NULL )
   
 }
+
+lines.fitted.variogram <- lines.georob

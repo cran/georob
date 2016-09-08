@@ -42,7 +42,7 @@ sample.variogram(object, ...)
 
 \method{plot}{sample.variogram}(x, type = "p", add = FALSE, 
     xlim = c(0, max(x[["lag.dist"]])),
-    ylim = c(0, 1.1 * max(x[["gamma"]])), col, pch, cex = 0.8, 
+    ylim = c(0, 1.1 * max(x[["gamma"]])), col, pch, lty, cex = 0.8, 
     xlab = "lag distance", ylab = "semivariance", 
     annotate.npairs = FALSE, npairs.pos = 3, npairs.cex = 0.7, 
     legend = nlevels(x[["xy.angle"]]) > 1 || nlevels(x[["xz.angle"]]) > 1, 
@@ -144,6 +144,8 @@ sample.variogram(object, ...)
   \item{pch}{the type of plotting symbols for distinguishing semi variances
   for angular classes in the \eqn{x}-\eqn{z}-plane.}
 
+  \item{lty}{the line type.}
+
   \item{cex}{character expansion factor for plotting symbols.}
   
   \item{annotate.npairs}{logical controlling whether the plotting symbols
@@ -204,7 +206,7 @@ with the following components:
   Cressie, N. and Hawkins, D. M. (1980) Robust Estimation of the Variogram: I.
   \emph{Mathematical Geology}, \bold{12}, 115--125.
 
-  Dowd, P. A. (1984) The variogram and kriging: Robust and resistant
+  Dowd, P. A. (1984) The variogram and Kriging: Robust and resistant
   estimators.  In \emph{Geostatistics for Natural Resources
   Characterization},  Verly, G., David, M., Journel, A. and Marechal, A. (Eds.)
   Dordrecht: D. Reidel Publishing Company, Part I, 1, 91--106.

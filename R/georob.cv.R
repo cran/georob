@@ -4,17 +4,15 @@ cv <- function( object, ... ) UseMethod( "cv" )
 
 ##  ############################################################################
 
-# cv.default <- function( 
-#   object, 
+# cv.default <- function(
+#   object,
 #   formula = NULL, subset = NULL,
 #   nset = 10, seed = NULL, sets = NULL,
-#   
+#
 #   ... )
 # {
-#   
-#   
-#   
-# }
+#
+### }
 
 ##  ############################################################################
 
@@ -24,10 +22,12 @@ cv.georob <-
     formula = NULL, subset = NULL,
     method = c( "block", "random" ), nset = 10, seed = NULL, sets = NULL,
     duplicates.in.same.set = TRUE,
-    re.estimate = TRUE, param = object[["param"]], 
-    fit.param = object[["initial.objects"]][["fit.param"]],
-    aniso = object[["aniso"]][["aniso"]], 
-    fit.aniso = object[["initial.objects"]][["fit.aniso"]],
+    re.estimate = TRUE,    param = object[["variogram.object"]][[1]][["param"]],
+    fit.param = object[["variogram.object"]][[1]][["fit.param"]],
+    aniso = object[["variogram.object"]][[1]][["aniso"]],
+    fit.aniso = object[["variogram.object"]][[1]][["fit.aniso"]],
+    variogram.object = NULL,
+    use.fitted.param = TRUE,
     return.fit = FALSE, reduced.output = TRUE,
     lgn = FALSE,
     mfl.action = c( "offset", "stop" ),
@@ -36,14 +36,10 @@ cv.georob <-
     ...
   )
 {
-  
-  ## Function computes nset-fold cross-validation predictions from a
+  ## Function computes nset-fold cross-validation predictions from a
   ## fitted georob object
-  
-  
-  ## History:
-  
-  ## 2011-10-24 Korrektur Ausschluss von nichtbenoetigten Variablen fuer lognormal kriging
+  ## History:
+  ## 2011-10-24 Korrektur Ausschluss von nichtbenoetigten Variablen fuer lognormal kriging
   ## 2011-12-23 AP modified for replicated observations and for parallel computing
   ## 2012-03-02 AP eliminated possibility for logging to file in parallel processing
   ## 2012-03-19 AP correction of error in parallel processing on Windows
@@ -68,155 +64,119 @@ cv.georob <-
   ## 2015-03-16 AP items to compute huberized prediction error
   ## 2015-06-23 AP modifications for robust prediction of response
   ## 2015-07-17 AP excluding blocks of observations
-  ## 2015-07-20 AP inactivation of modifications for robust prediction of response 
-  ##               (variables: robust, se.signal, scld.res, resscl)
+  ## 2015-07-20 AP inactivation of modifications for robust prediction of response  ##               (variables: robust, se.signal, scld.res, resscl)
   ## 2015-08-28 AP computation of hessian suppressed
   ## 2015-11-26 AP catching errors occurring during parallel model fits
   ## 2016-05-27 AP allow recursive calls of mclapply
   ## 2016-07-20 AP changes for parallel computations
-  
-  
-  ## auxiliary function that fits the model and computes the predictions of
+  ## 2016-08-17 AP changes for nested variogram models
+  ## 2016-08-22 AP correcting error when computing  standard errors of cv kriging predictions
+  ## auxiliary function that fits the model and computes the predictions of
   ## a cross-validation set
-  
-  f.aux <- function( 
-    ..i.., object, formula, data, sets,  
-    param, fit.param, aniso, fit.aniso, lgn, 
-    verbose, ...
+  f.aux <- function(    ..i.., object, formula, data, sets,    variogram.object, is.mat.param.aniso, lgn,    verbose, ...
   ){  ## cv function
-    
-    if (verbose) cat( "\n\n  processing cross-validation set", ..i.., "\n" ) 
-    
-    ## change environment of terms and formula so that subset selection works for update            
-    
-    environment( formula ) <- environment()
-    environment( object[["terms"]] ) <- environment()
-    
-    ## read-off initial values of variogram parameters
-    
-    if( ( is.matrix( param ) || is.data.frame( param ) ) )  param <- param[..i..,]
-    if( ( is.matrix( fit.param ) || is.data.frame( fit.param ) ) )  fit.param <- fit.param[..i..,]
-    if( ( is.matrix( aniso ) || is.data.frame( param ) ) )  aniso <- aniso[..i..,]
-    if( ( is.matrix( fit.aniso ) || is.data.frame( fit.aniso ) ) )  fit.aniso <- fit.aniso[..i..,]
-
-    t.georob <- update( 
-      object, 
-      formula = formula,
+    if (verbose) cat( "\n\n  processing cross-validation set", ..i.., "\n" )    ## change environment of terms and formula so that subset selection works for update    tmp <- environment()
+    environment( formula ) <- tmp
+    environment( object[["terms"]] ) <- tmp
+    ## read-off initial values of variogram parameters
+    if( is.mat.param.aniso ){
+      variogram.object <- lapply(
+        1L:length( variogram.object ),
+        function( i, vo, ovo, ..i.. ){
+          param <- vo[[i]][["param"]]
+          fit.param <- vo[[i]][["fit.param"]]
+          aniso <- vo[[i]][["aniso"]]
+          fit.aniso <- vo[[i]][["fit.aniso"]]
+          if( !is.null(param) && ( is.matrix( param ) || is.data.frame( param ) ) )  param <- param[..i..,]
+          if( !is.null(fit.param) && (is.matrix( fit.param ) || is.data.frame( fit.param ) ) )  fit.param <- fit.param[..i..,]
+          if( !is.null(aniso) && ( is.matrix( aniso ) || is.data.frame( param ) ) )  aniso <- aniso[..i..,]
+          if( !is.null(fit.aniso) && ( is.matrix( fit.aniso ) || is.data.frame( fit.aniso ) ) )  fit.aniso <- fit.aniso[..i..,]
+          if( !is.null(param) ) ovo[[i]][["param"]] <- param
+          if( !is.null(fit.param) ) ovo[[i]][["fit.param"]] <- fit.param
+          if( !is.null(aniso) ) ovo[[i]][["aniso"]] <- aniso
+          if( !is.null(fit.aniso) ) ovo[[i]][["fit.aniso"]] <- fit.aniso
+          ovo[[i]]
+        }, vo = variogram.object, ovo = object[["variogram.object"]], ..i.. = ..i..
+      )
+      object[["variogram.object"]] <- variogram.object
+      object[["call"]] <- f.call.set_allxxx_to_fitted_values( object )
+    }
+    t.georob <- update(      object,      formula = formula,
       data = data,
       subset = -sets[[..i..]] ,
-      param = param, fit.param = fit.param,
-      aniso = aniso, fit.aniso = fit.aniso,
-      verbose = verbose,
       object. = NULL,
       ...
     )
-    
-    if( verbose > 0 ){
+    if( verbose > 0. ){
       cat( "\n\n" )
       print( summary( t.georob ) )
     }
-    
-    ## compute predictions for current set
-    
-    ## note that the signal is predicted here; the predictive distribution
+    ## compute predictions for current set
+    ## note that the signal is predicted here; the predictive distribution
     ## of the response is then modelled from the pooled cross-validation
     ## predictions of th signal and the residuals of the object fitted to
     ## the full data set (cf.  main part of the function)
-    
-    t.predict <- predict( 
-      t.georob, newdata = data[sets[[..i..]], ], type = "signal", signif = NULL,
+    t.predict <- predict(      t.georob, newdata = data[sets[[..i..]], ], type = "response", signif = NULL,
       mmax = length( sets[[..i..]] ),
-      control = control.predict.georob( ncores = 1, extended.output = lgn ) 
-    )
-        
-    ## backtransformation for log-normal kriging
-    
-    if( lgn ){
+      control = control.predict.georob( ncores = 1L, extended.output = lgn )    )
+    ## backtransformation for log-normal kriging
+    if( lgn ){
       t.predict <- lgnpp( t.predict )
-      t.predict <- t.predict[, -match( 
-        c( "trend", "var.pred", "cov.pred.target", "var.target" ), names( t.predict ) 
-      )]
+      t.predict <- t.predict[, -match(        c( "trend", "var.pred", "cov.pred.target", "var.target" ), names( t.predict )      )]
     }
-    
-    t.predict <- data.frame( i = sets[[..i..]], t.predict )
-        
-    if( reduced.output ){
-      
-      if( !is.null( t.georob[["cov"]][["cov.betahat"]] ) ){
+    t.predict <- data.frame( i = sets[[..i..]], t.predict )
+    if( reduced.output ){
+      if( !is.null( t.georob[["cov"]][["cov.betahat"]] ) ){
         t.se.coef <- sqrt( diag( expand( t.georob[["cov"]][["cov.betahat"]] ) ) )
       } else {
         t.se.coef <- NULL
       }
-      
-      t.georob <- t.georob[c(  
-        "tuning.psi", "converged", "convergence.code",
-        "gradient", "variogram.model", "param", "aniso",
+      t.georob <- t.georob[c(        "tuning.psi", "converged", "convergence.code",
+        "gradient", "variogram.object",
         "coefficients"
       )]
-      
-      t.georob[["aniso"]] <- t.georob[["aniso"]][["aniso"]]
-      
-      if( !is.null( t.se.coef ) ) t.georob[["se.coefficients"]] <- t.se.coef
-      
-    }
-    
-    return( list( pred = t.predict, fit = t.georob ) )
+      if( !is.null( t.se.coef ) ) t.georob[["se.coefficients"]] <- t.se.coef
+    }
+    return( list( pred = t.predict, fit = t.georob ) )
     ## end cv function
   }
-  
-  ## begin of main body of function
-  
-  method <- match.arg( method )
-      
-  mfl.action <- match.arg( mfl.action )
-  
-  ## update terms of object is formula is provided
-  
-  if( !is.null( formula ) ){
+  #############################
+  ## begin of main body of function
+  method <- match.arg( method )
+  mfl.action <- match.arg( mfl.action )
+  ## update terms of object is formula is provided
+  if( !is.null( formula ) ){
     formula <- update( formula( object ), formula )
     object[["terms"]] <- terms( formula )
   } else {
     formula <- formula( object )
   }
-    
-  ## get data.frame with required variables (note that the data.frame passed
+  ## get data.frame with required variables (note that the data.frame passed
   ## as data argument to georob must exist in GlobalEnv)
 
   data <- cbind(
-    get_all_vars( 
-      formula( object ), data = eval( getCall(object)[["data"]] )
+    get_all_vars(      formula( object ), data = eval( getCall(object)[["data"]] )
     ),
-    get_all_vars( 
-      object[["locations.objects"]][["locations"]], eval( getCall(object)[["data"]] )
+    get_all_vars(      object[["locations.objects"]][["locations"]], eval( getCall(object)[["data"]] )
     )
   )
-  
-  if( identical( class( object[["na.action"]] ), "omit" ) ) data <- na.omit(data)
-  
-  ## select subset if appropriate
-  
-  if( !is.null( subset ) ){
+  if( identical( class( object[["na.action"]] ), "omit" ) ) data <- na.omit(data)
+  ## select subset if appropriate
+  if( !is.null( subset ) ){
     data <- data[subset, ]
     object[["Tmat"]] <- object[["Tmat"]][subset]
   } else if( !is.null( getCall(object)[["subset"]] ) ){
    data <- data[eval( getCall(object)[["subset"]] ), ]
   }
-  
-#   if( !is.null( getCall(object)[["subset"]] ) )
-   
-  ## define cross-validation sets
-  
-  if( is.null( sets ) ){
-    
-    if( !is.null( seed ) ) set.seed( seed )
-    
-    sets <- switch(
+#   if( !is.null( getCall(object)[["subset"]] ) )
+  ## define cross-validation sets
+  if( is.null( sets ) ){
+    if( !is.null( seed ) ) set.seed( seed )
+    sets <- switch(
       method,
       random = {
         sets <- runif( NROW( data ) )
-        sets <- cut( 
-          sets, 
-          breaks = c( -0.1, quantile( sets, probs = ( 1:(nset-1)/nset ) ), 1.1 )
+        sets <- cut(          sets,          breaks = c( -0.1, quantile( sets, probs = ( 1L:(nset-1L)/nset ) ), 1.1 )
         )
         factor( as.integer( sets ) )
       },
@@ -226,38 +186,27 @@ cv.georob <-
         sets
       }
     )
-    
-  } else {
-    
-    nset <- length( unique( sets ) )
+  } else {
+    nset <- length( unique( sets ) )
     if( length( sets ) != NROW( data ) ) stop(
-      "sets must be an integer vector with length equal to the number of observations"      
-    )
-    
-  }
-  
-  if( duplicates.in.same.set ){
+      "sets must be an integer vector with length equal to the number of observations"    )
+  }
+  if( duplicates.in.same.set ){
     dups <- duplicated( object[["Tmat"]] )
     idups <- match( object[["Tmat"]][dups], object[["Tmat"]][!dups] )
     sets[dups] <- (sets[!dups])[idups]
   }
-  
-  sets <- tapply(
-    1:NROW( data ),
+  sets <- tapply(
+    1L:NROW( data ),
     sets,
     function( x ) x
   )
-  
-  ## check whether all levels of factors are present in all calibration sets
-  
-  isf <- sapply( data, is.factor )
-  
-  mfl <- sapply(
+  ## check whether all levels of factors are present in all calibration sets
+  isf <- sapply( data, is.factor )
+  mfl <- sapply(
     names( data )[isf],
     function( v, data, sets ){
-      nolevel <- sapply( 
-        sets, 
-        function(s, x) any( table( x[-s] ) < 1 ),
+      nolevel <- sapply(        sets,        function(s, x) any( table( x[-s] ) < 1. ),
         x = data[, v]
       )
       if( any( nolevel ) ){
@@ -285,484 +234,471 @@ cv.georob <-
     },
     data = data, sets = sets
   )
-  
-  if( any( mfl ) ){
+  if( any( mfl ) ){
     v <- names( mfl )[mfl]
-    
-    ## construct offset and append to data
-    
-    offset <- apply( predict( object, type = "terms", terms = v )$fit, 1, sum )
-    
-    if( length( offset ) != nrow( data ) ) stop( "offset and data with incompatible dimensions" )
+    ## construct offset and append to data
+    offset <- apply( predict( object, type = "terms", terms = v )$fit, 1L, sum )
+    if( length( offset ) != NROW( data ) ) stop( "offset and data with incompatible dimensions" )
     data[, "..offset.."] <- offset
-    
-    ## update formula
-    formula <- update( 
-      formula, 
-      as.formula(
-        paste( 
-          ". ~ . -", paste( v, collapse = " - " ) , "+ offset(..offset..)" )
-      ) 
-    )
-    
-  }
-  
-  
-  ## redefine na.action component of object
-  
-  if( identical( class( object[["na.action"]] ), "exclude" ) ){
+    ## update formula
+    formula <- update(      formula,      as.formula(
+        paste(          ". ~ . -", paste( v, collapse = " - " ) , "+ offset(..offset..)" )
+      )    )
+  }
+  ## redefine na.action component of object
+  if( identical( class( object[["na.action"]] ), "exclude" ) ){
     class( object[["na.action"]] ) <- "omit"
   }
-  
-  ## check whether all variogram parameters are fixed
-  
-  if( !any( c( fit.param, fit.aniso ) ) && re.estimate ){
+  ## setup or check contents of variogram.object
+  if( is.null( variogram.object ) ){
+    ## match names of param, aniso, fit.param, fit.aniso
+    ## !! CARE: code works only if fit.param has not been used before (lazy evaluation)
+    if( is.matrix(param) || is.data.frame(param) ){
+      tmp <- colnames( param )
+      tmp <- sapply(tmp, function(x, choices) match.arg(x, choices),
+        choices = names( default.fit.param() )
+      )
+      colnames( param ) <- nme.param <- tmp
+    } else if( is.numeric(param) ){
+      tmp <- names( param )
+      tmp <- sapply(tmp, function(x, choices){
+          match.arg(x, choices)
+        },
+        choices = names( default.fit.param() )
+      )
+      names( param ) <- nme.param <- tmp
+    } else stop( "'param' must be a numeric vector or a matrix" )
+
+    if( is.matrix(fit.param) || is.data.frame(fit.param) ){
+      tmp <- colnames( fit.param )
+      tmp <- sapply(tmp, function(x, choices){
+          match.arg(x, choices)
+        },
+        choices = names( default.fit.param() )
+      )
+      colnames( fit.param ) <- tmp
+      fit.param <- fit.param[, colnames( fit.param ) %in% nme.param]
+    } else if( is.logical(fit.param) ){
+      tmp <- names( fit.param )
+      tmp <- sapply(tmp, function(x, choices) match.arg(x, choices),
+        choices = names( default.fit.param() )
+      )
+      names( fit.param ) <- tmp
+      fit.param <- fit.param[names( fit.param ) %in% nme.param]
+    } else stop( "'fit.param' must be a logical vector or a matrix" )
+    if( is.matrix(aniso) || is.data.frame(aniso) ){
+      tmp <- colnames( aniso )
+      tmp <- sapply(tmp, function(x, choices) match.arg(x, choices),
+        choices = names( default.aniso() )
+      )
+      colnames( aniso ) <- tmp
+    } else if( is.numeric(aniso) ){
+      tmp <- names( aniso )
+      tmp <- sapply(tmp, function(x, choices) match.arg(x, choices),
+        choices = names( default.aniso() )
+      )
+      names( aniso ) <- tmp
+    } else stop( "'aniso' must be a numeric vector or a matrix" )
+    if( is.matrix(fit.aniso) || is.data.frame(fit.aniso) ){
+      tmp <- colnames( fit.aniso )
+      tmp <- sapply(tmp, function(x, choices) match.arg(x, choices),
+        choices = names( default.aniso() )
+      )
+      colnames( fit.aniso ) <- tmp
+    } else if( is.logical(fit.aniso) ){
+      tmp <- names( fit.aniso )
+      tmp <- sapply(tmp, function(x, choices) match.arg(x, choices),
+        choices = names( default.aniso() )
+      )
+      names( fit.aniso ) <- tmp
+    } else stop( "'fit.aniso' must be a logical vector or a matrix" )
+    ## create variogram.object
+    variogram.object <- list(
+      list(        param = param, fit.param = fit.param,
+        aniso = aniso, fit.aniso = fit.aniso
+      )
+    )
+  } else {
+    variogram.object <- lapply(
+      variogram.object,
+      function( y ){
+        param      <- y[["param"]]
+        fit.param  <- y[["fit.param"]]
+        aniso      <- y[["aniso"]]
+        fit.aniso  <- y[["fit.aniso"]]
+        ## match names of components
+        nme.param <- NULL
+        if( !is.null(param) ){
+          if( is.matrix(param) || is.data.frame(param) ){
+            tmp <- colnames( param )
+            tmp <- sapply(tmp, function(x, choices) match.arg(x, choices),
+              choices = names( default.fit.param() )
+            )
+            colnames( param ) <- nme.param <- tmp
+          } else if( is.numeric(param) ){
+            tmp <- names( param )
+            tmp <- sapply(tmp, function(x, choices){
+                match.arg(x, choices)
+              },
+              choices = names( default.fit.param() )
+            )
+            names( param ) <- nme.param <- tmp
+          } else stop( "'param' must be a numeric vector or a matrix" )
+          y[["param"]] <- param
+        }
+        if( !is.null(fit.param) ){
+          if( is.matrix(fit.param) || is.data.frame(fit.param) ){
+            tmp <- colnames( fit.param )
+            tmp <- sapply(tmp, function(x, choices){
+                match.arg(x, choices)
+              },
+              choices = names( default.fit.param() )
+            )
+            colnames( fit.param ) <- tmp
+            if( !is.null( nme.param ) ){
+              fit.param <- fit.param[, colnames( fit.param ) %in% nme.param]
+            }
+          } else if( is.logical(fit.param) ){
+            tmp <- names( fit.param )
+            tmp <- sapply(tmp, function(x, choices) match.arg(x, choices),
+              choices = names( default.fit.param() )
+            )
+            names( fit.param ) <- tmp
+            if( !is.null( nme.param ) ){
+              fit.param <- fit.param[names( fit.param ) %in% nme.param]
+            }
+          } else stop( "'fit.param' must be a logical vector or a matrix" )
+          y[["fit.param"]] <- fit.param
+        }
+        if( !is.null(aniso) ){
+          if( is.matrix(aniso) || is.data.frame(aniso) ){
+            tmp <- colnames( aniso )
+            tmp <- sapply(tmp, function(x, choices) match.arg(x, choices),
+              choices = names( default.aniso() )
+            )
+            colnames( aniso ) <- tmp
+          } else if( is.numeric(aniso) ) {
+            tmp <- names( aniso )
+            tmp <- sapply(tmp, function(x, choices) match.arg(x, choices),
+              choices = names( default.aniso() )
+            )
+            names( aniso ) <- tmp
+          } else stop( "'aniso' must be a numeric vector or a matrix" )
+          y[["aniso"]] <- aniso
+        }
+        if( !is.null(fit.aniso) ){
+          if( is.matrix(fit.aniso) || is.data.frame(fit.aniso) ){
+            tmp <- colnames( fit.aniso )
+            tmp <- sapply(tmp, function(x, choices) match.arg(x, choices),
+              choices = names( default.aniso() )
+            )
+            colnames( fit.aniso ) <- tmp
+          } else if( is.logical(fit.aniso) ) {
+            tmp <- names( fit.aniso )
+            tmp <- sapply(tmp, function(x, choices) match.arg(x, choices),
+              choices = names( default.aniso() )
+            )
+            names( fit.aniso ) <- tmp
+          } else stop( "'fit.aniso' must be a logical vector or a matrix" )
+          y[["fit.aniso"]] <- fit.aniso
+        }
+        y
+      }
+    )
+  }
+  ## check whether all variogram parameters are fixed
+  fit.param.aniso <- unlist( lapply(      1L:length(variogram.object),      function( i, x, fvo ){
+        x <- x[[i]]
+        fvo <- fvo[[i]]
+        res <- NULL
+        if( is.null( x[["fit.param"]] ) ){
+          res <- c( res, fvo[["fit.param"]] )
+        } else {
+          res <- c( res, x[["fit.param"]] )
+        }
+        if( is.null( x[["fit.aniso"]] ) ){
+          res <- c( res, fvo[["fit.aniso"]] )
+        } else {
+          res <- c( res, x[["fit.aniso"]] )
+        }
+        res
+      }, x = variogram.object, fvo = object[["variogram.object"]]
+    ))
+  if( !any( fit.param.aniso ) && re.estimate ){
     re.estimate <- FALSE
     cat(
-      "re.estimate set equal to FALSE because all variogram parameters are fixed\n\n"    
-    )
+      "re.estimate set equal to FALSE because all variogram parameters are fixed\n\n"    )
     warnings(
-      "re.estimate set equal to FALSE because all variogram parameters are fixed"    
-    )
+      "re.estimate set equal to FALSE because all variogram parameters are fixed"    )
   }
-  
-  ## check dimension of param, fit.param, aniso, fit.aniso
-  
-  if( ( is.matrix( param ) || is.data.frame( param ) ) && nrow( param )!= nset ) stop(
-    "'param' must have 'nset' rows if it is a matrix or data frame"  
-  )
-    
-  if( ( is.matrix( fit.param ) || is.data.frame( fit.param ) ) && nrow( fit.param )!= nset ) stop(
-    "'fit.param' must have 'nset' rows if it is a matrix or data frame"  
-  )
-    
-  if( ( is.matrix( aniso ) || is.data.frame( aniso ) ) && nrow( aniso )!= nset ) stop(
-    "'aniso' must have 'nset' rows if it is a matrix or data frame"  
-  )
-    
-  if( ( is.matrix( fit.aniso ) || is.data.frame( fit.aniso ) ) && nrow( fit.aniso )!= nset ) stop(
-    "'fit.aniso' must have 'nset' rows if it is a matrix or data frame"  
-  )
-  
-  ## keep all variogram parameters fixed for re.estimate == FALSE
-  
-  if( !re.estimate ){
-	fit.param <- default.fit.param( variance = FALSE, nugget = FALSE, scale = FALSE )[names( param )]
-	fit.aniso <- default.fit.aniso()
-  }
-  
-  
-  ## set hessian equal to FALSE in control argument of georob call and update
-  ## call
-  
-  if( reduced.output || !return.fit ){
-    
-    cl <- object[["call"]]
-    
-    if( "control" %in% names(cl) ){
-      
-      ## georob called with control argument
-      
-      cl.control <- as.list( cl[["control"]] )
-      cl <- cl[ -match( "control", names(cl) ) ]
-      if( "hessian" %in% names(cl.control) ){
-        cl.control["hessian"] <- list( hessian = FALSE )
-      } else {
-        cl.control <- c( cl.control, hessian = FALSE )
+  ## check dimension of param, fit.param, aniso, fit.aniso
+  if(    !is.list(variogram.object) ||    !identical( length( object[["variogram.object"]]), length( variogram.object ) )  ) stop(
+    "'variogram.object' must be a list of the same length as 'object[[variogram.object]]' "  )
+  is.mat.param.aniso <- any( sapply(    variogram.object,
+    function( x, nset ){
+      is.mat <- FALSE
+      if( is.matrix( x[["param"]] ) || is.data.frame( x[["param"]] ) ){
+        if( NROW( x[["param"]] )!= nset ) stop(
+          "'param' must have 'nset' rows if it is a matrix or data frame"        )
+        is.mat <- TRUE
       }
-      
-    } else {
-      
-      ## georob called without control argument
-      
-      cl.control <- list( as.symbol("control.georob"), hessian = FALSE )
-      
-    }
-    
-    object[["call"]] <- as.call(  c( as.list(cl), control = as.call(cl.control) ) )
+      if( is.matrix( x[["fit.param"]] ) || is.data.frame( x[["fit.param"]] ) ){
+        if( NROW( x[["fit.param"]] )!= nset ) stop(
+          "'fit.param' must have 'nset' rows if it is a matrix or data frame"        )
+        is.mat <- TRUE
+      }
+      if( is.matrix( x[["aniso"]] ) || is.data.frame( x[["aniso"]] ) ){
+        if( NROW( x[["aniso"]] )!= nset ) stop(
+          "'aniso' must have 'nset' rows if it is a matrix or data frame"        )
+        is.mat <- TRUE
+      }
+      if( is.matrix( x[["fit.aniso"]] ) || is.data.frame( x[["fit.aniso"]] ) ){
+        if( NROW( x[["fit.aniso"]] )!= nset ) stop(
+          "'fit.aniso' must have 'nset' rows if it is a matrix or data frame"        )
+        is.mat <- TRUE
+      }
+      is.mat
+    }, nset = nset  ))
+  ## set initial values of variogram parameters equal to fitted values
+  if( use.fitted.param ) object[["call"]] <- f.call.set_allxxx_to_fitted_values( object )
+  ## keep all variogram parameters fixed for re.estimate == FALSE
+  cl <- object[["call"]]
+  if( !re.estimate ) cl <- f.call.set_allfitxxx_to_false( cl )
+  ## set hessian equal to FALSE and  avoid computation of covariance matrices
+  if( reduced.output || !return.fit ){
+    cl <- f.call.set_x_to_value_in_fun( cl, "control", "control.georob", "hessian", FALSE )
+    cl <- f.call.set_x_to_value_in_fun( cl, "control", "control.georob", "cov.bhat", FALSE )
+    cl <- f.call.set_x_to_value_in_fun( cl, "control", "control.georob", "cov.delta.bhat", FALSE )
+    cl <- f.call.set_x_to_value_in_fun( cl, "control", "control.georob", "cov.delta.bhat.betahat", FALSE )
+    cl <- f.call.set_x_to_value_in_fun( cl, "control", "control.georob", "cov.ehat", FALSE )
+    cl <- f.call.set_x_to_value_in_fun( cl, "control", "control.georob", "cov.ehat.p.bhat", FALSE )
   }
-  
-  ## loop over all cross-validation sets
-  
-  if( ncores > 1 ){
-    
-    ## parallel processing    
+  ## set verbose argument
+  cl <- f.call.set_x_to_value( cl, "verbose", verbose )
+  ## update call in object
 
-    if( .Platform[["OS.type"]] == "windows" ){
-      
-      ## create a SNOW cluster on windows OS
-      
-      cl <- makePSOCKcluster( ncores, outfile = "")
-      
-      ## export required items to workers
-      
-      junk <- clusterEvalQ( cl, require( georob, quietly = TRUE ) )
-      
-      t.result <- try(
-        parLapply(
-          cl, 
-          1:length( sets ),
-          f.aux, 
-          object = object,
-          formula = formula,
-          data = data,
-          sets = sets,
-          param = param, fit.param = fit.param,
-          aniso = aniso, fit.aniso = fit.aniso,
-          lgn = lgn, 
-          verbose = verbose,
-          ...
-        ), silent = TRUE
-      )
-      
-      stopCluster(cl)
-      
-    } else {
-      
-      ## fork child processes on non-windows OS
-      
-      t.result <- try(
-        mclapply(
-          1:length( sets ),
-          f.aux, 
-          object = object,
-          formula = formula,
-          data = data,
-          sets = sets,
-          param = param, fit.param = fit.param,
-          aniso = aniso, fit.aniso = fit.aniso,
-          lgn = lgn, 
-          verbose = verbose,
-          mc.cores = ncores,
-          mc.allow.recursive = object[["control"]][["pcmp"]][["allow.recursive"]],
-          ...
-        ) 
-        , silent = TRUE
-      )
-            
-    }
-    
-    has.error <- sapply(
-      t.result, function( x ) identical( class(x), "try-error" ) 
+  object[["call"]] <- cl
+  ## loop over all cross-validation sets
+  if( ncores > 1L && .Platform[["OS.type"]] == "windows" ){
+    ## create a SNOW cluster on windows OS
+    cl <- makePSOCKcluster( ncores, outfile = "")
+    ## export required items to workers
+    junk <- clusterEvalQ( cl, require( georob, quietly = TRUE ) )
+    t.result <- try(
+      parLapply(
+        cl,        1L:length( sets ),
+        f.aux,        object = object,
+        formula = formula,
+        data = data,
+        sets = sets,
+        variogram.object = variogram.object,
+        is.mat.param.aniso = is.mat.param.aniso,
+        lgn = lgn,        verbose = verbose,
+        ...
+      ), silent = TRUE
     )
-    
-    if( any( has.error ) ){
-      cat( "\nerror(s) occurred when fitting model in parallel to cross-validation sets:\n\n" )
-      sapply( t.result[has.error], cat)
-      cat( "\nrun cross-validation with arguments 'ncores = 1' and 'verbose = 2'\n\n" ) 
-      stop()
-    
-    }
-    
-  } else {
-    
-    ## sequential processing
-    
-    t.result <- lapply(
-      1:length( sets ),
-      f.aux, 
-      object = object,
-      formula = formula,
-      data = data,
-      sets = sets,
-      param = param, fit.param = fit.param,
-      aniso = aniso, fit.aniso = fit.aniso,
-      lgn = lgn, 
-      verbose = verbose,
-      ...
+    stopCluster(cl)
+  } else {
+    ## fork child processes on non-windows OS
+    t.result <- try(
+      mclapply(
+        1L:length( sets ),
+        f.aux,        object = object,
+        formula = formula,
+        data = data,
+        sets = sets,
+        variogram.object = variogram.object,
+        is.mat.param.aniso = is.mat.param.aniso,
+        lgn = lgn,        verbose = verbose,
+        mc.cores = ncores,
+        mc.allow.recursive = object[["control"]][["pcmp"]][["allow.recursive"]],
+        ...
+      )      , silent = TRUE
     )
-    
-  }
-  
-  ## create single data frame with cross-validation results 
-  
-  result <- t.result[[1]][["pred"]]
-  result[["subset"]] <- rep( 1, nrow( t.result[[1]][["pred"]] ) )
-  
-  for( t.i in 2:length( t.result ) ) {
-    result <- rbind( 
-      result, 
-      data.frame( 
-        t.result[[t.i]][["pred"]],
-        subset = rep( t.i, nrow( t.result[[t.i]][["pred"]] ) )
+  }
+  has.error <- sapply(
+    t.result, function( x ) identical( class(x), "try-error" )  )
+  if( any( has.error ) ){
+    cat( "\nerror(s) occurred when fitting model in parallel to cross-validation sets:\n\n" )
+    sapply( t.result[has.error], cat)
+    cat( "\nrun cross-validation with arguments 'ncores = 1' and 'verbose = 2'\n\n" )    stop()
+  }
+  ## create single data frame with cross-validation results  result <- t.result[[1L]][["pred"]]
+  result[["subset"]] <- rep( 1, NROW( t.result[[1L]][["pred"]] ) )
+  for( t.i in 2L:length( t.result ) ) {
+    result <- rbind(      result,      data.frame(        t.result[[t.i]][["pred"]],
+        subset = rep( t.i, NROW( t.result[[t.i]][["pred"]] ) )
       )
     )
   }
   t.ix <- sort( result[["i"]], index.return = T )[["ix"]]
   result <- result[t.ix, ]
-  result[["data"]] <- model.response( 
-    model.frame( formula( object), data, na.action = na.pass ) 
-  )
-  
-  if( lgn ) result[["lgn.data"]] <- exp( result[["data"]] )
-  
-  result <- result[, -match("i", colnames( result) )]
-  
-  isubset <- match( "subset", colnames( result ) )
+  result[["data"]] <- model.response(    model.frame( formula( object), data, na.action = na.pass )  )
+  if( lgn ) result[["lgn.data"]] <- exp( result[["data"]] )
+  result <- result[, -match("i", colnames( result) )]
+  isubset <- match( "subset", colnames( result ) )
   idata <- grep( "data", colnames( result ), fixed = TRUE )
   ipred<-  grep( "pred", colnames( result ), fixed = TRUE )
   ise <-   grep( "se", colnames( result ), fixed = TRUE )
   ise <- ise[ise != isubset]
-  
-  result <- cbind(
+  result <- cbind(
     result[, -c(isubset, idata, ipred, ise)],
     result[,  c(isubset, idata, ipred, ise)]
   )
-  
-  ## compute prediction standard errors of response 
-  
-  #   if( object[["tuning.psi"]] < object[["control"]][["tuning.psi.nr"]] ){
-  #     
-  #     ## robust
-  #     
-  #     resscl <- 1.
+  ## compute prediction standard errors of response  #   if( object[["tuning.psi"]] < object[["control"]][["tuning.psi.nr"]] ){
+  #  #     ## robust
+  #  #     resscl <- 1.
   #     warning( "scale factor for computing empirical distribution of residuals equals 1" )
   #     scld.res <- object[["residuals"]] / resscl
   #     se.signal <- result[, "se"]
-  #     result[, "se"] <- sqrt( 
-  #       result[, "se"]^2 + var(scld.res) * (length(scld.res) - 1) / length(scld.res) 
-  #     )
+  #     result[, "se"] <- sqrt(  #       result[, "se"]^2 + var(scld.res) * (length(scld.res) - 1L) / length(scld.res)  #     )
   #   } else {
-  
-    ## Gaussian 
-    
-  #     scld.res <- NULL
+    ## Gaussian  #     scld.res <- NULL
   #     se.signal <- NULL
-  result[, "se"] <- sqrt( result[, "se"]^2 + object[["param"]]["nugget"] )
-    
-  #   }
-  
-  ## prepare model fits for return
-  
-  t.fit <- lapply( t.result, function( x ) return( x[["fit"]] ) )
-  
-  if( re.estimate && !all( sapply( t.fit, function(x) x[["converged"]] ) ) ) warning(
-    "lack of covergence for  ", 
-    sum( !sapply( t.fit, function(x) x[["converged"]] ) ), " cross-validation sets"
+  #   result[, "se"] <- sqrt( result[, "se"]^2 + variogram.object[[1L]][["param"]]["nugget"] )
+  #   }
+  ## prepare model fits for return
+  t.fit <- lapply( t.result, function( x ) return( x[["fit"]] ) )
+  if( re.estimate && !all( sapply( t.fit, function(x) x[["converged"]] ) ) ) warning(
+    "lack of covergence for  ",    sum( !sapply( t.fit, function(x) x[["converged"]] ) ), " cross-validation sets"
   )
-  
-  result <- list( 
-    pred = result, 
-    fit = if( return.fit ) t.fit else NULL
+  result <- list(    pred = result,    fit = if( return.fit ) t.fit else NULL
   )
-  
-  #   attr( result[["pred"]], "nugget" )     <- sapply( t.fit, function(x) x[["param"]]["nugget"] )
+  #   attr( result[["pred"]], "nugget" )     <- sapply( t.fit, function(x) x[["param"]]["nugget"] )
   #   attr( result[["pred"]], "psi.func" )   <- object[["control"]][["psi.func"]]
   attr( result[["pred"]], "tuning.psi" ) <- object[["tuning.psi"]]
   #   attr( result[["pred"]], "exp.gauss.dpsi" )       <- object[["expectations"]][["exp.gauss.dpsi"]]
   #   attr( result[["pred"]], "se.signal" )  <- se.signal
   #   attr( result[["pred"]], "scaled.residuals" )   <- scld.res
-  
-  class( result ) <- "cv.georob"
-  
-  invisible( result )
-  
-}
+  class( result ) <- "cv.georob"
+  invisible( result )
+}
 
 ##  ###########################################################################
 
 plot.cv.georob <-
-  function( 
-    x, type = c( "sc", "lgn.sc", "ta", "qq", "hist.pit", "ecdf.pit", "mc", "bs" ), 
-    smooth = TRUE, span = 2/3,
-    ncutoff = NULL, 
-    add = FALSE, 
-    col, pch, lty,
-    main, xlab, ylab, 
-    ... 
-  )
+  function(    x, type = c( "sc", "lgn.sc", "ta", "qq", "hist.pit", "ecdf.pit", "mc", "bs" ),    smooth = TRUE, span = 2/3,
+    ncutoff = NULL,    add = FALSE,    col, pch, lty,
+    main, xlab, ylab,    ...  )
 {
-  
-  ## plot method for class "cv.georob"  
-  
-  ## 2011-12-21 A. Papritz
+  ## plot method for class "cv.georob"  ## 2011-12-21 A. Papritz
   ## 2013-06-12 AP substituting [["x"]] for $x in all lists
   ## 2015-03-12 AP adding smooth curve of types sc and lgn.sc
   ## 2015-06-25 AP new method to compute pit, mc, bs and crps (Gaussian and robust)
   ## 2016-02-29 AP minor changes for adding plots to existing graphics
   ## 2016-07-25 AP added liner color and type for scatterplot smooths
-  
-  x <- x[["pred"]]
-  
-  type = match.arg( type )
-  
-  if( type == "sc.lgn" && !"lgn.pred" %in% names( x ) ) stop(
+  x <- x[["pred"]]
+  type = match.arg( type )
+  if( type == "sc.lgn" && !"lgn.pred" %in% names( x ) ) stop(
     "lognormal kriging results missing, use 'lgn = TRUE' for cross-validation"
   )
-  
-    
-  if( add && type %in% c("hist.pit", "mc") ) warning( 
-    "plot will be replaced (adding elements not possible" 
-  )
-  
-  ## extract scaled residuals and predictions standard error of signal for
+  if( add && type %in% c("hist.pit", "mc") ) warning(    "plot will be replaced (adding elements not possible"  )
+  ## extract scaled residuals and predictions standard error of signal for
   ## a robust fit
-  
-  #   robust    <- attr( x, "tuning.psi" ) < control.georob()[["tuning.psi.nr"]]  
-  #   scld.res  <- attr( x, "scaled.residuals" )
+  #   robust    <- attr( x, "tuning.psi" ) < control.georob()[["tuning.psi.nr"]]  #   scld.res  <- attr( x, "scaled.residuals" )
   #   se.signal <- attr( x, "se.signal" )
-  
-  ## compute validation statistics
+  ## compute validation statistics
 
   if( type %in% c( "hist.pit", "ecdf.pit", "mc", "bs" ) ){
-    
-    result <- validate.predictions( 
-      data = x[["data"]],
+    result <- validate.predictions(      data = x[["data"]],
       pred = x[["pred"]],
       se.pred = x[["se"]],
-      statistic = gsub( "ecdf.", "", gsub( "hist.", "", type ) ), 
-    #       robust = robust,
+      statistic = gsub( "ecdf.", "", gsub( "hist.", "", type ) ),    #       robust = robust,
       ncutoff = ncutoff#,
     #       se.signal = se.signal,
     #       scld.res <- scld.res
     )
   }
 
-  if( missing( col ) ) col <- 1
-  if( missing( pch ) ) pch <- 1
-  if( missing( lty ) ) lty <- 1
+  if( missing( col ) ) col <- 1L
+  if( missing( pch ) ) pch <- 1L
+  if( missing( lty ) ) lty <- 1L
 
-  
-    
-  switch(
+  switch(
     type,
     sc = {
-      
-      ##  scatterplot of (transformed) measurements vs. predictions
-      
-      if( missing( main ) ) main <- "data vs. predictions"
+      ##  scatterplot of (transformed) measurements vs. predictions
+      if( missing( main ) ) main <- "data vs. predictions"
       if( missing( xlab ) ) xlab <- "predictions"
       if( missing( ylab ) ) ylab <- "data"
-      
-      if( add ){
+      if( add ){
         points( data ~ pred, x, col = col, pch = pch, ... )
-      } else {        
-        plot( 
-          data ~ pred, x, col = col, pch = pch, 
-          main = main, xlab = xlab, ylab = ylab, ... 
-        )
+      } else {        plot(          data ~ pred, x, col = col, pch = pch,          main = main, xlab = xlab, ylab = ylab, ...        )
       }
-      
-      if( smooth ){
-        lines( loess.smooth( x[["pred"]], x[["data"]], span = span ), 
-          col = col, lty = lty )
+      if( smooth ){
+        lines( loess.smooth( x[["pred"]], x[["data"]], span = span ),          col = col, lty = lty )
       }
-      
-      
-    },        
-    lgn.sc = {
-      
-      ##  scatterplot of original measurements vs.  back-transformded
+    },    lgn.sc = {
+      ##  scatterplot of original measurements vs.  back-transformded
       ##  lognormal predictions
-      
-      if( missing( main ) ) main <- "data vs. back-transformed predictions"
+      if( missing( main ) ) main <- "data vs. back-transformed predictions"
       if( missing( xlab ) ) xlab <- "back-transformed predictions"
       if( missing( ylab ) ) ylab <- "data"
-      
-      if( add ){
+      if( add ){
         points( lgn.data ~ lgn.pred, x, col = col, pch = pch, ... )
-      } else {        
-        plot( 
-          lgn.data ~ lgn.pred, x, col = col, pch = pch, 
-          main = main, xlab = xlab, ylab = ylab, ... 
-        )
+      } else {        plot(          lgn.data ~ lgn.pred, x, col = col, pch = pch,          main = main, xlab = xlab, ylab = ylab, ...        )
       }
-      
-      if( smooth ){
-        lines( loess.smooth( x[["lgn.pred"]], x[["lgn.data"]], span = span ), 
-          col = col, lty = lty )
+      if( smooth ){
+        lines( loess.smooth( x[["lgn.pred"]], x[["lgn.data"]], span = span ),          col = col, lty = lty )
       }
-      
-      
-    }, 
-    ta = {
-      
-      ##  Tukey-Anscombe plot
-      
-      if( missing( main ) ) main <- "Tukey-Anscombe plot"
+    },    ta = {
+      ##  Tukey-Anscombe plot
+      if( missing( main ) ) main <- "Tukey-Anscombe plot"
       if( missing( xlab ) ) xlab <- "predictions"
       if( missing( ylab ) ) ylab <- "standardized prediction errors"
-      
-      if( add ){
+      if( add ){
         points( I((data-pred)/se) ~ pred, x, col = col, pch = pch, ... )
-      } else {        
-        plot( 
-          I((data-pred)/se) ~ pred, x, col = col, pch = pch, 
-          main = main, xlab = xlab, ylab = ylab, ... 
-        )
+      } else {        plot(          I((data-pred)/se) ~ pred, x, col = col, pch = pch,          main = main, xlab = xlab, ylab = ylab, ...        )
       }
-      
-    },
+    },
     qq = {
-      
-      ##  normal QQ-Plot of standardized prediction errors
-      
-      if( missing( main ) ) main <- "normal-QQ-plot of standardized prediction errors"
+      ##  normal QQ-Plot of standardized prediction errors
+      if( missing( main ) ) main <- "normal-QQ-plot of standardized prediction errors"
       if( missing( xlab ) ) xlab <- "quantile N(0,1)"
       if( missing( ylab ) ) ylab <- "quantiles of standardized prediction errors"
-      
-      r.qq <- with( x, qqnorm( ( data - pred ) / se, plot.it = FALSE ) )
-      
-      if( add ){
+      r.qq <- with( x, qqnorm( ( data - pred ) / se, plot.it = FALSE ) )
+      if( add ){
         points( r.qq, col = col, pch = pch, ... )
       } else {
         plot( r.qq, col = col, pch = pch, main = main, xlab = xlab, ylab = ylab, ... )
       }
     },
     hist.pit = {
-      
-      ##  histogramm of probability-integral-transformation
-      
-      if( missing( main ) ) main <- "histogram PIT-values"
+      ##  histogramm of probability-integral-transformation
+      if( missing( main ) ) main <- "histogram PIT-values"
       if( missing( xlab ) ) xlab <- "PIT"
       if( missing( ylab ) ) ylab <- "density"
-      
-      r.hist <- hist( 
-        result,
-        col = col, lty = lty, 
-        main = main, xlab = xlab, ylab = ylab, freq = FALSE, ... )
+      r.hist <- hist(        result,
+        col = col, lty = lty,        main = main, xlab = xlab, ylab = ylab, freq = FALSE, ... )
     },
     ecdf.pit = {
-      
-      ##  ecdf of probability-integral-transformation
-      
-      if( missing( main ) ) main <- "ecdf PIT-values"
+      ##  ecdf of probability-integral-transformation
+      if( missing( main ) ) main <- "ecdf PIT-values"
       if( missing( xlab ) ) xlab <- "PIT"
       if( missing( ylab ) ) ylab <- "probability"
-      
-      r.hist <- plot(
+      r.hist <- plot(
         ecdf(result),  add = add,
-        col = col, lty = lty, 
-        main = main, xlab = xlab, ylab = ylab, ... 
-      )
+        col = col, lty = lty,        main = main, xlab = xlab, ylab = ylab, ...      )
     },
     mc = {
-      
-      ##  narginal calibration plots: ecdf of measurements and mean
+      ##  narginal calibration plots: ecdf of measurements and mean
       ##  predictive cdf
-      
-      if( missing( main ) ) main <- "empirical cdf of data and mean predictive cdfs"
+      if( missing( main ) ) main <- "empirical cdf of data and mean predictive cdfs"
       if( missing( xlab ) ) xlab <- "data or predicitons"
       if( missing( ylab ) ) ylab <- "probability"
-      
-      matplot( 
-        result[["y"]], 
-        result[, c( "ghat", "fbar" )], type = "l",
+      matplot(        result[["y"]],        result[, c( "ghat", "fbar" )], type = "l",
         col = c( "orange", "black" ),
         lty = c( "solid", "dashed" ),
         main = main, xlab = xlab, ylab = ylab,
         ...
       )
-      
-      t.usr <- par( "usr" )
-      t.usr[3:4] <- with( result, range( fbar - ghat ) ) *1.04
+      t.usr <- par( "usr" )
+      t.usr[3L:4L] <- with( result, range( fbar - ghat ) ) *1.04
       par( usr = t.usr )
       with( result, lines( y, fbar-ghat, col= "blue", lty = "dotted" ) )
-      axis(2, pos = t.usr[2], col.axis = "blue", col.ticks = "blue" )
-      legend( 
-        "topleft",
-        lty = c("solid", "dashed", "dotted" ), 
-        col = c( "orange", "black", "blue" ), bty = "n", cex = 1,
+      axis(2L, pos = t.usr[2L], col.axis = "blue", col.ticks = "blue" )
+      legend(        "topleft",
+        lty = c("solid", "dashed", "dotted" ),        col = c( "orange", "black", "blue" ), bty = "n", cex = 1.,
         legend = c(
           expression( paste( "empirical cdf ", hat(G) ) ),
           expression( paste( "mean predictive cdf ", bar(F) ) ),
@@ -771,18 +707,14 @@ plot.cv.georob <-
       )
     },
     bs  ={
-      
-      # plot of brier score vs. cutoff
-      
-      if( missing( main ) ) main <- "Brier score vs. cutoff"
+      # plot of brier score vs. cutoff
+      if( missing( main ) ) main <- "Brier score vs. cutoff"
       if( missing( xlab ) ) xlab <- "cutoff"
       if( missing( ylab ) ) ylab <- "Brier score"
-      
-      if( add ){
+      if( add ){
         lines( result[["y"]], result[["bs"]], col = col, lty = lty, ... )
       } else {
-        plot( result[["y"]], result[["bs"]], type = "l", col = col, lty = lty, 
-          main = main, xlab = xlab, ylab = ylab, ...
+        plot( result[["y"]], result[["bs"]], type = "l", col = col, lty = lty,          main = main, xlab = xlab, ylab = ylab, ...
         )
       }
     }
@@ -790,37 +722,27 @@ plot.cv.georob <-
   invisible( NULL )
 }
 
-  
 
 ##  ###########################################################################
 
 print.cv.georob <-
-  function( 
-    x, digits = max(3, getOption("digits") - 3), ...
+  function(    x, digits = max(3, getOption("digits") - 3), ...
   )
-{   ## print method for class "cv.georob"  
-  
-  ## 2011-10-13 A. Papritz
+{   ## print method for class "cv.georob"  ## 2011-10-13 A. Papritz
   ## 2012-12-18 AP invisible(x)
   ## 2013-06-12 AP substituting [["x"]] for $x in all lists
   ## 2015-06-25 AP new method to compute pit, mc, bs and crps (Gaussian and robust)
-  
-  x <- x[["pred"]]
-  
-  st <- validate.predictions( 
-    data = x[["data"]],
+  x <- x[["pred"]]
+  st <- validate.predictions(    data = x[["data"]],
     pred = x[["pred"]],
     se.pred = x[["se"]],
     statistic = "st",
     ...
   )
-  
-  print(
-    format( st, digits = digits ), print.gap = 2, 
-    quote = FALSE
+  print(
+    format( st, digits = digits ), print.gap = 2L,    quote = FALSE
   )
-  
-  invisible( x )
+  invisible( x )
 }
 
 
@@ -829,27 +751,17 @@ print.cv.georob <-
 summary.cv.georob <-
   function( object, se = FALSE, ... )
 {
-  
-  ## summary method for class "cv.georob" 
-  
-  ## function computes statistics of the cross-validation errors
-  
-  ## 2011-10-13 A. Papritz
+  ## summary method for class "cv.georob"  ## function computes statistics of the cross-validation errors
+  ## 2011-10-13 A. Papritz
   ## 2012-05-21 ap
   ## 2013-06-12 AP substituting [["x"]] for $x in all lists
   ## 2015-06-25 AP new method to compute pit, mc, bs and crps (Gaussian and robust)
-  
-  object <- object[["pred"]]
-  
-  ## extract scaled residuals and predictions standard error of signal for
+  object <- object[["pred"]]
+  ## extract scaled residuals and predictions standard error of signal for
   ## a robust fit
-  
-  #   robust    <- attr( object, "tuning.psi" ) < control.georob()[["tuning.psi.nr"]]  
-  #   scld.res  <- attr( object, "scaled.residuals" )
+  #   robust    <- attr( object, "tuning.psi" ) < control.georob()[["tuning.psi.nr"]]  #   scld.res  <- attr( object, "scaled.residuals" )
   #   se.signal <- attr( object, "se.signal" )
-  
-  crps <- validate.predictions( 
-    data = object[["data"]],
+  crps <- validate.predictions(    data = object[["data"]],
     pred = object[["pred"]],
     se.pred = object[["se"]],
     statistic = "crps",
@@ -858,17 +770,13 @@ summary.cv.georob <-
     #     se.signal = se.signal,
     #     scld.res = scld.res
   )
-  
-  st <- validate.predictions( 
-    data = object[["data"]],
+  st <- validate.predictions(    data = object[["data"]],
     pred = object[["pred"]],
     se.pred = object[["se"]],
     statistic = "st"
   )
-  
-  if( !is.null( object[["lgn.pred"]] ) ){
-    st.lgn <- validate.predictions( 
-      data = object[["lgn.data"]],
+  if( !is.null( object[["lgn.pred"]] ) ){
+    st.lgn <- validate.predictions(      data = object[["lgn.data"]],
       pred = object[["lgn.pred"]],
       se.pred = object[["lgn.se"]],
       statistic = "st"
@@ -876,29 +784,19 @@ summary.cv.georob <-
   } else {
     st.lgn <- NULL
   }
-  
-  ## collect results
-  
-  result <- list( st = st, crps = crps, st.lgn = st.lgn )
+  ## collect results
+  result <- list( st = st, crps = crps, st.lgn = st.lgn )
 
   ## compute standard errors of criteria across cross-validation sets
-  
-  criteria <- NULL
-  
-  if( se && !is.null( object[["subset"]] ) ){
-    
-    criteria <- t( sapply(
+  criteria <- NULL
+  if( se && !is.null( object[["subset"]] ) ){
+    criteria <- t( sapply(
         tapply(
-          1:nrow( object ),
+          1L:NROW( object ),
           factor( object[["subset"]] ),
-          function( 
-            i, data, pred, se.pred,
-            #              robust, se.signal, scld.res, 
-            lgn.data, lgn.pred, lgn.se.pred 
-          ){
-            
-            crps <- validate.predictions( 
-              data = data[i],
+          function(            i, data, pred, se.pred,
+            #              robust, se.signal, scld.res,            lgn.data, lgn.pred, lgn.se.pred          ){
+            crps <- validate.predictions(              data = data[i],
               pred = pred[i],
               se.pred = se.pred[i],
               statistic = "crps",
@@ -907,17 +805,13 @@ summary.cv.georob <-
               #               se.signal = se.signal[i],
               #               scld.res = scld.res
             )
-            
-            st <- validate.predictions( 
-              data = data[i],
+            st <- validate.predictions(              data = data[i],
               pred = pred[i],
               se.pred = se.pred[i],
               statistic = "st"
             )
-            
-            if( !is.null( lgn.pred ) ){
-              st.lgn <- validate.predictions( 
-                data = lgn.data[i],
+            if( !is.null( lgn.pred ) ){
+              st.lgn <- validate.predictions(                data = lgn.data[i],
                 pred = lgn.pred[i],
                 se.pred = lgn.se.pred[i],
                 statistic = "st"
@@ -926,10 +820,8 @@ summary.cv.georob <-
             } else {
               st.lgn <- NULL
             }
-            
-            return( c( st, st.lgn, crps = crps ) )
-            
-          },
+            return( c( st, st.lgn, crps = crps ) )
+          },
           data = object[["data"]],
           pred = object[["pred"]],
           se.pred = object[["se"]],
@@ -942,13 +834,11 @@ summary.cv.georob <-
         ),
         function( x ) x
       ))
-    
-    se.criteria <- apply(
-      criteria, 2,
+    se.criteria <- apply(
+      criteria, 2L,
       function( x ) sd( x ) / sqrt( length( x ) )
     )
-    
-    result[["se.st"]] <- se.criteria[c( "me", "mede", "rmse", "made", "qne", "msse", "medsse")]
+    result[["se.st"]] <- se.criteria[c( "me", "mede", "rmse", "made", "qne", "msse", "medsse")]
     result[["se.crps"]] <- se.criteria["crps"]
     if( !is.null( st.lgn ) ){
       result[["se.st.lgn"]] <- se.criteria[
@@ -956,155 +846,105 @@ summary.cv.georob <-
       ]
       names( result[["se.st.lgn"]] ) <- gsub( ".lgn", "", names( result[["se.st.lgn"]] ) )
     }
-    
-  }
-  
-  class( result ) <- "summary.cv.georob"
-  
-  if( !is.null( criteria ) ) attr( result, "statistics" ) <- criteria
- 
-  
-  return( result )
-  
-}
+  }
+  class( result ) <- "summary.cv.georob"
+  if( !is.null( criteria ) ) attr( result, "statistics" ) <- criteria
+  return( result )
+}
 
 ##  ###########################################################################
 
 print.summary.cv.georob <-
-  function( 
-    x, digits = max(3, getOption("digits") - 3), ...
+  function(    x, digits = max(3, getOption("digits") - 3), ...
   )
 {
-  
-  ## print method for class "summary.cv.georob"  
-  
-  ## 2011-12-20 A. Papritz
+  ## print method for class "summary.cv.georob"  ## 2011-12-20 A. Papritz
   ## 2012-05-21 ap
   ## 2012-12-18 AP invisible(x)
   ## 2013-06-12 AP substituting [["x"]] for $x in all lists
-  
 
   result <- c( x[["st"]], crps = x[["crps"]] )
   if( !is.null( x[["se.st"]] ) ){
     result <- rbind( result, c( x[["se.st"]], crps = x[["se.crps"]] ) )
     rownames( result ) <- c( "", "se" )
   }
-  
-  cat( "\nStatistics of cross-validation prediction errors\n" )
+  cat( "\nStatistics of cross-validation prediction errors\n" )
   print(
-    format( result, digits = digits ), print.gap = 2, 
-    quote = FALSE
+    format( result, digits = digits ), print.gap = 2L,    quote = FALSE
   )
-  
-  if( !is.null( x[["st.lgn"]] ) ){
+  if( !is.null( x[["st.lgn"]] ) ){
     result <- x[["st.lgn"]]
     if( !is.null( x[["se.st.lgn"]] ) ){
       result <- rbind( x[["st.lgn"]], x[["se.st.lgn"]] )
       rownames( result ) <- c( "", "se" )
     }
-    
-    cat( "\nStatistics of back-transformed cross-validation prediction errors\n" )
+    cat( "\nStatistics of back-transformed cross-validation prediction errors\n" )
     print(
-      format( result, digits = digits ), print.gap = 2, 
-      quote = FALSE
+      format( result, digits = digits ), print.gap = 2L,      quote = FALSE
     )
   }
-  
-  invisible( x )
-  
-}
+  invisible( x )
+}
 
 # ##  ###########################################################################
-# 
-# rstudent.cv.georob <-
+## rstudent.cv.georob <-
 #   function( model, ... )
 # {
-#   
-#   ## Function extracts studentized residuals from cv.georob object
-#   
-#   ## Arguments:
-#   
-#   ## model     cv.georob object
+##   ## Function extracts studentized residuals from cv.georob object
+##   ## Arguments:
+##   ## model     cv.georob object
 #   ## ...       further arguments (currently not used)
-#   
-#   ## 2011-10-13 A. Papritz
+##   ## 2011-10-13 A. Papritz
 #   ## 2013-06-12 AP substituting [["x"]] for $x in all lists
-#   
-#   if( !identical( class( model )[1], "cv.georob" ) ) stop(
-#     "model is not of class 'cv.georob'" 
-#   )
-#   
-#   model <- model[["pred"]]
-#   
-#   ( model[["data"]] - model[["pred"]] ) / model[["se"]]
-#   
-# }
+##   if( !identical( class( model )[1], "cv.georob" ) ) stop(
+#     "model is not of class 'cv.georob'"#   )
+##   model <- model[["pred"]]
+##   ( model[["data"]] - model[["pred"]] ) / model[["se"]]
+## }
 
 # ##  ###########################################################################
-# 
-# cv.variomodel <-
+## cv.variomodel <-
 #   function( object, geodata, ... )
 # {
-#   
-#   ## Wrapper function for cross-validation of object of class variomodel{geoR}
+##   ## Wrapper function for cross-validation of object of class variomodel{geoR}
 #   ## by function xvalid{geoR}
-#   
-#   ## Arguments:
-#   
-#   ## model     an object of class "variomodel{geoR}
+##   ## Arguments:
+##   ## model     an object of class "variomodel{geoR}
 #   ## ...       further arguements passed to xvalid{geoR), cf. respective help page
-#   
-#   ## 2012-11-22 A. Papritz
-#   
-#   call.fc <- match.call()
-# 
-#   res <- geoR::xvalid( model = object, ... )
-#   
-#   if( !is.null( attr( res, "geodata.xvalid" ) ) ){
+##   ## 2012-11-22 A. Papritz
+##   call.fc <- match.call()
+##   res <- geoR::xvalid( model = object, ... )
+##   if( !is.null( attr( res, "geodata.xvalid" ) ) ){
 #     attr( res, "geodata.xvalid" ) <- call.fc[["geodata"]]
 #   }
 #   if( !is.null( attr( res, "locations.xvalid" ) ) ){
 #     attr( res, "locations.xvalid" ) <- call.fc[["locations.xvalid"]]
 #   }
-#   
-#   return(res)
-#   
-# }
-# 
-# cv.likGRF <-
+##   return(res)
+## }
+## cv.likGRF <-
 #   function( object, geodata, ... )
 # {
-#   
-#   ## Wrapper function for cross-validation of object of class variomodel{geoR}
+##   ## Wrapper function for cross-validation of object of class variomodel{geoR}
 #   ## by function xvalid{geoR}
-#   
-#   ## Arguments:
-#   
-#   ## model     an object of class "likGRF{geoR}
+##   ## Arguments:
+##   ## model     an object of class "likGRF{geoR}
 #   ## ...       further arguements passed to xvalid{geoR), cf. respective help page
-#   
-#   ## 2012-11-22 A. Papritz
-#   
-#   call.fc <- match.call()
-# 
-#   res <- geoR::xvalid( model = object, geodata = geodata, ... )
-#   
-#   if( !is.null( attr( res, "geodata.xvalid" ) ) ){
+##   ## 2012-11-22 A. Papritz
+##   call.fc <- match.call()
+##   res <- geoR::xvalid( model = object, geodata = geodata, ... )
+##   if( !is.null( attr( res, "geodata.xvalid" ) ) ){
 #     attr( res, "geodata.xvalid" ) <- call.fc[["geodata"]]
 #   }
 #   if( !is.null( attr( res, "locations.xvalid" ) ) ){
 #     attr( res, "locations.xvalid" ) <- call.fc[["locations.xvalid"]]
 #   }
-#   
-#   return(res)
-#   
-# }
+##   return(res)
+## }
 
 ## ======================================================================
 
-validate.predictions <- 
-  function( 
-    data,
+validate.predictions <-  function(    data,
     pred,
     se.pred,
     statistic = c( "crps", "pit", "mc", "bs", "st" ),	
@@ -1114,92 +954,59 @@ validate.predictions <-
     #     scld.res = NULL
   )
 {
-  
-  ## function computes several statistics to validate probabilistic
+  ## function computes several statistics to validate probabilistic
   ## predictions, cf.  Gneiting et al., 2007, JRSSB
-  
-  ## 2011-20-21 A. Papritz
+  ## 2011-20-21 A. Papritz
   ## 2012-05-04 AP coping with NAs
   ## 2013-06-12 AP substituting [["x"]] for $x in all lists
   ## 2015-06-25 AP new method to compute pit, mc, bs and crps (Gaussian and robust)
   ## 2015-11-27 AP checking whether mandatory arguments were provided
-  
-  ## checking whether mandatory arguments were provided
-  
-  if( missing( data ) || missing( pred ) || missing( se.pred ) ) stop(
-	"some mandatory arguments are missing" 
-  )
-  
-  statistic = match.arg( statistic )
-  
-  ## exclude item with NAs
-  
-  param <- na.exclude( cbind( data, pred, se.pred ) )
+  ## checking whether mandatory arguments were provided
+  if( missing( data ) || missing( pred ) || missing( se.pred ) ) stop(
+	"some mandatory arguments are missing"  )
+  statistic = match.arg( statistic )
+  ## exclude item with NAs
+  param <- na.exclude( cbind( data, pred, se.pred ) )
   #   param <- na.exclude( cbind( data, pred, se.pred, se.signal ) )
   #   if( robust ) scld.res <- scld.res[!is.na(scld.res)]
-  
-  if( missing( ncutoff ) || is.null( ncutoff ) ) ncutoff <- min( 500, NROW( param ) )
-  
-  result <- switch(
+  if( missing( ncutoff ) || is.null( ncutoff ) ) ncutoff <- min( 500L, NROW( param ) )
+  result <- switch(
     statistic,
     pit = {
-      
-      ## probability integral transformation
-      
-      #       if( !robust ){
+      ## probability integral transformation
+      #       if( !robust ){
       pnorm( param[, "data"], mean = param[, "pred"], sd = param[, "se.pred"] )
       #       } else {
-      #         apply( 
-      #           param, 1,
+      #         apply(      #           param, 1L,
       #           function( x, r ){
       #             pnorMix( x["data"], norMix( x["pred"] + r, sigma = x["se.signal"] ) )
       #           }, r = scld.res
       #         )
       #       }
-      
-    },
+    },
     mc = ,
     bs = {
-      
-      ## marginal calibration and brier score
-      
-      margin.calib <- data.frame(
+      ## marginal calibration and brier score
+      margin.calib <- data.frame(
         y = t.x <- unique( t.y <- sort( c( param[, "data"] ) ) ),    # y: cutoff
         ghat = cumsum( tabulate( match( t.y, t.x ) ) ) / length(t.y) # Ghat(y)
       )
-      
-      ## 'dilute' margin.calib
-      
-      t.sel <- trunc( 
-        seq( 
-          from = as.integer(1), 
-          to = nrow( margin.calib ), 
-          length.out = min( nrow( margin.calib ), ncutoff ) 
-        ) 
-      )
+      ## 'dilute' margin.calib
+      t.sel <- trunc(        seq(          from = 1L,          to = NROW( margin.calib ),          length.out = min( NROW( margin.calib ), ncutoff )        )      )
       margin.calib <- margin.calib[t.sel,]
-      
-      ## compute mean of predictive distriutions Fhat_i(y) and Brier score 
-      
-      t.bla <- t(
+      ## compute mean of predictive distriutions Fhat_i(y) and Brier score      t.bla <- t(
         sapply(
           margin.calib[, "y"],
           function( cutoff, param ){
             #           function( cutoff, param, scld.res ){
-            
-            ## compute Fhat_i(y)
-            
-            #             if( !robust ){
+            ## compute Fhat_i(y)
+            #             if( !robust ){
             t.p <- pnorm( cutoff, mean = param[, "pred"], sd = param[, "se.pred"] )
             #             } else {
             #               t.p <- ppd.resp.rob( cutoff, m = param[, "pred"], s = param[, "se.signal"], r = scld.res )
             #             }
-            
-            ## compute barFhat(y) and BS(y)
-            
-            c( 
-              fbar = mean( t.p ), 
-              bs = mean( ( t.p - as.numeric( param[, "data"] <= cutoff ) )^2 )
+            ## compute barFhat(y) and BS(y)
+            c(              fbar = mean( t.p ),              bs = mean( ( t.p - as.numeric( param[, "data"] <= cutoff ) )^2 )
             )
           },
           param = param#,
@@ -1207,45 +1014,30 @@ validate.predictions <-
         )
       )
       cbind(
-        margin.calib, as.data.frame( t.bla ) 
-      )
+        margin.calib, as.data.frame( t.bla )      )
     },
     crps = {
-      
-      ## continuous ranked probability score
-      
-      #       if( !robust ){
+      ## continuous ranked probability score
+      #       if( !robust ){
       mean( crpsnorm(
-          y = param[, "data"], m = param[, "pred"], s = param[, "se.pred"] 
-        ))  
-      #       } else {
-      #         mean( crpspd.resp.rob( 
-      #           y = param[, "data"], m = param[, "pred"], s = param[, "se.signal"], r = scld.res
+          y = param[, "data"], m = param[, "pred"], s = param[, "se.pred"]        ))      #       } else {
+      #         mean( crpspd.resp.rob(      #           y = param[, "data"], m = param[, "pred"], s = param[, "se.signal"], r = scld.res
       #         ))
       #       }
-      
-    },
+    },
     st = {
-      
-      ## statistics of (standardized) prediction errors
-      
-      error <- param[, "data"] - param[, "pred"]
+      ## statistics of (standardized) prediction errors
+      error <- param[, "data"] - param[, "pred"]
       std.error <- error / param[, "se.pred"]
-      
-      statistics <- c( 
-        me = mean( error ),
+      statistics <- c(        me = mean( error ),
         mede = median( error ),
         rmse = sqrt( mean( error^2 ) ),
-        made = mad( error, center = 0 ),
+        made = mad( error, center = 0. ),
         qne = Qn( error, finite.corr = TRUE ),
         msse = mean( std.error^2 ),
         medsse = median( std.error^2 )
       )
-      
-    }
+    }
   )
-  
-  return( result )   
-  
-}
+  return( result )}
 

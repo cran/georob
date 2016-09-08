@@ -68,9 +68,11 @@
 \value{
   A \code{data.frame} with the columns of \code{values}, a column
   \code{loglik} (contains the maximized [restricted] log-likelihood),
-  columns with the estimated variogram and fixed effect parameters and the
-  column \code{converged} indicating whether convergence has occurred
-  \code{converged ==1} when fitting the respective model.  }
+  columns with the estimated variogram and fixed effect parameters, columns
+  with the gradient of the (restricted) log-likelihood (or the roots of the
+  estimating equations) and a column \code{converged}, indicating whether
+  convergence has occurred \code{converged ==1} when fitting the respective
+  model.  }
 
 \author{
   Andreas Papritz \email{andreas.papritz@env.ethz.ch}

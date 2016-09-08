@@ -17,8 +17,8 @@
 \usage{
 pmm(A, B, control = control.pcmp())
 
-control.pcmp(pmm.ncores = 1L, gcr.ncores = 1L, max.ncores = detectCores(), 
-    f = 2L, sfstop = FALSE, allow.recursive = TRUE, ...)
+control.pcmp(pmm.ncores = 1, gcr.ncores = 1, max.ncores = detectCores(), 
+    f = 1, sfstop = FALSE, allow.recursive = TRUE, ...)
 
 }
 %- maybe also 'usage' for other objects documented here.

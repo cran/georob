@@ -12,7 +12,7 @@
   representing a (robustly) fitted spatial linear model.  Objects of this
   class have methods for model building (see
   \code{\link{georobModelBuilding}}) and cross-validation (see
-  \code{\link{cv.georob}}), for computing (robust) kriging predictions (see
+  \code{\link{cv.georob}}), for computing (robust) Kriging predictions (see
   \code{\link{predict.georob}}), for plotting (see
   \code{\link{plot.georob}}) and for common generic functions (see
   \code{\link{georobMethods}}).  }
@@ -23,27 +23,32 @@
   \item{loglik}{the maximized (restricted) Gaussian log-likelihood of a
   non-robust (RE)ML fit or \code{NA} for a robust fit if 
   \code{tuning.psi} is less than \code{tuning.psi.nr}.}
-   
-  \item{variogram.model}{the name of the fitted parametric variogram
-  model.}
-   
-  \item{param}{a named numeric vector with the (estimated) variogram
-  parameters.}
-   
-  \item{aniso}{a list with the following components: 
-   
-    \itemize{
-
-      \item{\code{isotropic}: logical indicating whether an isotropic
-       variogram was fitted.}
+  
+  \item{variogram.object}{the estimated parameters of a possibly nested
+  variograms model.  This is a list that contains for each variogram model
+  structure the following components:
+  
+  \itemize{
+  
+      \item{\code{variogram.model}}: the name of the fitted parametric variogram
+      model.
        
+      \item{\code{param}}: a named numeric vector with the (estimated) variogram
+      parameters.
+       
+      \item{\code{fit.param}}: a named logical vector with the flags defining what
+      variogram parameters were estimated.
+      
+      \item{\code{isotropic}: logical indicating whether an isotropic
+      variogram was fitted.}
+      
       \item{\code{aniso}: a named numeric vector with the (estimated)
       anisotropy parameters.}
-       
+      
       \item{\code{sincos}: a list with \code{sin} and \code{cos} of the
       angles \eqn{\omega}, \eqn{\phi} and \eqn{\zeta} that define the
       orientation of the anisotropy ellipsoid.}
-
+      
       \item{\code{rotmat}: the matrix
       \eqn{(\mbox{\boldmath$C$\unboldmath}_1,
       \mbox{\boldmath$C$\unboldmath}_2,
@@ -52,10 +57,11 @@
       
       \item{\code{sclmat}: a vector with the elements 1, \eqn{1/f_1},
       \eqn{1/f_2} (see \code{\link{georobIntro}}). }
-
+        
     }
-  }
   
+  }
+   
   \item{gradient}{a named numeric vector with the estimating equations
   (robust REML) or the gradient of the maximized (restricted) log-likelihood
   (Gaussian (RE)ML) evaluated at the solution .}
@@ -146,7 +152,7 @@
       \mbox{\boldmath$X$\unboldmath} \widehat{\mbox{\boldmath$\beta$\unboldmath}}}{hat\epsilon+ hatB=Y-X hat\beta}.
       
       \item \code{cov.pred.target}: a covariance term required for the
-      back-trans-\cr formation of kriging predictions of log-transformed data.
+      back-trans-\cr formation of Kriging predictions of log-transformed data.
       
     }
   
@@ -164,11 +170,12 @@
  
     \itemize{
     
-      \item \code{gcr.constant}: the constant \eqn{\gamma_0} (see
-      expression for \eqn{\mbox{\boldmath$V$\unboldmath}_{\alpha,\xi}}{V_{\alpha,\xi}} in
-      section \bold{Model} of \code{\link{georobIntro})}.
+      \item \code{Valpha}: a list with the (generalized) correlation
+      matrices (\code{Valpha}) of the nested variogram models structures
+      along with the constants (\code{gcr.constant}) added to the respective
+      semivariances matrices.
       
-      \item \code{Valphaxi}: the correlation matrix
+      \item \code{Valphaxi}: the (generalized) correlation matrix
       \eqn{\mbox{\boldmath$V$\unboldmath}_{\alpha,\xi} =
       \mbox{\boldmath$\Gamma$\unboldmath}_{\alpha,\xi} /
       (\sigma_{\mathrm{n}}^2+\sigma^2 )}{V_{\alpha, \xi} = \Gamma_\theta /
@@ -223,7 +230,7 @@
  
   }
   
-  \item{initial.objects}{a list with 5 components:
+  \item{initial.objects}{a list with 3 components:
  
     \itemize{
     
@@ -234,19 +241,10 @@
       \item \code{bhat}: initial predictions of
       \eqn{\mbox{\boldmath$B$\unboldmath}}{B}.
       
-      \item \code{param}: numeric vector with initial estimates of the
-      variogram parameters, either computed (\code{initial.param = TRUE})
-      or as passed to \code{georob} (\code{initial.param = FALSE}).
-      
-      \item \code{fit.param}: logical vector indicating which variogram
-      parameters were fitted.
-      
-      \item \code{aniso}: numeric vector with initial estimates of the
-      anisotropy parameters, either either computed (\code{initial.param = TRUE})
-      or as passed to \code{georob} (\code{initial.param = FALSE}).
-      
-      \item \code{fit.aniso}: logical vector indicating which anisotropy
-      parameters were fitted.
+      \item{variogram.object}: the initial values of the parameters of a
+      possibly nested variograms model.  This is a list with the same
+      structure as described above for the component
+      \code{variogram.object}.
       
     }
  
@@ -285,7 +283,7 @@
   \code{\link{control.georob}} for controlling the behaviour of \code{georob};
   \code{\link{plot.georob}} for display of (RE)ML variogram estimates;
   \code{\link{cv.georob}} for assessing the goodness of a fit by \code{georob}; 
-  \code{\link{predict.georob}} for computing robust kriging predictions; and finally
+  \code{\link{predict.georob}} for computing robust Kriging predictions; and finally
   \code{\link{georobModelBuilding}} for stepwise building models of class \code{georob};
   \code{\link{georobMethods}} for further methods for the class \code{georob}.
 }

@@ -18,9 +18,6 @@
   Gneiting et al.  (2007) for assessing probabilistic forecasts.}
 
 \usage{
-% validate.predictions(data, pred, se.pred, 
-%     statistic = c( "crps", "pit", "mc", "bs", "st"), 
-%     robust = FALSE, ncutoff = NULL, se.signal = NULL, scld.res = NULL)
 validate.predictions(data, pred, se.pred, 
     statistic = c("crps", "pit", "mc", "bs", "st"), ncutoff = NULL)
     
@@ -158,14 +155,14 @@ validate.predictions(data, pred, se.pred,
   errors
   \eqn{Y(\mbox{\boldmath$s$\unboldmath})-\widehat{Y}(\mbox{\boldmath$s$\unboldmath})}{Y(s)-hatY(s)}
   follow normal distributions with zero mean and standard deviations equal
-  to the kriging standard errors.  This assumption is an approximation if
+  to the Kriging standard errors.  This assumption is an approximation if
   the errors \eqn{\varepsilon}{\epsilon} come from a long-tailed
-  distribution.  Furthermore, for the time being, the kriging variance of
+  distribution.  Furthermore, for the time being, the Kriging variance of
   the \emph{response} \eqn{Y} is approximated by adding the estimated
-  nugget \eqn{\widehat{\tau}^2}{hat\tau^2} to the kriging variance of the
+  nugget \eqn{\widehat{\tau}^2}{hat\tau^2} to the Kriging variance of the
   signal \eqn{Z}.  This approximation likely underestimates the mean
   squared prediction error of the response if the errors come from a
-  long-tailed distribution.  Hence, for robust kriging, the standard errors of
+  long-tailed distribution.  Hence, for robust Kriging, the standard errors of
   the (cross-)validation errors are likely too small.
   
   Notwithstanding these difficulties and imperfections, \code{validate.predictions} computes

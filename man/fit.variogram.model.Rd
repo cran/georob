@@ -26,7 +26,8 @@ fit.variogram.model(sv,
         "RMgneiting", "RMlgd", "RMmatern", "RMpenta", "RMqexp", 
         "RMspheric", "RMstable", "RMwave", "RMwhittle"), 
     param, fit.param = default.fit.param()[names(param)],
-	aniso = default.aniso(), fit.aniso = default.fit.aniso(),
+	  aniso = default.aniso(), fit.aniso = default.fit.aniso(),
+    variogram.object = NULL,
     max.lag = max(sv[["lag.dist"]]), min.npairs = 30, 
     weighting.method = c("cressie", "equal", "npairs"), hessian = TRUE, 
     verbose = 0, ...)
@@ -118,6 +119,34 @@ fit.variogram.model(sv,
   (\code{TRUE}) and which are kept fixed at their initial values
   (\code{FALSE}) when fitting the model.}
 
+  \item{variogram.object}{an optional list that defines a possibly nested
+  variogram model.  Each component is itself a list with the following
+  components:
+  
+  \itemize{
+  
+      \item{variogram.model}: a character keyword defining the variogram
+      model, see respective argument above.
+      
+      \item{param}: a named numeric vector with initial values of the
+      variogram parameters, see respective argument above.
+      
+      \item{fit.param}: a named logical vector defining which parameters are
+      adjusted, see respective argument above.
+    
+      \item{aniso}: a named numeric vector with initial values for fitting
+      geometrically anisotropic variogram models, see respective argument
+      above.
+      
+      \item{fit.param}: a named logical vector defining which anisotropy
+      parameters are adjusted, see respective argument above.
+  
+  } 
+  
+  Note that the arguments \code{variogram.model}, \code{param},
+  \code{fit.param}, \code{aniso} and \code{fit.aniso} are ignored when
+  \code{variogram.object} is passed to \code{fit.variogram.model}. }    
+  
   \item{max.lag}{a positive numeric defining the maximum lag distance to be
   used for fitting or plotting variogram models (default all lag classes).}
 

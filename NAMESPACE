@@ -1,6 +1,7 @@
 import( stats, parallel, sp )
 
 importFrom( constrainedKriging, covmodel, f.point.block.cov, K, preCKrige )
+importFrom( fields, rdist )
 importFrom( graphics, axis, hist, legend, lines, matplot, par, points, strheight, text)
 importFrom( lmtest, waldtest, waldtest.default )
 importFrom( nlme, fixef, fixed.effects, ranef, random.effects )
@@ -84,8 +85,6 @@ export(
 #   resid.georob,                   # ok
 #   residuals.georob,               # ok
 #   rstandard.georob,               # ok
-###   rstudent.cv.georob,             # eliminated
-###   rstudent.georob,                # eliminated
 #   step.default,                   # ok
 #   step.georob,                    # ok
 #   sample.variogram.default,       # ok
@@ -102,20 +101,20 @@ export(
 
 ## covariances.fixed.random.effects
 ## crpsnorm
-## crpspd.resp.rob                    # currently not used
+### crpspd.resp.rob                    # currently not used
 ## estimate.zhat
 ## estimating.equations.theta
 ## estimating.equations.B
 ## f.aux.Qstar
 ## f.aux.RSS
 ## f.aux.Valphaxi
-## f.aux.crpsnorm
+## f.aux.add1.drop1## f.aux.crpsnorm
 ## f.aux.eeq
-## f.aux.gamma
 ## f.aux.gcr
 ## f.aux.gradient.nll
 ## f.aux.gradient.npll
-## f.diag
+## f.aux.print.gradient
+## f.aux.tf.param.fwd## f.call.set_allfitxxx_to_false## f.call.set_allxxx_to_fitted_values## f.call.set_onefitxxx_to_value## f.call.set_onexxx_to_value## f.call.set_x_to_value## f.call.set_x_to_value_in_fun## f.diag
 ## f.psi.function
 ## f.reparam.bkw
 ## f.reparam.fwd
@@ -127,9 +126,10 @@ export(
 ## likelihood.calculations
 ## negative.loglikelihood
 ## partial.derivatives.variogram
-## ppd.resp.rob                       # currently not used
-## qpd.resp.rob                       # currently not used
-## var.pd.resp.rob                    # currently not used
+### ppd.resp.rob                       # currently not used
+### qpd.resp.rob                       # currently not used
+## safe_pchisq
+### var.pd.resp.rob                    # currently not used
 ## update.zhat
 
 
@@ -164,8 +164,6 @@ S3method( ranef, georob )
 S3method( resid, georob )
 S3method( residuals, georob )
 S3method( rstandard, georob )
-# S3method( rstudent, cv.georob )
-# S3method( rstudent, georob )
 S3method( sample.variogram, default )
 S3method( sample.variogram, formula )
 S3method( sample.variogram, georob )

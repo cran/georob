@@ -8,10 +8,10 @@
 
 \title{Predict Method for Robustly Fitted Spatial Linear Models}
 
-\description{Robust and customary external drift kriging prediction 
+\description{Robust and customary external drift Kriging prediction 
 based on a spatial linear models fitted by \code{georob}. The
 \code{predict} method for the class \code{georob} computes fitted values, point
-and block kriging predictions as
+and block Kriging predictions as
 well as model terms for display by \code{\link[stats]{termplot}}.
 }
 
@@ -39,9 +39,9 @@ control.predict.georob(full.covmat = FALSE, extended.output = FALSE,
   \code{\link[sp]{SpatialPixels}} or
   \code{\link[sp]{SpatialGrid}},   
   in which to look for variables
-  with which to compute fitted values or kriging predictions, see Details.\cr If
+  with which to compute fitted values or Kriging predictions, see Details.\cr If
   \code{newdata} is a \code{\link[sp]{SpatialPolygonsDataFrame}} then
-  block kriging predictions are computed, otherwise point kriging
+  block Kriging predictions are computed, otherwise point Kriging
   predictions.}
   
   \item{type}{character keyword defining what target quantity should be
@@ -94,7 +94,7 @@ control.predict.georob(full.covmat = FALSE, extended.output = FALSE,
   an explanation of the effect of \code{full.covmat}.}
   
   \item{extended.output}{logical controlling whether the covariance
-  matrices of the kriging predictions and of the data should be computed, see
+  matrices of the Kriging predictions and of the data should be computed, see
   \emph{Details} (default \code{FALSE}).}
   
   \item{mmax}{integer equal to the maximum number (default \code{10000}) of
@@ -104,7 +104,7 @@ control.predict.georob(full.covmat = FALSE, extended.output = FALSE,
   parallelized computations, see \emph{Details}.}
 
   \item{pwidth, pheight, napp}{numeric scalars, used to tune numeric
-  integration of semi-variances for block kriging, see
+  integration of semi-variances for block Kriging, see
   \code{\link[constrainedKriging]{preCKrige}}.}
   
   \item{pcmp}{a list of arguments passed to \code{\link{pmm}} or a
@@ -122,7 +122,7 @@ control.predict.georob(full.covmat = FALSE, extended.output = FALSE,
 \details{
   If \code{newdata} is an object of class \code{SpatialPoints},
   \code{SpatialPixels} or \code{SpatialGrid} then the drift model may only
-  use the coordinates as covariates (universal kriging).  Furthermore the
+  use the coordinates as covariates (universal Kriging).  Furthermore the
   names used for the coordinates in \code{newdata} must be the same as in
   \code{data} when creating \code{object} (argument \code{locations} of
   \code{predict.georob} should not be used).  Note that the result returned
@@ -131,7 +131,7 @@ control.predict.georob(full.covmat = FALSE, extended.output = FALSE,
   \code{SpatialGridDataFrame}.
   
   The \code{predict} method for class \code{georob} uses the package
-  \pkg{parallel} for parallelized computation of kriging predictions.  If
+  \pkg{parallel} for parallelized computation of Kriging predictions.  If
   there are \eqn{m} items to predict, the task is split into
   \code{ceiling(m/mmax)} sub-tasks that are then distributed to
   \code{ncores} CPUs.  Evidently, \code{ncores = 1} suppresses parallel
@@ -142,7 +142,7 @@ control.predict.georob(full.covmat = FALSE, extended.output = FALSE,
   
   The argument \code{extended.output = TRUE} is used to compute all
   quantities required for (approximately) unbiased back-transformation of
-  kriging predictions of log-transformed data to the original scale of the
+  Kriging predictions of log-transformed data to the original scale of the
   measurements by \code{\link{lgnpp}}.  In more detail, the following items
   are computed:
   
@@ -151,7 +151,7 @@ control.predict.georob(full.covmat = FALSE, extended.output = FALSE,
     \item \code{trend}: the fitted values,
     \eqn{\mbox{\boldmath$x$\unboldmath}(\mbox{\boldmath$s$\unboldmath})\mathrm{^T}\widehat{\mbox{\boldmath$\beta$\unboldmath}}}{x(s)^T hat\beta},
     
-    \item \code{var.pred}: the variances of the kriging predictions, 
+    \item \code{var.pred}: the variances of the Kriging predictions, 
     \eqn{\mathrm{Var}_{\hat{\theta}}[\widehat{Y}(\mbox{\boldmath$s$\unboldmath})]}{Var[hatY(s)]} or 
     \eqn{\mathrm{Var}_{\hat{\theta}}[\widehat{Z}(\mbox{\boldmath$s$\unboldmath})]}{Var[hatS(s)]},
 
@@ -198,9 +198,9 @@ control.predict.georob(full.covmat = FALSE, extended.output = FALSE,
     \item the coordinates of the prediction points (only present if
     \code{newdata} is a data frame).
     
-    \item \code{pred}: the kriging predictions (or fitted values).
+    \item \code{pred}: the Kriging predictions (or fitted values).
     
-    \item \code{se}: the root mean squared prediction errors (kriging
+    \item \code{se}: the root mean squared prediction errors (Kriging
     standard errors).
     
     \item \code{lower}, \code{upper}: the limits of tolerance/confidence
@@ -226,7 +226,7 @@ control.predict.georob(full.covmat = FALSE, extended.output = FALSE,
     see \emph{Details}.
     
     \item \code{var.pred}: the full covariance matrix of the
-    kriging predictions, see \emph{Details}.
+    Kriging predictions, see \emph{Details}.
     
     \item \code{cov.pred.target}: the full covariance matrix of the
     predictions and the prediction targets, see \emph{Details}.
@@ -249,7 +249,7 @@ control.predict.georob(full.covmat = FALSE, extended.output = FALSE,
   (WSL), pp. 51. 
   \url{http://e-collection.library.ethz.ch/eserv/eth:6027/eth-6027-01.pdf}
 
-  \enc{KŸnsch}{Kuensch}, H. R., Papritz, A., Schwierz, C. and Stahel, W. A. (2011) Robust
+  \enc{KÂŸnsch}{Kuensch}, H. R., Papritz, A., Schwierz, C. and Stahel, W. A. (2011) Robust
   estimation of the external drift and the variogram of spatial data.
   Proceedings of the ISI 58th World Statistics Congress of the International
   Statistical Institute.

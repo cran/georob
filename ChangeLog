@@ -435,3 +435,23 @@ processing col and pch arguments
 2016-07-25  Andreas Papritz  <papritz@env.ethz.ch>
 
 * cv.georob.R (plot.cv.georob) added line color and type for scatterplot smooths
+
+
+2016-08-22  Andreas Papritz  <papritz@env.ethz.ch>
+
+* cv.georob.R (cv.georob) correcting error when computing  standard errors of cv kriging predictions
+* cv.georob.R (cv.georob) changes for nested variogram models
+* georob.exported.functions.R (georob, control.georob, profilelogLik) changes for nested variogram models
+* georob.exported.functions.R (bwd,transf) corrections for logitx if argument is +/-Inf
+* georob.lgnpp.R (lgnpp) changes for nested variogram models
+* georob.predict.R (predict.georob, f.robust.uk) changes for nested variogram models
+* georob.private.functions.R (f.aux.gcr, likelihood.calculations, partial.derivatives.variogram, estimating.equations.theta, negative.loglikelihood, gradient.negative.loglikelihood, georob.fit, f.aux.eeq, f.aux.gradient.nll, f.aux.gradient.npll, f.aux.Valphaxi, f.reparam.fwd, f.reparam.bwd, f.aux.tf.param.fwd, f.aux.print.gradient, f.call.set_x_to_value, f.call.set_allfitxxx_to_false, f.call.set_onefitxxx_to_value, f.call.set_allxxx_to_fitted_values, f.call.set_onexxx_to_value) changes for nested variogram models
+* georob.S3methods.R (print.georob, ranef.georob, rstandard.georob, summary.georob, print.summary.georob, waldtest.georob, logLik.georob, deviance.georob, extractAIC.georob, f.aux.add1.drop1, add1.georob, drop1.georob, step.georob) changes for nested variogram models
+* variogram.R (fit.variogram.model, print.fitted.variogram, summary.fitted.variogram, print.summary.fitted.variogram, plot.georob, lines.georob) changes for nested variogram models
+
+
+2016-08-24  Andreas Papritz  <papritz@env.ethz.ch>
+
+* georob.exported.functions.R (control.georob) change of default for argument error.family.cov.residuals
+* variogram.R (plot.sample.variogram) new argument lty
+
