@@ -8,3 +8,4 @@
 2016-03-01  georob Version 0.2-3 released to CRAN, new features: correcting error in setting default values for fit.param, minor changes for diagnostics plots
 2016-07-26  georob Version 0.2-4 released to CRAN, new features: vignette with a tutorial and manual; changes in interface of georob and for parallel computations.
 2016-09-06  georob Version 0.3-0 released to CRAN, new features: estimating parameters of „nested“ variogram models.
+2016-09-06  georob Version 0.3-1 released to CRAN, correction of minor bug in internal function.

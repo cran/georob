@@ -455,3 +455,9 @@ processing col and pch arguments
 * georob.exported.functions.R (control.georob) change of default for argument error.family.cov.residuals
 * variogram.R (plot.sample.variogram) new argument lty
 
+
+2016-09-08  Andreas Papritz  <papritz@env.ethz.ch>
+
+* georob.private.functions.R (likelihood.calculations) correcting error for printing trial parameter values if they exceed safe bounds
+
+

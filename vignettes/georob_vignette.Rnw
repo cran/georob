@@ -8,6 +8,7 @@
 
 % 2016-07-26 AP Version f\"{u}r georob_0.2-4.tar.gz
 % 2016-08-22 AP Version f\"{u}r georob_0.3-0.tar.gz
+% 2016-09-09 AP Anpassungen zur Reduktion der Rechenzeit
 
 % cd R.user.home/georob/vignettes/
 % R CMD Sweave georob_vignette.Rnw;  R CMD Stangle georob_vignette.Rnw; pdflatex georob_vignette.tex; open georob_vignette.pdf;
@@ -76,7 +77,7 @@
 
 % Kontrolle, ob aufw\"{a}ndig zu berechnende Schritte durchgef\"{u}hrt werden
 
-\SweaveOpts{echo=TRUE, eval=TRUE}      % <<- Anpassen!!
+\SweaveOpts{echo=TRUE, eval=FALSE}      % <<- Anpassen!!
 
 % macros
 
@@ -574,9 +575,9 @@ analyses.
 
 \section{Model-based Gaussian analysis of \texttt{zinc}, data set \code{meuse}}\label{sec:meuse}
 
-% <<meuse-zinc-load,eval=TRUE,echo=FALSE>>=
-% if(file.exists("r_meuse_zinc_objects.RData")) load("r_meuse_zinc_objects.RData")
-% @
+<<meuse-zinc-load,echo=FALSE,eval=TRUE>>=
+if(file.exists("r_meuse_zinc_objects.RData")) load("r_meuse_zinc_objects.RData")
+@
 
 The package \pkg{sp} provides this data set.  According to the help
 page, it ``gives locations and topsoil heavy metal concentrations,
@@ -717,14 +718,19 @@ model by weighted non-linear least squares (using Cressie's weights)
 %
 \bcf
 %
-<<meuse-zinc-lm-res-sv-2,fig=TRUE,width=6,height=4,results=hide,eval=TRUE>>=
+<<meuse-zinc-lm-res-sv-2,fig=TRUE,width=6,height=4,results=hide>>=
 library(georob)
 plot(r.sv <- sample.variogram(residuals(r.lm), locations=meuse[, c("x","y")],
   lag.dist.def=100, max.lag=2000, 
   estimator="matheron"), type="l",
   main="sample variogram of residuals log(zinc)~sqrt(dist)+ffreq")
 lines(r.sv.spher <- fit.variogram.model(r.sv, variogram.mode="RMspheric",
-  param=c(variance=0.1, nugget=0.05, scale=1000)))
+  param=c(variance=0.1, nugget=0.05, scale=1000), method="BFGS"))
+@
+<<meuse-zinc-lm-res-sv-2,fig=TRUE,width=6,height=4,results=hide,echo=FALSE,eval=TRUE>>=
+library(georob)
+plot(r.sv, type="l", main="sample variogram of residuals log(zinc)~sqrt(dist)+ffreq")
+lines(r.sv.spher)
 @
 %
 \ecf{Sample variogram of regression residuals of
@@ -748,7 +754,7 @@ summary(r.sv.spher)
 We fit the model that we developed in the exploratory analysis now by
 Gaussian REML:
 %
-<<meuse-zinc-georob-reml>>=
+<<meuse-zinc-georob-reml,eval=TRUE>>=
 r.georob.m0.spher.reml <- georob(log(zinc)~sqrt(dist)+ffreq, meuse, locations=~x+y,
   variogram.model="RMspheric", param=c(variance=0.1, nugget=0.05, scale=1000), 
   tuning.psi=1000)
@@ -865,16 +871,64 @@ waldtest(r.georob.m0.spher.reml, .~.+soil)
 Drift models may also be build by stepwise covariate selection based
 on AIC, either keeping the variogram parameters fixed (default)
 %
-<<meuse-zinc-georob-reml-step-1,eval=TRUE>>=
+<<meuse-zinc-georob-reml-step-1,eval=FALSE>>=
 step(r.georob.m0.spher.reml, scope=log(zinc)~ffreq*sqrt(dist)+soil)
 @
 %
+\begin{Schunk}
+\begin{Soutput}
+Start:  AIC=106.91
+log(zinc) ~ sqrt(dist) + ffreq
+
+                   Df AIC Converged
+<none>                107          
++ soil              2 107         1
++ ffreq:sqrt(dist)  2 110         1
+- ffreq             2 166         1
+- sqrt(dist)        1 178         1
+
+Tuning constant:  1000 
+
+Fixed effects coefficients:
+(Intercept)   sqrt(dist)  ffreqffreq2  ffreqffreq3  
+      7.094       -2.146       -0.526       -0.537  
+
+Variogram:  RMspheric 
+ variance(fixed)    snugget(fixed)     nugget(fixed)      scale(fixed)  
+           0.123             0.000             0.056           872.400  
+\end{Soutput}
+\end{Schunk}
+%
 or re-estimating them afresh for each evaluated model
 %
-<<meuse-zinc-georob-reml-step-2,eval=TRUE>>=
+<<meuse-zinc-georob-reml-step-2,eval=FALSE>>=
 step(r.georob.m0.spher.reml, scope=log(zinc)~ffreq*sqrt(dist)+soil, 
   fixed.add1.drop1=FALSE)
 @
+%
+\begin{Schunk}
+\begin{Soutput}
+Start:  AIC=112.91
+log(zinc) ~ sqrt(dist) + ffreq
+
+                   Df AIC Converged
+<none>                113         1
++ soil              2 113         1
++ ffreq:sqrt(dist)  2 116         1
+- sqrt(dist)        1 144         1
+- ffreq             2 158         1
+
+Tuning constant:  1000 
+
+Fixed effects coefficients:
+(Intercept)   sqrt(dist)  ffreqffreq2  ffreqffreq3  
+      7.094       -2.146       -0.526       -0.537  
+
+Variogram:  RMspheric 
+        variance    snugget(fixed)            nugget             scale  
+           0.123             0.000             0.056           872.400  
+\end{Soutput}
+\end{Schunk}
 %
 which selects the same model.  Note that stepwise covariate
 selection by \code{step.georob()}, \code{add1.georob()} and
@@ -882,7 +936,7 @@ selection by \code{step.georob()}, \code{add1.georob()} and
 log-likelihood.  Before evaluating candidate models, the initial model
 is therefore re-fitted by ML, which can be done by
 %
-<<meuse-zinc-georob-ml>>=
+<<meuse-zinc-georob-ml,eval=TRUE>>=
 r.georob.m0.spher.ml <- update(r.georob.m0.spher.reml, 
   control=control.georob(ml.method="ML"))
 @
@@ -1231,16 +1285,16 @@ somewhat for \code{block1}.  Based on the \citeauthor{Cressie-2006}'s
 simulation study, we prefer the optimal prediction results.
 
 
-
-
 <<meuse-zinc-cleanup-1,echo=FALSE,eval=TRUE>>=
 palette("default")
 @
 
-% <<meuse-zinc-cleanup-2,echo=FALSE>>=
-% save(list=ls(pattern="^r\\."), file="r_meuse_zinc_objects.RData")
-% rm(list=ls(pattern="^r\\."))
-% @
+<<meuse-zinc-cleanup-2,echo=FALSE>>=
+# save(list=ls(pattern="^r\\."), file="r_meuse_zinc_objects.RData")
+save(list=c("r.sv", "r.sv.spher", "r.prfl.m0.spher.reml.scale", "r.cv.m0.spher.reml", 
+    "r.cv.m1.spher.reml", "r.bk", "r.blks"), file="r_meuse_zinc_objects.RData")
+rm(list=ls(pattern="^r\\."))
+@
 
 
 \clearpage
@@ -1252,9 +1306,9 @@ palette("default")
 
 \section{Robust analysis of \code{coalash} data}\label{sec:coalash}
 
-% <<ash-load,eval=TRUE,echo=FALSE>>=
-% if(file.exists("r_coalash_objects.RData")) load("r_coalash_objects.RData")
-% @
+<<ash-load,eval=TRUE,echo=FALSE>>=
+if(file.exists("r_coalash_objects.RData")) load("r_coalash_objects.RData")
+@
 % 
 This data set reports measurements of ash content [\% mass] in a
 coal seam in Pennsylvania \citep{Gomez-Hazen-1970}.  A subset of the
@@ -1449,7 +1503,7 @@ with a tuning constant $c=2$ for robust REML, but the
 popular Huber function and a redescending $\psi$-function based on the
 $t$-distribution are also implemented (see section~\ref{sec:control-georob}):
 %
-<<ash-georob-robust-1>>=
+<<ash-georob-robust-1,eval=TRUE>>=
 r.georob.m0.exp.c2 <- georob(coalash~x+y, coalash, locations=~x+y, 
   variogram.model="RMexp", param=c(variance=0.1, nugget=0.9, scale=1))
 @
@@ -1478,14 +1532,10 @@ waldtest(update(r.georob.m0.exp.c2, .~.+I(x^2)+I(y^2)+I(x*y)), r.georob.m0.exp.c
 %
 We simplify the drift model by dropping $y$:
 %
-<<ash-georob-robust-2>>=
+<<ash-georob-robust-2,eval=TRUE>>=
 r.georob.m1.exp.c2 <- update(r.georob.m0.exp.c2, .~.-y)
 @
-% %
-% <<ash-results-save-2,echo=FALSE>>=
-% <<ash-results-save-1>>
-% @
-% %
+%
 <<ash-summary-georob-robust-2,eval=TRUE>>=
 r.georob.m1.exp.c2
 @
@@ -1583,17 +1633,13 @@ but were not identified by Cressie's exploratory analysis.
 For comparison, we fit the same model by Gaussian REML by setting the
 tuning constant of the $\psi_c$-function $c \geq 1000$:
 %
-<<ash-georob-gaussian-1>>=
+<<ash-georob-gaussian-1,eval=TRUE>>=
 r.georob.m1.exp.c1000 <- update(r.georob.m1.exp.c2, tuning.psi=1000)
 @
 <<ash-georob-summary-gaussian-1,eval=TRUE>>=
 summary(r.georob.m1.exp.c1000)
 @
-% %
-% <<ash-results-save-3,echo=FALSE>>=
-% <<ash-results-save-1>>
-% @
-% %
+% 
 and compare the Gaussian and robust REML estimates of the variogram:
 %
 \bcf
@@ -1701,11 +1747,7 @@ r.cv.georob.m1.exp.c2 <- cv(r.georob.m1.exp.c2, seed=1,
   control=control.georob(initial.param=FALSE), ncores=my.ncores)
 r.cv.georob.m1.exp.c1000 <- cv(r.georob.m1.exp.c1000, seed=1, ncores=my.ncores)
 @
-% %
-% <<ash-results-save-3,echo=FALSE>>=
-% <<ash-results-save-1>>
-% @
-% %
+%
 By default, \code{cv.georob()} partitions the data set into 10
 geographically compact subsets of adjacent locations (see argument
 \code{method} of \code{cv.georob()} and section~\ref{sec:cv}):
@@ -1817,8 +1859,8 @@ provided by the package \pkg{sp}.  If \code{newdata} is a
 as covariates (universal Kriging), as we do it here.
 %
 <<ash-Kriging-grid,eval=TRUE>>=
-coalash.grid <- expand.grid(x=seq(-1, 17, by=0.1),
-  y=seq( -1, 24, by=0.1))
+coalash.grid <- expand.grid(x=seq(-1, 17, by=0.2),
+  y=seq( -1, 24, by=0.2))
 coordinates( coalash.grid) <- ~x+y  # convert to SpatialPoints
 gridded( coalash.grid) <- TRUE      # convert to SpatialPixels
 fullgrid( coalash.grid) <- TRUE     # convert to SpatialGrid
@@ -1837,11 +1879,7 @@ r.pk.m1.exp.c1000 <- predict(r.georob.m1.exp.c1000, newdata=coalash.grid)
 r.pk.m1.exp.c2 <- predict(r.georob.m1.exp.c2, newdata=coalash.grid, control=control.predict.georob(ncores=my.ncores))
 r.pk.m1.exp.c1000 <- predict(r.georob.m1.exp.c1000, newdata=coalash.grid, control=control.predict.georob(ncores=my.ncores))
 @
-% %
-% <<ash-results-save-4,echo=FALSE>>=
-% <<ash-results-save-1>>
-% @
-% %
+%
 and plotting the results by the function \code{spplot()} of the
 package \pkg{sp} as well:
 % 
@@ -1964,17 +2002,13 @@ Block-block- and point-block-means of the semi-variance are computed by
 \pkg{constrainedKriging} and \pkg{spatialCovariance}
 \citep[see section~\protect\ref{sec:predict-georob} and][]{Hofer-Papritz-2011,Clifford-2005}:
 %
-<<ash-bKriging-1,eval=TRUE>>=
+<<ash-bKriging-1>>=
 r.bk.m1.exp.c2 <- predict(r.georob.m1.exp.c2, newdata=coalash.polygons,
   control=control.predict.georob(pwidth=4, pheight=4, full.covmat=TRUE))
 r.bk.m1.exp.c1000 <- predict(r.georob.m1.exp.c1000, newdata=coalash.polygons,
   control=control.predict.georob(pwidth=4, pheight=4, full.covmat=TRUE))
 @
-% %
-% <<ash-results-save-5,echo=FALSE>>=
-% <<ash-results-save-1>>
-% @
-% %
+%
 Since the blocks are squares of constant size, choosing a square
 ``integration pixel'' of the same dimension (arguments \code{pwidth},
 \code{pheight} of \code{control.predict.georob()}) allows to compute
@@ -2037,10 +2071,14 @@ The outlier at (5,6) also affects the the prediction of the block
 means and robust block Kriging is again more efficient than Gaussian
 block Kriging.
 
-% <<ash-results-save-1,echo=FALSE>>=
-% save(list=ls(pattern="^r\\."), file="r_coalash_objects.RData")
-% rm(list=ls(pattern="^r\\."))
-% @
+<<ash-results-save-1,echo=FALSE>>=
+# save(list=ls(pattern="^r\\."), file="r_coalash_objects.RData")
+save(list=c(
+    "r.cv.georob.m1.exp.c2", "r.cv.georob.m1.exp.c1000", 
+    "r.pk.m1.exp.c2", "r.pk.m1.exp.c1000", "r.bk.m1.exp.c2", "r.bk.m1.exp.c1000"
+  ), file="r_coalash_objects.RData")
+rm(list=ls(pattern="^r\\."))
+@
 
 \clearpage
 

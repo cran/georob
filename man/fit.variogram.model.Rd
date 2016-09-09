@@ -324,13 +324,13 @@ data(wolfcamp, package = "geoR")
 r.sv.iso <- sample.variogram(wolfcamp[["data"]], locations = wolfcamp[[1]], 
     lag.dist.def = seq(0, 200, by = 15))
 
+\dontrun{
 r.irf0.iso <- fit.variogram.model(r.sv.iso, variogram.model = "RMfbm",
     param = c(variance = 100, nugget = 1000, scale = 1., alpha = 1.),
     fit.param = default.fit.param(scale = FALSE, alpha = TRUE),
     method = "Nelder-Mead", hessian = FALSE, control = list(maxit = 5000))  
 summary(r.irf0.iso, correlation = TRUE)
 
-\dontrun{
 plot(r.sv.iso, type = "l")
 lines(r.irf0.iso, line.col = "red")}
 
@@ -338,18 +338,17 @@ lines(r.irf0.iso, line.col = "red")}
 r.sv.aniso <- sample.variogram(wolfcamp[["data"]],
     locations = wolfcamp[[1]], lag.dist.def = seq(0, 200, by = 15),
     xy.angle.def = c(0., 22.5, 67.5, 112.5, 157.5, 180.))
+  
 \dontrun{
-plot(r.sv.aniso, type = "l")}
-
 r.irf0.aniso <- fit.variogram.model(r.sv.aniso, variogram.model = "RMfbm",
     param = c(variance = 100, nugget = 1000, scale = 1., alpha = 1.5),
     fit.param = default.fit.param(scale = FALSE, alpha = TRUE),
     aniso = default.aniso(f1 = 0.4, omega = 135.),
     fit.aniso = default.fit.aniso(f1 = TRUE, omega = TRUE),
-    method = "Nelder-Mead", hessian = TRUE, control = list(maxit = 5000))
+    method = "BFGS", hessian = TRUE, control = list(maxit = 5000))
 summary(r.irf0.aniso, correlation = TRUE)
 
-\dontrun{
+plot(r.sv.aniso, type = "l")
 lines(r.irf0.aniso, xy.angle = seq(0, 135, by = 45))}
 }
 

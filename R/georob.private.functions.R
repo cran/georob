@@ -753,36 +753,58 @@ function(
   ## 2016-07-20 AP changes for parallel computations
   ## 2016-08-09 AP changes for nested variogram models
   ## 2016-08-10 AP changes for isotropic variogram models
-  ## check consistency of arguments
-  if( !is.null( gcr.constant ) ){
-    if( !is.list( gcr.constant ) ||      !identical( length(gcr.constant), length(variogram.object) )    ) stop( "lengths of 'gcr.constant' and 'variogram.object' differ" )  } else {
+  
+  ## check consistency of arguments
+  
+  if( !is.null( gcr.constant ) ){
+    if( !is.list( gcr.constant ) || 
+      !identical( length(gcr.constant), length(variogram.object) ) 
+    ) stop( "lengths of 'gcr.constant' and 'variogram.object' differ" )  
+  } else {
     gcr.constant <- as.list( rep( NA_real_, length(variogram.object) ) )
   }
-
+  
+  
+
   res <- lapply(
     1L:length(variogram.object),
     function( i, x, gcr.constant, lag.vectors, control.pcmp ){
-      variogram.model <- x[[i]][["variogram.model"]]
+      
+      variogram.model <- x[[i]][["variogram.model"]]
       param           <- x[[i]][["param"]]
       param           <- param[!names(param) %in% c( "variance", "snugget", "nugget")]
       aniso           <- x[[i]][c("aniso", "sclmat", "rotmat")]
       gcr.constant    <- gcr.constant[[i]]
 
       result <- list( error = TRUE )
-      #       RFoptions(newAniso=FALSE) ## moved to georob.fit
-      ## anisotropic model      if( NCOL( lag.vectors ) > 1L ){        ## matrix for coordinate transformation
-        A <- aniso[["sclmat"]] * aniso[["rotmat"]] / param["scale"]
-        ## prepare model
-        model.list <- list( variogram.model )
+      
+      #       RFoptions(newAniso=FALSE) ## moved to georob.fit
+        
+      ## anisotropic model 
+      
+      if( NCOL( lag.vectors ) > 1L ){ 
+        
+        ## matrix for coordinate transformation
+        
+        A <- aniso[["sclmat"]] * aniso[["rotmat"]] / param["scale"]
+        
+        ## prepare model
+        
+        model.list <- list( variogram.model )
         model.list <- c( model.list, as.list( param[-1L] ) )
         model.list <- list( "$", var = 1., A = A, model.list )
-        ##  negative semivariance matrix
-        ## functions of version 3 of RandomFields
-        ## auxiliary function to compute generalized correlations in parallel
-        f.aux <- function(i, s, e, lag.vectors, model.list ){
+        
+        ##  negative semivariance matrix
+        
+        ## functions of version 3 of RandomFields
+        
+        ## auxiliary function to compute generalized correlations in parallel
+        
+        f.aux <- function(i, s, e, lag.vectors, model.list ){
           result <- try(
             -RFvariogram(
-              x = lag.vectors[s[i]:e[i], ], model = model.list,              dim = attr( lag.vectors, "ndim.coords" ), grid = FALSE
+              x = lag.vectors[s[i]:e[i], ], model = model.list, 
+              dim = attr( lag.vectors, "ndim.coords" ), grid = FALSE
             ),
             silent = TRUE
           )
@@ -792,19 +814,30 @@ function(
             "RFvariogram.error"
           }
         }
-      } else {
-        ## isotropic model
-        ## matrix for coordinate transformation
-        A <- 1. / param["scale"]
-        ## prepare model
-        model.list <- list( variogram.model )
+        
+      } else {
+        
+        ## isotropic model
+        
+        ## matrix for coordinate transformation
+        
+        A <- 1. / param["scale"]
+        
+        ## prepare model
+        
+        model.list <- list( variogram.model )
         model.list <- c( model.list, as.list( param[-1L] ) )
         model.list <- list( "$", var = 1., A = A, model.list )
-        ##  negative semivariance matrix
-        ## functions of version 3 of RandomFields
-        ## auxiliary function to compute generalized correlations in parallel
-        f.aux <- function(i, s, e, lag.vectors, model.list ){
-          result <- try(
+        
+        ##  negative semivariance matrix
+        
+        ## functions of version 3 of RandomFields
+        
+        ## auxiliary function to compute generalized correlations in parallel
+        
+        f.aux <- function(i, s, e, lag.vectors, model.list ){
+          
+          result <- try(
             -RFvariogram( x = lag.vectors[s[i]:e[i]], model = model.list, grid = FALSE ),
             silent = TRUE
           )
@@ -815,7 +848,8 @@ function(
           }
         }
       }
-      ## determine number of cores
+              
+      ## determine number of cores
 
       ncores <- control.pcmp[["gcr.ncores"]]
       if( !control.pcmp[["allow.recursive"]] ) ncores <- 1L
@@ -828,7 +862,8 @@ function(
       s <- ( (0L:(k-1L)) * dn ) + 1L
       e <- (1L:k) * dn
       e[k] <- n
-      ## compute generalized correlations in parallel
+      
+      ## compute generalized correlations in parallel
 
       if( ncores > 1L && identical( .Platform[["OS.type"]], "windows") ){
 
@@ -838,44 +873,60 @@ function(
           #         junk <- sfLibrary( RandomFields, verbose = FALSE )
           junk <- sfLibrary( georob, verbose = FALSE )
         }
-        Valpha <- sfLapply(
+        
+        
+        Valpha <- sfLapply(
           1L:k, f.aux, s = s, e = e, lag.vectors = lag.vectors, model.list = model.list
         )
-        if( control.pcmp[["sfstop"]] ){
+        
+        if( control.pcmp[["sfstop"]] ){
           junk <- sfStop()
           options( error = NULL )
         }
-      } else {
-        Valpha <- mclapply(
+        
+      } else {
+        
+        Valpha <- mclapply(
           1L:k, f.aux, s = s, e = e, lag.vectors = lag.vectors, model.list = model.list,
           mc.cores = ncores
         )
-      }
-      not.ok <- any( sapply(          Valpha,          function( x ) identical( x, "RFvariogram.error" ) || is.na(x)
+        
+      }
+      
+      not.ok <- any( sapply( 
+          Valpha, 
+          function( x ) identical( x, "RFvariogram.error" ) || is.na(x)
         ))
-      if( !not.ok ){
+      
+      if( !not.ok ){
 
         Valpha <- unlist( Valpha )
 
         ##  compute additive constant for positive definiteness
-        if( is.na( gcr.constant ) ){
+        
+        if( is.na( gcr.constant ) ){
           if( variogram.model %in% irf.models ){
             gcr.constant <- -min( Valpha ) * 2.
           } else {
             gcr.constant <- 1.
           }
         }
-        ## compute generalized correlation
-        Valpha <- gcr.constant + Valpha
-        ## convert generalized correlation vector to symmetric correlation matrices
-        if( symmetric ){
+        
+        ## compute generalized correlation
+        
+        Valpha <- gcr.constant + Valpha
+        
+        ## convert generalized correlation vector to symmetric correlation matrices
+        
+        if( symmetric ){
           Valpha <- list(
             diag = rep( gcr.constant, 0.5 * ( 1. + sqrt( 1. + 8L * length( Valpha ) ) ) ),
             tri = Valpha
           )
           attr( Valpha, "struc" ) <- "sym"
         }
-        ##  collect results
+        
+        ##  collect results
 
         result[["error"]]        <- FALSE
         result[["gcr.constant"]] <- gcr.constant
@@ -953,7 +1004,8 @@ likelihood.calculations <-
   ## load lik.item object
 
   lik.item <- get( "lik.item", pos = as.environment( envir ) )
-  #   print(str(lik.item[c("variogram.object", "eta", "xi")]))
+  
+  #   print(str(lik.item[c("variogram.object", "eta", "xi")]))
 
   ##  transform variogram parameters back to original scale
 
@@ -1012,7 +1064,8 @@ likelihood.calculations <-
     ))
 
   if( same.param && !is.null( lik.item[["zhat"]] ) ){
-    if( verbose > 4. ) cat(
+    
+    if( verbose > 4. ) cat(
       "\n     likelihood.calculations: exit without computing any objects\n"
     )
     return( lik.item )
@@ -1036,7 +1089,7 @@ likelihood.calculations <-
           tmp <- names( t.param )
           tmp <- gsub(
             "nugget", "eta", gsub(
-              "variance", "xi", fixed = TRUE ), fixed = TRUE )
+              "variance", "xi", tmp, fixed = TRUE ), fixed = TRUE )
           names( t.param ) <- tmp
         }
 
@@ -1123,7 +1176,9 @@ likelihood.calculations <-
       }
 
       vo
-    },    x = variogram.object, vo = lik.item[["variogram.object"]],    n = attr( lag.vectors, "ndim.coords" )
+    }, 
+    x = variogram.object, vo = lik.item[["variogram.object"]], 
+    n = attr( lag.vectors, "ndim.coords" )
   )
 
 
@@ -1311,14 +1366,21 @@ partial.derivatives.variogram <-
   aniso.name <- names( aniso )
   alpha <- unname( param["scale"] )
   n = NCOL( x )
-  if( n > 1L ){
-    aux <- rotmat %*% t(x)
-    ## scaled lag distance
-    hs <- sqrt( colSums( ( sclmat * aux )^2 ) ) / alpha
-  } else {
-    hs <- x / alpha
+  
+  if( n > 1L ){
+    
+    aux <- rotmat %*% t(x)
+    
+    ## scaled lag distance
+    
+    hs <- sqrt( colSums( ( sclmat * aux )^2 ) ) / alpha
+    
+  } else {
+    
+    hs <- x / alpha
   }
-  ## partial derivatives of scaled lag distance with respect to
+      
+  ## partial derivatives of scaled lag distance with respect to
   ## anisotropy parameters
 
   dhs.daniso <- switch(
@@ -3016,7 +3078,8 @@ georob.fit <-
   ##  ToDos:
 
   ##  main body of georob.fit
-  RFoptions(newAniso=FALSE)
+  
+  RFoptions(newAniso=FALSE)
 
   d2r <- pi / 180.
 
@@ -3096,7 +3159,8 @@ georob.fit <-
    variogram.object <- lapply(
     variogram.object,
     function( x, TT, d2r, n ){
-      ## create local copies of objects
+      
+      ## create local copies of objects
 
       variogram.model <- x[["variogram.model"]]
       param <- x[["param"]]
@@ -3230,7 +3294,8 @@ georob.fit <-
         isotropic <- TRUE
       } else {
         isotropic <- FALSE
-      }
+      }      
+
       ## adjust default initial values of anisotropy parameters if these are
       ## fitted
 
@@ -3414,7 +3479,8 @@ georob.fit <-
   }
 
   #   print(str(variogram.object))
-  ## transform variogram parameters
+  
+  ## transform variogram parameters
 
   tmp <- f.aux.tf.param.fwd( variogram.object, param.tf, fwd.tf )
 
@@ -3444,7 +3510,8 @@ georob.fit <-
     }
     attr( lag.vectors, "ndim.coords" ) <- NCOL(coordinates)
   }
-  #   print(str(lag.vectors))
+  
+  #   print(str(lag.vectors))
 
   ##  create environment to store items required to compute likelihood and
   ##  estimating equations that are provided by
@@ -3956,7 +4023,8 @@ georob.fit <-
     #     if( reparam || identical( maximizer, "nlminb" ) ){
 
     ## transform variogram parameters
-    if( reparam ) param.tf[c("variance", "snugget")] <- param.transf()[c("variance", "snugget")]
+    
+    if( reparam ) param.tf[c("variance", "snugget")] <- param.transf()[c("variance", "snugget")]
 
     tmp <- f.aux.tf.param.fwd(
       fitted.variogram.object,
@@ -5540,84 +5608,137 @@ f.call.set_onefitxxx_to_value <- function( cl, nme, value, i = NULL ){
   ## nme:    name of parameter that should be change
   ## value:  new value for nme
   ## i:      index of variogram component for which parameter should be fixed
-  ## auxiliary function
-  f.aux <- function( x, nme, value ){
-    if( nme %in% c( "f1", "f2", "omega", "phi", "zeta" ) ){
-      ## anisotropy parameter
-      sel <- grep( "^fit.a", names(x), fixed = FALSE )
-      if( length(sel) ){
-        ## fit.aniso argument present in cl
-        fit.aniso <- as.list(x[[sel]])
-        ## match names of fit.aniso
-        if( length(names(fit.aniso)) > 1L ){
+  
+  
+  ## auxiliary function
+  
+  f.aux <- function( x, nme, value ){
+    
+    if( nme %in% c( "f1", "f2", "omega", "phi", "zeta" ) ){
+      
+      ## anisotropy parameter
+      
+      sel <- grep( "^fit.a", names(x), fixed = FALSE )
+      
+      if( length(sel) ){
+        
+        ## fit.aniso argument present in cl
+        
+        fit.aniso <- as.list(x[[sel]])
+        
+        ## match names of fit.aniso
+        
+        if( length(names(fit.aniso)) > 1L ){
           tmp <- sapply( names(fit.aniso)[-1L], match.arg, choices = names(default.fit.aniso()) )
           names(fit.aniso) <- c( "", tmp )
         }
-        ## set new value for nme
-        if( nme %in% names(fit.aniso) ){
-          ## nme present in fit.aniso
-          fit.aniso[nme] <- value
-        } else {
-          ## nme not present in fit.aniso
-          tmp <- list( value )
+        
+        ## set new value for nme
+        
+        if( nme %in% names(fit.aniso) ){
+          
+          ## nme present in fit.aniso
+          
+          fit.aniso[nme] <- value
+          
+        } else {
+          
+          ## nme not present in fit.aniso
+          
+          tmp <- list( value )
           names( tmp ) <- nme
           fit.aniso <- c( fit.aniso, tmp )
-        }
-      } else {
-        ## no fit.aniso argument in cl
-        fit.aniso <- c( list( as.symbol("default.fit.aniso" ) ), list( value ) )
+          
+        }
+        
+      } else {
+        
+        ## no fit.aniso argument in cl
+        
+        fit.aniso <- c( list( as.symbol("default.fit.aniso" ) ), list( value ) )
         names(fit.aniso) <- c( "", nme )
-      }
-      cl <- as.call(
+        
+      }
+      
+      cl <- as.call(
         c(
           if( length(sel) ) x[-sel] else x,
           list( fit.aniso = as.call( fit.aniso ) )
         )
       )
-    } else {
-      ## variogram parameter
-      sel <- grep( "^fit.p", names(x), fixed = FALSE )
-      if( length(sel) ){
-        ## fit.param argument present in cl
-        fit.param <- as.list(x[[sel]])
+      
+      
+    } else {
+      
+      ## variogram parameter
+      
+      sel <- grep( "^fit.p", names(x), fixed = FALSE )
+      
+      if( length(sel) ){
+        
+        ## fit.param argument present in cl
+        
+        fit.param <- as.list(x[[sel]])
 
         ## match names of fit.param
-        if( length(names(fit.param)) > 1L ){
+        
+        if( length(names(fit.param)) > 1L ){
           tmp <- sapply( names(fit.param)[-1L], match.arg, choices = names(default.fit.param()) )
           names(fit.param) <- c( "", tmp )
         }
-        ## set new value for nme
-        if( nme %in% names(fit.param) ){
-          ## nme present in fit.param
-          fit.param[nme] <- value
-        } else {
-          ## nme not present in fit.param
-          tmp <- list( value )
+        
+        ## set new value for nme
+        
+        if( nme %in% names(fit.param) ){
+          
+          ## nme present in fit.param
+          
+          fit.param[nme] <- value
+          
+        } else {
+          
+          ## nme not present in fit.param
+          
+          tmp <- list( value )
           names( tmp ) <- nme
           fit.param <- c( fit.param, tmp )
         }
-      } else {
-        ## no fit.param argument in cl
-        fit.param <- c( list( as.symbol("default.fit.param" ) ), list( value ) )
+        
+        
+      } else {
+        
+        ## no fit.param argument in cl
+        
+        fit.param <- c( list( as.symbol("default.fit.param" ) ), list( value ) )
         names(fit.param) <- c( "", nme )
-      }
-      cl <- as.call(
+        
+      }
+      
+      cl <- as.call(
         c(
           if( length(sel) ) x[-sel] else x,
           list( fit.param = as.call( fit.param ) )
         )
       )
-    }
+      
+    }
   }
-  ## start of main body  if( !identical( class(cl), "call" ) ) stop(
+  
+  ## start of main body  
+  
+  if( !identical( class(cl), "call" ) ) stop(
     "'cl' must be of class 'call'"
   )
 
   if( !"variogram.object" %in% names(cl) ){
-    x <- as.list(cl)
-    cl.new <- f.aux( x, nme, value )
+    
+    x <- as.list(cl)
+    
+    cl.new <- f.aux( x, nme, value )    
+
   } else {
-    cl.vo <- cl[["variogram.object"]]
+    
+    cl.vo <- cl[["variogram.object"]]
     cl.m.vo <- cl[ -match("variogram.object", names(cl)) ]
 
     if( is.null(i) || !i %in% 1L:length( as.list( cl.vo[-1L] ) ) ) stop( "'i' wrong" )
@@ -5625,13 +5746,20 @@ f.call.set_onefitxxx_to_value <- function( cl, nme, value, i = NULL ){
     tmp <- lapply(
       1L:length( as.list( cl.vo[-1L] ) ),
       function( i, x, ii, nme, value ){
-        x <- as.list(x[[i]])
-        if( identical( i, ii ) ){
-          f.aux( x, nme, value )
-        } else {
-          as.call( x )
-        }
-      }, x = as.list( cl.vo[-1L] ), ii = as.integer(i), nme = nme, value = value
+        
+        x <- as.list(x[[i]])
+        
+        if( identical( i, ii ) ){
+          
+          f.aux( x, nme, value )
+          
+        } else {
+        
+          as.call( x )
+        
+        }
+        
+      }, x = as.list( cl.vo[-1L] ), ii = as.integer(i), nme = nme, value = value
     )
 
     cl.vo.new <- as.call( c( as.list(cl.vo[1L]), as.list(tmp) ) )
@@ -5647,7 +5775,8 @@ f.call.set_onefitxxx_to_value <- function( cl, nme, value, i = NULL ){
 
 ##  ####################
 
-## set all initial values of variogram parameters in call to fitted values
+## set all initial values of variogram parameters in call to fitted values 
+
 f.call.set_allxxx_to_fitted_values <- function( object ){
 
   ## arguments
@@ -5733,84 +5862,138 @@ f.call.set_onexxx_to_value <- function( cl, nme, value, i = NULL ){
   ## nme:    name of parameter that should be change
   ## value:  new value for nme
   ## i:      index of variogram component for which parameter should be fixed
-  ## auxiliary function
-  f.aux <- function( x, nme, value ){
-    if( nme %in% c( "f1", "f2", "omega", "phi", "zeta" ) ){
-      ## anisotropy parameter
-      sel <- grep( "^a", names(x), fixed = FALSE )
-      if( length(sel) ){
-        ## aniso argument present in cl
-        aniso <- as.list(x[[sel]])
-        ## match names of aniso
-        if( length(names(aniso)) > 1L ){
+  
+  
+  ## auxiliary function
+  
+  f.aux <- function( x, nme, value ){
+    
+    if( nme %in% c( "f1", "f2", "omega", "phi", "zeta" ) ){
+      
+      ## anisotropy parameter
+      
+      sel <- grep( "^a", names(x), fixed = FALSE )
+      
+      if( length(sel) ){
+        
+        ## aniso argument present in cl
+        
+        aniso <- as.list(x[[sel]])
+        
+        ## match names of aniso
+        
+        if( length(names(aniso)) > 1L ){
           tmp <- sapply( names(aniso)[-1L], match.arg, choices = names(default.aniso()) )
           names(aniso) <- c( "", tmp )
         }
-        ## set new value for nme
-        if( nme %in% names(aniso) ){
-          ## nme present in aniso
-          aniso[nme] <- value
-        } else {
-          ## nme not present in aniso
-          tmp <- list( value )
+        
+        ## set new value for nme
+        
+        if( nme %in% names(aniso) ){
+          
+          ## nme present in aniso
+          
+          aniso[nme] <- value
+          
+        } else {
+          
+          ## nme not present in aniso
+          
+          tmp <- list( value )
           names( tmp ) <- nme
           aniso <- c( aniso, tmp )
-        }
-      } else {
-        ## no aniso argument in cl
-        aniso <- c( list( as.symbol("c" ) ), list( value ) )
+          
+        }
+        
+      } else {
+        
+        ## no aniso argument in cl
+        
+        aniso <- c( list( as.symbol("c" ) ), list( value ) )
         names(aniso) <- c( "", nme )
-      }
-      cl <- as.call(
+        
+      }
+      
+      cl <- as.call(
         c(
           if( length(sel) ) x[-sel] else x,
           list( aniso = as.call( aniso ) )
         )
       )
-    } else {
-      ## variogram parameter
-      sel <- grep( "^p", names(x), fixed = FALSE )
-      if( length(sel) ){
-        ## param argument present in cl
-        param <- as.list(x[[sel]])
+      
+      
+    } else {
+      
+      ## variogram parameter
+      
+      sel <- grep( "^p", names(x), fixed = FALSE )
+      
+      if( length(sel) ){
+        
+        ## param argument present in cl
+        
+        param <- as.list(x[[sel]])
 
         ## match names of param
-        if( length(names(param)) > 1L ){
-          tmp <- sapply( names(param)[-1L], match.arg,            choices = names(param.transf()) )
+        
+        if( length(names(param)) > 1L ){
+          tmp <- sapply( names(param)[-1L], match.arg, 
+            choices = names(param.transf()) )
           names(param) <- c( "", tmp )
         }
-        ## set new value for nme
-        if( nme %in% names(param) ){
-          ## nme present in param
-          param[nme] <- value
-        } else {
-          ## nme not present in param
-          tmp <- list( value )
+        
+        ## set new value for nme
+        
+        if( nme %in% names(param) ){
+          
+          ## nme present in param
+          
+          param[nme] <- value
+          
+        } else {
+          
+          ## nme not present in param
+          
+          tmp <- list( value )
           names( tmp ) <- nme
           param <- c( param, tmp )
         }
-      } else {
-        ## no param argument in cl
-        param <- c( list( as.symbol("c" ) ), list( value ) )
+        
+        
+      } else {
+        
+        ## no param argument in cl
+        
+        param <- c( list( as.symbol("c" ) ), list( value ) )
         names(param) <- c( "", nme )
-      }
-      cl <- as.call(
+        
+      }
+      
+      cl <- as.call(
         c(
           if( length(sel) ) x[-sel] else x,
           list( param = as.call( param ) )
         )
       )
-    }
+      
+    }
   }
-  ## start of main body  if( !identical( class(cl), "call" ) ) stop(
+  
+  ## start of main body  
+  
+  if( !identical( class(cl), "call" ) ) stop(
     "'cl' must be of class 'call'"
   )
 
   if( !"variogram.object" %in% names(cl) ){
-    x <- as.list(cl)
-    cl.new <- f.aux( x, nme, value )
+    
+    x <- as.list(cl)
+    
+    cl.new <- f.aux( x, nme, value )    
+
   } else {
-    cl.vo <- cl[["variogram.object"]]
+    
+    cl.vo <- cl[["variogram.object"]]
     cl.m.vo <- cl[ -match("variogram.object", names(cl)) ]
 
     if( is.null(i) || !i %in% 1L:length( as.list( cl.vo[-1L] ) ) ) stop( "'i' wrong" )
@@ -5818,13 +6001,20 @@ f.call.set_onexxx_to_value <- function( cl, nme, value, i = NULL ){
     tmp <- lapply(
       1L:length( as.list( cl.vo[-1L] ) ),
       function( i, x, ii, nme, value ){
-        x <- as.list(x[[i]])
-        if( identical( i, ii ) ){
-          f.aux( x, nme, value )
-        } else {
-          as.call( x )
-        }
-      }, x = as.list( cl.vo[-1L] ), ii = as.integer(i), nme = nme, value = value
+        
+        x <- as.list(x[[i]])
+        
+        if( identical( i, ii ) ){
+          
+          f.aux( x, nme, value )
+          
+        } else {
+        
+          as.call( x )
+        
+        }
+        
+      }, x = as.list( cl.vo[-1L] ), ii = as.integer(i), nme = nme, value = value
     )
 
     cl.vo.new <- as.call( c( as.list(cl.vo[1L]), as.list(tmp) ) )

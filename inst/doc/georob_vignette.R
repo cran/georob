@@ -32,7 +32,13 @@ my.ncores <- 1     # <<- Anpassen!!
 
 
 ###################################################
-### code chunk number 2: meuse-data
+### code chunk number 2: meuse-zinc-load
+###################################################
+if(file.exists("r_meuse_zinc_objects.RData")) load("r_meuse_zinc_objects.RData")
+
+
+###################################################
+### code chunk number 3: meuse-data
 ###################################################
 data(meuse, package="sp")
 levels(meuse$ffreq) <- paste("ffreq", levels(meuse$ffreq), sep="")
@@ -41,7 +47,7 @@ str(meuse)
 
 
 ###################################################
-### code chunk number 3: meuse-zinc-eda-plot-1
+### code chunk number 4: meuse-zinc-eda-plot-1
 ###################################################
 getOption("SweaveHooks")[["fig"]]()
 library(lattice)
@@ -53,7 +59,7 @@ legend("topright", col=c(rep(1, nlevels(meuse$ffreq)), 1:nlevels(meuse$soil)),
 
 
 ###################################################
-### code chunk number 4: meuse-zinc-eda-plot-2
+### code chunk number 5: meuse-zinc-eda-plot-2
 ###################################################
 getOption("SweaveHooks")[["fig"]]()
 xyplot(log(zinc)~dist | ffreq, meuse, groups=soil, panel=function(x, y, ...){
@@ -63,7 +69,7 @@ xyplot(log(zinc)~dist | ffreq, meuse, groups=soil, panel=function(x, y, ...){
 
 
 ###################################################
-### code chunk number 5: meuse-zinc-eda-plot-3
+### code chunk number 6: meuse-zinc-eda-plot-3
 ###################################################
 getOption("SweaveHooks")[["fig"]]()
 xyplot(log(zinc)~sqrt(dist) | ffreq, meuse, groups=soil, panel=function(x, y, ...){
@@ -74,21 +80,21 @@ xyplot(log(zinc)~sqrt(dist) | ffreq, meuse, groups=soil, panel=function(x, y, ..
 
 
 ###################################################
-### code chunk number 6: meuse-zinc-lm
+### code chunk number 7: meuse-zinc-lm
 ###################################################
 r.lm <- lm(log(zinc)~sqrt(dist)+ffreq, meuse)
 summary(r.lm)
 
 
 ###################################################
-### code chunk number 7: meuse-zinc-lm-resdiag
+### code chunk number 8: meuse-zinc-lm-resdiag
 ###################################################
 getOption("SweaveHooks")[["fig"]]()
 op <- par(mfrow=c(2, 2)); plot(r.lm); par(op)
 
 
 ###################################################
-### code chunk number 8: meuse-zinc-lm-res-sv-1
+### code chunk number 9: meuse-zinc-lm-res-sv-1
 ###################################################
 getOption("SweaveHooks")[["fig"]]()
 library(georob)
@@ -99,26 +105,35 @@ plot(sample.variogram(residuals(r.lm), locations=meuse[, c("x","y")],
 
 
 ###################################################
-### code chunk number 9: meuse-zinc-lm-res-sv-2
+### code chunk number 10: meuse-zinc-lm-res-sv-2 (eval = FALSE)
+###################################################
+getOption("SweaveHooks")[["fig"]]()
+## library(georob)
+## plot(r.sv <- sample.variogram(residuals(r.lm), locations=meuse[, c("x","y")],
+##   lag.dist.def=100, max.lag=2000, 
+##   estimator="matheron"), type="l",
+##   main="sample variogram of residuals log(zinc)~sqrt(dist)+ffreq")
+## lines(r.sv.spher <- fit.variogram.model(r.sv, variogram.mode="RMspheric",
+##   param=c(variance=0.1, nugget=0.05, scale=1000), method="BFGS"))
+
+
+###################################################
+### code chunk number 11: meuse-zinc-lm-res-sv-2
 ###################################################
 getOption("SweaveHooks")[["fig"]]()
 library(georob)
-plot(r.sv <- sample.variogram(residuals(r.lm), locations=meuse[, c("x","y")],
-  lag.dist.def=100, max.lag=2000, 
-  estimator="matheron"), type="l",
-  main="sample variogram of residuals log(zinc)~sqrt(dist)+ffreq")
-lines(r.sv.spher <- fit.variogram.model(r.sv, variogram.mode="RMspheric",
-  param=c(variance=0.1, nugget=0.05, scale=1000)))
+plot(r.sv, type="l", main="sample variogram of residuals log(zinc)~sqrt(dist)+ffreq")
+lines(r.sv.spher)
 
 
 ###################################################
-### code chunk number 10: meuse-zinc-lm-res-spher
+### code chunk number 12: meuse-zinc-lm-res-spher
 ###################################################
 summary(r.sv.spher)
 
 
 ###################################################
-### code chunk number 11: meuse-zinc-georob-reml
+### code chunk number 13: meuse-zinc-georob-reml
 ###################################################
 r.georob.m0.spher.reml <- georob(log(zinc)~sqrt(dist)+ffreq, meuse, locations=~x+y,
   variogram.model="RMspheric", param=c(variance=0.1, nugget=0.05, scale=1000), 
@@ -126,27 +141,27 @@ r.georob.m0.spher.reml <- georob(log(zinc)~sqrt(dist)+ffreq, meuse, locations=~x
 
 
 ###################################################
-### code chunk number 12: meuse-zinc-summary-georob-reml
+### code chunk number 14: meuse-zinc-summary-georob-reml
 ###################################################
 summary(r.georob.m0.spher.reml)
 
 
 ###################################################
-### code chunk number 13: meuse-zinc-proflik-reml-scale-1a (eval = FALSE)
+### code chunk number 15: meuse-zinc-proflik-reml-scale-1a (eval = FALSE)
 ###################################################
 ## r.prfl.m0.spher.reml.scale <- profilelogLik(r.georob.m0.spher.reml,
 ##   values=data.frame(scale=seq(500, 5000, by=50)))
 
 
 ###################################################
-### code chunk number 14: meuse-zinc-proflik-reml-scale-1b
+### code chunk number 16: meuse-zinc-proflik-reml-scale-1b (eval = FALSE)
 ###################################################
-r.prfl.m0.spher.reml.scale <- profilelogLik(r.georob.m0.spher.reml,
-  values=data.frame(scale=seq(500, 5000, by=50)), ncores=my.ncores)
+## r.prfl.m0.spher.reml.scale <- profilelogLik(r.georob.m0.spher.reml,
+##   values=data.frame(scale=seq(500, 5000, by=50)), ncores=my.ncores)
 
 
 ###################################################
-### code chunk number 15: meuse-zinc-proflik-reml-scale-2
+### code chunk number 17: meuse-zinc-proflik-reml-scale-2
 ###################################################
 getOption("SweaveHooks")[["fig"]]()
 plot(loglik~scale, r.prfl.m0.spher.reml.scale, type="l")
@@ -155,7 +170,7 @@ abline(h=r.georob.m0.spher.reml$loglik - 0.5*qchisq(0.95, 1), lty="dotted")
 
 
 ###################################################
-### code chunk number 16: meuse-zinc-proflik-reml-scale-3
+### code chunk number 18: meuse-zinc-proflik-reml-scale-3
 ###################################################
 getOption("SweaveHooks")[["fig"]]()
 op <- par(mfrow=c(1,2), cex=0.66)
@@ -165,13 +180,13 @@ par(op)
 
 
 ###################################################
-### code chunk number 17: meuse-zinc-georob-reml-waldtest-1
+### code chunk number 19: meuse-zinc-georob-reml-waldtest-1
 ###################################################
 waldtest(r.georob.m0.spher.reml, .~.-ffreq)
 
 
 ###################################################
-### code chunk number 18: meuse-zinc-georob-reml-multcomp
+### code chunk number 20: meuse-zinc-georob-reml-multcomp
 ###################################################
 library(multcomp)
 summary(glht(r.georob.m0.spher.reml, 
@@ -180,39 +195,39 @@ summary(glht(r.georob.m0.spher.reml,
 
 
 ###################################################
-### code chunk number 19: meuse-zinc-georob-reml-waldtest-2
+### code chunk number 21: meuse-zinc-georob-reml-waldtest-2
 ###################################################
 waldtest(r.georob.m0.spher.reml, .~.+sqrt(dist):ffreq)
 
 
 ###################################################
-### code chunk number 20: meuse-zinc-georob-reml-waldtest-3
+### code chunk number 22: meuse-zinc-georob-reml-waldtest-3
 ###################################################
 waldtest(r.georob.m0.spher.reml, .~.+soil)
 
 
 ###################################################
-### code chunk number 21: meuse-zinc-georob-reml-step-1
+### code chunk number 23: meuse-zinc-georob-reml-step-1 (eval = FALSE)
 ###################################################
-step(r.georob.m0.spher.reml, scope=log(zinc)~ffreq*sqrt(dist)+soil)
+## step(r.georob.m0.spher.reml, scope=log(zinc)~ffreq*sqrt(dist)+soil)
 
 
 ###################################################
-### code chunk number 22: meuse-zinc-georob-reml-step-2
+### code chunk number 24: meuse-zinc-georob-reml-step-2 (eval = FALSE)
 ###################################################
-step(r.georob.m0.spher.reml, scope=log(zinc)~ffreq*sqrt(dist)+soil, 
-  fixed.add1.drop1=FALSE)
+## step(r.georob.m0.spher.reml, scope=log(zinc)~ffreq*sqrt(dist)+soil, 
+##   fixed.add1.drop1=FALSE)
 
 
 ###################################################
-### code chunk number 23: meuse-zinc-georob-ml
+### code chunk number 25: meuse-zinc-georob-ml
 ###################################################
 r.georob.m0.spher.ml <- update(r.georob.m0.spher.reml, 
   control=control.georob(ml.method="ML"))
 
 
 ###################################################
-### code chunk number 24: meuse-zinc-georob-aic
+### code chunk number 26: meuse-zinc-georob-aic
 ###################################################
 extractAIC(r.georob.m0.spher.reml, REML=TRUE)
 extractAIC(r.georob.m0.spher.ml)
@@ -220,7 +235,7 @@ r.georob.m0.spher.ml
 
 
 ###################################################
-### code chunk number 25: meuse-zinc-cv-1 (eval = FALSE)
+### code chunk number 27: meuse-zinc-cv-1 (eval = FALSE)
 ###################################################
 ## r.cv.m0.spher.reml <- cv(r.georob.m0.spher.reml, seed=3245, lgn=TRUE)
 ## r.georob.m1.spher.reml <- update(r.georob.m0.spher.reml, .~.-ffreq)
@@ -228,22 +243,22 @@ r.georob.m0.spher.ml
 
 
 ###################################################
-### code chunk number 26: meuse-zinc-cv-2
+### code chunk number 28: meuse-zinc-cv-2 (eval = FALSE)
 ###################################################
-r.cv.m0.spher.reml <- cv(r.georob.m0.spher.reml, seed=3245, lgn=TRUE, ncores=my.ncores)
-r.georob.m1.spher.reml <- update(r.georob.m0.spher.reml, .~.-ffreq)
-r.cv.m1.spher.reml <- cv(r.georob.m1.spher.reml, seed=3245, lgn=TRUE, ncores=my.ncores)
+## r.cv.m0.spher.reml <- cv(r.georob.m0.spher.reml, seed=3245, lgn=TRUE, ncores=my.ncores)
+## r.georob.m1.spher.reml <- update(r.georob.m0.spher.reml, .~.-ffreq)
+## r.cv.m1.spher.reml <- cv(r.georob.m1.spher.reml, seed=3245, lgn=TRUE, ncores=my.ncores)
 
 
 ###################################################
-### code chunk number 27: meuse-zinc-cv-summary
+### code chunk number 29: meuse-zinc-cv-summary
 ###################################################
 summary(r.cv.m0.spher.reml)
 summary(r.cv.m1.spher.reml)
 
 
 ###################################################
-### code chunk number 28: meuse-zinc-cv-plot
+### code chunk number 30: meuse-zinc-cv-plot
 ###################################################
 getOption("SweaveHooks")[["fig"]]()
 op <- par(mfrow=c(3,2))
@@ -265,7 +280,7 @@ par(op)
 
 
 ###################################################
-### code chunk number 29: meuse-zinc-georob-plot
+### code chunk number 31: meuse-zinc-georob-plot
 ###################################################
 getOption("SweaveHooks")[["fig"]]()
 op <- par(mfrow=c(2,2), cex=0.66)
@@ -278,7 +293,7 @@ par(op)
 
 
 ###################################################
-### code chunk number 30: meuse-zinc-meuse-grid
+### code chunk number 32: meuse-zinc-meuse-grid
 ###################################################
 data(meuse.grid)
 levels(meuse.grid$ffreq) <- paste("ffreq", levels(meuse.grid$ffreq), sep="")
@@ -288,7 +303,7 @@ gridded(meuse.grid) <- TRUE
 
 
 ###################################################
-### code chunk number 31: meuse-zinc-meuse-point-Kriging
+### code chunk number 33: meuse-zinc-meuse-point-Kriging
 ###################################################
 r.pk <- predict(r.georob.m0.spher.reml, newdata=meuse.grid,
   control=control.predict.georob(extended.output=TRUE))
@@ -296,13 +311,13 @@ r.pk <- lgnpp(r.pk)
 
 
 ###################################################
-### code chunk number 32: meuse-zinc-meuse-point-Kriging-lgn
+### code chunk number 34: meuse-zinc-meuse-point-Kriging-lgn
 ###################################################
 str(r.pk)
 
 
 ###################################################
-### code chunk number 33: meuse-zinc-point-Kriging-plot
+### code chunk number 35: meuse-zinc-point-Kriging-plot
 ###################################################
 getOption("SweaveHooks")[["fig"]]()
 brks <- c(25, 50, 75, 100, 150, 200, seq(500, 3500,by=500))
@@ -315,34 +330,34 @@ plot(upr, position=c(2/3, 0, 1, 1), more=FALSE)
 
 
 ###################################################
-### code chunk number 34: meuse-zinc-block-Kriging
+### code chunk number 36: meuse-zinc-block-Kriging
 ###################################################
 data(meuse.blocks, package="constrainedKriging")
 str(meuse.blocks, max=2)
 
 
 ###################################################
-### code chunk number 35: meuse-zinc-meuse-block-Kriging-1a (eval = FALSE)
+### code chunk number 37: meuse-zinc-meuse-block-Kriging-1a (eval = FALSE)
 ###################################################
 ## r.bk <- predict(r.georob.m1.spher.reml, newdata=meuse.blocks,
 ##   control=control.predict.georob(extended.output=TRUE, pwidth=25, pheight=25, mmax=25))
 
 
 ###################################################
-### code chunk number 36: meuse-zinc-meuse-block-Kriging-1b
+### code chunk number 38: meuse-zinc-meuse-block-Kriging-1b (eval = FALSE)
 ###################################################
-r.bk <- predict(r.georob.m1.spher.reml, newdata=meuse.blocks,
-  control=control.predict.georob(extended.output=TRUE, pwidth=25, pheight=25))
+## r.bk <- predict(r.georob.m1.spher.reml, newdata=meuse.blocks,
+##   control=control.predict.georob(extended.output=TRUE, pwidth=25, pheight=25))
 
 
 ###################################################
-### code chunk number 37: meuse-zinc-meuse-block-Kriging-2
+### code chunk number 39: meuse-zinc-meuse-block-Kriging-2 (eval = FALSE)
 ###################################################
-r.bk <- lgnpp(r.bk, newdata=meuse.grid)
+## r.bk <- lgnpp(r.bk, newdata=meuse.grid)
 
 
 ###################################################
-### code chunk number 38: meuse-zinc-block-Kriging-plot
+### code chunk number 40: meuse-zinc-block-Kriging-plot
 ###################################################
 getOption("SweaveHooks")[["fig"]]()
 brks <- c(25, 50, 75, 100, 150, 200, seq(500, 3500,by=500))
@@ -355,7 +370,7 @@ plot(upr, position=c(2/3, 0, 1, 1), more=FALSE)
 
 
 ###################################################
-### code chunk number 39: meuse-zinc-block-Kriging-blocks
+### code chunk number 41: meuse-zinc-block-Kriging-blocks
 ###################################################
 getOption("SweaveHooks")[["fig"]]()
 ## define blocks
@@ -375,62 +390,77 @@ plot(geometry(blks), add=TRUE, col=2)
 
 
 ###################################################
-### code chunk number 40: meuse-zinc-block-Kriging-3
+### code chunk number 42: meuse-zinc-block-Kriging-3 (eval = FALSE)
 ###################################################
-r.blks <- predict(r.georob.m1.spher.reml, newdata=blks, 
-  control=control.predict.georob(extended.output=TRUE, pwidth=800, pheight=800))
-r.blks <- lgnpp(r.blks, newdata=meuse.grid)
+## r.blks <- predict(r.georob.m1.spher.reml, newdata=blks, 
+##   control=control.predict.georob(extended.output=TRUE, pwidth=800, pheight=800))
+## r.blks <- lgnpp(r.blks, newdata=meuse.grid)
 
 
 ###################################################
-### code chunk number 41: <meuse-zinc-block-Kriging-4a
+### code chunk number 43: <meuse-zinc-block-Kriging-4a (eval = FALSE)
 ###################################################
-t.pk <- predict(r.georob.m0.spher.reml, newdata=as.data.frame(meuse.grid),
-  control=control.predict.georob(extended.output=TRUE, full.covmat=TRUE))
-str(t.pk)
+## t.pk <- predict(r.georob.m0.spher.reml, newdata=as.data.frame(meuse.grid),
+##   control=control.predict.georob(extended.output=TRUE, full.covmat=TRUE))
+## str(t.pk)
 
 
 ###################################################
-### code chunk number 42: meuse-zinc-block-Kriging-5
+### code chunk number 44: meuse-zinc-block-Kriging-5 (eval = FALSE)
 ###################################################
-## index defining to which block the points predictions belong
-ind <- over(geometry(meuse.grid), geometry(blks))
-ind <- tapply(1:nrow(meuse.grid), factor(ind), function(x) x)
-## select point predictions in block and predict block average
-tmp <- t(sapply(ind, function(i, x){
-  x$pred <- x$pred[i,]
-  x$mse.pred <- x$mse.pred[i,i]
-  x$var.pred <- x$var.pred[i,i]
-  x$cov.pred.target <- x$cov.pred.target[i,i]
-  x$var.target <- x$var.target[i,i]
-  res <- lgnpp(x, is.block=TRUE)
-  res
-  }, x=t.pk))
-colnames(tmp) <- c("opt.pred", "opt.se")
-r.blks <- cbind( r.blks, tmp)
+## ## index defining to which block the points predictions belong
+## ind <- over(geometry(meuse.grid), geometry(blks))
+## ind <- tapply(1:nrow(meuse.grid), factor(ind), function(x) x)
+## ## select point predictions in block and predict block average
+## tmp <- t(sapply(ind, function(i, x){
+##   x$pred <- x$pred[i,]
+##   x$mse.pred <- x$mse.pred[i,i]
+##   x$var.pred <- x$var.pred[i,i]
+##   x$cov.pred.target <- x$cov.pred.target[i,i]
+##   x$var.target <- x$var.target[i,i]
+##   res <- lgnpp(x, is.block=TRUE)
+##   res
+##   }, x=t.pk))
+## colnames(tmp) <- c("opt.pred", "opt.se")
+## r.blks <- cbind( r.blks, tmp)
 
 
 ###################################################
-### code chunk number 43: meuse-zinc-block-Kriging-6
+### code chunk number 45: meuse-zinc-block-Kriging-6
 ###################################################
 r.blks@data[, c("lgn.pred", "opt.pred", "lgn.se", "opt.se")]
 
 
 ###################################################
-### code chunk number 44: meuse-zinc-cleanup-1
+### code chunk number 46: meuse-zinc-cleanup-1
 ###################################################
 palette("default")
 
 
 ###################################################
-### code chunk number 45: ash-data
+### code chunk number 47: meuse-zinc-cleanup-2 (eval = FALSE)
+###################################################
+## # save(list=ls(pattern="^r\\."), file="r_meuse_zinc_objects.RData")
+## save(list=c("r.sv", "r.sv.spher", "r.prfl.m0.spher.reml.scale", "r.cv.m0.spher.reml", 
+##     "r.cv.m1.spher.reml", "r.bk", "r.blks"), file="r_meuse_zinc_objects.RData")
+## rm(list=ls(pattern="^r\\."))
+
+
+###################################################
+### code chunk number 48: ash-load
+###################################################
+if(file.exists("r_coalash_objects.RData")) load("r_coalash_objects.RData")
+
+
+###################################################
+### code chunk number 49: ash-data
 ###################################################
 data(coalash, package="gstat")
 summary(coalash)
 
 
 ###################################################
-### code chunk number 46: ash-centred-bubbleplot1
+### code chunk number 50: ash-centred-bubbleplot1
 ###################################################
 getOption("SweaveHooks")[["fig"]]()
 plot(y~x, coalash, cex=sqrt(abs(coalash - median(coalash))), 
@@ -441,7 +471,7 @@ legend("topleft", pch=1, col=c("blue", "red"), legend=c("< 0", "> 0"), bty="n")
 
 
 ###################################################
-### code chunk number 47: ash-coords-scatterplot
+### code chunk number 51: ash-coords-scatterplot
 ###################################################
 getOption("SweaveHooks")[["fig"]]()
 op <- par(mfrow=c(1,2))
@@ -451,14 +481,14 @@ par(op)
 
 
 ###################################################
-### code chunk number 48: ash-centerd-qqnorm
+### code chunk number 52: ash-centerd-qqnorm
 ###################################################
 getOption("SweaveHooks")[["fig"]]()
 qqnorm(coalash$coalash)
 
 
 ###################################################
-### code chunk number 49: ash-lmrob
+### code chunk number 53: ash-lmrob
 ###################################################
 library(robustbase)
 r.lmrob <- lmrob(coalash~x+y, coalash)
@@ -466,7 +496,7 @@ summary(r.lmrob)
 
 
 ###################################################
-### code chunk number 50: ash-diag-lmrob
+### code chunk number 54: ash-diag-lmrob
 ###################################################
 getOption("SweaveHooks")[["fig"]]()
 op <- par(mfrow=c(2,2))
@@ -475,7 +505,7 @@ par(op)
 
 
 ###################################################
-### code chunk number 51: ash-sv-res-lmrob-iso
+### code chunk number 55: ash-sv-res-lmrob-iso
 ###################################################
 getOption("SweaveHooks")[["fig"]]()
 library(georob)
@@ -494,7 +524,7 @@ legend("bottomright", pch=1:4, col=c("black", "blue", "cyan", "orange"),
 
 
 ###################################################
-### code chunk number 52: ash-sv-res-lmrob-aniso
+### code chunk number 56: ash-sv-res-lmrob-aniso
 ###################################################
 getOption("SweaveHooks")[["fig"]]()
 r.sv <- sample.variogram(residuals(r.lmrob), locations=coalash[, c("x","y")],
@@ -509,45 +539,45 @@ legend("bottomright", pch=c(1, 3), col=c("blue", "orange"),
 
 
 ###################################################
-### code chunk number 53: ash-georob-robust-1
+### code chunk number 57: ash-georob-robust-1
 ###################################################
 r.georob.m0.exp.c2 <- georob(coalash~x+y, coalash, locations=~x+y, 
   variogram.model="RMexp", param=c(variance=0.1, nugget=0.9, scale=1))
 
 
 ###################################################
-### code chunk number 54: ash-summary-georob-robust-1
+### code chunk number 58: ash-summary-georob-robust-1
 ###################################################
 summary(r.georob.m0.exp.c2)
 
 
 ###################################################
-### code chunk number 55: ash-waldtest-quadratic-robust
+### code chunk number 59: ash-waldtest-quadratic-robust
 ###################################################
 waldtest(update(r.georob.m0.exp.c2, .~.+I(x^2)+I(y^2)+I(x*y)), r.georob.m0.exp.c2)
 
 
 ###################################################
-### code chunk number 56: ash-georob-robust-2
+### code chunk number 60: ash-georob-robust-2
 ###################################################
 r.georob.m1.exp.c2 <- update(r.georob.m0.exp.c2, .~.-y)
 
 
 ###################################################
-### code chunk number 57: ash-summary-georob-robust-2
+### code chunk number 61: ash-summary-georob-robust-2
 ###################################################
 r.georob.m1.exp.c2
 
 
 ###################################################
-### code chunk number 58: ash-georob-robust-3
+### code chunk number 62: ash-georob-robust-3
 ###################################################
 getOption("SweaveHooks")[["fig"]]()
 plot(r.georob.m1.exp.c2, lag.dist.def=1, max.lag=10, estimator="qn", col="blue")
 
 
 ###################################################
-### code chunk number 59: ash-diag-georob-robust-2-1
+### code chunk number 63: ash-diag-georob-robust-2-1
 ###################################################
 getOption("SweaveHooks")[["fig"]]()
 op <- par(mfrow=c(2,2))
@@ -559,7 +589,7 @@ par(op)
 
 
 ###################################################
-### code chunk number 60: ash-rw-georob-robust-2-1
+### code chunk number 64: ash-rw-georob-robust-2-1
 ###################################################
 round(cbind(coalash[, c("x", "y")], 
   rweights=r.georob.m1.exp.c2[["rweights"]])[c(15, 50, 63, 73, 88, 111, 192),],
@@ -567,7 +597,7 @@ round(cbind(coalash[, c("x", "y")],
 
 
 ###################################################
-### code chunk number 61: ash-rw-georob-robust-2-1
+### code chunk number 65: ash-rw-georob-robust-2-1
 ###################################################
 sel <- r.georob.m1.exp.c2[["rweights"]] <= 0.8 & 
   !1:nrow(coalash) %in% c(15, 50, 63, 73, 88, 111, 192)
@@ -577,7 +607,7 @@ round(cbind(coalash[, c("x", "y")],
 
 
 ###################################################
-### code chunk number 62: ash-diag-georob-robust-2-2
+### code chunk number 66: ash-diag-georob-robust-2-2
 ###################################################
 getOption("SweaveHooks")[["fig"]]()
 plot(y~x, coalash, cex=sqrt(abs(residuals(r.georob.m1.exp.c2))), 
@@ -588,19 +618,19 @@ legend("topleft", pch=1, col=c("blue", "red"), legend=c("< 0", "> 0"), bty="n")
 
 
 ###################################################
-### code chunk number 63: ash-georob-gaussian-1
+### code chunk number 67: ash-georob-gaussian-1
 ###################################################
 r.georob.m1.exp.c1000 <- update(r.georob.m1.exp.c2, tuning.psi=1000)
 
 
 ###################################################
-### code chunk number 64: ash-georob-summary-gaussian-1
+### code chunk number 68: ash-georob-summary-gaussian-1
 ###################################################
 summary(r.georob.m1.exp.c1000)
 
 
 ###################################################
-### code chunk number 65: ash-georob-gaussian-2
+### code chunk number 69: ash-georob-gaussian-2
 ###################################################
 getOption("SweaveHooks")[["fig"]]()
 plot(r.georob.m1.exp.c1000, lag.dist.def=1, max.lag=10, estimator="matheron")
@@ -613,7 +643,7 @@ legend("bottomright", lt=1, col=c("black","blue", "orange"),
 
 
 ###################################################
-### code chunk number 66: ash-georob-diag-gaussian-robust-2
+### code chunk number 70: ash-georob-diag-gaussian-robust-2
 ###################################################
 getOption("SweaveHooks")[["fig"]]()
 op <- par(mfrow=c(1,2), cex=5/6)
@@ -630,7 +660,7 @@ abline(0, 1, lty="dotted")
 
 
 ###################################################
-### code chunk number 67: ash-cv-georob-gaussian-robust-1 (eval = FALSE)
+### code chunk number 71: ash-cv-georob-gaussian-robust-1 (eval = FALSE)
 ###################################################
 ## r.cv.georob.m1.exp.c2 <- cv(r.georob.m1.exp.c2, seed=1,
 ##   control=control.georob(initial.param=FALSE))
@@ -638,29 +668,29 @@ abline(0, 1, lty="dotted")
 
 
 ###################################################
-### code chunk number 68: ash-cv-georob-gaussian-robust-2
+### code chunk number 72: ash-cv-georob-gaussian-robust-2 (eval = FALSE)
 ###################################################
-r.cv.georob.m1.exp.c2 <- cv(r.georob.m1.exp.c2, seed=1, 
-  control=control.georob(initial.param=FALSE), ncores=my.ncores)
-r.cv.georob.m1.exp.c1000 <- cv(r.georob.m1.exp.c1000, seed=1, ncores=my.ncores)
+## r.cv.georob.m1.exp.c2 <- cv(r.georob.m1.exp.c2, seed=1, 
+##   control=control.georob(initial.param=FALSE), ncores=my.ncores)
+## r.cv.georob.m1.exp.c1000 <- cv(r.georob.m1.exp.c1000, seed=1, ncores=my.ncores)
 
 
 ###################################################
-### code chunk number 69: ash-cv-georob-subsets
+### code chunk number 73: ash-cv-georob-subsets
 ###################################################
 getOption("SweaveHooks")[["fig"]]()
 plot(y~x, r.cv.georob.m1.exp.c2$pred, asp=1, col=subset, pch=as.integer(subset))
 
 
 ###################################################
-### code chunk number 70: ash-summary-cv-georob-gaussian-robust
+### code chunk number 74: ash-summary-cv-georob-gaussian-robust
 ###################################################
 summary(r.cv.georob.m1.exp.c1000, se=TRUE)
 summary(r.cv.georob.m1.exp.c2, se=TRUE)
 
 
 ###################################################
-### code chunk number 71: ash-diag-cv-georob-gaussian-robust
+### code chunk number 75: ash-diag-cv-georob-gaussian-robust
 ###################################################
 getOption("SweaveHooks")[["fig"]]()
 op <- par(mfrow=c(3, 2))
@@ -685,10 +715,10 @@ par(op)
 
 
 ###################################################
-### code chunk number 72: ash-Kriging-grid
+### code chunk number 76: ash-Kriging-grid
 ###################################################
-coalash.grid <- expand.grid(x=seq(-1, 17, by=0.1),
-  y=seq( -1, 24, by=0.1))
+coalash.grid <- expand.grid(x=seq(-1, 17, by=0.2),
+  y=seq( -1, 24, by=0.2))
 coordinates( coalash.grid) <- ~x+y  # convert to SpatialPoints
 gridded( coalash.grid) <- TRUE      # convert to SpatialPixels
 fullgrid( coalash.grid) <- TRUE     # convert to SpatialGrid
@@ -696,21 +726,21 @@ str(coalash.grid, max=2)
 
 
 ###################################################
-### code chunk number 73: ash-pKriging-1 (eval = FALSE)
+### code chunk number 77: ash-pKriging-1 (eval = FALSE)
 ###################################################
 ## r.pk.m1.exp.c2 <- predict(r.georob.m1.exp.c2, newdata=coalash.grid)
 ## r.pk.m1.exp.c1000 <- predict(r.georob.m1.exp.c1000, newdata=coalash.grid)
 
 
 ###################################################
-### code chunk number 74: ash-pKriging-2
+### code chunk number 78: ash-pKriging-2 (eval = FALSE)
 ###################################################
-r.pk.m1.exp.c2 <- predict(r.georob.m1.exp.c2, newdata=coalash.grid, control=control.predict.georob(ncores=my.ncores))
-r.pk.m1.exp.c1000 <- predict(r.georob.m1.exp.c1000, newdata=coalash.grid, control=control.predict.georob(ncores=my.ncores))
+## r.pk.m1.exp.c2 <- predict(r.georob.m1.exp.c2, newdata=coalash.grid, control=control.predict.georob(ncores=my.ncores))
+## r.pk.m1.exp.c1000 <- predict(r.georob.m1.exp.c1000, newdata=coalash.grid, control=control.predict.georob(ncores=my.ncores))
 
 
 ###################################################
-### code chunk number 75: ash-pKriging-plot-robust-gaussian-1
+### code chunk number 79: ash-pKriging-plot-robust-gaussian-1
 ###################################################
 getOption("SweaveHooks")[["fig"]]()
 pred.rob <- spplot(r.pk.m1.exp.c2, "pred", at=seq(8, 12, by=0.25), 
@@ -728,7 +758,7 @@ plot(se.gauss, pos=c(0.5, 0, 1, 0.5), more=FALSE)
 
 
 ###################################################
-### code chunk number 76: ash-pKriging-plot-robust-gaussian-2
+### code chunk number 80: ash-pKriging-plot-robust-gaussian-2
 ###################################################
 getOption("SweaveHooks")[["fig"]]()
 library(lattice)
@@ -758,7 +788,7 @@ plot(ratio.msep, pos=c(0.5, 0, 1, 1), more=FALSE)
 
 
 ###################################################
-### code chunk number 77: ash-Kriging-polygons
+### code chunk number 81: ash-Kriging-polygons
 ###################################################
 getOption("SweaveHooks")[["fig"]]()
 tmp <- expand.grid(x = seq(2.5, 16.5, by=4), y=seq(2, 22, by=4))
@@ -776,29 +806,29 @@ plot(coalash.polygons, col="grey", axes=TRUE); points(y~x, coalash)
 
 
 ###################################################
-### code chunk number 78: ash-bKriging-1
+### code chunk number 82: ash-bKriging-1 (eval = FALSE)
 ###################################################
-r.bk.m1.exp.c2 <- predict(r.georob.m1.exp.c2, newdata=coalash.polygons,
-  control=control.predict.georob(pwidth=4, pheight=4, full.covmat=TRUE))
-r.bk.m1.exp.c1000 <- predict(r.georob.m1.exp.c1000, newdata=coalash.polygons,
-  control=control.predict.georob(pwidth=4, pheight=4, full.covmat=TRUE))
+## r.bk.m1.exp.c2 <- predict(r.georob.m1.exp.c2, newdata=coalash.polygons,
+##   control=control.predict.georob(pwidth=4, pheight=4, full.covmat=TRUE))
+## r.bk.m1.exp.c1000 <- predict(r.georob.m1.exp.c1000, newdata=coalash.polygons,
+##   control=control.predict.georob(pwidth=4, pheight=4, full.covmat=TRUE))
 
 
 ###################################################
-### code chunk number 79: ash-str-bKriging
+### code chunk number 83: ash-str-bKriging
 ###################################################
 str(r.bk.m1.exp.c2, max=2)
 
 
 ###################################################
-### code chunk number 80: ash-gKriging
+### code chunk number 84: ash-gKriging
 ###################################################
 c(pred=mean(r.bk.m1.exp.c2$pred$pred),
   se=sqrt(sum(r.bk.m1.exp.c2$mse.pred))/24)
 
 
 ###################################################
-### code chunk number 81: ash-bKriging-2
+### code chunk number 85: ash-bKriging-2
 ###################################################
 coalash.domain <- rbind(c(0.5,0), c(16.5,0), c(16.5,24), c(0.5,24), c(0.5,0))
 coalash.domain <- SpatialPolygonsDataFrame(
@@ -809,7 +839,7 @@ slot(predict(r.georob.m1.exp.c2, newdata=coalash.domain,
 
 
 ###################################################
-### code chunk number 82: ash-bKriging-plot-robust-gaussian-1
+### code chunk number 86: ash-bKriging-plot-robust-gaussian-1
 ###################################################
 getOption("SweaveHooks")[["fig"]]()
 pred.rob <- spplot(r.bk.m1.exp.c2$pred, "pred", at=seq(8, 11, by=0.25), 
@@ -824,5 +854,16 @@ plot(pred.rob, pos=c(0, 0.5, 0.5, 1), more=TRUE)
 plot(pred.gauss, pos=c(0.5, 0.5, 1, 1), more=TRUE)
 plot(se.rob, pos=c(0, 0, 0.5, 0.5), more=TRUE)
 plot(se.gauss, pos=c(0.5, 0, 1, 0.5), more=FALSE)
+
+
+###################################################
+### code chunk number 87: ash-results-save-1 (eval = FALSE)
+###################################################
+## # save(list=ls(pattern="^r\\."), file="r_coalash_objects.RData")
+## save(list=c(
+##     "r.cv.georob.m1.exp.c2", "r.cv.georob.m1.exp.c1000", 
+##     "r.pk.m1.exp.c2", "r.pk.m1.exp.c1000", "r.bk.m1.exp.c2", "r.bk.m1.exp.c1000"
+##   ), file="r_coalash_objects.RData")
+## rm(list=ls(pattern="^r\\."))
 
 
