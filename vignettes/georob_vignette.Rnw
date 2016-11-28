@@ -9,6 +9,7 @@
 % 2016-07-26 AP Version f\"{u}r georob_0.2-4.tar.gz
 % 2016-08-22 AP Version f\"{u}r georob_0.3-0.tar.gz
 % 2016-09-09 AP Anpassungen zur Reduktion der Rechenzeit
+% 2016-11-14 AP Korrektur Fehler in Rotationsmatrix f\"{u}r geom. anisotrope Variogramme
 
 % cd R.user.home/georob/vignettes/
 % R CMD Sweave georob_vignette.Rnw;  R CMD Stangle georob_vignette.Rnw; pdflatex georob_vignette.tex; open georob_vignette.pdf;
@@ -2206,11 +2207,9 @@ The transformation matrix is given by
 where
 %
 \begin{eqnarray}\label{eq:coordinate-rotation-matrix}
-  \mbox{\boldmath$C$\unboldmath}_1^\mathrm{T} & = & (\sin\phi \sin\omega, -\cos\zeta \cos\omega + \sin\zeta \cos\phi \sin\omega, 
-    -\cos\omega \sin\zeta - \cos\zeta \cos\phi \sin\omega) \nonumber \\
-  \mbox{\boldmath$C$\unboldmath}_2^\mathrm{T} & = & (-\sin\phi \cos\omega, \cos\omega \sin\zeta \cos\phi 
-    + \cos\zeta \sin\omega, -\cos\zeta \cos\omega \cos\phi + \sin\zeta \sin\omega)\nonumber \\
-  \mbox{\boldmath$C$\unboldmath}_3^\mathrm{T} & = & (\cos\phi, -\sin\phi \sin\zeta, \cos\zeta \sin\phi)
+  \mbox{\boldmath$C$\unboldmath}_1^\mathrm{T} & = & ( \sin\omega \sin\phi, -\cos\omega \cos\zeta - \sin\omega \cos\phi \sin\zeta, \cos\omega \sin\zeta - \sin\omega \cos\phi \cos\zeta ) \nonumber \\
+  \mbox{\boldmath$C$\unboldmath}_2^\mathrm{T} & = & ( \cos\omega \sin\phi, \sin\omega \cos\zeta - \cos\omega \cos\phi \sin\zeta, -\sin\omega \sin\zeta - \cos\omega \cos\phi\cos\zeta )\nonumber \\
+  \mbox{\boldmath$C$\unboldmath}_3^\mathrm{T} & = & (\cos\phi, \sin\phi \sin\zeta, \sin\phi \cos\zeta )
 \end{eqnarray}
 %
 To model geometrically anisotropic variograms in 

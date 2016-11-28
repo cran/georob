@@ -902,7 +902,9 @@ function(
 
         Valpha <- unlist( Valpha )
 
-        ##  compute additive constant for positive definiteness
+        ##  compute additive constant for positive definiteness, this
+        ##  implements a sufficient condition for positive definiteness of
+        ##  Valpha (strong row sum criterion)
         
         if( is.na( gcr.constant ) ){
           if( variogram.model %in% irf.models ){
@@ -992,6 +994,7 @@ likelihood.calculations <-
   ## 2015-12-02 AP reparametrized variogram parameters renamed
   ## 2016-07-20 AP changes for parallel computations
   ## 2016-08-03 AP changes for nested variogram models
+  ## 2016-11-14 AP correcting error in 3d rotation matrix for geometrically anisotropic variograms
 
   ##  function transforms (1) the variogram parameters back to their
   ##  original scale; computes (2) the correlation matrix, its inverse
@@ -1139,7 +1142,26 @@ likelihood.calculations <-
   )
 
   ##  update variogram and parameters
-
+  
+#   f.rotate <- function( omega=90, phi=90, zeta=0 ){
+#     omega <- omega / 180 * pi
+#     phi <- phi / 180 * pi
+#     zeta <- zeta / 180 * pi
+#     
+#     co = cos(omega)
+#     so = sin(omega)
+#     cp = cos(phi)
+#     sp = sin(phi)
+#     cz = cos(zeta)
+#     sz = sin(zeta)
+#     
+#     rbind(
+#       c(             so*sp,             co*sp,       cp ),
+#       c( -co*cz - so*cp*sz,  so*cz - co*cp*sz,    sp*sz ),
+#       c(  co*sz - so*cp*cz, -so*sz - co*cp*cz,    sp*cz )
+#     )
+#   }
+  
   lik.item[["variogram.object"]] <- lapply(
     1L:length(variogram.object),
     function( i, x, vo, n ){
@@ -1160,9 +1182,9 @@ likelihood.calculations <-
         vo[["rotmat"]] <- with(
           vo[["sincos"]],
           rbind(
-            c(             sp*so,             sp*co,       cp ),
-            c( -cz*co + sz*cp*so,  co*sz*cp + cz*so,   -sp*sz ),
-            c( -co*sz - cz*cp*so, -cz*co*cp + sz*so,    cz*sp )
+            c(             so*sp,             co*sp,       cp ),
+            c( -co*cz - so*cp*sz,  so*cz - co*cp*sz,    sp*sz ),
+            c(  co*sz - so*cp*cz, -so*sz - co*cp*cz,    sp*cz )
           )[ 1L:n, 1L:n, drop = FALSE ]
         )
 
@@ -1180,7 +1202,6 @@ likelihood.calculations <-
     x = variogram.object, vo = lik.item[["variogram.object"]], 
     n = attr( lag.vectors, "ndim.coords" )
   )
-
 
   ## update eta, xi, var.signal
 
@@ -1362,6 +1383,7 @@ partial.derivatives.variogram <-
   ##  2014-05-15 AP changes for version 3 of RandomFields
   ##  2015-07-17 AP new name of function, scaling with 1-xi eliminated
   ##  2016-08-04 AP changes for nested variogram models
+  ##  2016-11-14 AP correcting error in 3d rotation matrix for geometrically anisotropic variograms
 
   aniso.name <- names( aniso )
   alpha <- unname( param["scale"] )
@@ -1402,9 +1424,9 @@ partial.derivatives.variogram <-
       drotmat <- with(
         sincos,
         rbind(
-          c(             sp*co,            -sp*so, 0. ),
-          c(  co*sz*cp + cz*so,  cz*co - sz*cp*so, 0. ),
-          c( -cz*co*cp + sz*so,  co*sz + cz*cp*so, 0. )
+          c(             co*sp,            -so*sp, 0. ),
+          c(  so*cz - co*cp*sz,  co*cz + so*cp*sz, 0. ),
+          c( -so*sz - co*cp*cz, -co*sz + so*cp*cz, 0. )
         )[ 1L:n, 1L:n, drop = FALSE ]
       )
       colSums(
@@ -1416,9 +1438,9 @@ partial.derivatives.variogram <-
       drotmat <- with(
         sincos,
         rbind(
-          c(     cp*so,     cp*co,    -sp ),
-          c( -sz*sp*so, -co*sz*sp, -cp*sz ),
-          c(  cz*sp*so,  cz*co*sp,  cz*cp )
+          c(     so*cp,     co*cp,    -sp ),
+          c(  so*sp*sz,  co*sp*sz,  cp*sz ),
+          c(  so*sp*cz,  co*sp*cz,  cp*cz )
         )[ 1L:n, 1L:n, drop = FALSE ]
       )
       colSums(
@@ -1431,8 +1453,8 @@ partial.derivatives.variogram <-
         sincos,
         rbind(
           c(                0.,               0.,     0. ),
-          c(  co*sz + cz*cp*so, cz*co*cp - sz*so, -cz*sp ),
-          c( -cz*co + sz*cp*so, co*sz*cp + cz*so, -sp*sz )
+          c(  co*sz - so*cp*cz, -so*sz - co*cp*cz,  sp*cz ),
+          c(  co*cz + so*cp*sz, -so*cz + co*cp*sz, -sp*sz )
         )[ 1L:n, 1L:n, drop = FALSE ]
       )
       colSums(
@@ -3074,6 +3096,8 @@ georob.fit <-
   ## 2016-07-22 AP corrected names of gradient components
   ## 2016-08-08 AP changes for nested variogram models
   ## 2016-08-10 AP changes for isotropic variogram models
+  ## 2016-11-14 AP correcting error in 3d rotation matrix for geometrically anisotropic variograms
+  ## 2016-11-28 AP checking ml.method and presence of intercept for intrinsic models
 
   ##  ToDos:
 
@@ -3158,7 +3182,7 @@ georob.fit <-
 
    variogram.object <- lapply(
     variogram.object,
-    function( x, TT, d2r, n ){
+    function( x, TT, d2r, n, has.intercept ){
       
       ## create local copies of objects
 
@@ -3172,7 +3196,18 @@ georob.fit <-
       ##  return names of extra parameters (if any)
 
       ep <- param.names( model = variogram.model )
-
+      
+      ## check whether reml method is chosen to fit intrinsic variogram
+      
+      if( variogram.model %in% control.georob()[["irf.models"]] ){
+        if( ml.method == "ML" && tuning.psi >= tuning.psi.nr ) stop( 
+          "models with intrinsic variograms must be estimated by REML"
+        )
+        if( !has.intercept ) stop(
+          "models with intrinsic variograms require a drift model with an intercept"
+        )
+      }
+      
       ## check names of initial variogram parameters and flags for fitting
 
       param.name <- c( "variance", "snugget", "nugget", "scale", ep )
@@ -3270,7 +3305,7 @@ georob.fit <-
       aniso <- aniso[aniso.name]
       fit.aniso <- fit.aniso[aniso.name]
 
-      ## check whether intitial values of anisotropy parameters are valid
+      ## check whether initial values of anisotropy parameters are valid
 
       if( aniso["f1"] < 0. ||  aniso["f1"] > 1. ) stop(
         "initial value of parameter 'f1' must be in [0, 1]"
@@ -3332,9 +3367,9 @@ georob.fit <-
         rotmat <- with(
           sincos,
           rbind(
-            c(             sp*so,             sp*co,       cp ),
-            c( -cz*co + sz*cp*so,  co*sz*cp + cz*so,   -sp*sz ),
-            c( -co*sz - cz*cp*so, -cz*co*cp + sz*so,    cz*sp )
+            c(             so*sp,             co*sp,       cp ),
+            c( -co*cz - so*cp*sz,  so*cz - co*cp*sz,    sp*sz ),
+            c(  co*sz - so*cp*cz, -so*sz - co*cp*cz,    sp*cz )
           )[ 1L:n, 1L:n, drop = FALSE ]
         )
 
@@ -3357,7 +3392,10 @@ georob.fit <-
         sincos = sincos, rotmat = rotmat, sclmat = sclmat
       )
 
-    }, TT = TT, d2r = d2r, n = NCOL(coordinates)
+    }, TT = TT, d2r = d2r, n = NCOL(coordinates),
+    has.intercept = attr(
+      terms( initial.objects[["initial.fit"]] ), "intercept"
+    ) == 1L
   )
 
   #   print(str(variogram.object))

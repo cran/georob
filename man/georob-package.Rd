@@ -163,14 +163,14 @@
       ) 
     }{A=diag(1/\alpha, 1/(f_1\,\alpha),1/(f_2\,\alpha)) (C_1, C_2, C_3)}
     where
-    \deqn{\mbox{\boldmath$C$\unboldmath}_1^\mathrm{T} = (\sin\phi \sin\omega, -\cos\zeta \cos\omega + \sin\zeta \cos\phi \sin\omega, -\cos\omega \sin\zeta - \cos\zeta \cos\phi \sin\omega)
-    }{C_1^T=(sin\phi sin\omega, -cos\zeta cos\omega + sin\zeta cos\phi sin\omega, -cos\omega sin\zeta - cos\zeta cos\phi sin\omega)
+    \deqn{\mbox{\boldmath$C$\unboldmath}_1^\mathrm{T} = ( \sin\omega \sin\phi, -\cos\omega \cos\zeta - \sin\omega \cos\phi \sin\zeta, \cos\omega \sin\zeta - \sin\omega \cos\phi \cos\zeta )
+    }{C_1^T=( sin\omega sin\phi, -cos\omega cos\zeta - sin\omega cos\phi sin\zeta, cos\omega sin\zeta - sin\omega cos\phi cos\zeta )
     }
-    \deqn{\mbox{\boldmath$C$\unboldmath}_2^\mathrm{T} = (-\sin\phi \cos\omega, \cos\omega \sin\zeta \cos\phi + \cos\zeta \sin\omega, -\cos\zeta \cos\omega \cos\phi + \sin\zeta \sin\omega)
-    }{C_2^T=(-sin\phi cos\omega, cos\omega sin\zeta cos\phi + cos\zeta sin\omega, -cos\zeta cos\omega cos\phi + sin\zeta sin\omega)
+    \deqn{\mbox{\boldmath$C$\unboldmath}_2^\mathrm{T} = ( \cos\omega \sin\phi, \sin\omega \cos\zeta - \cos\omega \cos\phi \sin\zeta, -\sin\omega \sin\zeta - \cos\omega \cos\phi\cos\zeta )
+    }{C_2^T=( cos\omega sin\phi, sin\omega cos\zeta - cos\omega cos\phi sin\zeta, -sin\omega sin\zeta - cos\omega cos\phicos\zeta )
     }
-    \deqn{\mbox{\boldmath$C$\unboldmath}_3^\mathrm{T} = (\cos\phi, -\sin\phi \sin\zeta, \cos\zeta \sin\phi)
-    }{C_3^T=(cos\phi, -sin\phi sin\zeta, cos\zeta sin\phi)
+    \deqn{\mbox{\boldmath$C$\unboldmath}_3^\mathrm{T} = (\cos\phi, \sin\phi \sin\zeta, \sin\phi \cos\zeta )
+    }{C_3^T=(cos\phi, sin\phi sin\zeta, sin\phi cos\zeta )
     }
     To model geometrically anisotropic variograms in 
     \eqn{ \mathrm{I}\!\mathrm{R}^2}{R^2} 

@@ -82,6 +82,7 @@ function(
   ## 2016-07-22 AP SpatialPoints, SpatialPixels and SpatialGrid as newdata objects
   ## 2016-07-27 AP correcting error when newdata is SpatialPoints, ...  objects
   ## 2016-08-11 AP changes for nested variogram models
+  ## 2016-11-28 AP correcting error when computing predictions for intrinsic variograms
 
 
 
@@ -197,7 +198,12 @@ function(
       "'newdata' is a SpatialPoints, SpatialPixels or SpatialGrid object\n but drift covariates are not functions of coordinates"
     )
   }
-
+  
+  if( control[["extended.output"]] &&
+    any( sapply(object[["variogram.object"]], function(x) x[["variogram.model"]]) 
+      %in% control.georob()[["irf.models"]] )
+  ) stop( "extended output cannot be computed for intrinsic variogram models" )
+  
   ## extract fixed effects terms of object
 
   tt <- terms( object )
@@ -354,9 +360,6 @@ function(
 
   }
   
-
-
-  
   ## extract signal variance, xi, nugget and gcr.constant
   
   tmp <- f.reparam.fwd( object[["variogram.object"]] )
@@ -370,7 +373,6 @@ function(
     object[["Valphaxi.objects"]][["Valpha"]],
     function(x) x[["gcr.constant"]]
   )
-  
 
   ##########################
 
@@ -498,7 +500,7 @@ function(
           mse.pred <- rep( 0., length( object[["Tmat"]] ) )
           if( control[["extended.output"]] ){
             var.pred <- var.target <- cov.pred.target <- rep(
-              var.signal + nugget,
+              var.signal * Valphaxi.objects[["Valphaxi"]][1,1] + nugget,
               length( object[["Tmat"]] )
             )
           }
@@ -722,7 +724,7 @@ function(
     if( !is.null( pred.coords ) &&
       NCOL( locations.coords ) != NCOL( pred.coords )
     ) stop(
-      "inconsistent number of coordinates in object and in newdata"
+      "inconsistent number of coordinates in 'object' and in 'newdata'"
     )
     
     ## number of items to predict
@@ -1083,6 +1085,7 @@ f.robust.uk <- function(
   ## 2015-06-24 AP modifications for robust prediction of response
   ## 2016-07-20 AP changes for parallel computations
   ## 2016-08-11 AP changes for nested variogram models
+  ## 2016-11-28 AP correcting error when computing predictions for intrinsic variograms
   
   n <- length( bhat )
     
@@ -1126,7 +1129,8 @@ f.robust.uk <- function(
           
           if( !all( sapply( variogram.object, function(x) x[["isotropic"]] ) ) ){
             indices.pairs <- combn( NROW( pred.coords[!ex, , drop = FALSE ] ), 2L )
-            lag.vectors <- pred.coords[!ex, , drop = FALSE ][ indices.pairs[2L,], ] - pred.coords[!ex, , drop = FALSE ][ indices.pairs[1L,], ]
+            lag.vectors <- pred.coords[!ex, , drop = FALSE ][ indices.pairs[2L,], ] 
+                         - pred.coords[!ex, , drop = FALSE ][ indices.pairs[1L,], ]
           } else {
             lag.vectors <- as.vector( dist( pred.coords[!ex, , drop = FALSE ] ) )
           }
@@ -1170,7 +1174,7 @@ f.robust.uk <- function(
                     
         } else {
           
-          t.var.target <- var.signal
+          t.var.target <- var.signal * Valphaxi[1, 1]
           
         }
         
@@ -1214,7 +1218,7 @@ f.robust.uk <- function(
           )
         )
         
-        ## add spatial nugget is prediction and supportlocation coincides
+        ## add spatial nugget is prediction and support locations coincides
         
         if( sum(xi) < 1. ){
           if( NCOL(lag.vectors) > 1L ){
