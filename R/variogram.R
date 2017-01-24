@@ -601,6 +601,7 @@ fit.variogram.model <-
   ## 2015-11-27 AP checking mandatory arguments, issuing warnings
   ## 2016-02-08 AP correcting error in setting default values for fit.param
   ## 2016-08-18 AP changes for nested variogram models
+  ## 2016-11-14 AP correcting error in 3d rotation matrix for geometrically anisotropic variograms
   
   ## auxiliary function called by optim to compute objective function
   
@@ -744,9 +745,9 @@ fit.variogram.model <-
           vo[["rotmat"]] <- with(
             vo[["sincos"]],
             rbind(
-              c(             sp*so,             sp*co,       cp ),
-              c( -cz*co + sz*cp*so,  co*sz*cp + cz*so,   -sp*sz ),
-              c( -co*sz - cz*cp*so, -cz*co*cp + sz*so,    cz*sp )
+              c(             so*sp,             co*sp,       cp ),
+              c( -co*cz - so*cp*sz,  so*cz - co*cp*sz,    sp*sz ),
+              c(  co*sz - so*cp*cz, -so*sz - co*cp*cz,    sp*cz )
             )[ 1L:n, 1L:n, drop = FALSE ]
           )
           
@@ -1216,9 +1217,9 @@ fit.variogram.model <-
         rotmat <- with(
           sincos,
           rbind(
-            c(             sp*so,             sp*co,       cp ),
-            c( -cz*co + sz*cp*so,  co*sz*cp + cz*so,   -sp*sz ),
-            c( -co*sz - cz*cp*so, -cz*co*cp + sz*so,    cz*sp )
+            c(             so*sp,             co*sp,       cp ),
+            c( -co*cz - so*cp*sz,  so*cz - co*cp*sz,    sp*sz ),
+            c(  co*sz - so*cp*cz, -so*sz - co*cp*cz,    sp*cz )
           )[ 1L:n, 1L:n, drop = FALSE ]
         )
 

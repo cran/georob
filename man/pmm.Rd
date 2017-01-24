@@ -25,9 +25,10 @@ control.pcmp(pmm.ncores = 1, gcr.ncores = 1, max.ncores = detectCores(),
 \arguments{
   \item{A, B}{matrices to be multiplied.}
 
-  \item{control}{a list of with the arguments \code{ncores}, \code{f}, and
-  \code{sfstop} or a function such as \code{control.pcmp} that generates such
-  a list.} 
+  \item{control}{a list of with the arguments \code{pmm.ncores},
+  \code{gcr.ncores}, \code{max.ncores}, \code{f}, \code{sfstop} and
+  \code{allow.recursive} or a function such as \code{control.pcmp} that
+  generates such a list.}
   
   \item{pmm.ncores}{number (integer, default 1) of cores used for parallelized
   matrix multiplication.}
@@ -91,8 +92,8 @@ processes.
 \dontrun{
 A <- as.matrix(dist(rnorm(2000)))
 B <- as.matrix(dist(rnorm(2000)))
-system.time(C <- pmm(A, B, control = control.pcmp(ncores = 1)))
-system.time(C <- pmm(A, B, control = control.pcmp(ncores = 4)))
+system.time(C <- pmm(A, B, control = control.pcmp(pmm.ncores = 1)))
+system.time(C <- pmm(A, B, control = control.pcmp(pmm.ncores = 4)))
 }}
 
 \keyword{models}

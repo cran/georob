@@ -461,12 +461,21 @@ processing col and pch arguments
 * georob.private.functions.R (likelihood.calculations) correcting error for printing trial parameter values if they exceed safe bounds
 
 
-2016-11-14  Andreas Papritz  <papritz@env.ethz.ch>
+2016-11-29  Andreas Papritz  <papritz@env.ethz.ch>
 
 * georob.private.functions.R (likelihood.calculations,georob.fit, partial.derivatives.variogram) correcting error in 3d rotation matrix for geometrically anisotropic variograms
+* variogram.R (fit.variogram.model) correcting error in 3d rotation matrix for geometrically anisotropic variograms
 
 
 2016-11-28  Andreas Papritz  <papritz@env.ethz.ch>
 
 * georob.private.functions.R (georob.fit) checking ml.method and presence of intercept for intrinsic models
 * georob.predict.R (predict.georob,f.robust.uk) correcting error when computing predictions for intrinsic variograms
+
+
+2016-11-29  Andreas Papritz  <papritz@env.ethz.ch>
+
+* variogram.R (fit.variogram.model) correcting error in 3d rotation matrix for geometrically anisotropic variograms
+
+
+
