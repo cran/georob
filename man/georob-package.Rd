@@ -73,7 +73,7 @@
       \xi\, \mbox{\boldmath$V$\unboldmath}_\alpha )
       ,}{%
       E[B B^T] = \Gamma_\theta = \sigma_n^2 I+\sigma^2 V_\alpha =
-      \sigma_Z^2 V_{\alpha,\xi} = \sigma_Z^2 ((1-\xi) I - \xi V_\alpha)
+      \sigma_B^2 V_{\alpha,\xi} = \sigma_B^2 ((1-\xi) I - \xi V_\alpha)
       ,}
     where 
     \eqn{\sigma_{\mathrm{n}}^2}{\sigma_n^2} 
@@ -82,9 +82,9 @@
     that cannot be resolved with the chosen sampling design,  
     \eqn{\sigma^2} is the variance of the captured auto-correlated variation in 
     \eqn{B(\mbox{\boldmath$s$\unboldmath})}{B(s)},  
-    \eqn{\sigma_Z^2=\sigma_{\mathrm{n}}^2+\sigma^2}{\sigma_Z^2=\sigma_n^2+\sigma^2} 
+    \eqn{\sigma_B^2=\sigma_{\mathrm{n}}^2+\sigma^2}{\sigma_B^2=\sigma_n^2+\sigma^2} 
     is the signal variance, and 
-    \eqn{\xi=\sigma^2/\sigma_Z^2}{\xi=\sigma^2/\sigma_Z^2}. 
+    \eqn{\xi=\sigma^2/\sigma_B^2}{\xi=\sigma^2/\sigma_B^2}. 
     To estimate both 
     \eqn{\sigma_{\mathrm{n}}^2}{\sigma_n^2} and \eqn{\tau^2} (and not only their sum), one needs
     replicated measurements for some of the 
@@ -441,10 +441,10 @@
   (WSL), pp. 51. 
   \url{http://e-collection.library.ethz.ch/eserv/eth:6027/eth-6027-01.pdf}
 
-  \enc{KŸnsch}{Kuensch}, H. R., Papritz, A., Schwierz, C. and Stahel, W. A. (in
+  \enc{KÂŸnsch}{Kuensch}, H. R., Papritz, A., Schwierz, C. and Stahel, W. A. (in
   preparation) Robust Geostatistics.
 
-  \enc{KŸnsch}{Kuensch}, H. R., Papritz, A., Schwierz, C. and Stahel, W. A. (2011) Robust
+  \enc{KÂŸnsch}{Kuensch}, H. R., Papritz, A., Schwierz, C. and Stahel, W. A. (2011) Robust
   estimation of the external drift and the variogram of spatial data.
   Proceedings of the ISI 58th World Statistics Congress of the International
   Statistical Institute.

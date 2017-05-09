@@ -398,18 +398,18 @@ georob(formula, data, subset, weights, na.action, model = TRUE,
     
     \itemize{
       \item the signal variance 
-      \eqn{\sigma_Z^2 = \sigma^2 + \sigma_{\mathrm{n}}^2}{\sigma_Z^2 = \sigma^2+\sigma_n^2},
+      \eqn{\sigma_B^2 = \sigma^2 + \sigma_{\mathrm{n}}^2}{\sigma_B^2 = \sigma^2+\sigma_n^2},
 
       \item the inverse relative nugget 
-      \eqn{\eta = \sigma_Z^2 / \tau^2} and
+      \eqn{\eta = \sigma_B^2 / \tau^2} and
       
       \item the relative auto-correlated signal variance
-      \eqn{\xi = \sigma^2/\sigma_Z^2}{\xi = \sigma^2 / \sigma_Z^2}.
+      \eqn{\xi = \sigma^2/\sigma_B^2}{\xi = \sigma^2 / \sigma_B^2}.
     }
     
     \code{georob} maximizes then a (restricted) \emph{profile
     log-likelihood} that depends only on \eqn{\eta}, \eqn{\xi},
-    \eqn{\alpha}, \ldots, and \eqn{\sigma_Z^2} is estimated by an explicit
+    \eqn{\alpha}, \ldots, and \eqn{\sigma_B^2} is estimated by an explicit
     expression that depends on these parameters (e.g. Diggle and Ribeiro,
     2006, p.  113).  This is usually more efficient than maximizing the
     (restricted) log-likelihood with respect to the original variance
@@ -432,10 +432,10 @@ fit of a spatial linear model.  See
 \references{
   Diggle, P. J. and Ribeiro, P. J. R. (2006) Model-based Geostatistics. Springer.
 
-  \enc{KŸnsch}{Kuensch}, H. R., Papritz, A., Schwierz, C. and Stahel, W. A. (in
+  \enc{KÂŸnsch}{Kuensch}, H. R., Papritz, A., Schwierz, C. and Stahel, W. A. (in
   preparation) Robust Geostatistics.
 
-  \enc{KŸnsch}{Kuensch}, H. R., Papritz, A., Schwierz, C. and Stahel, W. A. (2011) Robust
+  \enc{KÂŸnsch}{Kuensch}, H. R., Papritz, A., Schwierz, C. and Stahel, W. A. (2011) Robust
   estimation of the external drift and the variogram of spatial data.
   Proceedings of the ISI 58th World Statistics Congress of the International
   Statistical Institute.

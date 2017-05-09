@@ -34,7 +34,7 @@ control.predict.georob(full.covmat = FALSE, extended.output = FALSE,
   \code{\link[sp]{SpatialPointsDataFrame}}, 
   \code{\link[sp]{SpatialPixelsDataFrame}}, 
   \code{\link[sp]{SpatialGridDataFrame}}, 
-  \code{\link[sp]{SpatialPolygonsDataFrame}} or an (optioanal) object of class
+  \code{\link[sp]{SpatialPolygonsDataFrame}} or an (optional) object of class
   \code{\link[sp]{SpatialPoints}}, 
   \code{\link[sp]{SpatialPixels}} or
   \code{\link[sp]{SpatialGrid}},   

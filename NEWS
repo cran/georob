@@ -10,4 +10,5 @@
 2016-09-06  georob Version 0.3-0 released to CRAN, new features: estimating parameters of „nested“ variogram models.
 2016-09-06  georob Version 0.3-1 released to CRAN, correction of minor bug in internal function.
 2016-11-28  georob Version 0.3-2 released to CRAN, correction of errors in 3d anisotropic variogram modelling and for computing kriging predictions for models with intrinsic variograms.
-2016-01-24  georob Version 0.3-3 released to CRAN, correction of minor bug for fitting 3d anisotropic variogram models to sample variograms.
+2017-01-24  georob Version 0.3-3 released to CRAN, correction of minor bug for fitting 3d anisotropic variogram models to sample variograms.
+2017-05-09  georob Version 0.3-4 released to CRAN, correction of minor bug for computing robust initial values of regression coefficients by rq().

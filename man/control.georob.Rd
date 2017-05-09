@@ -63,7 +63,8 @@ dfwd.transf(...)
 
 bwd.transf(...)
 
-control.rq(tau = 0.5, rq.method = "br", rq.alpha = 0.1, ci = FALSE, iid = TRUE, 
+control.rq(tau = 0.5, rq.method = c("br", "fnb", "pfn"), 
+    rq.alpha = 0.1, ci = FALSE, iid = TRUE, 
     interp = TRUE, tcrit = TRUE, rq.beta = 0.99995, eps = 1e-06, 
     Mm.factor = 0.8, max.bad.fixup = 3, ...)
                
@@ -87,7 +88,7 @@ control.nlminb(control = list(rel.tol = 1.e-5), lower = -Inf,
   \code{tuning.psi <= tuning.psi.nr}).}
 
   \item{reparam}{logical.  If \code{TRUE} (default) the re-parametrized
-  variance parameters \eqn{\sigma_Z^2}, \eqn{\eta} and \eqn{\xi} are
+  variance parameters \eqn{\sigma_B^2}, \eqn{\eta} and \eqn{\xi} are
   estimated by Gaussian (RE)ML, otherwise the original parameters
   \eqn{\tau^2}, \eqn{\sigma_{\mathrm{n}}^2}{\sigma_n^2} and \eqn{\sigma^2}
   (cf.  subsection \emph{Estimating variance parameters by Gaussian
@@ -300,7 +301,9 @@ control.nlminb(control = list(rel.tol = 1.e-5), lower = -Inf,
   parameters.}
 
   \item{tau, rq.method, rq.alpha, ci, iid, interp, tcrit}{arguments passed
-  as \code{...} to \code{\link[quantreg]{rq}}.}
+  as \code{...} to \code{\link[quantreg]{rq}}.  Note that only \code{"br"},
+  \code{"fnb"} and \code{"pfn"} methods of \code{rq()} are currently
+  supported.}
   
   \item{rq.beta, eps, Mm.factor, max.bad.fixup}{arguments passed as
   \code{...} to \code{\link[quantreg]{rq}}.}

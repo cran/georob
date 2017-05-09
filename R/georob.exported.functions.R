@@ -91,6 +91,7 @@ georob <-
   ## 2016-07-15 AP allowing use of lmrob for computing initial fixed effects for rank-deficient model matrix
   ## 2016-07-20 AP changes for parallel computations
   ## 2016-08-08 AP changes for nested variogram models
+  ## 2017-05-07 AP correcting error for interface to rq.fit
   
   ## check validity of tuning.psi
   
@@ -405,15 +406,35 @@ georob <-
       tau <- control[["rq"]][["tau"]]
       process <- (tau < 0 || tau > 1)
       
-      f.rq.fit <- rq.fit
-      formals( f.rq.fit ) <- c( alist( x=, y= ), control[["rq"]] )
-      fit <- f.rq.fit( x = x, y = yy ) 
+      if(tau == 0) tau <- control[["req"]][["eps"]]
+      if(tau == 1) tau <- 1. - control[["req"]][["eps"]]
       
-      if( process ) {
-        rho <- list(x = fit[["sol"]][1L, ], y = fit[["sol"]][3L, ])
+      fit <- switch(
+        control[["rq"]][["method"]],
+        br = rq.fit( 
+          x = x, y = yy, tau = tau, method = control[["rq"]][["method"]], 
+          alpha = control[["rq"]][["alpha"]], ci = control[["rq"]][["ci"]],
+          iid = control[["rq"]][["iid"]], interp = control[["rq"]][["interp"]], 
+          tcrit = control[["rq"]][["tcrit"]]
+        ),
+        fnb = rq.fit( 
+          x = x, y = yy, tau = tau, method = control[["rq"]][["method"]], 
+          beta = control[["rq"]][["beta"]], eps = control[["rq"]][["eps"]]
+        ),
+        pfn = rq.fit( 
+          x = x, y = yy, tau = tau, method = control[["rq"]][["method"]], 
+          Mm.factor = control[["rq"]][["Mm.factor"]], 
+          max.bad.fixup = control[["rq"]][["max.bad.fixup"]]
+        )
+      )
+       
+      if (process){
+        rho <- list(x = fit$sol[1, ], y = fit$sol[3, ])
       } else {
-        dimnames(fit[["residuals"]]) <- list( dimnames( x )[[1L]], NULL )
-        rho <- sum( Rho( fit[["residuals"]], tau ) )
+        if (length(dim(fit$residuals))) 
+        dimnames(fit$residuals) <- list(dimnames(x)[[1]], 
+          NULL)
+        rho <- sum(Rho(fit$residuals, tau))
       }
       if( control[["rq"]][["method"]] == "lasso" ){
         class(fit) <- c("lassorq", "rq")
@@ -1016,13 +1037,13 @@ function(
 ## ======================================================================
 control.rq <-
   function(
-    ## arguments for rq
-    tau = 0.5, rq.method = "br",
-    ## arguments for rq.fit.br
+    ## specific arguments for rq: tau = 0.5, method = "br"
+    tau = 0.5, rq.method = c("br", "fnb", "pfn"),
+    ## specific arguments for rq.fit.br: tau = 0.5, alpha = 0.1, ci = FALSE, iid = TRUE, interp = TRUE, tcrit = TRUE
     rq.alpha = 0.1, ci = FALSE, iid = TRUE, interp = TRUE, tcrit = TRUE,
-    ## arguments for rq.fit.fnb
+    ## specific arguments for rq.fit.fnb: tau = 0.5, rhs = (1 - tau) * apply(x, 2, sum), beta = 0.99995, eps = 1e-06
     rq.beta = 0.99995, eps = 1.e-06,
-    ## arguments for rq.fit.pfn
+    ## specific arguments for rq.fit.pfn: tau = 0.5, Mm.factor = 0.8, max.bad.fixup = 3, eps = 1e-06
     Mm.factor = 0.8, max.bad.fixup = 3,
     ...
   )
@@ -1034,6 +1055,9 @@ control.rq <-
   ## 2012-12-14 A. Papritz
   ## 2014-07-29 AP
   ## 2015-06-30 AP function and arguments renamed
+  ## 2017-05-09 AP small changes
+  
+  rq.method = match.arg(rq.method)
   
   list( 
     tau = tau,  method = rq.method,

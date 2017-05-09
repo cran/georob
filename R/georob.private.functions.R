@@ -1079,7 +1079,7 @@ likelihood.calculations <-
 
   if( length( param.aniso ) && any( param.aniso > safe.param ) ){
 
-    lapply(
+    if( verbose > 1 ) lapply(
       1L:length(variogram.object),
       function( i, x, d2r, reparam ){
 
@@ -1116,7 +1116,7 @@ likelihood.calculations <-
     return( lik.item )
 
   }
-
+  
   ## check whether extra variogram parameters are within allowed bounds and
   ## return an error otherwise
 
@@ -3098,7 +3098,7 @@ georob.fit <-
   ## 2016-08-10 AP changes for isotropic variogram models
   ## 2016-11-14 AP correcting error in 3d rotation matrix for geometrically anisotropic variograms
   ## 2016-11-28 AP checking ml.method and presence of intercept for intrinsic models
-
+  ## 2017-02-24 AP warning for negative definite hessian
   ##  ToDos:
 
   ##  main body of georob.fit
@@ -4100,6 +4100,12 @@ georob.fit <-
       control.pcmp = control.pcmp,
       verbose = 0.,
       force.gradient = force.gradient
+    )
+    
+    ## check whether hessian is positive definite
+    
+    if( any( eigen(r.hessian)$values < 0. ) ) warning( 
+      "hessian not positive definite, check whether local minimum of log-likelihood has been found"
     )
 
     #   } else {

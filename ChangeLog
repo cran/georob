@@ -478,4 +478,16 @@ processing col and pch arguments
 * variogram.R (fit.variogram.model) correcting error in 3d rotation matrix for geometrically anisotropic variograms
 
 
+2017-02-24  Andreas Papritz  <papritz@env.ethz.ch>
+
+* georob.private.functions.R (georob.fit) warning for negative definite hessian
+
+
+2017-05-09  Andreas Papritz  <papritz@env.ethz.ch>
+
+* georob.exported.functions.R (georob, control.rq) small changes and error correction in interface to rq() for computing robust initial values
+
+
+
+
 

@@ -93,7 +93,7 @@ r.logzn.ml <- georob(log(zinc)~sqrt(dist), data=meuse, locations=~x+y,
   
 r.prflik <- profilelogLik(r.logzn.ml, values=expand.grid(scale=seq(75, 600, by=25)))
 plot(loglik~scale, r.prflik, type="l")
-abline(v=r.logzn.ml$param["scale"], lty="dotted")
+abline(v=r.logzn.ml$variogram.object[[1]]$param["scale"], lty="dotted")
 abline(h=r.logzn.ml$loglik-0.5*qchisq(0.95, 1), lty="dotted")
   
 }
