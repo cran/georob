@@ -56,6 +56,7 @@ export(
 # documented but unexported functions
 #
 #   add1.georob,                    # ok
+#   coef.georob,                    # ok
 #   cv.georob                       # ok
 #   deviance.georob,                # ok
 #   drop1.georob,                   # ok
@@ -73,6 +74,7 @@ export(
 #   plot.georob                     # ok
 #   plot.sample.variogram,          # ok
 #   predict.georob,                 # ok
+#   print.coef.georob,              # ok
 #   print.cv.georob,                # ok
 #   print.fitted.variogram,         # ok
 #   print.georob,                   # ok
@@ -135,7 +137,8 @@ export(
 
 ## S3 methods
 
-S3method( add1, georob  )
+S3method( add1, georob )
+S3method( coef, georob )
 S3method( cv, georob )
 S3method( deviance, georob  )
 S3method( drop1, georob  )
@@ -152,6 +155,7 @@ S3method( plot, cv.georob )
 S3method( plot, georob )
 S3method( plot, sample.variogram )
 S3method( predict, georob )
+S3method( print, coef.georob )
 S3method( print, cv.georob )
 S3method( print, fitted.variogram )
 S3method( print, georob )

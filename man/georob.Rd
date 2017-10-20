@@ -200,7 +200,7 @@ georob(formula, data, subset, weights, na.action, model = TRUE,
 }
 
 \details{\code{georob} fits a spatial linear model by robust or Gaussian RE(ML) 
-  (\cite{\enc{K혺nsch}{Kuensch} et al., 2011}, \cite{\enc{K혺nsch}{Kuensch}
+  (\cite{\enc{K웢sch}{Kuensch} et al., 2011}, \cite{\enc{K웢sch}{Kuensch}
   et al., in preparation}).  \code{\link{georobIntro}} describes the
   employed model and briefly sketches the robust REML estimation and the
   robust external drift Kriging method.  Here, we describe further details
@@ -432,10 +432,10 @@ fit of a spatial linear model.  See
 \references{
   Diggle, P. J. and Ribeiro, P. J. R. (2006) Model-based Geostatistics. Springer.
 
-  \enc{K혺nsch}{Kuensch}, H. R., Papritz, A., Schwierz, C. and Stahel, W. A. (in
+  \enc{K웢sch}{Kuensch}, H. R., Papritz, A., Schwierz, C. and Stahel, W. A. (in
   preparation) Robust Geostatistics.
 
-  \enc{K혺nsch}{Kuensch}, H. R., Papritz, A., Schwierz, C. and Stahel, W. A. (2011) Robust
+  \enc{K웢sch}{Kuensch}, H. R., Papritz, A., Schwierz, C. and Stahel, W. A. (2011) Robust
   estimation of the external drift and the variogram of spatial data.
   Proceedings of the ISI 58th World Statistics Congress of the International
   Statistical Institute.

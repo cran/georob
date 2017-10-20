@@ -488,6 +488,14 @@ processing col and pch arguments
 * georob.exported.functions.R (georob, control.rq) small changes and error correction in interface to rq() for computing robust initial values
 
 
+2017-07-26  Andreas Papritz  <papritz@env.ethz.ch>
+
+* georob.private.functions.R (georob.fit) changes to allow non-zero snugget if there are no replicated observations
+
+
+2017-10-20  Andreas Papritz  <papritz@env.ethz.ch>
+
+* georob.S3methods.R (fixef.georob) new functions coef.georob and print.coef.georob
 
 
 

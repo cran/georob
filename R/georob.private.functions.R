@@ -3099,6 +3099,8 @@ georob.fit <-
   ## 2016-11-14 AP correcting error in 3d rotation matrix for geometrically anisotropic variograms
   ## 2016-11-28 AP checking ml.method and presence of intercept for intrinsic models
   ## 2017-02-24 AP warning for negative definite hessian
+  ## 2017-07-26 AP changes to allow non-zero snugget if there are no replicated observations
+  
   ##  ToDos:
 
   ##  main body of georob.fit
@@ -3450,9 +3452,9 @@ georob.fit <-
   ## no replicated observations
 
   if( sum( duplicated( TT ) ) == 0L ){
-    variogram.object[[1L]][["param"]]["nugget"] <- sum(  variogram.object[[1L]][["param"]][c("nugget", "snugget") ])
-    variogram.object[[1L]][["fit.param"]]["nugget"] <- any(  variogram.object[[1L]][["fit.param"]][c("nugget", "snugget") ])
-    variogram.object[[1L]][["param"]]["snugget"] <- 0.
+    #     variogram.object[[1L]][["param"]]["nugget"] <- sum(  variogram.object[[1L]][["param"]][c("nugget", "snugget") ])
+    #     variogram.object[[1L]][["fit.param"]]["nugget"] <- any(  variogram.object[[1L]][["fit.param"]][c("nugget", "snugget") ])
+    #     variogram.object[[1L]][["param"]]["snugget"] <- 0.
     variogram.object[[1L]][["fit.param"]]["snugget"] <- FALSE
   }
 

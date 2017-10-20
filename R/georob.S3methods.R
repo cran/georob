@@ -5,6 +5,8 @@
 #####################################
 
 # add1.georob
+# coef.georob
+# print.coef.georob
 # deviance.georob
 # drop1.georob
 # extractAIC.georob
@@ -35,6 +37,80 @@
 # print.summary.cv.georob
 
 # 2011-08-11 A. Papritz
+
+## ##############################################################################
+
+coef.georob <- function( 
+  object, what = c("trend", "variogram"), ...
+) 
+{
+  ## coef method for class georob
+  
+  ## 2017-10-20 A. Papritz
+  
+  f.aux <- function(x){
+    tmp <- x[["param"]]
+    if( !x[["isotropic"]] ){
+      tmp <- c(tmp, x[["aniso"]])
+    }
+    attr( tmp, "variogram.model" ) <- x[["variogram.model"]]
+    tmp
+  }
+  
+  what <- match.arg( what )
+  
+  res <- switch(
+    what,
+    trend = object[["coefficients"]],
+    variogram = lapply(object[["variogram.object"]], f.aux)    
+  )
+  
+  if( is.list(res) ){
+    if( identical( length( res ), 1L ) ){
+      res <- res[[1]]
+    } else {
+      names( res ) <- sapply( object[["variogram.object"]], function(x) x[["variogram.model"]] )  
+    }
+  }
+  
+  class( res ) <- "coef.georob"
+  
+  res
+}
+
+## ##############################################################################
+
+print.coef.georob <- function( 
+  x, ...
+) 
+{
+  ## print method for class coef.georob
+  
+  ## 2017-10-20 A. Papritz
+  
+  xx <- unclass( x )
+  
+  if( is.list( xx ) ){
+    lapply( 
+      xx, 
+      function(x){
+        cat( "Variogram: ", attr(x, "variogram.model"), "\n" )
+        attr( x, "variogram.model" ) <- NULL
+        print( x )
+        cat( "\n" )
+      }
+    )
+    
+  } else {    
+    attr( xx, "variogram.model" ) <- NULL
+    print( xx )
+  }
+  
+  invisible(x)
+  
+}
+
+
 
 ## ##############################################################################
 
@@ -110,7 +186,7 @@ print.georob <- function(
   cat("\nFixed effects coefficients:\n")
   
   print(
-    format( coef( x), digits = digits ), print.gap = 2L, 
+    format( coef(x), digits = digits ), print.gap = 2L, 
     quote = FALSE
   )
   

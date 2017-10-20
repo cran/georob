@@ -1,8 +1,9 @@
-% 2015-08-20 A. Papritz
+% 2017-10-20 A. Papritz
 % R CMD Rdconv -t html -o bla.html S3methods.georob.Rd ; open bla.html; R CMD Rd2pdf --force S3methods.georob.Rd; 
 
 \encoding{macintosh}
 \name{georob-S3methods}
+\alias{coef.georob}
 \alias{fixed.effects}
 \alias{fixed.effects.georob}
 \alias{fixef}
@@ -11,6 +12,7 @@
 \alias{model.frame.georob}
 \alias{model.matrix.georob}
 \alias{nobs.georob}
+\alias{print.coef.georob}
 \alias{print.georob}
 \alias{print.summary.georob}
 \alias{random.effects}
@@ -26,14 +28,16 @@
 
 \title{Common S3 Methods for Class \code{georob}}
 
-\description{This page documents the methods \code{fixef},
-  \code{fixed.effects}, \code{model.frame},
-  \code{model.matrix}, \code{nobs}, \code{print}, \code{ranef},
-  \code{random.effects}, \code{resid}, \code{residuals}, \code{rstandard}, % \code{rstudent}, 
-  \code{summary} and \code{vcov} for the
-  class \code{georob}.  }
+\description{This page documents the methods \code{coef}, \code{fixef},
+  \code{fixed.effects}, \code{model.frame}, \code{model.matrix},
+  \code{nobs}, \code{print}, \code{ranef}, \code{random.effects},
+  \code{resid}, \code{residuals}, \code{rstandard}, % \code{rstudent},
+  \code{summary} and \code{vcov} for the class \code{georob} which extract
+  the respective components or summarize a \code{georob} object.  }
 
 \usage{
+\method{coef}{georob}(object, what, ...)
+
 \method{fixef}{georob}(object, ...)
 
 \method{fixed.effects}{georob}(object, ...)
@@ -107,6 +111,10 @@
   
   \item{terms}{If \code{type = "terms"}, which terms (default is all terms).}
   
+  \item{what}{If \code{what = "trend"} (default) the function \code{coef}
+  extracts the coefficients of the trend model and for \code{what =
+  "variogram"} the variogram parameters.}
+  
   \item{...}{additional arguments passed to methods.}
   
 }
@@ -132,14 +140,13 @@
   coefficients, which may of course also be obtained by \code{coef}.
   
   Besides, the default methods of the generic functions
-  \code{\link[stats]{coef}}, \code{\link[stats]{confint}},
+  \code{\link[stats]{confint}},
   \code{\link[stats]{df.residual}}, \code{\link[stats]{fitted}},
   \code{\link[stats]{formula}}, \code{\link[stats]{termplot}} and
   \code{\link[stats]{update}} can be used for objects of class
   \code{georob}.
   
 }
-
 
 \author{
    Andreas Papritz \email{andreas.papritz@env.ethz.ch}

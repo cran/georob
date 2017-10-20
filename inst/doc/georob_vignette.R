@@ -165,7 +165,7 @@ summary(r.georob.m0.spher.reml)
 ###################################################
 getOption("SweaveHooks")[["fig"]]()
 plot(loglik~scale, r.prfl.m0.spher.reml.scale, type="l")
-abline(v=r.georob.m0.spher.reml$param["scale"], lty="dashed")
+abline(v=coef(r.georob.m0.spher.reml, "variogram")["scale"], lty="dashed")
 abline(h=r.georob.m0.spher.reml$loglik - 0.5*qchisq(0.95, 1), lty="dotted")
 
 

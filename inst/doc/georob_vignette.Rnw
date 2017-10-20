@@ -10,6 +10,8 @@
 % 2016-08-22 AP Version f\"{u}r georob_0.3-0.tar.gz
 % 2016-09-09 AP Anpassungen zur Reduktion der Rechenzeit
 % 2016-11-14 AP Korrektur Fehler in Rotationsmatrix f\"{u}r geom. anisotrope Variogramme
+% 2017-08-11 AP Korrektur von Tippfehlern
+% 2017-10-20 AP Korrektur von Fehler bei Plot von Profillikelihood
 
 % cd R.user.home/georob/vignettes/
 % R CMD Sweave georob_vignette.Rnw;  R CMD Stangle georob_vignette.Rnw; pdflatex georob_vignette.tex; open georob_vignette.pdf;
@@ -787,7 +789,7 @@ r.prfl.m0.spher.reml.scale <- profilelogLik(r.georob.m0.spher.reml,
 %
 <<meuse-zinc-proflik-reml-scale-2,fig=TRUE,width=6,height=4,results=hide,eval=TRUE>>=
 plot(loglik~scale, r.prfl.m0.spher.reml.scale, type="l")
-abline(v=r.georob.m0.spher.reml$param["scale"], lty="dashed")
+abline(v=coef(r.georob.m0.spher.reml, "variogram")["scale"], lty="dashed")
 abline(h=r.georob.m0.spher.reml$loglik - 0.5*qchisq(0.95, 1), lty="dotted")
 @
 %
@@ -2811,11 +2813,11 @@ Data about the prediction targets are passed as argument
 either an ordinary \strong{data frame}, a \strong{SpatialPoints-},
 \strong{SpatialPixels-}, \strong{SpatialGrid} or a
 \strong{SpatialPolygonsDataFrame}, a \strong{SpatialPoints},
-\strong{SpatialPixels} or a \strong{SpatialGrid} object, the all the
+\strong{SpatialPixels} or a \strong{SpatialGrid} object, all the
 latter provided by the package \pkg{sp}.  If \code{newdata} is a
-\code{SpatialPoints}, \code{SpatialPixels} or a
-\code{SpatialGrid} then the drift model may only use the coordinates
-as covariates (universal Kriging).  If \code{newdata} is a
+\code{SpatialPoints}, \code{SpatialPixels} or a \code{SpatialGrid}
+object then the drift model may only use the coordinates as covariates
+(universal Kriging).  If \code{newdata} is a
 \code{SpatialPolygonsDataFrame} then block Kriging predictions are
 computed, otherwise point Kriging predictions.
 
@@ -3009,7 +3011,7 @@ lattice, can be computed by closed-form expressions
 \citep{Clifford-2005}.
 %
 Also the PDF of the distance between a fixed point and a point
-uniformed distributed in a rectangle is available in closed form
+uniformly distributed in a rectangle is available in closed form
 \citep{Hofer-Papritz-2011}.
 %
 Hence, for a two-dimensional study region, only 1-dimensional

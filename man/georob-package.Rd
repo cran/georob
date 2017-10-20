@@ -439,7 +439,7 @@
   Institute of Terrestrial Ecosystems, ETH Zurich and 
   Swiss Federal Institute for Forest, Snow and Landscape Research
   (WSL), pp. 51. 
-  \url{http://e-collection.library.ethz.ch/eserv/eth:6027/eth-6027-01.pdf}
+  \url{http://dx.doi.org/10.3929/ethz-a-007555133}
 
   \enc{Knsch}{Kuensch}, H. R., Papritz, A., Schwierz, C. and Stahel, W. A. (in
   preparation) Robust Geostatistics.
