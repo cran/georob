@@ -302,6 +302,7 @@ validate.predictions(data, pred, se.pred,
 
 \seealso{ 
   \code{\link{georob}} for (robust) fitting of spatial linear models;
+  
   \code{\link{cv.georob}} for assessing the goodness of a fit by \code{georob}.
 }
 
@@ -337,3 +338,4 @@ par(op)}
 
 \keyword{models}
 \keyword{spatial}
+\keyword{robust}

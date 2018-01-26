@@ -1,4 +1,4 @@
-% 2015-06-30 A. Papritz
+% 2017-12-22 A. Papritz
 % R CMD Rdconv -t html -o bla.html pmm.Rd ; open bla.html; R CMD Rd2pdf --force pmm.Rd; 
 
 \encoding{macintosh}
@@ -18,7 +18,8 @@
 pmm(A, B, control = control.pcmp())
 
 control.pcmp(pmm.ncores = 1, gcr.ncores = 1, max.ncores = detectCores(), 
-    f = 1, sfstop = FALSE, allow.recursive = TRUE, ...)
+    f = 1, sfstop = FALSE, allow.recursive = TRUE,
+    fork = !identical(.Platform[["OS.type"]], "windows"), ...)
 
 }
 %- maybe also 'usage' for other objects documented here.
@@ -48,6 +49,11 @@ control.pcmp(pmm.ncores = 1, gcr.ncores = 1, max.ncores = detectCores(),
   
   \item{allow.recursive}{logical controlling whether nested parallelized
   computation should be allowed (default \code{TRUE}).}
+  
+  \item{fork}{logical controlling whether forking should be used for
+  parallel computations (default \code{TRUE} on unix and \code{FALSE} on
+  windows operating systems).  Note that settting \code{fork == TRUE} on
+  windows suppresses parallel computations.}
   
   \item{...}{further arguments, currently not used.}
   
@@ -87,6 +93,13 @@ processes.
 \author{
    Andreas Papritz \email{andreas.papritz@env.ethz.ch}
 }
+
+\seealso{
+  \code{\link{georobIntro}} for a description of the model and a brief summary of the algorithms; 
+  
+  \code{\link{georob}} for (robust) fitting of spatial linear models.
+}
+
 
 \examples{
 \dontrun{

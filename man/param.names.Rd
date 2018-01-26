@@ -38,6 +38,7 @@ param.bounds(model, d)
 
 \seealso{
   \code{\link{georobIntro}} for a description of the model and a brief summary of the algorithms; 
+  
   \code{\link{georob}} for (robust) fitting of spatial linear models.
 }
 

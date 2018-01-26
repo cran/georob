@@ -741,10 +741,17 @@ pmm <-
   ## 2014-06-25 A. Papritz
   ## 2015-03-13 AP small changes in f.aux
   ## 2016-07-20 AP arguments renamed, new control of recursive parallelization
+  ## 2018-01-05 AP improved memory management in parallel computations
   
   ## auxiliary function 
   
-  f.aux <- function(i, s, e, A, B ) A %*% B[ , s[i]:e[i], drop = FALSE]
+  f.aux <- function( i ){
+    
+    ## s, e, A, B are taken from parent environment
+    
+    A %*% B[ , s[i]:e[i], drop = FALSE]
+    
+  }
   
   ## determine number of cores
   
@@ -762,9 +769,15 @@ pmm <-
   
   ##
   
+  ## set default value for control of forking if missing (required for backward compatibility)
+  
+  if( is.null( control[["fork"]] ) ){
+    control[["fork"]] <- !identical( .Platform[["OS.type"]], "windows" )
+  }
+    
   if( ncores > 1L ){
     
-    if( identical( .Platform[["OS.type"]], "windows") ){
+    if( !control[["fork"]] ){
       
       ## create a SNOW cluster on windows OS
       
@@ -773,7 +786,9 @@ pmm <-
         junk <- sfInit( parallel = TRUE, cpus = ncores )
       }
       
-      res <- sfLapply( 1L:k, f.aux, s = s, e = e, A = A, B = B )
+      junk <- sfExport( "s", "e", "A", "B" )
+      
+      res <- sfLapply( 1L:k, f.aux )
       
       if( control[["sfstop"]] ){
         junk <- sfStop()
@@ -782,11 +797,11 @@ pmm <-
       
     } else {
       
-      res <- mclapply( 
-        1L:k, f.aux,s = s, e = e, A = A, B = B, mc.cores = ncores
-      )
+      res <- mclapply( 1L:k, f.aux, mc.cores = ncores )
       
     }
+    
+    junk <- gc()
     
     matrix( unlist(res), nrow = NROW( A ) )
     
@@ -1139,6 +1154,7 @@ control.pcmp <-
   function( 
     pmm.ncores = 1, gcr.ncores = 1, max.ncores = detectCores(), 
     f = 1, sfstop = FALSE, allow.recursive = TRUE, 
+    fork = !identical( .Platform[["OS.type"]], "windows" ),
     ... 
   )
 {
@@ -1156,7 +1172,8 @@ control.pcmp <-
   list( 
     pmm.ncores = pmm.ncores, gcr.ncores = gcr.ncores, max.ncores = max.ncores, 
     f = f, sfstop = sfstop, 
-    allow.recursive = allow.recursive
+    allow.recursive = allow.recursive,
+    fork = fork
   )
 
 }
@@ -1420,8 +1437,7 @@ function(
  
 ##  ##############################################################################
 
-profilelogLik <- 
-function( object, values, use.fitted = TRUE, verbose = 0, 
+profilelogLik <- function( object, values, use.fitted = TRUE, verbose = 0, 
   ncores = min( detectCores(), NROW(values) ) ){
   
   ## function to compute (restricted) likelihood profile for a georob fit
@@ -1441,10 +1457,13 @@ function( object, values, use.fitted = TRUE, verbose = 0,
   ## 2016-07-28 AP returns gradient in results
   ## 2016-08-08 AP changes for nested variogra
   ## 2016-08-12 AP changes for nested variogram models
+  ## 2017-12-22 AP improved memory management in parallel computations
   
   ## auxiliary function to fit model and return maximized (pseudo) log-likelihood
   
-  f.aux <- function( i, values, object, data ){
+  f.aux <- function( i ){
+    
+    ## values, object, data are taken from parent environment
     
     ## set fixed initial values 
     
@@ -1605,7 +1624,7 @@ function( object, values, use.fitted = TRUE, verbose = 0,
     1L:length(values),
     function( i, v, vo ){
       v <- v[[i]]
-      names( v ) <- paste( names(v), i, sep= control.georob() [["sepstr"]] )
+      names( v ) <- paste( names(v), i, sep = control.georob()[["sepstr"]] )
       v
     }, v = values
   )
@@ -1630,24 +1649,32 @@ function( object, values, use.fitted = TRUE, verbose = 0,
   
   values <- as.matrix( values )
   
-  if( ncores > 1L && .Platform[["OS.type"]] == "windows" ){
+  ## set default value for control of forking if missing (required for backward compatibility)
+  
+  if( is.null( object[["control"]][["pcmp"]][["fork"]] ) ){
+    object[["control"]][["pcmp"]][["fork"]] <- !identical( .Platform[["OS.type"]], "windows" )
+  }
+  
+  if( ncores > 1L && !object[["control"]][["pcmp"]][["fork"]] ){
     
     ## create a SNOW cluster on windows OS
     
-    cl <- makePSOCKcluster( ncores, outfile = "")
-    
+    clstr <- makeCluster( ncores, type = "SOCK" )
+    save( clstr, file = "SOCKcluster.RData" )
+    options( error = f.stop.cluster )
+
     ## export required items to workers
     
-    junk <- clusterEvalQ( cl, require( georob, quietly = TRUE ) )
+    junk <- clusterEvalQ( clstr, require( georob, quietly = TRUE ) )
+    junk <- clusterExport( clstr, c( "values", "object", "data" ), envir = environment() )
     
     result <- parLapply(
-      cl, 
+      clstr, 
       1L:NROW(values),
-      f.aux, 
-      values = values, object = object, data = data
+      f.aux
     )
     
-    stopCluster(cl)
+    f.stop.cluster( clstr )
     
   } else {
     
@@ -1656,7 +1683,6 @@ function( object, values, use.fitted = TRUE, verbose = 0,
     result <- mclapply(
       1L:NROW(values),
       f.aux, 
-      values = values, object = object, data = data,
       mc.cores = ncores,
       mc.allow.recursive = object[["control"]][["pcmp"]][["allow.recursive"]]
     )

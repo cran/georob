@@ -1,4 +1,4 @@
-% 2015-08-27 A. Papritz
+% 2018-01-24 A. Papritz
 % R CMD Rdconv -t html -o bla.html predict.georob.Rd ; open bla.html; R CMD Rd2pdf --force predict.georob.Rd; 
 
 \encoding{macintosh}
@@ -18,6 +18,7 @@ well as model terms for display by \code{\link[stats]{termplot}}.
 \usage{
 \method{predict}{georob}(object, newdata, type =  c("signal", "response", "trend", "terms"), 
     terms = NULL, se.fit = TRUE, signif = 0.95, locations, 
+    variogram.model = NULL, param = NULL, aniso = NULL, variogram.object = NULL, 
     control = control.predict.georob(), verbose = 0, ...)
     
 control.predict.georob(full.covmat = FALSE, extended.output = FALSE, 
@@ -28,7 +29,8 @@ control.predict.georob(full.covmat = FALSE, extended.output = FALSE,
 
 
 \arguments{
-  \item{object}{an object of class \code{"georob"}, see \code{\link{georobObject}}.}
+  \item{object}{an object of class \code{"georob"} (mandatory argument),
+  see \code{\link{georobObject}}.}
   
   \item{newdata}{an optional data frame, 
   \code{\link[sp]{SpatialPointsDataFrame}}, 
@@ -81,9 +83,25 @@ control.predict.georob(full.covmat = FALSE, extended.output = FALSE,
   
   \item{locations}{an optional one-sided formula specifying what variables
   of \code{newdata} are the coordinates of the prediction points\cr
-  (default: \code{object[["locations.objects"]]$locations}).}
+  (default: \code{object[["locations.objects"]][["locations"]]}).}
   
-  \item{control}{a list with the arguments \code{full.covmat},
+  \item{variogram.model}{an optional character keyword defining the
+  variogram model to be used for Kriging, see \code{\link{georob}} and
+  \emph{Details}.}
+  
+  \item{param}{an optional named numeric vector with values of the
+  variogram parameters used for Kriging, see \code{\link{georob}} and
+  \emph{Details}.}
+  
+  \item{aniso}{an optional named numeric vector with values of anisotropy
+  parameters of a variogram used for Kriging, see \code{\link{georob}} and
+  \emph{Details}.}
+  
+  \item{variogram.object}{an optional list that defines a possibly nested
+  variogram model used for Kriging, see \code{\link{georob}} and
+  \emph{Details}.}
+  
+  \item{control}{a list with the components \code{full.covmat},
   \code{extended.output}, \code{mmax}, \code{ncores}, \code{pwidth},
   \code{pheight}, \code{napp} and \code{pcmp} or a function such as
   \code{control.predict.georob} that generates such a list.}
@@ -130,15 +148,15 @@ control.predict.georob(full.covmat = FALSE, extended.output = FALSE,
   \code{SpatialPointsDataFrame}, \code{SpatialPixelsDataFrame} or
   \code{SpatialGridDataFrame}.
   
-  The \code{predict} method for class \code{georob} uses the package
-  \pkg{parallel} for parallelized computation of Kriging predictions.  If
-  there are \eqn{m} items to predict, the task is split into
-  \code{ceiling(m/mmax)} sub-tasks that are then distributed to
-  \code{ncores} CPUs.  Evidently, \code{ncores = 1} suppresses parallel
-  execution.  By default, the function uses all available CPUs as returned
-  by \code{\link[parallel]{detectCores}}.  \cr Note that if
-  \code{full.covmat} is \code{TRUE} \code{mmax} must exceed \eqn{m} (and parallel
-  execution is not possible).
+  The \code{predict} method for class \code{georob} uses the packages
+  \pkg{parallel}, \pkg{snow} and \pkg{snowfall} for parallelized
+  computation of Kriging predictions.  If there are \eqn{m} items to
+  predict, the task is split into \code{ceiling(m/mmax)} sub-tasks that are
+  then distributed to \code{ncores} CPUs.  Evidently, \code{ncores = 1}
+  suppresses parallel execution.  By default, the function uses all
+  available CPUs as returned by \code{\link[parallel]{detectCores}}.  \cr
+  Note that if \code{full.covmat} is \code{TRUE} \code{mmax} must exceed
+  \eqn{m} (and parallel execution is not possible).
   
   The argument \code{extended.output = TRUE} is used to compute all
   quantities required for (approximately) unbiased back-transformation of
@@ -238,9 +256,6 @@ control.predict.georob(full.covmat = FALSE, extended.output = FALSE,
   
 }
 
-\author{
-   Andreas Papritz \email{andreas.papritz@env.ethz.ch}}
-
 \references{
   Nussbaum, M., Papritz, A., Baltensweiler, A. and Walthert, L. (2012)
   \emph{Organic Carbon  Stocks of Swiss Forest Soils},
@@ -256,10 +271,39 @@ control.predict.georob(full.covmat = FALSE, extended.output = FALSE,
   \url{http://e-collection.library.ethz.ch/eserv/eth:7080/eth-7080-01.pdf}
 }
 
+\author{
+   Andreas Papritz \email{andreas.papritz@env.ethz.ch}}
+
+
 \seealso{
-  \code{\link{georobIntro}} for a description of the model and a brief summary of the algorithms; 
+  \code{\link{georobIntro}} for a description of the model and a brief summary of the algorithms;
+  
   \code{\link{georob}} for (robust) fitting of spatial linear models;
-  \code{\link{georobObject}} for a description of the class \code{georob}.
+  
+  \code{\link{georobObject}} for a description of the class \code{georob};
+  
+  \code{\link{profilelogLik}} for computing profiles of Gaussian likelihoods;
+  
+  \code{\link{plot.georob}} for display of RE(ML) variogram estimates;
+  
+  \code{\link{control.georob}} for controlling the behaviour of \code{georob};
+  
+  \code{\link{georobModelBuilding}} for stepwise building models of class \code{georob};
+  
+  \code{\link{cv.georob}} for assessing the goodness of a fit by \code{georob}; 
+  
+  \code{\link{georobMethods}} for further methods for the class \code{georob};
+  
+%  \code{\link{predict.georob}} for computing robust Kriging predictions; 
+%  \code{\link{validate.predictions}} for validating Kriging predictions; 
+  \code{\link{lgnpp}} for unbiased back-transformation of Kriging prediction 
+  of log-transformed data;
+  
+  \code{\link{georobSimulation}} for simulating realizations of a Gaussian process
+  from model fitted by \code{georob}; and finally
+  
+  \code{\link{sample.variogram}} and \code{\link{fit.variogram.model}} 
+  for robust estimation and modelling of sample variograms.
 }
 
 \examples{

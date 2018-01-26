@@ -28,6 +28,7 @@ cv(object, ...)
 
 \seealso{ 
   \code{\link{georob}} for (robust) fitting of spatial linear models;
+  
   \code{\link{cv.georob}} for assessing the goodness of a model fitted by
   \code{georob}.  }
 

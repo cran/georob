@@ -1185,48 +1185,6 @@ safe_pchisq <- function(q, df, ...)
 
 ## ##############################################################################
 
-## auxiliary function for fitting model and extracting aic by add1 and drop1
-  
-f.aux.add1.drop1 <- function( tt, change, scale, k, trace, n0, object, data, verbose, ... ){
-    
-  if(trace > 1.) {
-    cat( paste( "\ntrying ", change, sep="" ), tt, "\n", sep = "")
-    utils::flush.console()
-  }
-  
-  nfit <- update( 
-    object, as.formula(paste("~ .", change, tt)), 
-    verbose = verbose, object. = object
-  )
-  
-  converged <- TRUE
-  
-  if( !is.na(!nfit[["converged"]]) && !nfit[["converged"]] ){
-    converged <- FALSE
-    warning( "there were errors: call function with argument 'verbose' > 1" )
-    if( verbose > 0. ) cat( 
-      "lack of convergence when fitting model", paste("~ .", change, tt), 
-      "\nconvergence code:", nfit$convergence.code, "\n"
-    )
-  }
-  
-  nnew <- nobs( nfit, use.fallback = TRUE )
-  if( all(is.finite(c(n0, nnew))) && nnew != n0 ) stop(
-    "number of rows in use has changed: remove missing values?"
-  )
-  df.aic <-  c( extractAIC( nfit, scale, k = k, REML = FALSE, ... ), as.numeric(converged))
-  names( df.aic ) <- c("df", "AIC", "converged")
-  #   attr( df.aic, "nfit" ) <- list(
-  #     variogram.object = nfit[["variogram.object"]],
-  #     initial.objects = nfit[["initial.objects"]],
-  #     call = nfit[["call"]]
-  #   )
-  df.aic
-}
-
-
-## ##############################################################################
-
 add1.georob <- function( object, scope, scale = 0, test=c("none", "Chisq"),
   k = 2, trace = FALSE, data = NULL, fixed = TRUE, use.fitted.param = TRUE, verbose = 0, 
   ncores = 1, ... )
@@ -1244,8 +1202,87 @@ add1.georob <- function( object, scope, scale = 0, test=c("none", "Chisq"),
   ## 2016-05-27 AP diagnostics about convergence
   ## 2016-07-20 AP changes for parallel computations
   ## 2016-08-09 AP changes for nested variogram models
+  ## 2018-01-05 AP improved memory management in parallel computations
+  ##							 improved error handling during parallel computations
+    
+  ## auxiliary function for fitting model and extracting aic by add1 and drop1
+  
+  f.aux.add1.drop1 <- function( tt, change, scale, trace, ... ){
+      
+    ## objects object, ..data.., k, n0, verbose are taken from parent environment
+    
+    if(trace > 1.) {
+      cat( paste( "\ntrying ", change, sep="" ), tt, "\n", sep = "")
+      utils::flush.console()
+    }
+    
+    nfit <- update( 
+      object, as.formula(paste("~ .", change, tt)),  data = ..data..,
+      verbose = verbose, object. = object
+    )
+    
+    converged <- TRUE
+    
+    if( !is.na(!nfit[["converged"]]) && !nfit[["converged"]] ){
+      converged <- FALSE
+      warning( "there were errors: call function with argument 'verbose' > 1" )
+      if( verbose > 0. ) cat( 
+        "lack of convergence when fitting model", paste("~ .", change, tt), 
+        "\nconvergence code:", nfit$convergence.code, "\n"
+      )
+    }
+    
+    nnew <- nobs( nfit, use.fallback = TRUE )
+    if( all(is.finite(c(n0, nnew))) && nnew != n0 ) stop(
+      "number of rows in use has changed: remove missing values?"
+    )
+    df.aic <-  c( extractAIC( nfit, scale, k = k, REML = FALSE, ... ), as.numeric(converged))
+    names( df.aic ) <- c("df", "AIC", "converged")
+    #   attr( df.aic, "nfit" ) <- list(
+    #     variogram.object = nfit[["variogram.object"]],
+    #     initial.objects = nfit[["initial.objects"]],
+    #     call = nfit[["call"]]
+    #   )
+    df.aic
+  }
     
   test <- match.arg(test)
+  
+  ## evaluate terms and scope
+  
+  if( missing(scope ) || is.null( scope ) ) stop("no terms in scope")
+  if( !is.character( scope ) ) scope <- add.scope( object, update.formula(object, scope) )
+  if( !length(scope)) stop( "no terms in scope for adding to object" )
+  
+  ## get data.frame with required variables (note that the data.frame passed
+  ## as data argument to georob must exist in GlobalEnv)
+  
+  if( is.null( data ) ){
+    
+    frmla <- update.formula( 
+      formula( object ),
+      as.formula( paste( "~ . + ", paste(scope, collapse = " + ") ) )
+    )
+    
+    ..data.. <- cbind(
+      get_all_vars(
+        frmla, data = eval( getCall(object)[["data"]] )
+      ),
+      get_all_vars(
+        object[["locations.objects"]][["locations"]], eval( getCall(object)[["data"]] )
+      )
+    )
+    
+    if( identical( class( object[["na.action"]] ), "omit" ) ) ..data.. <- na.omit(..data..)
+    
+  } else {
+    
+    ..data.. <- data
+  
+  }
+
+
+  ## manipulate call
   
   cl <- object[["call"]]
   
@@ -1267,10 +1304,6 @@ add1.georob <- function( object, scope, scale = 0, test=c("none", "Chisq"),
   cl <- f.call.set_x_to_value_in_fun( cl, "control", "control.georob", "cov.ehat.p.bhat", FALSE )
     
   object[["call"]] <- cl
-  
-  ## update object call if data argument has been provided
-
-  if( !is.null( data ) ) object[["call"]] <- update( object, data = data, evaluate = FALSE ) 
   
   ## check if object is result of GAUSSIAN ML fit, manipulate its call and
   ## re-fit it by ML if required
@@ -1308,12 +1341,6 @@ add1.georob <- function( object, scope, scale = 0, test=c("none", "Chisq"),
     
   }
   
-  ## evaluate terms and scope
-  
-  if( missing(scope ) || is.null( scope ) ) stop("no terms in scope")
-  if( !is.character( scope ) ) scope <- add.scope( object, update.formula(object, scope) )
-  if( !length(scope)) stop( "no terms in scope for adding to object" )
-  
   ## initialize result
   
   ns <- length( scope )
@@ -1339,36 +1366,36 @@ add1.georob <- function( object, scope, scale = 0, test=c("none", "Chisq"),
     verbose <- 0.
   }
   
-  if( .Platform[["OS.type"]] == "windows" && ncores > 1L ){
+  ## set default value for control of forking if missing (required for backward compatibility)
   
-    if( is.null( data ) ) stop( 
-      "argument 'data' required for parallel execution on windows OS"    
-    )
-    
+  if( is.null( object[["control"]][["pcmp"]][["fork"]] ) ){
+    object[["control"]][["pcmp"]][["fork"]] <- !identical( .Platform[["OS.type"]], "windows" )
+  }
+  
+  if( ncores > 1L && !object[["control"]][["pcmp"]][["fork"]] ){
+  
     ## create a SNOW cluster on windows OS
     
-    cl <- makePSOCKcluster( ncores, outfile = "")
+    clstr <- makeCluster( ncores, type = "SOCK" )
+    save( clstr, file = "SOCKcluster.RData" )
+    options( error = f.stop.cluster )
     
     ## export required items to workers
     
-    junk <- clusterEvalQ( cl, require( georob, quietly = TRUE ) )
-    
-    #     result <- parLapply(
-    #       cl, 
-    #       scope, f.aux,
-    #       scale = scale, k= k, trace = trace, 
-    #       object = object, data = data, verbose = verbose, ...
-    #     )
-    
-    result <- parLapply(
-      cl, 
-      scope, f.aux.add1.drop1,
-      change = "+", scale = scale, k= k, trace = trace, n0 = n0,
-      object = object, data = data, verbose = verbose, ...
+    junk <- clusterEvalQ( clstr, require( georob, quietly = TRUE ) )
+    junk <- clusterExport( 
+      clstr, c( "object", "..data..", "k", "n0", "verbose" ), envir =  environment() 
     )
     
-    
-    stopCluster(cl)
+    result <- parLapply(
+      clstr, 
+      scope, 
+      f.aux.add1.drop1,
+      change = "+", scale = scale, trace = trace, 
+      ...
+    )
+        
+    f.stop.cluster( clstr )
     
   } else {
         
@@ -1376,8 +1403,7 @@ add1.georob <- function( object, scope, scale = 0, test=c("none", "Chisq"),
     
     result <- mclapply(
       scope, f.aux.add1.drop1, 
-      change = "+", scale = scale, k= k, trace = trace, n0 = n0,
-      object = object, data = data, verbose = verbose,
+      change = "+", scale = scale, trace = trace, 
       mc.cores = ncores, 
       mc.allow.recursive = object[["control"]][["pcmp"]][["allow.recursive"]],
       ...
@@ -1450,8 +1476,75 @@ drop1.georob <- function( object, scope, scale = 0, test=c( "none", "Chisq" ),
   ## 2016-05-27 AP diagnostics about convergence
   ## 2016-07-20 AP changes for parallel computations
   ## 2016-08-09 AP changes for nested variogram models
+  ## 2018-01-05 AP improved memory management in parallel computations
+  ##							 improved error handling during parallel computations
+    
+  ## auxiliary function for fitting model and extracting aic by add1 and drop1
+  
+  f.aux.add1.drop1 <- function( tt, change, scale, trace, ... ){
+      
+    ## objects object, ..data.., k, n0, verbose are taken from parent environment
+    
+    if(trace > 1.) {
+      cat( paste( "\ntrying ", change, sep="" ), tt, "\n", sep = "")
+      utils::flush.console()
+    }
+    
+    nfit <- update( 
+      object, as.formula(paste("~ .", change, tt)),  data = ..data..,
+      verbose = verbose, object. = object
+    )
+    
+    converged <- TRUE
+    
+    if( !is.na(!nfit[["converged"]]) && !nfit[["converged"]] ){
+      converged <- FALSE
+      warning( "there were errors: call function with argument 'verbose' > 1" )
+      if( verbose > 0. ) cat( 
+        "lack of convergence when fitting model", paste("~ .", change, tt), 
+        "\nconvergence code:", nfit$convergence.code, "\n"
+      )
+    }
+    
+    nnew <- nobs( nfit, use.fallback = TRUE )
+    if( all(is.finite(c(n0, nnew))) && nnew != n0 ) stop(
+      "number of rows in use has changed: remove missing values?"
+    )
+    df.aic <-  c( extractAIC( nfit, scale, k = k, REML = FALSE, ... ), as.numeric(converged))
+    names( df.aic ) <- c("df", "AIC", "converged")
+    #   attr( df.aic, "nfit" ) <- list(
+    #     variogram.object = nfit[["variogram.object"]],
+    #     initial.objects = nfit[["initial.objects"]],
+    #     call = nfit[["call"]]
+    #   )
+    df.aic
+  }
     
   test <- match.arg(test)
+  
+  ## get data.frame with required variables (note that the data.frame passed
+  ## as data argument to georob must exist in GlobalEnv)
+
+  if( is.null( data ) ){
+    
+    ..data.. <- cbind(
+      get_all_vars(
+        formula( object ), data = eval( getCall(object)[["data"]] )
+      ),
+      get_all_vars(
+        object[["locations.objects"]][["locations"]], eval( getCall(object)[["data"]] )
+      )
+    )
+    
+    if( identical( class( object[["na.action"]] ), "omit" ) ) ..data.. <- na.omit(..data..)
+    
+  } else {
+    
+    ..data.. <- data
+  
+  }
+      
+  ## manipulate call
   
   cl <- object[["call"]]
   
@@ -1473,11 +1566,7 @@ drop1.georob <- function( object, scope, scale = 0, test=c( "none", "Chisq" ),
   cl <- f.call.set_x_to_value_in_fun( cl, "control", "control.georob", "cov.ehat.p.bhat", FALSE )
     
   object[["call"]] <- cl
-  
-  ## update object call if data argument has been provided
-
-  if( !is.null( data ) ) object[["call"]] <- update( object, data = data, evaluate = FALSE ) 
-  
+    
   ## check if object is result of GAUSSIAN ML fit, manipulate its call and
   ## re-fit it by ML if required
 
@@ -1543,15 +1632,6 @@ drop1.georob <- function( object, scope, scale = 0, test=c( "none", "Chisq" ),
   n0 <- nobs( object, use.fallback = TRUE )
   env <- environment( formula(object) )
   
-  #   param <- object[["param"]]
-  #   aniso <- object[["aniso"]][["aniso"]]
-  #   fit.param <- c( 
-  #     variance = FALSE, snugget = FALSE, nugget = FALSE, scale = FALSE, 
-  #     alpha = FALSE, beta = FALSE, delta = FALSE, 
-  #     gamma = FALSE, kappa = FALSE, lambda = FALSE, mu = FALSE, nu = FALSE
-  #   )[names( object[["param"]] )]
-  #   fit.aniso <- c( f1 = FALSE, f2 = FALSE, omega = FALSE, phi = FALSE, zeta = FALSE )
-  
   ## prepare for parallel execution
   
   if( ncores > 1L ){
@@ -1560,28 +1640,36 @@ drop1.georob <- function( object, scope, scale = 0, test=c( "none", "Chisq" ),
     verbose <- 0.
   }
   
-  if( .Platform[["OS.type"]] == "windows" && ncores > 1L ){
+  ## set default value for control of forking if missing (required for backward compatibility)
   
-    if( is.null( data ) ) stop( 
-      "argument 'data' required for parallel execution on windows OS"
-    )
-    
+  if( is.null( object[["control"]][["pcmp"]][["fork"]] ) ){
+    object[["control"]][["pcmp"]][["fork"]] <- !identical( .Platform[["OS.type"]], "windows" )
+  }
+  
+  if( ncores > 1L && !object[["control"]][["pcmp"]][["fork"]] ){
+  
     ## create a SNOW cluster on windows OS
     
-    cl <- makePSOCKcluster( ncores, outfile = "")
+    clstr <- makeCluster( ncores, type = "SOCK" )
+    save( clstr, file = "SOCKcluster.RData" )
+    options( error = f.stop.cluster )
     
     ## export required items to workers
 
-    junk <- clusterEvalQ( cl, require( georob, quietly = TRUE ) )
-    
+    junk <- clusterEvalQ( clstr, require( georob, quietly = TRUE ) )
+    junk <- clusterExport( 
+      clstr, c( "object", "..data..", "k", "n0", "verbose" ), envir =  environment() 
+    )
+
     result <- parLapply(
-      cl, 
-      scope, f.aux.add1.drop1,
-      change = "-", scale = scale, k= k, trace = trace, n0 = n0,
-      object = object, data = data, verbose = verbose, ...
+      clstr, 
+      scope, 
+      f.aux.add1.drop1,
+      change = "-", scale = scale, trace = trace, 
+      ...
     )
     
-    stopCluster(cl)
+    f.stop.cluster( clstr )
     
   } else {
         
@@ -1589,8 +1677,7 @@ drop1.georob <- function( object, scope, scale = 0, test=c( "none", "Chisq" ),
     
     result <- mclapply(
       scope, f.aux.add1.drop1, 
-      change = "-", scale = scale, k= k, trace = trace, n0 = n0,
-      object = object, data = data, verbose = verbose,
+      change = "-", scale = scale, trace = trace, 
       mc.cores = ncores, 
       mc.allow.recursive = object[["control"]][["pcmp"]][["allow.recursive"]],
       ...
@@ -1643,7 +1730,6 @@ drop1.georob <- function( object, scope, scale = 0, test=c( "none", "Chisq" ),
   
 }
 
-
 ##  ############################################################################
 
 step <- function( object, ... ) UseMethod( "step" )
@@ -1657,7 +1743,7 @@ step.default <- stats::step
 
 step.georob <- function( object, scope, scale = 0, 
   direction = c( "both", "backward", "forward" ), trace = 1, keep = NULL, steps = 1000, 
-  k = 2, data = NULL, fixed.add1.drop1 = TRUE, fixed.step = fixed.add1.drop1, 
+  k = 2, fixed.add1.drop1 = TRUE, fixed.step = fixed.add1.drop1, 
   use.fitted.param = TRUE, verbose = 0, ncores = 1, ... )
 {
   
@@ -1670,6 +1756,7 @@ step.georob <- function( object, scope, scale = 0,
   ## 2016-05-22 AP changes for better computational efficiency
   ## 2016-07-20 AP changes for parallel computations
   ## 2016-08-09 AP changes for nested variogram models
+  ## 2018-01-05 AP improved memory management in parallel computations
 
   ## code of step{stats} complemented by argument fixed to control whether
   ## variogram parameters should be kept fixed
@@ -1720,6 +1807,56 @@ step.georob <- function( object, scope, scale = 0,
     fit
   }
   
+  ## evaluate terms and scope
+  
+  Terms <- terms(object)
+  object$call$formula <- object$formula <- Terms
+  md <- missing(direction)
+  direction <- match.arg(direction)
+  backward <- direction == "both" | direction == "backward"
+  forward  <- direction == "both" | direction == "forward"
+  if(missing(scope)) {
+    fdrop <- numeric()
+    fadd <- attr(Terms, "factors")
+    if(md) forward <- FALSE
+  }
+  else {
+    if(is.list(scope)) {
+      fdrop <- if(!is.null(fdrop <- scope$lower))
+      attr(terms(update.formula(object, fdrop)), "factors")
+      else numeric()
+      fadd <- if(!is.null(fadd <- scope$upper))
+      attr(terms(update.formula(object, fadd)), "factors")
+    }
+    else {
+      fadd <- if(!is.null(fadd <- scope))
+      attr(terms(update.formula(object, scope)), "factors")
+      fdrop <- numeric()
+    }
+  }
+  models <- vector("list", steps)
+  if(!is.null(keep)) keep.list <- vector("list", steps)
+  n <- nobs(object, use.fallback = TRUE)  # might be NA
+  
+  ## get data.frame with required variables (note that the data.frame passed
+  ## as data argument to georob must exist in GlobalEnv)
+  
+  frmla <- update.formula( 
+    formula( object ),
+    as.formula( paste( "~ . + ", paste( colnames(fadd), collapse = " + ") ) )
+  )
+  
+  ..data.. <- cbind(
+    get_all_vars(
+      frmla, data = eval( getCall(object)[["data"]] )
+    ),
+    get_all_vars(
+      object[["locations.objects"]][["locations"]], eval( getCall(object)[["data"]] )
+    )
+  )
+  
+  if( identical( class( object[["na.action"]] ), "omit" ) ) ..data.. <- na.omit(..data..)
+  
   ## store number of fitted variogram parameters
   
   n.fitted.param.aniso <- sum( 
@@ -1758,9 +1895,9 @@ step.georob <- function( object, scope, scale = 0,
     
   object[["call"]] <- cl
   
-  ## update object call if data argument has been provided
-
-  if( !is.null( data ) ) object[["call"]] <- update( object, data = data, evaluate = FALSE ) 
+  #   ## update object call if data argument has been provided
+  # 
+  #   if( !is.null( data ) ) object[["call"]] <- update( object, data = data, evaluate = FALSE ) 
   
   ## check if object is result of GAUSSIAN ML fit and manipulate its call to
   ## refit it by ML if required
@@ -1779,7 +1916,7 @@ step.georob <- function( object, scope, scale = 0,
     cl <- f.call.set_x_to_value_in_fun( cl, "control", "control.georob", "ml.method", "ML" )
         
     object[["call"]] <- cl
-    object <- update( object )
+    object <- update( object, data = ..data.. )
     
   }
   
@@ -1794,40 +1931,9 @@ step.georob <- function( object, scope, scale = 0,
     
     object[["call"]] <- cl
     
-    object <- update( object )
+    object <- update( object, data = ..data.. )
     
   }
-    
-  ## evaluate terms and scope
-  
-  Terms <- terms(object)
-  object$call$formula <- object$formula <- Terms
-  md <- missing(direction)
-  direction <- match.arg(direction)
-  backward <- direction == "both" | direction == "backward"
-  forward  <- direction == "both" | direction == "forward"
-  if(missing(scope)) {
-    fdrop <- numeric()
-    fadd <- attr(Terms, "factors")
-    if(md) forward <- FALSE
-  }
-  else {
-    if(is.list(scope)) {
-      fdrop <- if(!is.null(fdrop <- scope$lower))
-      attr(terms(update.formula(object, fdrop)), "factors")
-      else numeric()
-      fadd <- if(!is.null(fadd <- scope$upper))
-      attr(terms(update.formula(object, fadd)), "factors")
-    }
-    else {
-      fadd <- if(!is.null(fadd <- scope))
-      attr(terms(update.formula(object, scope)), "factors")
-      fdrop <- numeric()
-    }
-  }
-  models <- vector("list", steps)
-  if(!is.null(keep)) keep.list <- vector("list", steps)
-  n <- nobs(object, use.fallback = TRUE)  # might be NA
     
   ## now start the model search
   
@@ -1863,9 +1969,9 @@ step.georob <- function( object, scope, scale = 0,
     if(backward && length(scope$drop)) {
       aod <- drop1(
         fit, scope$drop, scale = scale,
-        k = k, trace = trace, data = data, fixed = fixed.add1.drop1, 
+        k = k, trace = trace, fixed = fixed.add1.drop1, 
         use.fitted.param = use.fitted.param, verbose = verbose, 
-        ncores = ncores, ...
+        ncores = ncores, data = ..data.., ...
       )
       rn <- row.names(aod)
       row.names(aod) <- c(rn[1L], paste("-", rn[-1L], sep=" "))
@@ -1880,9 +1986,9 @@ step.georob <- function( object, scope, scale = 0,
       if(forward && length(scope$add)) {
         aodf <- add1(
           fit, scope$add, scale = scale,
-          k = k, trace = trace, data = data, fixed = fixed.add1.drop1, 
+          k = k, trace = trace, fixed = fixed.add1.drop1, 
           use.fitted.param = use.fitted.param, verbose = verbose, 
-          ncores = ncores, ...
+          ncores = ncores, data = ..data.., ...
         )
         rn <- row.names(aodf)
         row.names(aodf) <- c(rn[1L], paste("+", rn[-1L], sep=" "))
@@ -1916,7 +2022,7 @@ step.georob <- function( object, scope, scale = 0,
     #     )
     
     fit <- update(
-      fit, paste("~ .", change), verbose = verbose, object. = fit
+      fit, paste("~ .", change), data = ..data.., verbose = verbose, object. = fit
     )
     
     cl <- object[["call"]]

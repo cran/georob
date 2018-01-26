@@ -202,10 +202,10 @@
   \emph{argument to} \code{georob} \emph{must exist in the user workspace
   when calling \code{cv.georob}}.  
   
-  \code{cv.georob} then uses the package \pkg{parallel} for parallelized
-  computations.  By default, the function uses \eqn{K} CPUs but not
-  more than are physically available (as returned by
-  \code{\link[parallel]{detectCores}}).
+  \code{cv.georob} then uses the packages \pkg{parallel}, \pkg{snow}
+  and \pkg{snowfall} for parallelized computations.  By default, the
+  function uses \eqn{K} CPUs but not more than are physically available (as
+  returned by \code{\link[parallel]{detectCores}}).
   
   \code{cv.georob} uses the function \code{\link[stats]{update}} to
   re-estimated the model with the reduced data sets.  Therefore, any
@@ -270,10 +270,35 @@ Springer-Verlag.
    Andreas Papritz \email{andreas.papritz@env.ethz.ch}}
 
 \seealso{
-  \code{\link{validate.predictions}} for computing statistics of the cross-validation errors;
+  \code{\link{georobIntro}} for a description of the model and a brief summary of the algorithms;
+  
   \code{\link{georob}} for (robust) fitting of spatial linear models;
+  
   \code{\link{georobObject}} for a description of the class \code{georob};
-  \code{\link{predict.georob}} for computing robust Kriging predictions.
+  
+  \code{\link{profilelogLik}} for computing profiles of Gaussian likelihoods;
+  
+  \code{\link{plot.georob}} for display of RE(ML) variogram estimates;
+  
+  \code{\link{control.georob}} for controlling the behaviour of \code{georob};
+  
+  \code{\link{georobModelBuilding}} for stepwise building models of class \code{georob};
+%  \code{\link{cv.georob}} for assessing the goodness of a fit by \code{georob}; 
+  
+  \code{\link{georobMethods}} for further methods for the class \code{georob};
+  
+  \code{\link{predict.georob}} for computing robust Kriging predictions; 
+  
+  \code{\link{validate.predictions}} for validating Kriging predictions; 
+  
+  \code{\link{lgnpp}} for unbiased back-transformation of Kriging prediction 
+  of log-transformed data; 
+  
+  \code{\link{georobSimulation}} for simulating realizations of a Gaussian process
+  from model fitted by \code{georob}; and finally
+  
+  \code{\link{sample.variogram}} and \code{\link{fit.variogram.model}} 
+  for robust estimation and modelling of sample variograms.
 }
 
 

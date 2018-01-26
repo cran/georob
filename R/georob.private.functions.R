@@ -753,7 +753,8 @@ function(
   ## 2016-07-20 AP changes for parallel computations
   ## 2016-08-09 AP changes for nested variogram models
   ## 2016-08-10 AP changes for isotropic variogram models
-  
+  ## 2017-12-23 AP improved memory management in parallel computations
+
   ## check consistency of arguments
   
   if( !is.null( gcr.constant ) ){
@@ -776,7 +777,7 @@ function(
       aniso           <- x[[i]][c("aniso", "sclmat", "rotmat")]
       gcr.constant    <- gcr.constant[[i]]
 
-      result <- list( error = TRUE )
+      result <- list( error = TRUE )      
       
       #       RFoptions(newAniso=FALSE) ## moved to georob.fit
         
@@ -800,7 +801,10 @@ function(
         
         ## auxiliary function to compute generalized correlations in parallel
         
-        f.aux <- function(i, s, e, lag.vectors, model.list ){
+        f.aux <- function( i ){
+          
+          ## objects s, e, lag.vectors, model.list taken from parent environment
+
           result <- try(
             -RFvariogram(
               x = lag.vectors[s[i]:e[i], ], model = model.list, 
@@ -835,10 +839,15 @@ function(
         
         ## auxiliary function to compute generalized correlations in parallel
         
-        f.aux <- function(i, s, e, lag.vectors, model.list ){
+        f.aux <- function( i ){
+          
+          ## objects s, e, lag.vectors, model.list taken from parent environment
           
           result <- try(
-            -RFvariogram( x = lag.vectors[s[i]:e[i]], model = model.list, grid = FALSE ),
+            -RFvariogram(
+              x = lag.vectors[s[i]:e[i]], model = model.list, 
+              grid = FALSE 
+            ),
             silent = TRUE
           )
           if( !(identical( class( result ), "try-error" ) || any( is.na( result ) )) ){
@@ -847,6 +856,7 @@ function(
             "RFvariogram.error"
           }
         }
+        
       }
               
       ## determine number of cores
@@ -863,21 +873,30 @@ function(
       e <- (1L:k) * dn
       e[k] <- n
       
+      ## set default value for control of forking if missing (required for backward compatibility)
+      
+      if( is.null( control.pcmp[["fork"]] ) ){
+        control.pcmp[["fork"]] <- !identical( .Platform[["OS.type"]], "windows" )
+      }
+      
       ## compute generalized correlations in parallel
 
-      if( ncores > 1L && identical( .Platform[["OS.type"]], "windows") ){
+      if( ncores > 1L && !control.pcmp[["fork"]] ){
 
         if( !sfIsRunning() ){
           options( error = f.stop.cluster )
+          
           junk <- sfInit( parallel = TRUE, cpus = ncores )
-          #         junk <- sfLibrary( RandomFields, verbose = FALSE )
+          
           junk <- sfLibrary( georob, verbose = FALSE )
-        }
+          #         junk <- sfLibrary( RandomFields, verbose = FALSE )
+          
+          junk <- sfExport( "s", "e", "lag.vectors", "model.list" )
+          
+         }
         
         
-        Valpha <- sfLapply(
-          1L:k, f.aux, s = s, e = e, lag.vectors = lag.vectors, model.list = model.list
-        )
+        Valpha <- sfLapply( 1L:k, f.aux )
         
         if( control.pcmp[["sfstop"]] ){
           junk <- sfStop()
@@ -886,10 +905,7 @@ function(
         
       } else {
         
-        Valpha <- mclapply(
-          1L:k, f.aux, s = s, e = e, lag.vectors = lag.vectors, model.list = model.list,
-          mc.cores = ncores
-        )
+        Valpha <- mclapply( 1L:k, f.aux, mc.cores = ncores )
         
       }
       
@@ -5821,14 +5837,17 @@ f.call.set_onefitxxx_to_value <- function( cl, nme, value, i = NULL ){
 
 ##  ####################
 
-## set all initial values of variogram parameters in call to fitted values 
+## set all initial values of variogram parameters in call to fitted values
+## and possibly update value for variogram.model
 
 f.call.set_allxxx_to_fitted_values <- function( object ){
 
   ## arguments
 
   ## object:   a georob object
-
+  
+  ## 2018-01-17 ap	also update of variogram.model
+  
   if( !identical( class(object), "georob" ) ) stop(
     "'object' must be of class 'georob'"
   )
@@ -5840,17 +5859,20 @@ f.call.set_allxxx_to_fitted_values <- function( object ){
     x <- as.list( cl )
 
     sel <- c(
+      grep( "^v", names(x), fixed = FALSE ),
       grep( "^p", names(x), fixed = FALSE ),
       grep( "^a", names(x), fixed = FALSE )
 
     )
 
+    variogram.model <- c( list(as.symbol("c")), as.list( object[["variogram.object"]][[1L]][["variogram.model"]] ))
     param <- c( list(as.symbol("c")), as.list( object[["variogram.object"]][[1L]][["param"]] ))
     aniso <- c( list(as.symbol("c")), as.list( object[["variogram.object"]][[1L]][["aniso"]] ))
 
     cl <- as.call(
       c(
         if( length(sel) ) x[-sel] else x,
+        list( variogram.model = as.call( variogram.model ) ),
         list( param = as.call( param ) ),
         list( aniso = as.call( aniso ) )
       )
@@ -5867,23 +5889,27 @@ f.call.set_allxxx_to_fitted_values <- function( object ){
 
         x <- as.list( x[[i]] )
         vo <- vo[[i]]
-
+        
         sel <- c(
+          grep( "^v", names(x), fixed = FALSE ),
           grep( "^p", names(x), fixed = FALSE ),
           grep( "^a", names(x), fixed = FALSE )
         )
-
+        
+        variogram.model <- c( list(as.symbol("c")), as.list( vo[["variogram.model"]] ))
         param <- c( list(as.symbol("c")), as.list( vo[["param"]] ))
         aniso <- c( list(as.symbol("c")), as.list( vo[["aniso"]] ))
-
+        
         as.call(
           c(
             if( length(sel) ) x[-sel] else x,
+            list( variogram.model = as.call( variogram.model )),
             list( param = as.call( param )),
             list( aniso = as.call( aniso ))
           )
         )
-      }, x <- as.list( cl.vo[-1L] ), vo = object[["variogram.object"]]
+                
+      }, x = as.list( cl.vo[-1L] ), vo = object[["variogram.object"]]
     )
 
     cl.vo.new <- as.call( c( as.list(cl.vo[1L]), as.list(tmp) ) )
@@ -5905,7 +5931,7 @@ f.call.set_onexxx_to_value <- function( cl, nme, value, i = NULL ){
   ## arguments
 
   ## cl:     a call to function georob
-  ## nme:    name of parameter that should be change
+  ## nme:    name of parameter that should be changed
   ## value:  new value for nme
   ## i:      index of variogram component for which parameter should be fixed
   

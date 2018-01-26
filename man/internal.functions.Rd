@@ -1,4 +1,4 @@
-% 2015-09-02 A. Papritz
+% 208-01-24 A. Papritz
 % R CMD Rdconv -t html -o bla.html internal.functions.Rd ; open bla.html; R CMD Rd2pdf --force internal.functions.Rd 
 \name{internal.functions}
 \alias{covariances.fixed.random.effects}
@@ -41,6 +41,7 @@
 % \alias{ppd.resp.rob}
 % \alias{qpd.resp.rob}
 \alias{safe_pchisq}
+\alias{simple.kriging.weights}
 % \alias{var.pd.resp.rob}
 \alias{update.zhat}
 
@@ -90,6 +91,7 @@ The unexported internal functions
     % \item{\code{ppd.resp.rob}}
     % \item{\code{qpd.resp.rob}}
     \item{\code{safe_pchisq}}
+    \item{\code{simple.kriging.weights}}
     % \item{\code{var.pd.resp.rob}}
     \item{\code{update.zhat}}
 }
@@ -111,13 +113,28 @@ the function \code{\link[robustbase]{lmrob}} of the package \pkg{robustbase}.}
 
 \seealso{
   \code{\link{georob}} for (robust) fitting of spatial linear models;
+  
   \code{\link{georobObject}} for a description of the class \code{georob};
+  
+  \code{\link{profilelogLik}} for computing profiles of Gaussian likelihoods;
+  
   \code{\link{plot.georob}} for display of (RE)ML variogram estimates;
+  
   \code{\link{control.georob}} for controlling the behaviour of \code{georob};
+  
   \code{\link{georobModelBuilding}} for stepwise building models of class \code{georob};
+  
   \code{\link{cv.georob}} for assessing the goodness of a fit by \code{georob}; 
-  \code{\link{predict.georob}} for computing robust Kriging predictions; and finally
+  
+  \code{\link{predict.georob}} for computing robust Kriging predictions; 
+  
+%  \code{\link{validate.predictions}} for validating Kriging predictions; 
+  
+  \code{\link{lgnpp}} for unbiased back-transformation of Kriging prediction 
+  of log-transformed data; and finally
+  
   \code{\link{georobMethods}} for further methods for the class \code{georob},
+  
   \code{\link{sample.variogram}} and \code{\link{fit.variogram.model}} 
   for robust estimation and modelling of sample variograms.
 }

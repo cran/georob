@@ -320,7 +320,9 @@ lgnpp(object, newdata, locations, is.block = FALSE, all.pred = NULL,
 
 \seealso{
   \code{\link{georobIntro}} for a description of the model and a brief summary of the algorithms; 
+  
   \code{\link{georob}} for (robust) fitting of spatial linear models;
+  
   \code{\link{predict.georob}} for computing robust Kriging predictions.
 }
 

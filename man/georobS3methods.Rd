@@ -2,13 +2,14 @@
 % R CMD Rdconv -t html -o bla.html S3methods.georob.Rd ; open bla.html; R CMD Rd2pdf --force S3methods.georob.Rd; 
 
 \encoding{macintosh}
-\name{georob-S3methods}
+\name{georobS3methods}
+\alias{georobS3methods}
+\alias{georobMethods}
 \alias{coef.georob}
 \alias{fixed.effects}
 \alias{fixed.effects.georob}
 \alias{fixef}
 \alias{fixef.georob}
-\alias{georobMethods}
 \alias{model.frame.georob}
 \alias{model.matrix.georob}
 \alias{nobs.georob}
@@ -33,7 +34,7 @@
   \code{nobs}, \code{print}, \code{ranef}, \code{random.effects},
   \code{resid}, \code{residuals}, \code{rstandard}, % \code{rstudent},
   \code{summary} and \code{vcov} for the class \code{georob} which extract
-  the respective components or summarize a \code{georob} object.  }
+  the respective components or summarize a \code{georob} object.}
 
 \usage{
 \method{coef}{georob}(object, what, ...)
@@ -153,10 +154,34 @@
 }
 
 \seealso{
-  \code{\link{georobIntro}} for a description of the model and a brief summary of the algorithms; 
+  \code{\link{georobIntro}} for a description of the model and a brief summary of the algorithms;
+  
   \code{\link{georob}} for (robust) fitting of spatial linear models;
+  
+  \code{\link{georobObject}} for a description of the class \code{georob};
+  
+  \code{\link{profilelogLik}} for computing profiles of Gaussian likelihoods;
+  
+  \code{\link{plot.georob}} for display of RE(ML) variogram estimates;
+  
+  \code{\link{control.georob}} for controlling the behaviour of \code{georob};
+  
   \code{\link{georobModelBuilding}} for stepwise building models of class \code{georob};
-  \code{\link{georobObject}} for a description of the class \code{georob}.
+  
+  \code{\link{cv.georob}} for assessing the goodness of a fit by \code{georob}; 
+%  \code{\link{georobMethods}} for further methods for the class \code{georob};
+  
+  \code{\link{predict.georob}} for computing robust Kriging predictions; 
+%  \code{\link{validate.predictions}} for validating Kriging predictions; 
+  
+  \code{\link{lgnpp}} for unbiased back-transformation of Kriging prediction 
+  of log-transformed data; 
+  
+  \code{\link{georobSimulation}} for simulating realizations of a Gaussian process
+  from model fitted by \code{georob}; and finally
+  
+  \code{\link{sample.variogram}} and \code{\link{fit.variogram.model}} 
+  for robust estimation and modelling of sample variograms.
 }
 
 \examples{

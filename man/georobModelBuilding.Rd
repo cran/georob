@@ -47,7 +47,7 @@ step(object, ...)
 
 \method{step}{georob}(object, scope, scale = 0, 
     direction = c("both", "backward", "forward"), trace = 1, 
-    keep = NULL, steps = 1000, k = 2, data = NULL, 
+    keep = NULL, steps = 1000, k = 2, 
     fixed.add1.drop1 = TRUE, fixed.step = fixed.add1.drop1,
     use.fitted.param = TRUE, verbose = 0, ncores = 1, ...)
 
@@ -138,6 +138,10 @@ step(object, ...)
 }
 \details{
 
+  \bold{Note} that \emph{the data frame passed as} \code{data}
+  \emph{argument to} \code{georob} \emph{must exist in the user workspace
+  when calling \code{step.georob}, \code{add1.georob} or \code{drop1.georob}}.  
+
   For a non-robust fit the  function \code{deviance} returns the residual deviance 
   \deqn{(\mbox{\boldmath $Y -X \widehat{\beta}$})^{\mathrm{T}}
     (\widehat{\tau}^2 \mbox{\boldmath$I$\unboldmath} + 
@@ -145,7 +149,7 @@ step(object, ...)
     (\mbox{\boldmath $Y -X \widehat{\beta}$})
     }{(Y - X hat\beta)^T(\tau^2 I + \Gamma_hat\theta)^{-1}(Y - X hat\beta)
   }
-  (see \code{\link{georob-package}} for an explanation of the notation). 
+  (see \code{\link{georobPackage}} for an explanation of the notation). 
   For a robust fit the deviance is not defined. The function then computes with a warning
   the deviance of an equivalent Gaussian model with heteroscedastic nugget 
   \eqn{\tau^2/\mbox{\boldmath $w$\unboldmath}}{\tau/w} where \eqn{\mbox{\boldmath $w$\unboldmath}}{w} are 
@@ -184,9 +188,33 @@ step(object, ...)
 
 \seealso{
   \code{\link{georobIntro}} for a description of the model and a brief summary of the algorithms; 
+  
   \code{\link{georob}} for (robust) fitting of spatial linear models;
+  
   \code{\link{georobObject}} for a description of the class \code{georob};
-  \code{\link{georobMethods}} for further methods for the class \code{georob}.
+  
+  \code{\link{profilelogLik}} for computing profiles of Gaussian likelihoods;
+  
+  \code{\link{plot.georob}} for display of RE(ML) variogram estimates;
+  
+  \code{\link{control.georob}} for controlling the behaviour of \code{georob};
+  
+%  \code{\link{georobModelBuilding}} for stepwise building models of class \code{georob};
+  \code{\link{cv.georob}} for assessing the goodness of a fit by \code{georob}; 
+  
+  \code{\link{georobMethods}} for further methods for the class \code{georob};
+  
+  \code{\link{predict.georob}} for computing robust Kriging predictions; 
+%  \code{\link{validate.predictions}} for validating Kriging predictions; 
+  
+  \code{\link{lgnpp}} for unbiased back-transformation of Kriging prediction 
+  of log-transformed data; 
+  
+  \code{\link{georobSimulation}} for simulating realizations of a Gaussian process
+  from model fitted by \code{georob}; and finally
+  
+  \code{\link{sample.variogram}} and \code{\link{fit.variogram.model}} 
+  for robust estimation and modelling of sample variograms.
 }
 
 \examples{

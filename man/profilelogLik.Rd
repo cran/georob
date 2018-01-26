@@ -50,10 +50,11 @@
   \emph{argument to} \code{georob} \emph{must exist in the user workspace
   when calling \code{profilelogLik}}.
   
-  \code{profilelogLik} uses the package \pkg{parallel} for
-  parallelized computation of the profile likelihood.  By default, the
-  function uses \code{NROW(values)} CPUs but not more than are physically
-  available (as returned by \code{\link[parallel]{detectCores}}).
+  \code{profilelogLik} uses the packages \pkg{parallel}, \pkg{snow} and
+  \pkg{snowfall} for parallelized computation of the profile
+  likelihood.  By default, the function uses \code{NROW(values)} CPUs but
+  not more than are physically available (as returned by
+  \code{\link[parallel]{detectCores}}).
   
   \code{profilelogLik} uses the function \code{\link[stats]{update}} to
   re-estimated the model with partly fixed variogram parameters.
@@ -72,14 +73,42 @@
   with the gradient of the (restricted) log-likelihood (or the roots of the
   estimating equations) and a column \code{converged}, indicating whether
   convergence has occurred \code{converged ==1} when fitting the respective
-  model.  }
+  model. 
+}
 
 \author{
   Andreas Papritz \email{andreas.papritz@env.ethz.ch}
 }
 
 \seealso{
-  \code{\link{georob}} for (robust) fitting of spatial linear models.
+  \code{\link{georobIntro}} for a description of the model and a brief summary of the algorithms;
+  
+  \code{\link{georob}} for (robust) fitting of spatial linear models;
+  
+  \code{\link{georobObject}} for a description of the class \code{georob};
+  
+%  \code{\link{profilelogLik}} for computing profiles of Gaussian likelihoods;  
+  \code{\link{plot.georob}} for display of RE(ML) variogram estimates;
+  
+  \code{\link{control.georob}} for controlling the behaviour of \code{georob};
+  
+  \code{\link{georobModelBuilding}} for stepwise building models of class \code{georob};
+  
+  \code{\link{cv.georob}} for assessing the goodness of a fit by \code{georob}; 
+  
+  \code{\link{georobMethods}} for further methods for the class \code{georob};
+  
+  \code{\link{predict.georob}} for computing robust Kriging predictions; 
+  
+%  \code{\link{validate.predictions}} for validating Kriging predictions; 
+  \code{\link{lgnpp}} for unbiased back-transformation of Kriging prediction 
+  of log-transformed data;
+  
+  \code{\link{georobSimulation}} for simulating realizations of a Gaussian process
+  from model fitted by \code{georob}; and finally
+  
+  \code{\link{sample.variogram}} and \code{\link{fit.variogram.model}} 
+  for robust estimation and modelling of sample variograms.
 }
 
 \examples{

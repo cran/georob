@@ -79,9 +79,10 @@ default.fit.aniso(f1 = FALSE, f2 = FALSE, omega = FALSE,
 }
 
 \seealso{
-  \code{\link{georobIntro}} for a description of the model and a brief
-  summary of the algorithms; \code{\link{georob}} for (robust) fitting of
-  spatial linear models.  }
+  \code{\link{georobIntro}} for a description of the model and a brief summary of the algorithms; 
+  
+  \code{\link{georob}} for (robust) fitting of spatial linear models.
+}
 
 \examples{
 default.aniso(f1 = 0.5, omega = 45)

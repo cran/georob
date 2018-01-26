@@ -1,17 +1,17 @@
-import( stats, parallel, sp )
+import( graphics, parallel, snowfall, sp, stats, utils )
 
+# importFrom( graphics, axis, hist, legend, lines, matplot, par, points, strheight, text)
+# importFrom( utils, combn)
+importFrom( abind, abind )
 importFrom( constrainedKriging, covmodel, f.point.block.cov, K, preCKrige )
 importFrom( fields, rdist )
-importFrom( graphics, axis, hist, legend, lines, matplot, par, points, strheight, text)
 importFrom( lmtest, waldtest, waldtest.default )
+importFrom( methods, slot)
 importFrom( nlme, fixef, fixed.effects, ranef, random.effects )
 importFrom( nleqslv, nleqslv )
 importFrom( quantreg, rq.fit )
-importFrom( snowfall, sfCpus, sfInit, sfLibrary, sfIsRunning, sfLapply, sfStop )
-importFrom( RandomFields, RFvariogram, RFoldstyle, RFoptions)
+importFrom( RandomFields, RFsimulate, RFvariogram, RFoldstyle, RFoptions)
 importFrom( robustbase, lmrob.control, lmrob.fit, Qn, robMD, summarizeRobWeights )
-importFrom( methods, slot)
-importFrom( utils, combn)
 # importFrom( nor1mix, norMix, pnorMix, qnorMix, var.norMix )
 
 # exported functions
@@ -19,6 +19,8 @@ importFrom( utils, combn)
 export(
   bwd.transf,                       # ok
   compress,                         # ok
+  condsim,                          # ok
+  control.condsim,                  # ok
   control.georob,                   # ok
   control.nleqslv,                  # ok
   control.nlminb,                   # ok
@@ -110,13 +112,21 @@ export(
 ## f.aux.Qstar
 ## f.aux.RSS
 ## f.aux.Valphaxi
-## f.aux.add1.drop1## f.aux.crpsnorm
+## f.aux.add1.drop1
+## f.aux.crpsnorm
 ## f.aux.eeq
 ## f.aux.gcr
 ## f.aux.gradient.nll
 ## f.aux.gradient.npll
 ## f.aux.print.gradient
-## f.aux.tf.param.fwd## f.call.set_allfitxxx_to_false## f.call.set_allxxx_to_fitted_values## f.call.set_onefitxxx_to_value## f.call.set_onexxx_to_value## f.call.set_x_to_value## f.call.set_x_to_value_in_fun## f.diag
+## f.aux.tf.param.fwd
+## f.call.set_allfitxxx_to_false
+## f.call.set_allxxx_to_fitted_values
+## f.call.set_onefitxxx_to_value
+## f.call.set_onexxx_to_value
+## f.call.set_x_to_value
+## f.call.set_x_to_value_in_fun
+## f.diag
 ## f.psi.function
 ## f.reparam.bkw
 ## f.reparam.fwd
@@ -131,6 +141,7 @@ export(
 ### ppd.resp.rob                       # currently not used
 ### qpd.resp.rob                       # currently not used
 ## safe_pchisq
+## simple.kriging.weights
 ### var.pd.resp.rob                    # currently not used
 ## update.zhat
 

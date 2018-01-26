@@ -35,6 +35,8 @@ function(
   terms = NULL, se.fit = TRUE,
   signif = 0.95,
   locations,
+  variogram.model = NULL, param = NULL, aniso = NULL,
+  variogram.object = NULL,
   control = control.predict.georob(),
   verbose = 0, ...
 )
@@ -83,6 +85,9 @@ function(
   ## 2016-07-27 AP correcting error when newdata is SpatialPoints, ...  objects
   ## 2016-08-11 AP changes for nested variogram models
   ## 2016-11-28 AP correcting error when computing predictions for intrinsic variograms
+  ## 2017-10-24 AP error message if names of coordinates in object and newdata are not the same
+  ## 2017-12-22 AP improved memory management in parallel computations
+  ## 2018-01-22 AP optional specification of new variogram model
 
 
 
@@ -93,6 +98,178 @@ function(
   ## match arguments
 
   type <- match.arg( type )
+  
+  ## setup or check contents of variogram.object
+  
+  if( !all( 
+      is.null(variogram.model), is.null(param),  is.null(aniso), 
+      is.null(variogram.object)
+    )
+  ){
+    
+    cl <- object[["call"]]
+    
+    if( is.null( variogram.object ) ){
+      
+      ## either variogram.model, param, or aniso have been specified
+           
+      if( "variogram.object" %in% names(cl) ) stop(
+        "variogram parameters were specified for 'object' as argument 'variogram.object'",
+        " --- specifiy new variogram model in the same way"
+      )
+      
+      if( !is.null(variogram.model) ){
+        variogram.model <- match.arg(
+          variogram.model,
+          c( "RMexp", "RMaskey", "RMbessel", "RMcauchy", 
+            "RMcircular", "RMcubic", "RMdagum", "RMdampedcos", "RMdewijsian", "RMfbm",
+            "RMgauss", "RMgencauchy", "RMgenfbm", "RMgengneiting", "RMgneiting", "RMlgd",
+            "RMmatern", "RMpenta", "RMqexp", "RMspheric", "RMstable",
+            "RMwave", "RMwhittle"
+          ) 
+        )
+      } else variogram.model <- object[["variogram.object"]][[1]][["variogram.model"]]
+              
+      ## match names of param, aniso
+      
+      if( !is.null(param) ){
+        if( is.numeric(param) ){
+          tmp <- names( param )
+          tmp <- sapply(tmp, function(x, choices){
+              match.arg(x, choices)
+            },
+            choices = names( default.fit.param() )
+          )
+          names( param ) <- nme.param <- tmp
+        } else stop( "'param' must be a numeric vector" )
+      } else param <- object[["variogram.object"]][[1]][["param"]]
+      
+      fit.param <- default.fit.param( variance = FALSE, nugget = FALSE, scale = FALSE )
+      
+      if( !is.null(aniso) ){
+        if( is.numeric(aniso) ){
+          tmp <- names( aniso )
+          tmp <- sapply(tmp, function(x, choices) match.arg(x, choices),
+            choices = names( default.aniso() )
+          )
+          names( aniso ) <- tmp
+        } else stop( "'aniso' must be a numeric vector" )
+      } else aniso <- object[["variogram.object"]][[1]][["aniso"]]
+      
+      fit.aniso <- default.fit.aniso()
+      
+      ## create variogram.object
+      
+      variogram.object <- list(
+        list(
+          variogram.model = variogram.model,
+          param = param, fit.param = fit.param,
+          aniso = aniso, fit.aniso = fit.aniso
+        )
+      )
+      
+    } else {
+      
+      ## variogram.object has been passed to function, check contents
+      
+      if( !"variogram.object" %in% names(cl) ) stop(
+        "variogram parameters were not specified for 'object' as argument 'variogram.object'",
+        " --- specifiy new variogram model in the same way"
+      )
+      
+      variogram.object <- lapply(
+        variogram.object,
+        function( y ){
+          
+          variogram.model <- y[["variogram.model"]]
+          param      <- y[["param"]]
+          aniso      <- y[["aniso"]]
+          
+          if( !is.null(variogram.model) ){
+            y[["variogram.model"]] <- match.arg(
+              variogram.model,
+              c( "RMexp", "RMaskey", "RMbessel", "RMcauchy", 
+                "RMcircular", "RMcubic", "RMdagum", "RMdampedcos", "RMdewijsian", "RMfbm",
+                "RMgauss", "RMgencauchy", "RMgenfbm", "RMgengneiting", "RMgneiting", "RMlgd",
+                "RMmatern", "RMpenta", "RMqexp", "RMspheric", "RMstable",
+                "RMwave", "RMwhittle"
+              ) 
+            )          
+          } else stop( "component 'variogram.model' missing in 'variogram.object'")
+          
+          ## match names of components
+          
+          nme.param <- NULL
+          
+          if( !is.null(param) ){
+            if( is.numeric(param) ){
+              tmp <- names( param )
+              tmp <- sapply(tmp, function(x, choices){
+                  match.arg(x, choices)
+                },
+                choices = names( default.fit.param() )
+              )
+              names( param ) <- nme.param <- tmp
+            } else stop( "'param' must be a numeric vector" )
+            y[["param"]] <- param
+          } else stop( "component 'param' missing in 'variogram.object'")
+          
+          y[["fit.param"]] <- default.fit.param( variance = FALSE, nugget = FALSE, scale = FALSE )
+                    
+          if( !is.null(aniso) ){
+            if( is.numeric(aniso) ) {
+              tmp <- names( aniso )
+              tmp <- sapply(tmp, function(x, choices) match.arg(x, choices),
+                choices = names( default.aniso() )
+              )
+              names( aniso ) <- tmp
+            } else stop( "'aniso' must be a numeric vector" )
+            y[["aniso"]] <- aniso
+          } else y[["aniso"]] <- default.aniso()
+          
+          y[["fit.aniso"]] <- default.fit.aniso()
+                    
+          y
+          
+        }
+      )
+    }
+    
+    ## replace variogram.object in object
+    
+    object[["variogram.object"]] <- variogram.object
+    
+    ## set all initial values to specified parameter values
+    
+    object[["call"]] <- f.call.set_allxxx_to_fitted_values( object )
+    
+    ## fix all variogram parameters
+    
+    cl <- object[["call"]]
+    
+    cl <- f.call.set_allfitxxx_to_false( cl )
+    
+    ## set hessian equal to FALSE and avoid computation of unneeded
+    ## covariance matrices
+    
+    cl <- f.call.set_x_to_value_in_fun( cl, "control", "control.georob", "hessian", FALSE )
+    cl <- f.call.set_x_to_value_in_fun( cl, "control", "control.georob", "cov.bhat", FALSE )
+    cl <- f.call.set_x_to_value_in_fun( cl, "control", "control.georob", "cov.ehat", FALSE )
+    cl <- f.call.set_x_to_value_in_fun( cl, "control", "control.georob", "cov.ehat.p.bhat", FALSE )
+    
+    ## set verbose argument
+    
+    cl <- f.call.set_x_to_value( cl, "verbose", 0 )
+    
+    ## update call in object
+    
+    object[["call"]] <- cl
+    
+    ## re-fit object
+    
+    object <- update( object )
+
+  }
 
   ## expand matrices
 
@@ -722,9 +899,13 @@ function(
     )
     
     if( !is.null( pred.coords ) &&
-      NCOL( locations.coords ) != NCOL( pred.coords )
+      !(
+        NCOL( locations.coords ) == NCOL( pred.coords ) &&
+        all( colnames( pred.coords ) == 
+          colnames(object[["locations.objects"]][["coordinates"]]) )
+      )
     ) stop(
-      "inconsistent number of coordinates in 'object' and in 'newdata'"
+      "inconsistent number and/or names of coordinates in 'object' and in 'newdata'"
     )
     
     ## number of items to predict
@@ -760,23 +941,38 @@ function(
     
     ## auxiliary function to compute the predictions for one part
     
-    f.aux <- function(
-      i,
-      rs, re, n.part,
-      type,
-      locations.coords, betahat, bhat, response,
-      #       rp.response, scld.res,
-      pred.X, pred.coords, offset, newdata, mf.newdata,
-      variogram.object, var.signal, xi, nugget, gcr.constant,
-      cov.delta.bhat.betahat.l, cov.betahat.l, cov.bhat.betahat, cov.p.t,
-      Valphaxi, Valphaxi.inverse,
-      pwidth, pheight, napp,
-      signif,
-      extended.output, full.covmat,
-      control.pcmp,
-      verbose
+    f.aux <- function( 
+      i
+#       rs, re, n.part,
+#       type,
+#       locations.coords, betahat, bhat, response,
+#       #       rp.response, scld.res,
+#       pred.X, pred.coords, offset, newdata, mf.newdata,
+#       variogram.object, var.signal, xi, nugget, gcr.constant,
+#       cov.delta.bhat.betahat.l, cov.betahat.l, cov.bhat.betahat, cov.p.t,
+#       Valphaxi, Valphaxi.inverse,
+#       pwidth, pheight, napp,
+#       signif,
+#       extended.output, full.covmat,
+#       control.pcmp,
+#       verbose
     ){
       
+      ## objects 
+      ##
+      ## rs, re, n.part, type, locations.coords,
+      ## betahat, bhat, response, variogram.object,
+      ## # rp.response, scld.res, 
+      ## pred.X, pred.coords, offset,
+      ## newdata, mf.newdata, var.signal, xi, nugget,
+      ## gcr.constant, cov.delta.bhat.betahat.l, cov.betahat.l,
+      ## cov.bhat.betahat, cov.p.t, 
+      ## Valphaxi, Valphaxi.inverse,
+      ## pwidth, pheight, napp, extended.output, full.covmat,
+      ## signif, control.pcmp, verbose
+      ##
+      ## are taken from parent enviroment
+            
       if( verbose > 0. )
       cat( "  predicting part ", i, " of ", n.part, "\n" )
       
@@ -823,62 +1019,70 @@ function(
       return( result )
     }
     
+    ## prepare items to pass to function f.aux
+    
+    betahat 					<- object[["coefficients"]]
+    bhat 							<- object[["bhat"]]
+    response 					<- model.response( model.frame( object ) )
+    variogram.object 	<- object[["variogram.object"]]
+    Valphaxi 					<- Valphaxi.objects[["Valphaxi"]]
+    Valphaxi.inverse 	<- Valphaxi.objects[["Valphaxi.inverse"]]
+    pwidth 						<- control[["pwidth"]]
+    pheight 					<- control[["pheight"]]
+    napp 							<- control[["napp"]]
+    extended.output 	<- control[["extended.output"]]
+    full.covmat 			<- control[["full.covmat"]]
+    
+  ## set default value for control of forking if missing (required for backward compatibility)
+  
+  if( is.null( control[["pcmp"]][["fork"]] ) ){
+    control[["pcmp"]][["fork"]] <- !identical( .Platform[["OS.type"]], "windows" )
+  }
     ## compute the predictions for all the parts
     
-    if( .Platform[["OS.type"]] == "windows"  && ncores > 1L ){
+    if( ncores > 1L && !control[["pcmp"]][["fork"]] ){
       
       ## create a SNOW cluster on windows OS
       
-      cl <- makePSOCKcluster( ncores, outfile =  "" )
+      clstr <- makeCluster( ncores, type = "SOCK")
+      save( clstr, file = "SOCKcluster.RData" )
+      options( error = f.stop.cluster )
       
       ## export required items to workers
       
-      #         junk <- clusterExport(
-      #           cl,
-      #           c( "pcmp", "RFoptions", "RFvariogram", "f.stop.cluster" )
-      #         )
-      #         junk <- clusterEvalQ( cl, require( snowfall, quietly = TRUE ) )
-      junk <- clusterEvalQ( cl, require( georob, quietly = TRUE ) )
+      junk <- clusterEvalQ( clstr, require( georob, quietly = TRUE ) )
       
-      save( cl, file = "SOCKcluster.RData" )
-      options( error = f.stop.cluster )
+      junk <- clusterExport( 
+        clstr, 
+        c( "rs", "re", "n.part",
+          "type",
+          "locations.coords", 
+          "betahat", "bhat", "response", "variogram.object",
+          #       "rp.response", "scld.res",
+          "pred.X", "pred.coords", "offset", "newdata", "mf.newdata",
+          "var.signal", "xi", "nugget", "gcr.constant",
+          "cov.delta.bhat.betahat.l", "cov.betahat.l", "cov.bhat.betahat", "cov.p.t",
+          "Valphaxi", "Valphaxi.inverse",
+          "pwidth", "pheight", "napp", "extended.output", "full.covmat",
+          "signif",
+          "control.pcmp",
+          "verbose" ), 
+        envir = environment()
+      )
+      
       
       t.result <- try(
         parLapply(
-          cl,
+          clstr,
           1L:n.part,
-          f.aux,
-          rs = rs, re = re, n.part = n.part,
-          type = type,
-          locations.coords = locations.coords,
-          betahat = object[["coefficients"]],
-          bhat = object[["bhat"]],
-          response = model.response( model.frame( object ) ),
-          #           rp.response = rp.response,
-          #           scld.res = scld.res,
-          pred.X = pred.X, pred.coords = pred.coords, offset = offset,
-          newdata = newdata, mf.newdata = mf.newdata,
-          variogram.object = object[["variogram.object"]],
-          var.signal = var.signal, xi = xi, nugget = nugget, gcr.constant = gcr.constant,
-          cov.delta.bhat.betahat.l = cov.delta.bhat.betahat.l,
-          cov.betahat.l = cov.betahat.l,
-          cov.bhat.betahat = cov.bhat.betahat,
-          cov.p.t = cov.p.t,
-          Valphaxi = Valphaxi.objects[["Valphaxi"]],
-          Valphaxi.inverse = Valphaxi.objects[["Valphaxi.inverse"]],
-          pwidth = control[["pwidth"]], pheight = control[["pheight"]], napp = control[["napp"]],
-          signif = signif,
-          extended.output = control[["extended.output"]],
-          full.covmat = control[["full.covmat"]],
-          control.pcmp = control.pcmp,
-          verbose = verbose
+          f.aux
         )
       )
       
-      f.stop.cluster( cl )
+      f.stop.cluster( clstr )
       
-      #         junk <- parLapply( cl, 1L:length(cl), function( i ) sfStop() )
-      #         junk <- stopCluster( cl )
+      #         junk <- parLapply( clstr, 1L:length(clstr), function( i ) sfStop() )
+      #         junk <- stopCluster( clstr )
       #         if( file.exists( "SOCKcluster.RData" ) ){
       #           file.remove( "SOCKcluster.RData" )
       #         }
@@ -892,30 +1096,6 @@ function(
         mclapply(
           1L:n.part,
           f.aux,
-          rs = rs, re = re, n.part = n.part,
-          type = type,
-          locations.coords = locations.coords,
-          betahat = object[["coefficients"]],
-          bhat = object[["bhat"]],
-          response = model.response( model.frame( object ) ),
-          #           rp.response = rp.response,
-          #           scld.res = scld.res,
-          pred.X = pred.X, pred.coords = pred.coords, offset = offset,
-          newdata = newdata, mf.newdata = mf.newdata,
-          variogram.object = object[["variogram.object"]],
-          var.signal = var.signal, xi = xi, nugget = nugget, gcr.constant = gcr.constant,
-          cov.delta.bhat.betahat.l = cov.delta.bhat.betahat.l,
-          cov.betahat.l = cov.betahat.l,
-          cov.bhat.betahat = cov.bhat.betahat,
-          cov.p.t = cov.p.t,
-          Valphaxi = Valphaxi.objects[["Valphaxi"]],
-          Valphaxi.inverse = Valphaxi.objects[["Valphaxi.inverse"]],
-          pwidth = control[["pwidth"]], pheight = control[["pheight"]], napp = control[["napp"]],
-          signif = signif,
-          extended.output = control[["extended.output"]],
-          full.covmat = control[["full.covmat"]],
-          control.pcmp = control.pcmp,
-          verbose = verbose,
           mc.cores = ncores,
           mc.allow.recursive = control.pcmp[["allow.recursive"]]
         )
@@ -934,8 +1114,14 @@ function(
       stop()
     }
     
+    ## delete items
+    rm(
+      betahat, bhat, response, variogram.object, Valphaxi,
+      Valphaxi.inverse, pwidth, pheight, napp, extended.output, full.covmat 
+    )
+    
     ## collect results of the various parts into a single list
-
+    
     result <- t.result[[1L]]
     if( length( t.result ) > 1L ){
       for( i in 2L:length( t.result ) ) {
@@ -1060,7 +1246,7 @@ function(
 
 ##  ###########################################################################
 
-## auxiliary function for computing robust kriging predictions for a part
+## auxiliary function for computing robust kriging predictions for a set
 ## of prediction targets
 
 f.robust.uk <- function(
@@ -1121,7 +1307,7 @@ f.robust.uk <- function(
         
         ## point kriging
         
-        ## generalized (co-)variance (matrix) of target prediction points
+        ## generalized (co-)variance (matrix) of signal at prediction points
         
         if( full.covmat && NROW( pred.coords[!ex, , drop = FALSE ] ) > 1L ){
                     
@@ -1218,7 +1404,7 @@ f.robust.uk <- function(
           )
         )
         
-        ## add spatial nugget is prediction and support locations coincides
+        ## add spatial nugget if prediction and support locations coincides
         
         if( sum(xi) < 1. ){
           if( NCOL(lag.vectors) > 1L ){
@@ -1625,6 +1811,678 @@ f.robust.uk <- function(
   return( result )
   ## end robust.uk
 }
+
+##  ###########################################################################
+
+simple.kriging.weights <- function(
+  pred.coords, newdata = NULL, 
+  object = NULL, 
+  support.coords, locations, variogram.object,  
+  type = c("response", "signal"),
+  covariances = FALSE,
+  control = control.predict.georob(),
+  verbose = 0, ...
+)
+{
+
+  ## simplified version of predict.georob that computes only the simple
+  ## kriging weights
+  
+  ## 2018-01-22 A. Papritz
+  
+  
+  ##  ###########################################################################
+  
+  ## auxiliary function for computing generalized covariances between
+  ## prediction targets and support data
+  
+  f.gamma <- function(
+    type, 
+    support.coords, pred.coords, newdata,
+    variogram.object, var.signal, xi, nugget, gcr.constant,
+    pwidth, pheight, napp,
+    control.pcmp, verbose
+  ){
+    
+    ## simplified version of f.robust.uk that returns a list with the
+    ## simple kriging weights (gammaVi) and the variances of the prediction
+    ## targets (t.var.target) (both are computed as in f.robust.uk)
+    
+    ## 2018-01-22 A. Papritz
+    
+    ## exclude prediction items with missing information
+    
+    if( !is.null( pred.coords ) ){						  # point kriging
+      
+      n <- NROW(pred.coords)
+      ex <- attr( na.omit( pred.coords ), "na.action" )
+      if(length(ex)){
+        ex <- ( 1L:n ) %in% sort( ex )
+      } else {
+        ex <- rep( FALSE, n )	
+      }
+      
+      
+    } else {
+      
+      n <- NROW(newdata)
+      ex <- rep( FALSE, n )											# block kriging
+      
+    }
+    
+    if( any( !ex ) ){
+      
+      if( !is.null( pred.coords ) ){ 
+        
+        ## point kriging
+        
+        ## generalized covariance matrix between prediction and support
+        ## points
+        
+        if( !all( sapply( variogram.object, function(x) x[["isotropic"]] ) ) ){
+          indices.pairs <- expand.grid( 
+            1L:NROW( pred.coords[!ex, , drop = FALSE ] ),
+            1L:NROW( support.coords )
+          )
+          lag.vectors <- (pred.coords[!ex, , drop = FALSE ])[ indices.pairs[, 1L], ] - 
+          support.coords[ indices.pairs[, 2L], ] 
+        } else {
+          lag.vectors <- as.vector( rdist( pred.coords[!ex, , drop = FALSE ], support.coords ) )
+        }
+        attr( lag.vectors, "ndim.coords" ) <- NCOL(pred.coords[!ex, , drop = FALSE ])
+        
+        ## functions of version 3 of RandomFields
+        
+        Valpha <-  f.aux.gcr(
+          lag.vectors = lag.vectors, 
+          variogram.object = variogram.object,
+          gcr.constant = gcr.constant,
+          symmetric = FALSE,
+          control.pcmp = control.pcmp, 
+          verbose = verbose
+        )
+        
+        if( any( sapply( Valpha, function(x) x[["error"]] ) ) ) stop(
+          "an error occurred when computing semivariances between support ",
+          "and prediction points"
+        )
+        
+        gamma <- rowSums(
+          sapply(
+            1L:length(Valpha),
+            function( i, x, xi ){
+              xi[i] * x[[i]][["Valpha"]]
+            }, x = Valpha, xi = xi
+          )
+        )
+        
+        ## add spatial nugget if prediction and support locations coincides
+        
+        if( sum(xi) < 1. ){
+          if( NCOL(lag.vectors) > 1L ){
+            sel <- abs( rowSums(lag.vectors) ) < control.georob()[["zero.dist"]]
+          } else {
+            sel <- lag.vectors < control.georob()[["zero.dist"]]
+          }
+          gamma[sel] <- gamma[sel] + (1. - sum(xi) )
+        }
+        
+        gamma <- var.signal * gamma
+        
+        ## add nugget for prediction points that match a support point if
+        ## weights are computed for response
+        
+        if( identical( type, "response" ) ){ 
+          if( NCOL(lag.vectors) > 1L ){
+            sel <- abs( rowSums(lag.vectors) ) < control.georob()[["zero.dist"]]
+          } else {
+            sel <- lag.vectors < control.georob()[["zero.dist"]]
+          }
+          gamma[sel] <- gamma[sel] + unname( nugget )
+        }
+        
+        ## convert to matrix
+        
+        gamma <- matrix( gamma, nrow = NROW( pred.coords[!ex, , drop = FALSE ] ) )
+        
+      } else {
+        
+        ## block kriging
+        
+        ## construct covmodel
+        
+        tmp <- lapply(
+          1L:length(variogram.object),
+          function(i, x, type){
+            
+            variogram.model.v2 <- x[[i]][["variogram.model.v2"]]
+            param              <- x[[i]][["param"]]
+            
+            ## setup covariance model list
+            
+            t.covmodel <- covmodel(
+              modelname = variogram.model.v2,
+              mev = switch(
+                type,
+                response = 0.,
+                signal = unname( if( identical(i, 1L) ) param["nugget"] else 0. )
+              ),
+              nugget = switch(
+                type,
+                response = unname( if( identical(i, 1L) ) sum( param[c("snugget", "nugget")] ) else 0. ),
+                signal = unname( if( identical(i, 1L) ) param["snugget"] else 0. )
+              ),
+              variance = unname( param["variance"] ),
+              scale = unname( param["scale"] ),
+              parameter = unname( 
+                if( length(param) > 4L-(i-1L)*2L ){
+                  param[-(1:(4L-(i-1L)*2L))]
+                } else {
+                  NULL
+                }
+              )
+            )
+          }, x = variogram.object, type = type
+        )
+        
+        t.covmodel <- tmp[[1]]
+        if( length(tmp) > 1L ){
+          for( i in 2L:length(tmp) ) t.covmodel <- c( t.covmodel, tmp[[i]] )
+        }
+        class(t.covmodel) <- class(tmp[[1]])
+        
+        ## variances of the prediction blocks
+        
+        t.preCKrige <- preCKrige(
+          newdata = newdata[!ex, , drop = FALSE ], 
+          model = t.covmodel,
+          pwidth = pwidth, pheight = pheight, napp = napp
+        )
+        t.var.target <- sapply( 
+          t.preCKrige@covmat,
+          function( x ) c( x )
+        )      
+        
+        ## get rid of mev component in covariance model list
+        
+        t.covmodel <- t.preCKrige@model[
+        unlist( 
+          lapply( 
+            1L:length(t.preCKrige@model), 
+            function( i, m ){
+              m[[i]][["model"]] != "mev"
+            }, 
+            m = t.preCKrige@model
+          )
+        )
+        ]
+        
+        ## covariances between the support points and the prediction
+        ## blocks
+        
+        gamma <- t( 
+          sapply(
+            t.preCKrige@pixconfig,
+            function( x, locations, model ){
+              f.point.block.cov(
+                pixconfig = x,
+                locations = locations,
+                model = model
+              )
+            },
+            locations = support.coords,
+            model = t.covmodel
+          )
+        )
+        
+      }  ## end of block krighing
+      
+      
+    } else {
+      
+      gamma <- NULL
+      
+    }
+    
+    ## add items with missing information back
+    
+    sr <- (1L:n)[!ex]
+    
+    result <- matrix( rep( NA_real_, n * NCOL(gamma) ), nrow = n )
+    if( length(sr) ) result[sr, ] <- gamma  
+    
+    return( result ) 
+    
+  }
+  
+  ##  ##############################################################################
+
+  ## begin of main body of function
+  
+  RFoptions(newAniso=FALSE)
+  
+  ## match arguments
+
+  type <- match.arg( type )
+  
+  ## mandatory argument
+  
+  if( is.null(newdata) && missing(pred.coords) ) stop( 
+    "either 'newdata' or 'pred.coords' must be specified"
+  )
+  
+
+  ## compute coordinates and generalized covariance matrix of support data
+  ## if object is missing
+
+  if( is.null(object) ){
+    
+    ## compute required items because object is missing
+    
+    if( missing(support.coords) || missing(locations) || missing(variogram.object) ) stop( 
+      "some mandatory arguments are missing" 
+    )
+    
+    ## signal variance, xi, nugget
+    
+    tmp <- f.reparam.fwd( variogram.object )
+    
+    var.signal <- attr(tmp, "var.signal" )
+    xi <- sapply( tmp, function(x) x[["param"]]["variance"] )
+    nugget <- variogram.object[[1L]][["param"]]["nugget"]
+    
+    ## lag vectors
+    
+    isotropic <- all( sapply(variogram.object, function(x) x[["isotropic"]] ) )
+    
+    if( !isotropic ){
+      i.pairs <- combn( NROW( support.coords ), 2L )
+      lag.vectors <- support.coords[ i.pairs[2L,], ] - support.coords[ i.pairs[1L,], ]
+    } else {
+      lag.vectors <- as.vector( dist( support.coords ) )
+    }
+    attr( lag.vectors, "ndim.coords" ) <- NCOL(support.coords)
+    
+    ## compute generalized covariance matrix of support data
+    
+    Valpha <- f.aux.gcr(
+      lag.vectors = lag.vectors, 
+      variogram.object = variogram.object,
+      control.pcmp = control[["pcmp"]],
+      verbose = verbose
+    )
+    
+    if( any( sapply( Valpha, function(x) x[["error"]] ) ) ) stop(
+      "an error occurred when computing semivariances between prediction points"          
+    )
+    
+    gcvmat <- list(
+      diag = var.signal * rowSums(
+        sapply(
+          1L:length(Valpha),
+          function( i, x, xi ){
+            xi[i] * x[[i]][["Valpha"]][["diag"]]
+          }, x = Valpha, xi = xi
+        )
+      ) + ( 1. - sum(xi) ) + nugget,
+      tri = var.signal * rowSums(
+        sapply(
+          1L:length(Valpha),
+          function( i, x, xi ){
+            xi[i] * x[[i]][["Valpha"]][["tri"]]
+          }, x = Valpha, xi = xi
+        )
+      )
+    )
+    attr( gcvmat, "struc" ) <- "sym"
+    
+    gcvmat <- expand( gcvmat )
+    
+    ## extract gcr.constant
+    
+    gcr.constant <- lapply( 
+      Valpha,
+      function(x) x[["gcr.constant"]]
+    )
+    
+  } else {
+    
+    ## get required items from object
+    
+    ## coordinates and formula for locations
+    
+    support.coords <- object[["locations.objects"]][["coordinates"]][!duplicated( object[["Tmat"]] ), , drop = FALSE]
+    
+    if( missing( locations ) ){
+      locations <-  object[["locations.objects"]][["locations"]]
+    }
+    
+    ## signal variance, xi, nugget and gcr.constant
+    
+    variogram.object  <- object[["variogram.object"]]
+    
+    tmp <- f.reparam.fwd( variogram.object )
+    
+    var.signal <- attr(tmp, "var.signal" )
+    xi <- sapply( tmp, function(x) x[["param"]]["variance"] )
+    
+    nugget <- variogram.object[[1L]][["param"]]["nugget"]
+    
+    ## generalized covariance matrix of support data
+    
+    Valphaxi.objects  <- expand( object[["Valphaxi.objects"]] )
+    
+    gcvmat <- var.signal * Valphaxi.objects[["Valphaxi"]]
+    diag( gcvmat ) <- diag( gcvmat ) + unname(nugget)
+    attr( gcvmat, "struc" ) <- "sym"
+    
+    ## gcr.constant
+    
+    gcr.constant <- lapply( 
+      Valphaxi.objects[["Valpha"]],
+      function(x) x[["gcr.constant"]]
+    )
+    
+  }
+  
+  ## inverse generalized covariance matrix of support data
+  
+  gcvmat.inverse <- try( chol2inv( chol( gcvmat ) ) )
+  if( identical( class(gcvmat.inverse), "try-error" ) ) stop( 
+    "an error occurred when computing the inverse generalized covariance matrix of the data"
+  )
+  attr( gcvmat.inverse, "struc" ) <- "sym"
+  
+
+  ## prepare items for block kriging
+
+  if( !missing( newdata ) && class( newdata ) == "SpatialPolygonsDataFrame" ){
+    
+    ## check whether pwidth and pheight were provided
+
+    if( is.null( control[["pwidth"]] ) || is.null( control[["pheight"]] ) ) stop(
+      "'pwidth' and 'pheight' must be provided for block kriging"
+    )
+    
+    ## map names of variogram models of RandomFields version 3 to version 2
+    
+    variogram.object <- lapply(
+      variogram.object,
+      function(x){
+
+        variogram.model <- x[["variogram.model"]]
+        isotropic <- x[["isotropic"]]
+        param <- x[["param"]]
+        
+        if( variogram.model %in% control.georob()[["irf.models"]] ) stop(
+          "block kriging not yet implemented for unbounded variogram models"
+        )
+        if( !isotropic ) stop(
+          "block kriging not yet implemented for anisotropic variograms"
+        )
+
+        variogram.model.v2 <- gsub("^RM", "", variogram.model )
+        
+        variogram.model.v2 <- switch(
+          variogram.model.v2,
+          askey = stop(
+            "variogram model 'RMaskey' not implemented in package constrainedKriging"
+          ),
+          dagum = stop(
+            "variogram model 'RMdagum' not implemented in package constrainedKriging"
+          ),
+          dewijsian = stop(
+            "variogram model 'RMdewijsian' not implemented in package constrainedKriging"
+          ),
+          fbm = stop(
+            "variogram model 'RMfbm' not implemented in package constrainedKriging"
+          ),
+          genfbm = stop(
+            "variogram model 'RMgenfbm' not implemented in package constrainedKriging"
+          ),
+          dampedcos = "dampedcosine",
+          exp = "exponential",
+          lgd = "lgd1",
+          qexp = "qexponential",
+          spheric = "spherical",
+          variogram.model.v2
+        )
+        
+        if( identical( variogram.model.v2, "gengneiting" ) ) param[6L] <- sum( param[5L:6L] ) + 0.5
+        
+        x[["variogram.model.v2"]] <- variogram.model.v2
+        x[["param"]] <- param
+        
+        x
+        
+      }
+    )
+
+  }
+    
+
+  ## compute generalized covariance matrix between prediction and support sites
+  
+  Terms.loc <- terms( locations )
+  attr( Terms.loc, "intercept" ) <- 0
+    
+  ## get coordinates of prediction sites from newdata if missing
+  
+  if( missing(pred.coords) ){
+    
+    pred.coords <- switch(
+      class( newdata ),
+      "data.frame" = model.matrix(
+        Terms.loc,
+        model.frame(
+          Terms.loc, newdata, na.action = na.pass
+        )
+      ),
+      "SpatialPoints" = ,
+      "SpatialPixels" = ,
+      "SpatialGrid" = ,
+      "SpatialPointsDataFrame" = ,
+      "SpatialPixelsDataFrame" = ,
+      "SpatialGridDataFrame" = coordinates( newdata ),
+      "SpatialPolygonsDataFrame" = NULL
+    )
+    
+  } else {
+
+    if(!(
+        NCOL( support.coords ) == NCOL( pred.coords ) &&
+        all( colnames( pred.coords ) == 
+          colnames( support.coords ) )
+      )
+    ) stop(
+      "inconsistent number and/or names of coordinates in 'object' and in 'newdata' or 'pred.coords'"
+    )
+    
+  }
+  
+       
+  ## number of items to predict
+  
+  if( !is.null( pred.coords ) ){
+    m <- NROW( pred.coords )
+  } else {
+    m <- NROW( newdata )    
+  }
+  
+  
+  ## determine number of prediction parts
+  
+  n.part <- ceiling( m / control[["mmax"]] )
+  rs <- ( 0L:(n.part-1L)) * control[["mmax"]] + 1L
+  re <- ( 1L:(n.part  )) * control[["mmax"]]; re[n.part] <- m
+  
+  ncores <- min( n.part, control[["ncores"]] )
+  
+  ncores.available <- control[["pcmp"]][["max.ncores"]]
+  if( sfIsRunning() ) sfStop()
+  
+  control.pcmp <- control[["pcmp"]]
+  control.pcmp[["pmm.ncores"]] <- min(
+    control.pcmp[["pmm.ncores"]],
+    max( 1L, floor( (ncores.available - ncores) / ncores ) )
+  )
+  if( ncores > 1L && !control.pcmp[["allow.recursive"]] ) control.pcmp[["pmm.ncores"]] <- 1L
+  
+  if( control[["full.covmat"]] && n.part > 1L ) stop(
+    "full covariance matrix of prediction errors cannot ",
+    "be computed\n  if prediction problem is split into several parts\n",
+    "-> increase 'mmax' to avoid splitting"
+  )
+  
+  
+  ## handle parallel processing
+  
+  ## auxiliary function to compute the predictions for one part
+  
+  f.aux <- function( i ){
+    
+    ## objects 
+    ##
+    ##       rs, re, n.part,
+    ##       type,
+    ##       support.coords, pred.coords, newdata,
+    ##       variogram.object, var.signal, xi, nugget, gcr.constant,
+    ##       pwidth, pheight, napp,
+    ##       control.pcmp, verbose
+    ##
+    ## are taken from parent enviroment
+    
+    if( verbose > 0. )
+    cat( "  predicting part ", i, " of ", n.part, "\n" )
+    
+    ## select the data for the current part
+    
+    if( !is.null( pred.coords ) ) {
+      pred.coords <- pred.coords[ rs[i]:re[i], , drop = FALSE]
+    } else {
+      newdata <- newdata[ rs[i]:re[i], ]
+    }
+    
+    ## compute simple kriging weights for the current part
+    
+    result <- f.gamma(
+      type = type, 
+      support.coords = support.coords, pred.coords = pred.coords, newdata = newdata,
+      variogram.object = variogram.object, var.signal = var.signal,
+      xi = xi, nugget = nugget, gcr.constant = gcr.constant,
+      pwidth = pwidth, pheight = pheight, napp = napp,
+      control.pcmp = control.pcmp,
+      verbose = verbose
+    )
+    
+    return( result )
+    
+  }
+  
+  ## prepare items to pass to function f.aux
+  
+  pwidth 						<- control[["pwidth"]]
+  pheight 					<- control[["pheight"]]
+  napp 							<- control[["napp"]]
+  
+  ## set default value for control of forking if missing (required for backward compatibility)
+  
+  if( is.null( control[["pcmp"]][["fork"]] ) ){
+    control[["pcmp"]][["fork"]] <- !identical( .Platform[["OS.type"]], "windows" )
+  }
+  ## compute the predictions for all the parts
+  
+  if( ncores > 1L && !control[["pcmp"]][["fork"]] ){
+    
+    ## create a SNOW cluster on windows OS
+    
+    clstr <- makeCluster( ncores, type = "SOCK")
+    save( clstr, file = "SOCKcluster.RData" )
+    options( error = f.stop.cluster )
+    
+    ## export required items to workers
+    
+    junk <- clusterEvalQ( clstr, require( georob, quietly = TRUE ) )
+    
+    junk <- clusterExport( 
+      clstr, 
+      c( 
+        "rs", "re", "n.part",
+        "type",
+        "support.coords",  
+        "pred.coords", "newdata", 
+        "variogram.object", "var.signal", 
+        "xi", "nugget", "gcr.constant",
+        "pwidth", "pheight", "napp", 
+        "control.pcmp",  "verbose"
+      ), 
+      envir = environment()
+    )
+    
+    
+    t.result <- try(
+      parLapply(
+        clstr,
+        1L:n.part,
+        f.aux
+      )
+    )
+    
+    f.stop.cluster( clstr )
+        
+  } else {
+    
+    ## fork child processes on non-windows OS
+    
+    t.result <- try(
+      mclapply(
+        1L:n.part,
+        f.aux,
+        mc.cores = ncores,
+        mc.allow.recursive = control.pcmp[["allow.recursive"]]
+      )
+    )
+    
+  }
+  
+  has.error <- sapply(
+    t.result, function( x ) identical( class(x), "try-error" )
+  )
+  
+  if( any( has.error ) ){
+    cat( "\nerror(s) occurred when computing kriging predictions in parallel:\n\n" )
+    sapply( t.result[has.error], cat)
+    cat( "\nuse 'ncores=1' and 'verbose = 1' to avoid parallel computations and to see where problem occurs\n\n" )
+    stop()
+  }
+    
+  ## collect results of the various parts into a matrix
+  
+  gcvmat.pred <- t.result[[1L]]
+  if( length( t.result ) > 1L ){
+    for( i in 2L:length( t.result ) ) {
+      gcvmat.pred <- rbind( gcvmat.pred, t.result[[i]] )
+    }
+  }
+  
+  result <- pmm( gcvmat.pred, gcvmat.inverse, control = control[["pcmp"]] )
+ 
+  if( covariances ){
+    result <- list( 
+      gcvmat = gcvmat,
+      gcvmat.inverse = gcvmat.inverse,
+      gcvmat.pred = gcvmat.pred,
+      skw = result
+    )
+    result <- compress( result )
+  }
+  
+  invisible( result )
+
+}
+
+
+
 
 # ##  ###########################################################################
 #
