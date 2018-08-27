@@ -1186,7 +1186,7 @@ safe_pchisq <- function(q, df, ...)
 ## ##############################################################################
 
 add1.georob <- function( object, scope, scale = 0, test=c("none", "Chisq"),
-  k = 2, trace = FALSE, data = NULL, fixed = TRUE, use.fitted.param = TRUE, verbose = 0, 
+  k = 2, trace = FALSE, fixed = TRUE, use.fitted.param = TRUE, verbose = 0, 
   ncores = 1, ... )
 {
   
@@ -1204,12 +1204,13 @@ add1.georob <- function( object, scope, scale = 0, test=c("none", "Chisq"),
   ## 2016-08-09 AP changes for nested variogram models
   ## 2018-01-05 AP improved memory management in parallel computations
   ##							 improved error handling during parallel computations
+  ## 2018-08-27 AP elimination of data argument
     
   ## auxiliary function for fitting model and extracting aic by add1 and drop1
   
   f.aux.add1.drop1 <- function( tt, change, scale, trace, ... ){
       
-    ## objects object, ..data.., k, n0, verbose are taken from parent environment
+    ## objects object, k, n0, verbose are taken from parent environment
     
     if(trace > 1.) {
       cat( paste( "\ntrying ", change, sep="" ), tt, "\n", sep = "")
@@ -1217,7 +1218,7 @@ add1.georob <- function( object, scope, scale = 0, test=c("none", "Chisq"),
     }
     
     nfit <- update( 
-      object, as.formula(paste("~ .", change, tt)),  data = ..data..,
+      object, as.formula(paste("~ .", change, tt)), 
       verbose = verbose, object. = object
     )
     
@@ -1254,34 +1255,6 @@ add1.georob <- function( object, scope, scale = 0, test=c("none", "Chisq"),
   if( !is.character( scope ) ) scope <- add.scope( object, update.formula(object, scope) )
   if( !length(scope)) stop( "no terms in scope for adding to object" )
   
-  ## get data.frame with required variables (note that the data.frame passed
-  ## as data argument to georob must exist in GlobalEnv)
-  
-  if( is.null( data ) ){
-    
-    frmla <- update.formula( 
-      formula( object ),
-      as.formula( paste( "~ . + ", paste(scope, collapse = " + ") ) )
-    )
-    
-    ..data.. <- cbind(
-      get_all_vars(
-        frmla, data = eval( getCall(object)[["data"]] )
-      ),
-      get_all_vars(
-        object[["locations.objects"]][["locations"]], eval( getCall(object)[["data"]] )
-      )
-    )
-    
-    if( identical( class( object[["na.action"]] ), "omit" ) ) ..data.. <- na.omit(..data..)
-    
-  } else {
-    
-    ..data.. <- data
-  
-  }
-
-
   ## manipulate call
   
   cl <- object[["call"]]
@@ -1384,7 +1357,7 @@ add1.georob <- function( object, scope, scale = 0, test=c("none", "Chisq"),
     
     junk <- clusterEvalQ( clstr, require( georob, quietly = TRUE ) )
     junk <- clusterExport( 
-      clstr, c( "object", "..data..", "k", "n0", "verbose" ), envir =  environment() 
+      clstr, c( "object", "k", "n0", "verbose" ), envir =  environment() 
     )
     
     result <- parLapply(
@@ -1460,7 +1433,7 @@ add1.georob <- function( object, scope, scale = 0, test=c("none", "Chisq"),
 ## ##############################################################################
 
 drop1.georob <- function( object, scope, scale = 0, test=c( "none", "Chisq" ),
-  k = 2, trace = FALSE, data = NULL, fixed = TRUE, use.fitted.param = TRUE, verbose = 0, 
+  k = 2, trace = FALSE, fixed = TRUE, use.fitted.param = TRUE, verbose = 0, 
   ncores = 1, ... )
 {
   
@@ -1478,12 +1451,13 @@ drop1.georob <- function( object, scope, scale = 0, test=c( "none", "Chisq" ),
   ## 2016-08-09 AP changes for nested variogram models
   ## 2018-01-05 AP improved memory management in parallel computations
   ##							 improved error handling during parallel computations
+  ## 2018-08-27 AP elimination of data argument
     
   ## auxiliary function for fitting model and extracting aic by add1 and drop1
   
   f.aux.add1.drop1 <- function( tt, change, scale, trace, ... ){
       
-    ## objects object, ..data.., k, n0, verbose are taken from parent environment
+    ## objects object, k, n0, verbose are taken from parent environment
     
     if(trace > 1.) {
       cat( paste( "\ntrying ", change, sep="" ), tt, "\n", sep = "")
@@ -1491,7 +1465,7 @@ drop1.georob <- function( object, scope, scale = 0, test=c( "none", "Chisq" ),
     }
     
     nfit <- update( 
-      object, as.formula(paste("~ .", change, tt)),  data = ..data..,
+      object, as.formula(paste("~ .", change, tt)), 
       verbose = verbose, object. = object
     )
     
@@ -1522,28 +1496,6 @@ drop1.georob <- function( object, scope, scale = 0, test=c( "none", "Chisq" ),
     
   test <- match.arg(test)
   
-  ## get data.frame with required variables (note that the data.frame passed
-  ## as data argument to georob must exist in GlobalEnv)
-
-  if( is.null( data ) ){
-    
-    ..data.. <- cbind(
-      get_all_vars(
-        formula( object ), data = eval( getCall(object)[["data"]] )
-      ),
-      get_all_vars(
-        object[["locations.objects"]][["locations"]], eval( getCall(object)[["data"]] )
-      )
-    )
-    
-    if( identical( class( object[["na.action"]] ), "omit" ) ) ..data.. <- na.omit(..data..)
-    
-  } else {
-    
-    ..data.. <- data
-  
-  }
-      
   ## manipulate call
   
   cl <- object[["call"]]
@@ -1658,7 +1610,7 @@ drop1.georob <- function( object, scope, scale = 0, test=c( "none", "Chisq" ),
 
     junk <- clusterEvalQ( clstr, require( georob, quietly = TRUE ) )
     junk <- clusterExport( 
-      clstr, c( "object", "..data..", "k", "n0", "verbose" ), envir =  environment() 
+      clstr, c( "object", "k", "n0", "verbose" ), envir =  environment() 
     )
 
     result <- parLapply(
@@ -1757,6 +1709,7 @@ step.georob <- function( object, scope, scale = 0,
   ## 2016-07-20 AP changes for parallel computations
   ## 2016-08-09 AP changes for nested variogram models
   ## 2018-01-05 AP improved memory management in parallel computations
+  ## 2018-08-27 AP elimination of data argument
 
   ## code of step{stats} complemented by argument fixed to control whether
   ## variogram parameters should be kept fixed
@@ -1837,26 +1790,7 @@ step.georob <- function( object, scope, scale = 0,
   models <- vector("list", steps)
   if(!is.null(keep)) keep.list <- vector("list", steps)
   n <- nobs(object, use.fallback = TRUE)  # might be NA
-  
-  ## get data.frame with required variables (note that the data.frame passed
-  ## as data argument to georob must exist in GlobalEnv)
-  
-  frmla <- update.formula( 
-    formula( object ),
-    as.formula( paste( "~ . + ", paste( colnames(fadd), collapse = " + ") ) )
-  )
-  
-  ..data.. <- cbind(
-    get_all_vars(
-      frmla, data = eval( getCall(object)[["data"]] )
-    ),
-    get_all_vars(
-      object[["locations.objects"]][["locations"]], eval( getCall(object)[["data"]] )
-    )
-  )
-  
-  if( identical( class( object[["na.action"]] ), "omit" ) ) ..data.. <- na.omit(..data..)
-  
+    
   ## store number of fitted variogram parameters
   
   n.fitted.param.aniso <- sum( 
@@ -1894,11 +1828,7 @@ step.georob <- function( object, scope, scale = 0,
   cl <- f.call.set_x_to_value_in_fun( cl, "control", "control.georob", "cov.ehat.p.bhat", FALSE )
     
   object[["call"]] <- cl
-  
-  #   ## update object call if data argument has been provided
-  # 
-  #   if( !is.null( data ) ) object[["call"]] <- update( object, data = data, evaluate = FALSE ) 
-  
+    
   ## check if object is result of GAUSSIAN ML fit and manipulate its call to
   ## refit it by ML if required
    
@@ -1916,7 +1846,7 @@ step.georob <- function( object, scope, scale = 0,
     cl <- f.call.set_x_to_value_in_fun( cl, "control", "control.georob", "ml.method", "ML" )
         
     object[["call"]] <- cl
-    object <- update( object, data = ..data.. )
+    object <- update( object )
     
   }
   
@@ -1931,7 +1861,7 @@ step.georob <- function( object, scope, scale = 0,
     
     object[["call"]] <- cl
     
-    object <- update( object, data = ..data.. )
+    object <- update( object )
     
   }
     
@@ -1971,7 +1901,7 @@ step.georob <- function( object, scope, scale = 0,
         fit, scope$drop, scale = scale,
         k = k, trace = trace, fixed = fixed.add1.drop1, 
         use.fitted.param = use.fitted.param, verbose = verbose, 
-        ncores = ncores, data = ..data.., ...
+        ncores = ncores, ...
       )
       rn <- row.names(aod)
       row.names(aod) <- c(rn[1L], paste("-", rn[-1L], sep=" "))
@@ -1988,7 +1918,7 @@ step.georob <- function( object, scope, scale = 0,
           fit, scope$add, scale = scale,
           k = k, trace = trace, fixed = fixed.add1.drop1, 
           use.fitted.param = use.fitted.param, verbose = verbose, 
-          ncores = ncores, data = ..data.., ...
+          ncores = ncores, ...
         )
         rn <- row.names(aodf)
         row.names(aodf) <- c(rn[1L], paste("+", rn[-1L], sep=" "))
@@ -2022,7 +1952,7 @@ step.georob <- function( object, scope, scale = 0,
     #     )
     
     fit <- update(
-      fit, paste("~ .", change), data = ..data.., verbose = verbose, object. = fit
+      fit, paste("~ .", change), verbose = verbose, object. = fit
     )
     
     cl <- object[["call"]]

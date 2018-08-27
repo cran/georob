@@ -522,3 +522,7 @@ processing col and pch arguments
 * georob.predict.R (predict.georob) new optional arguments for specifying a variogram model different from the one contained in object.
 * georob.simulation.R (condsim.georob, control.condsim.georob) new functions for (un)conditional simulation
 
+
+2018-08-27  Andreas Papritz  <papritz@env.ethz.ch>
+
+* georob.S3methods.R (add1.georob, drop1.georob, step.georob) elimination of data argument

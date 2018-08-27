@@ -1,4 +1,4 @@
-% 2015-06-30 A. Papritz
+% 2018-08-27 A. Papritz
 % R CMD Rdconv -t html -o bla.html georobModelBuilding.Rd ; open bla.html; R CMD Rd2pdf --force georobModelBuilding.Rd; 
 
 \encoding{macintosh}
@@ -32,11 +32,11 @@
 \method{extractAIC}{georob}(fit, scale = 0, k = 2, ...)
 
 \method{add1}{georob}(object, scope, scale = 0, test = c("none", "Chisq"), k = 2,
-    trace = FALSE, data = NULL, fixed = TRUE, use.fitted.param = TRUE, verbose = 0, 
+    trace = FALSE, fixed = TRUE, use.fitted.param = TRUE, verbose = 0, 
     ncores = 1, ...)
     
 \method{drop1}{georob}(object, scope, scale = 0, test = c("none", "Chisq"), k = 2,
-    trace = FALSE, data = NULL, fixed = TRUE, use.fitted.param = TRUE, verbose = 0, 
+    trace = FALSE, fixed = TRUE, use.fitted.param = TRUE, verbose = 0, 
     ncores = 1, ...)
     
 step(object, ...)
@@ -60,8 +60,6 @@ step(object, ...)
 
   \item{object, fit}{an object of class \code{georob}, see
     \code{\link{georobObject}}.}
-    
-  \item{data}{an optional data frame.}
     
   \item{direction}{the mode of stepwise search, see
     \code{\link[stats]{step}}.  }
@@ -137,10 +135,6 @@ step(object, ...)
   
 }
 \details{
-
-  \bold{Note} that \emph{the data frame passed as} \code{data}
-  \emph{argument to} \code{georob} \emph{must exist in the user workspace
-  when calling \code{step.georob}, \code{add1.georob} or \code{drop1.georob}}.  
 
   For a non-robust fit the  function \code{deviance} returns the residual deviance 
   \deqn{(\mbox{\boldmath $Y -X \widehat{\beta}$})^{\mathrm{T}}
@@ -226,8 +220,7 @@ data(meuse)
 r.logzn.reml <- georob(log(zinc) ~ sqrt(dist), data = meuse, locations = ~ x + y,
     variogram.model = "RMexp",
     param = c(variance = 0.15, nugget = 0.05, scale = 200),
-    tuning.psi = 1000,
-    control = control.georob(cov.bhat = TRUE, cov.ehat.p.bhat = TRUE))
+    tuning.psi = 1000)
 summary(r.logzn.reml, correlation = TRUE)
 
 deviance(r.logzn.reml)

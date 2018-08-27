@@ -1,4 +1,4 @@
-% 2018-01-10 A. Papritz
+% 2018-05-30 A. Papritz
 % R CMD Rdconv -t html -o bla.html georobSimulation.Rd ; open bla.html; 
 % R CMD Rd2pdf --force georobSimulation.Rd; open georobSimulation.pdf
 
@@ -215,7 +215,7 @@ by \code{\link{georob}} and contained in \code{object}.
   Simulations are conditioned to data either by exploiting the respective
   built-in functionality of \code{\link[RandomFields]{RFsimulate}}
   (\code{use.grid == FALSE}) or by the Kriging method (\code{use.grid ==
-  TRUE}, see \enc{Chil¬ès}{Chiles} and Delfiner, 1999, sec.  7.3).  The
+  TRUE}, see \enc{Chilès}{Chiles} and Delfiner, 1999, sec.  7.3).  The
   latter approach may again be faster for large problems because it
   exploits the larger speed of unconditional simulations for rectangular
   grids.
@@ -272,7 +272,7 @@ by \code{\link{georob}} and contained in \code{object}.
 
 \references{ 
 
-  \enc{Chil¬ès}{Chiles}, J.-P. and Delfiner, P. (1999) \emph{Geostatistics:
+  \enc{Chilès}{Chiles}, J.-P. and Delfiner, P. (1999) \emph{Geostatistics:
   Modeling Spatial Uncertainty}, John Wiley & Sons, New York.
 
 }
@@ -328,8 +328,7 @@ fullgrid(meuse.grid.sgdf) <- TRUE
 r.logzn.reml <- georob(log(zinc) ~ sqrt(dist), data = meuse, locations = ~ x + y,
     variogram.model = "RMexp",
     param = c(variance = 0.15, nugget = 0.05, scale = 200),
-    tuning.psi = 1000,
-    control = control.georob(cov.bhat = TRUE, cov.ehat.p.bhat = TRUE))
+    tuning.psi = 1000)
     
 ## Conditional simulations
 r.sim <- condsim(r.logzn.reml, newdata = meuse.grid.sgdf, nsim = 100, seed = 1)

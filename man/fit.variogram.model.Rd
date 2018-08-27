@@ -1,4 +1,4 @@
-% 2016-02-08 A. Papritz
+% 2018-05-25 A. Papritz
 % R CMD Rdconv -t html -o bla.html fit.variogram.model.Rd ; open bla.html; R CMD Rd2pdf --force fit.variogram.model.Rd; 
 
 \encoding{macintosh}
@@ -233,32 +233,34 @@ mechanisms are used in \code{fit.variogram.model}.
   \item{sse}{the value of the object function (weighted residual sum of
   squares) evaluated at the solution.}
 
-  \item{variogram.model}{the name of the fitted parametric variogram
-  model.}
-   
-  \item{param}{a named vector with the (estimated) variogram parameters of
-  the fitted model.}
-
-  \item{fit.param}{logical vector indicating which variogram
-  parameters were fitted.}
+  \item{variogram.object}{the estimated parameters of a possibly nested
+  variograms model.  This is a list that contains for each variogram model
+  structure the following components:
   
-  \item{aniso}{a list with the following components: 
-   
-    \itemize{
-
+  \itemize{
+  
+      \item{\code{variogram.model}}: the name of the fitted parametric variogram
+      model.
+       
+      \item{\code{param}}: a named numeric vector with the (estimated) variogram
+      parameters.
+       
+      \item{\code{fit.param}}: a named logical vector with the flags defining what
+      variogram parameters were estimated.
+      
       \item{\code{isotropic}: logical indicating whether an isotropic
-       variogram was fitted.}
-       
+      variogram was fitted.}
+      
       \item{\code{aniso}: a named numeric vector with the (estimated)
-      anisotropy parameters of the fitted model.}
-       
-      \item \code{fit.aniso}: logical vector indicating which anisotropy
-      parameters were fitted.
+      anisotropy parameters.}
+      
+      \item{\code{fit.aniso}}: a named logical vector with the flags defining what
+      anisotropy parameters were estimated.
       
       \item{\code{sincos}: a list with \code{sin} and \code{cos} of the
       angles \eqn{\omega}, \eqn{\phi} and \eqn{\zeta} that define the
       orientation of the anisotropy ellipsoid.}
-
+      
       \item{\code{rotmat}: the matrix
       \eqn{(\mbox{\boldmath$C$\unboldmath}_1,
       \mbox{\boldmath$C$\unboldmath}_2,
@@ -267,9 +269,11 @@ mechanisms are used in \code{fit.variogram.model}.
       
       \item{\code{sclmat}: a vector with the elements 1, \eqn{1/f_1},
       \eqn{1/f_2} (see \code{\link{georobIntro}}). }
-
+        
     }
+  
   }
+   
   
   \item{param.tf}{a character vector listing the transformations of the
   variogram parameters used for model fitting.}
@@ -285,8 +289,10 @@ mechanisms are used in \code{fit.variogram.model}.
   \item{convergence.code}{a diagnostic integer issued by
   \code{\link[stats]{optim}} (component \code{convergence}) about convergence.}
   
+  \item{iter}{a named integer vector of length two with the number of
+  function and gradient evaluations by \code{\link[stats]{optim}}.}
+      
   \item{call}{the matched call.}  
-  
   
   \item{residuals}{a numeric vector with the residuals, that is the sample
   semi-variance minus the fitted values.}

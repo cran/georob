@@ -1,4 +1,4 @@
-% 2015-07-24 A. Papritz
+% 2018-05-25 A. Papritz
 % R CMD Rdconv -t html -o bla.html georobObject.Rd ; open bla.html; R CMD Rd2pdf --force georobObject.Rd; 
 
 \encoding{macintosh}
@@ -45,6 +45,9 @@
       \item{\code{aniso}: a named numeric vector with the (estimated)
       anisotropy parameters.}
       
+      \item{\code{fit.aniso}}: a named logical vector with the flags defining what
+      anisotropy parameters were estimated.
+      
       \item{\code{sincos}: a list with \code{sin} and \code{cos} of the
       angles \eqn{\omega}, \eqn{\phi} and \eqn{\zeta} that define the
       orientation of the anisotropy ellipsoid.}
@@ -64,7 +67,7 @@
    
   \item{gradient}{a named numeric vector with the estimating equations
   (robust REML) or the gradient of the maximized (restricted) log-likelihood
-  (Gaussian (RE)ML) evaluated at the solution .}
+  (Gaussian (RE)ML) evaluated at the solution.}
 
   \item{tuning.psi}{the value of the tuning constant \eqn{c} of the
   \eqn{\psi_c}-function.}
@@ -220,7 +223,7 @@
       \item \code{locations}: a formula indicating the coordinates of the
       measurement locations.
         
-      \item \code{locations.coords}: a numeric matrix with the coordinates
+      \item \code{coordinates}: a numeric matrix with the coordinates
       of the measurement locations.
     
       \item \code{lag.vectors}: a numeric matrix with the lag vectors
@@ -241,8 +244,8 @@
       \item \code{bhat}: initial predictions of
       \eqn{\mbox{\boldmath$B$\unboldmath}}{B}.
       
-      \item{variogram.object}: the initial values of the parameters of a
-      possibly nested variograms model.  This is a list with the same
+      \item \code{variogram.object}: the initial values of the parameters
+      of a possibly nested variograms model.  This is a list with the same
       structure as described above for the component
       \code{variogram.object}.
       
