@@ -10,7 +10,7 @@ importFrom( methods, slot)
 importFrom( nlme, fixef, fixed.effects, ranef, random.effects )
 importFrom( nleqslv, nleqslv )
 importFrom( quantreg, rq.fit )
-importFrom( RandomFields, RFsimulate, RFvariogram, RFoldstyle, RFoptions)
+importFrom( RandomFields, RFsimulate, RFfctn, RFoldstyle, RFoptions)
 importFrom( robustbase, lmrob.control, lmrob.fit, Qn, robMD, summarizeRobWeights )
 # importFrom( nor1mix, norMix, pnorMix, qnorMix, var.norMix )
 

@@ -102,7 +102,7 @@ function(
   ## setup or check contents of variogram.object
   
   if( !all( 
-      is.null(variogram.model), is.null(param),  is.null(aniso), 
+      is.null(variogram.model), is.null(param), is.null(aniso), 
       is.null(variogram.object)
     )
   ){

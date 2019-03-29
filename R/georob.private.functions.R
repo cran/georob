@@ -754,6 +754,8 @@ function(
   ## 2016-08-09 AP changes for nested variogram models
   ## 2016-08-10 AP changes for isotropic variogram models
   ## 2017-12-23 AP improved memory management in parallel computations
+  ## 2019-03-29 AP call to RFvariogram{RandomFields, version 3.1} replaced by 
+  ##               call to RFfctn{RandomFields, version 3.3}
 
   ## check consistency of arguments
   
@@ -765,8 +767,6 @@ function(
     gcr.constant <- as.list( rep( NA_real_, length(variogram.object) ) )
   }
   
-  
-
   res <- lapply(
     1L:length(variogram.object),
     function( i, x, gcr.constant, lag.vectors, control.pcmp ){
@@ -805,14 +805,34 @@ function(
           
           ## objects s, e, lag.vectors, model.list taken from parent environment
 
+          #           RandomFields Version 3.1
+          #           result <- try(
+          #             -RFvariogram(
+          #               x = lag.vectors[s[i]:e[i], ], model = model.list, 
+          #               dim = attr( lag.vectors, "ndim.coords" ), grid = FALSE
+          #             ),
+          #             silent = TRUE
+          #           )
+          
+          RFoptions( allow_duplicated_locations = TRUE )
+
+          ## note: RFfctn computes covariance for stationary and negative
+          ## semivariance for IRF models, required is negative semivariance
           result <- try(
-            -RFvariogram(
+            RFfctn(
               x = lag.vectors[s[i]:e[i], ], model = model.list, 
               dim = attr( lag.vectors, "ndim.coords" ), grid = FALSE
-            ),
+            ) - model.list[["var"]],
             silent = TRUE
           )
+
+          RFoptions( allow_duplicated_locations = FALSE )
+          
           if( !(identical( class( result ), "try-error" ) || any( is.na( result ) )) ){
+            if(!variogram.model %in% irf.models){
+              ## subtract variance for stationary models
+              result <- result - model.list[["var"]]
+            }
             result
           } else {
             "RFvariogram.error"
@@ -843,14 +863,34 @@ function(
           
           ## objects s, e, lag.vectors, model.list taken from parent environment
           
+          #           RandomFields Version 3.1
+          #           result <- try(
+          #             -RFvariogram(
+          #               x = lag.vectors[s[i]:e[i]], model = model.list, 
+          #               grid = FALSE 
+          #             ),
+          #             silent = TRUE
+          #           )
+          
+          RFoptions( allow_duplicated_locations = TRUE )
+
+          ## note: RFfctn computes covariance for stationary and negative
+          ## semivariance for IRF models, required is negative semivariance
           result <- try(
-            -RFvariogram(
+            RFfctn(
               x = lag.vectors[s[i]:e[i]], model = model.list, 
               grid = FALSE 
             ),
             silent = TRUE
           )
+          
+          RFoptions( allow_duplicated_locations = FALSE )
+
           if( !(identical( class( result ), "try-error" ) || any( is.na( result ) )) ){
+            if(!variogram.model %in% irf.models){
+              ## subtract variance for stationary models
+              result <- result - model.list[["var"]]
+            }
             result
           } else {
             "RFvariogram.error"
@@ -911,7 +951,7 @@ function(
       
       not.ok <- any( sapply( 
           Valpha, 
-          function( x ) identical( x, "RFvariogram.error" ) || is.na(x)
+          function( x ) identical( x, "RFvariogram.error" ) || any(is.na(x))
         ))
       
       if( !not.ok ){

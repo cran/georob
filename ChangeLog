@@ -526,3 +526,14 @@ processing col and pch arguments
 2018-08-27  Andreas Papritz  <papritz@env.ethz.ch>
 
 * georob.S3methods.R (add1.georob, drop1.georob, step.georob) elimination of data argument
+
+
+2018-11-25 Andreas Papritz  <papritz@env.ethz.ch>
+
+* georob.simulation.R (f.aux.sim.1) elimination of grid.nodes argument
+
+
+2019-03-29 Andreas Papritz  <papritz@env.ethz.ch>
+
+* georob.private.functions.R (f.aux.gcr) call to RFvariogram{RandomFields, version 3.1} replaced by call to RFfctn{RandomFields, version 3.3}
+* georob.simulation.R (condsim) conditioning data is passed as SpatialPointsDataFrame to RFsimulate 

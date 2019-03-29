@@ -50,6 +50,10 @@ condsim <- function(
   ## parameters estimated by georob for a spatial linear model
   
   ## 2018-01-27 A. Papritz
+  ## 2018-11-25	A. Papritz small change in function f.aux.sim.1
+  ## 2019-03-29 A. Papritz restore default for RFoption spConform
+  ## 2019-03-29 A. Papritz conditioning data is passed as SpatialPointsDataFrame to
+  ##                       RFsimulate (only applies for exact coordinates)
   
   
   ## auxiliary function for aggregating a response variable x for the
@@ -544,7 +548,6 @@ condsim <- function(
   
   }
   
-
   ## compute (conditional) realizations ...
   
   if( !control[["use.grid"]] ){
@@ -592,6 +595,7 @@ condsim <- function(
     
     if( control[["condsim"]] ){
       data <- cbind( coords.d, values = rep( 0., NROW(coords.d) ) )
+      coordinates(data) <- colnames(coords.d)
     } else {
       data <- NULL
     }
@@ -612,7 +616,7 @@ condsim <- function(
       tmp <- lapply(
         variogram,
         
-        function( x, grid.nodes, nsim ){
+        function( x, nsim ){
           
           signal <- RFsimulate(
             model = x[["signal"]], n = nsim,
@@ -630,7 +634,7 @@ condsim <- function(
             signal
           }
                     
-        }, grid.nodes = grid.nodes, nsim = nsim
+        }, nsim = nsim
       )
       
       res <- tmp[[1]]
@@ -640,6 +644,8 @@ condsim <- function(
         }
       }
       
+      RFoptions( spConform = TRUE )      
+
       res
       
     }
@@ -842,6 +848,8 @@ condsim <- function(
         }
       }
       
+      RFoptions( spConform = TRUE )
+
       res
       
     }

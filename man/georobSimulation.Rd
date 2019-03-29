@@ -77,7 +77,7 @@ parameters of a spatial linear model estimated by the function
   
   \item{trend.coef}{an optional numeric vector with the coefficients of the
   trend model to be used for computing the (conditional) mean function of
-  the random processes.}
+  the random process.}
   
   \item{variogram.model}{an optional character keyword defining the
   variogram model to be used for the simulations, see \code{\link{georob}}
@@ -129,8 +129,8 @@ parameters of a spatial linear model estimated by the function
   }
   
   \item{include.data.sites}{logical scalar, to control whether
-  (conditionally) simulated values are also computed for the points 
-  of the original data set used to estimated the model parameters.}
+  (conditionally) simulated values are returned also for the points 
+  of the original data set used to estimate the model parameters.}
   
   \item{means}{logical scalar, to control whether
   the (un)conditional means are included in the output.}

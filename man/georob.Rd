@@ -1,4 +1,4 @@
-% 2015-11-27 A. Papritz
+% 2018-11-16 A. Papritz
 % R CMD Rdconv -t html -o bla.html georob.Rd ; open bla.html; R CMD Rd2pdf --force georob.Rd; 
 
 \encoding{macintosh}
@@ -356,8 +356,8 @@ georob(formula, data, subset, weights, na.action, model = TRUE,
     values for \code{param} and \code{aniso} are not sufficiently close to
     the roots of the system of nonlinear equations, then
     \code{\link[nleqslv]{nleqslv}} may fail to find them.      
-    Setting
-    \code{initial.param = TRUE} allows one to find initial values that are
+    Setting \code{initial.param = TRUE} (see \code{\link{control.georob}}) 
+    allows one to find initial values that are
     often sufficiently close to the roots so that
     \code{\link[nleqslv]{nleqslv}} converges.  This is achieved by:
         

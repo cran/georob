@@ -12,8 +12,9 @@
 % 2016-11-14 AP Korrektur Fehler in Rotationsmatrix f\"{u}r geom. anisotrope Variogramme
 % 2017-08-11 AP Korrektur von Tippfehlern
 % 2017-10-20 AP Korrektur von Fehler bei Plot von Profillikelihood
+% 2018-11-16 AP Kleine Erg\"{a}nzung Abschnitt \"{u}ber Berechnung von robusten Startwerten
 
-% cd R.user.home/georob/vignettes/
+% cd ~/R.user.home/georob/vignettes/
 % R CMD Sweave georob_vignette.Rnw;  R CMD Stangle georob_vignette.Rnw; pdflatex georob_vignette.tex; open georob_vignette.pdf;
 % bibtex georob_vignette; pdflatex georob_vignette.tex;  open georob_vignette.pdf;
 
@@ -833,7 +834,7 @@ We now study the \code{summary} output in detail:
 % log-likelihood is equal to -54.6.
 %
 The estimated variogram parameters are reported along with 95\%
-confidence intervals that are computed based on the asympotic normal
+confidence intervals that are computed based on the asymptotic normal
 distribution of (RE)ML estimates from the observed Fisher information.
 
 The dependence of \code{log(zinc)} on \code{sqrt(dist)} is highly
@@ -871,7 +872,7 @@ waldtest(r.georob.m0.spher.reml, .~.+soil)
 
 \smallskip
 
-Drift models may also be build by stepwise covariate selection based
+Drift models may also be build by step-wise covariate selection based
 on AIC, either keeping the variogram parameters fixed (default)
 %
 <<meuse-zinc-georob-reml-step-1,eval=FALSE>>=
@@ -933,7 +934,7 @@ Variogram:  RMspheric
 \end{Soutput}
 \end{Schunk}
 %
-which selects the same model.  Note that stepwise covariate
+which selects the same model.  Note that step-wise covariate
 selection by \code{step.georob()}, \code{add1.georob()} and
 \code{drop1.georob()} requires the \emph{non-restricted}
 log-likelihood.  Before evaluating candidate models, the initial model
@@ -1091,7 +1092,7 @@ plot(upr, position=c(2/3, 0, 1, 1), more=FALSE)
 @ 
 %
 \ecf{Lognormal point Kriging prediction of \code{zinc} (left:
-prediction; middle and right: lower and upper bounds of pointwise 95\%
+prediction; middle and right: lower and upper bounds of point-wise 95\%
 prediction intervals).}{meuse-zinc-point-Kriging-plot}
 %
 
@@ -1164,7 +1165,7 @@ plot(upr, position=c(2/3, 0, 1, 1), more=FALSE)
 %
 \ecf{Lognormal block Kriging prediction of \code{zinc} computed under
 the assumption of permanence of log-normality (left: prediction; middle
-and right: lower and upper bounds of pointwise 95\% prediction
+and right: lower and upper bounds of point-wise 95\% prediction
 intervals).}{meuse-zinc-block-Kriging-plot}
 %
 
@@ -1173,7 +1174,7 @@ log-normal laws~---~which strictly cannot hold~---~does not much
 impair the efficiency of the back-transformation as long as the blocks
 are small \citep{Cressie-2006,Hofer-etal-2013}.  However, for
 larger blocks, one should use the optimal predictor obtained by
-\emph{averaging back-transtransformed point predictions}.  \code{lgnpp()}
+\emph{averaging back-transformed point predictions}.  \code{lgnpp()}
 allows to compute this as well.  We illustrate this here by predicting
 the spatial mean over two larger square blocks:
 %
@@ -2376,9 +2377,10 @@ of initial values than maximizing the Gaussian (restricted)
 log-likelihood with respect to the same parameters.  If the initial
 values for \code{param} and \code{aniso} are not sufficiently close to
 the roots of the system of nonlinear equations, then \code{nleqslv()}
-may fail to find them.  Setting \code{initial.param = TRUE} allows one
-to find initial values that are often sufficiently close to the roots
-so that \code{nleqslv()} converges.  This is achieved by:
+may fail to find them.  Setting \code{initial.param = TRUE} (see
+\code{control.georob()}) allows one to find initial values that are
+often sufficiently close to the roots so that \code{nleqslv()}
+converges.  This is achieved by:
 
 \begin{enumerate}
   
