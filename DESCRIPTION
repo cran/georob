@@ -1,8 +1,8 @@
 Package: georob
 Type: Package
 Title: Robust Geostatistical Analysis of Spatial Data
-Version: 0.3-8
-Date: 2019-03-29
+Version: 0.3-9
+Date: 2019-04-07
 Authors@R: c(
   person( "Andreas", "Papritz", role = c( "cre", "aut" ), 
           email =  "andreas.papritz@env.ethz.ch" ),
@@ -22,9 +22,9 @@ Description: Provides functions for efficiently fitting linear models with
          Kriging predictions of log-transformed data.
 License: GPL (>= 2)
 NeedsCompilation: no
-Packaged: 2019-03-29 15:48:40 UTC; papritz
+Packaged: 2019-04-08 12:57:57 UTC; papritz
 Author: Andreas Papritz [cre, aut],
   Cornelia Schwierz [ctb]
 Maintainer: Andreas Papritz <andreas.papritz@env.ethz.ch>
 Repository: CRAN
-Date/Publication: 2019-03-29 16:10:02 UTC
+Date/Publication: 2019-04-08 16:52:49 UTC

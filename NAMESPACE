@@ -21,6 +21,7 @@ export(
   compress,                         # ok
   condsim,                          # ok
   control.condsim,                  # ok
+  control.fit.variogram.model,      # ok
   control.georob,                   # ok
   control.nleqslv,                  # ok
   control.nlminb,                   # ok

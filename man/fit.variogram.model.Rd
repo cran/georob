@@ -1,8 +1,9 @@
-% 2018-05-25 A. Papritz
+% 2019-04-07 A. Papritz
 % R CMD Rdconv -t html -o bla.html fit.variogram.model.Rd ; open bla.html; R CMD Rd2pdf --force fit.variogram.model.Rd; 
 
 \encoding{macintosh}
 \name{fit.variogram.model}
+\alias{control.fit.variogram.model}
 \alias{fit.variogram.model}
 \alias{print.fitted.variogram}
 \alias{summary.fitted.variogram}
@@ -29,8 +30,13 @@ fit.variogram.model(sv,
 	  aniso = default.aniso(), fit.aniso = default.fit.aniso(),
     variogram.object = NULL,
     max.lag = max(sv[["lag.dist"]]), min.npairs = 30, 
-    weighting.method = c("cressie", "equal", "npairs"), hessian = TRUE, 
-    verbose = 0, ...)
+    weighting.method = c("cressie", "equal", "npairs"), 
+    control = control.fit.variogram.model(),
+    verbose = 0)
+
+control.fit.variogram.model(maximizer = c("nlminb", "optim"), 
+    param.tf = param.transf(), fwd.tf = fwd.transf(), bwd.tf = bwd.transf(),
+    hessian = TRUE, optim = control.optim(), nlminb = control.nlminb())
     
 \method{print}{fitted.variogram}(x, digits = max(3, getOption("digits") - 3), ...)
 
@@ -169,12 +175,45 @@ fit.variogram.model(sv,
     }
   }
 
-  \item{hessian}{logical controlling whether the hessian is computed by
-  \code{\link[stats]{optim}}.}
-
   \item{verbose}{positive integer controlling logging of diagnostic
   messages to the console during model fitting.}
 
+  \item{control}{a list with the components \code{maximizer},
+  \code{param.tf}, \code{fwd.tf}, \code{bwd.tf}, \code{hessian},
+  \code{optim} and \code{nlminb}  or a function such as
+  \code{control.fit.variogram.model} that generates such a list. 
+  See code{\link{control.georob}} for information on 
+  code{maximizer}, \code{param.tf}, \code{fwd.tf}, 
+  \code{bwd.tf}, \code{hessian}, \code{optim} and \code{nlminb}.}
+  
+  \item{maximizer}{character keyword defining the optimizer for nonlinear
+  least squares.  Possible values are \code{\link[stats]{nlminb}}
+  (default) or \code{\link[stats]{optim}}.}
+
+  \item{hessian}{logical scalar controlling whether the Hessian should be
+  computed at the nonlinear least squares estimates.}
+  
+  \item{param.tf}{a function such as \code{\link{param.transf}}, which
+  returns a named vector of character strings that define the
+  transformations to be applied to the variogram parameters for model
+  fitting, see \code{\link{control.georob}}.}
+  
+  \item{fwd.tf}{a function such as \code{\link{fwd.transf}}, which returns
+  a named list of invertible functions to be used to transform variogram
+  parameters, see \code{\link{control.georob}}.}
+
+  \item{bwd.tf}{a function such as \code{\link{bwd.transf}}, which returns
+  the named list of inverse functions corresponding to \code{fwd.tf}, see
+  see \code{\link{control.georob}}.}
+
+  \item{nlminb}{a list of arguments passed to \code{nlminb} or a function
+  such as \code{\link{control.nlminb}} that generates such a list (see
+  \code{\link[stats]{nlminb}} for allowed arguments).}
+  
+  \item{optim}{a list of arguments passed to \code{optim} or a function
+  such as \code{\link{control.optim}} that generates such a list (see
+  \code{\link[stats]{optim}} for allowed arguments).}
+  
   \item{object, x}{an object of class \code{fitted.variogram}.}
   
   \item{digits}{positive integer indicating the number of decimal digits to print.}
@@ -212,8 +251,7 @@ fit.variogram.model(sv,
 
   \item{lty}{line type for plotting variogram models.}
 
-  \item{\dots}{additional arguments passed to \code{\link[stats]{optim}} or
-  to methods.}
+  \item{\dots}{additional arguments passed to methods.}
 
 }
 \details{The parametrization of geometrically anisotropic variograms is
@@ -358,8 +396,7 @@ r.sv.iso <- sample.variogram(wolfcamp[["data"]], locations = wolfcamp[[1]],
 \dontrun{
 r.irf0.iso <- fit.variogram.model(r.sv.iso, variogram.model = "RMfbm",
     param = c(variance = 100, nugget = 1000, scale = 1., alpha = 1.),
-    fit.param = default.fit.param(scale = FALSE, alpha = TRUE),
-    method = "Nelder-Mead", hessian = FALSE, control = list(maxit = 5000))  
+    fit.param = default.fit.param(scale = FALSE, alpha = TRUE))  
 summary(r.irf0.iso, correlation = TRUE)
 
 plot(r.sv.iso, type = "l")
@@ -376,7 +413,12 @@ r.irf0.aniso <- fit.variogram.model(r.sv.aniso, variogram.model = "RMfbm",
     fit.param = default.fit.param(scale = FALSE, alpha = TRUE),
     aniso = default.aniso(f1 = 0.4, omega = 135.),
     fit.aniso = default.fit.aniso(f1 = TRUE, omega = TRUE),
-    method = "BFGS", hessian = TRUE, control = list(maxit = 5000))
+    control = control.fit.variogram.model(
+      maximizer = "optim",
+      optim = control.optim(
+        method = "BFGS", hessian = TRUE, control = list(maxit = 5000)
+      )
+    ))
 summary(r.irf0.aniso, correlation = TRUE)
 
 plot(r.sv.aniso, type = "l")

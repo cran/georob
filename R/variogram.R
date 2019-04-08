@@ -570,6 +570,33 @@ plot.sample.variogram <-
 
 ## ##############################################################################
 
+control.fit.variogram.model <- function(
+  maximizer = c( "nlminb", "optim" ),
+  param.tf = param.transf(),
+  fwd.tf = fwd.transf(), 
+  bwd.tf = bwd.transf(),
+  hessian = TRUE,
+  optim = control.optim(),
+  nlminb = control.nlminb()
+){
+
+  ## auxiliary function to set meaningful default values for georob
+
+  ## 2019-04-07 A. Papritz
+
+  list(
+    maximizer = match.arg( maximizer ),
+    param.tf = param.tf, fwd.tf = fwd.tf, bwd.tf = bwd.tf,
+    hessian = hessian,
+    optim = optim, 
+    nlminb = nlminb
+  )
+
+}
+
+
+## ##############################################################################
+
 fit.variogram.model <-
   function(
     sv,
@@ -585,9 +612,8 @@ fit.variogram.model <-
     max.lag = max( sv[["lag.dist"]] ),
     min.npairs = 30,
     weighting.method = c( "cressie", "equal", "npairs" ),
-    hessian = TRUE,
-    verbose = 0,
-    ...
+    control = control.fit.variogram.model(),
+    verbose = 0
   )
 {
   
@@ -602,11 +628,12 @@ fit.variogram.model <-
   ## 2016-02-08 AP correcting error in setting default values for fit.param
   ## 2016-08-18 AP changes for nested variogram models
   ## 2016-11-14 AP correcting error in 3d rotation matrix for geometrically anisotropic variograms
+  ## 2019-04-07 AP new control argument and possibility to choose between 
+  ##               optim and nlminb for non-linear least squares 
   
   ## auxiliary function called by optim to compute objective function
   
-  f.aux <- 
-    function( 
+  f.aux <- function( 
       adjustable.param.aniso, 
       envir, 
       fixed.param.aniso, name.param.aniso, tf.param.aniso,
@@ -1333,9 +1360,9 @@ fit.variogram.model <-
   
   ## transform variogram parameters
 
-  param.tf <-  param.transf()
-  fwd.tf <- fwd.transf()
-  bwd.tf <- bwd.transf()
+  param.tf <-  control[["param.tf"]]
+  fwd.tf <- control[["fwd.tf"]]
+  bwd.tf <- control[["bwd.tf"]]
   
   tmp <- f.aux.tf.param.fwd( variogram.object, param.tf, fwd.tf )
 
@@ -1364,30 +1391,87 @@ fit.variogram.model <-
 
   assign( "variogram.item", variogram.item, pos = as.environment( envir ) )
   
-  ## fit the model
+  ## prepare lag vectors
   
   lag.vectors <- as.matrix( 
     sv[t.lag.select, c( "lag.x", "lag.y", "lag.z" )[1L:attr( sv, "ndim")]] 
   )
   attr( lag.vectors, "ndim.coords" ) <- attr( sv, "ndim")
   
-  r.fit <- optim(
-    par = transformed.param.aniso[fit.param.aniso],
-    fn = f.aux,
-    hessian = hessian,
-    ...,
-    envir = envir,
-    fixed.param.aniso = transformed.param.aniso[!fit.param.aniso],
-    name.param.aniso = names(transformed.param.aniso),
-    tf.param.aniso = tf.param.aniso,
-    bwd.tf = bwd.tf,
-    lag.vectors = lag.vectors,
-    gamma = sv[["gamma"]][t.lag.select],
-    npairs = sv[["npairs"]][t.lag.select],
-    weighting.method = weighting.method,
-    d2r = d2r,
-    verbose = verbose
-  )
+  ## fit the model
+    
+  if(identical( control[["maximizer"]], "optim" )){
+  
+    r.fit <- optim(
+      par = transformed.param.aniso[fit.param.aniso],
+      fn = f.aux,
+      method = control[["optim"]][["method"]],
+      lower = control[["optim"]][["lower"]],
+      upper = control[["optim"]][["upper"]],
+      control = control[["optim"]][["control"]],
+      hessian = control[["hessian"]],
+      envir = envir,
+      fixed.param.aniso = transformed.param.aniso[!fit.param.aniso],
+      name.param.aniso = names(transformed.param.aniso),
+      tf.param.aniso = tf.param.aniso,
+      bwd.tf = bwd.tf,
+      lag.vectors = lag.vectors,
+      gamma = sv[["gamma"]][t.lag.select],
+      npairs = sv[["npairs"]][t.lag.select],
+      weighting.method = weighting.method,
+      d2r = d2r,
+      verbose = verbose
+    )
+    
+  } else {
+    
+    r.fit <- nlminb(
+      start = transformed.param.aniso[fit.param.aniso],
+      objective = f.aux,
+      lower = control[["nlminb"]][["lower"]],
+      upper = control[["nlminb"]][["upper"]],
+      control = control[["nlminb"]][["control"]],
+      envir = envir,
+      fixed.param.aniso = transformed.param.aniso[!fit.param.aniso],
+      name.param.aniso = names(transformed.param.aniso),
+      tf.param.aniso = tf.param.aniso,
+      bwd.tf = bwd.tf,
+      lag.vectors = lag.vectors,
+      gamma = sv[["gamma"]][t.lag.select],
+      npairs = sv[["npairs"]][t.lag.select],
+      weighting.method = weighting.method,
+      d2r = d2r,
+      verbose = verbose
+    )
+    
+    ## compute hessian
+    
+    if(control[["hessian"]]){
+      r.fit[["hessian"]] <- optimHess(
+        par = r.fit[["par"]],
+        fn = f.aux,
+        control = control[["optim"]][["control"]],
+        envir = envir,
+        fixed.param.aniso = transformed.param.aniso[!fit.param.aniso],
+        name.param.aniso = names(transformed.param.aniso),
+        tf.param.aniso = tf.param.aniso,
+        bwd.tf = bwd.tf,
+        lag.vectors = lag.vectors,
+        gamma = sv[["gamma"]][t.lag.select],
+        npairs = sv[["npairs"]][t.lag.select],
+        weighting.method = weighting.method,
+        d2r = d2r,
+        verbose = verbose
+      )
+    }   
+    
+    ## rename components 
+    
+    tmp <- names( r.fit )
+    tmp[match(c("objective", "evaluations"), tmp)] <- c("value", "counts")
+    names( r.fit ) <- tmp
+    
+  }
   
   ## get variogram.item
   
@@ -1431,7 +1515,7 @@ fit.variogram.model <-
     fitted = variogram.item[["fitted"]],
     weights = variogram.item[["weights"]]
   )
-  if( hessian ) r.result[["hessian"]] <- r.fit[["hessian"]]
+  if( control[["hessian"]] ) r.result[["hessian"]] <- r.fit[["hessian"]]
   
   class( r.result ) <- "fitted.variogram"
   

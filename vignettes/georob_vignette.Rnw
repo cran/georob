@@ -13,6 +13,7 @@
 % 2017-08-11 AP Korrektur von Tippfehlern
 % 2017-10-20 AP Korrektur von Fehler bei Plot von Profillikelihood
 % 2018-11-16 AP Kleine Erg\"{a}nzung Abschnitt \"{u}ber Berechnung von robusten Startwerten
+% 2019-04-07 AP Anpassung fuer neue Argumente von fit.variogram.model
 
 % cd ~/R.user.home/georob/vignettes/
 % R CMD Sweave georob_vignette.Rnw;  R CMD Stangle georob_vignette.Rnw; pdflatex georob_vignette.tex; open georob_vignette.pdf;
@@ -729,7 +730,7 @@ plot(r.sv <- sample.variogram(residuals(r.lm), locations=meuse[, c("x","y")],
   estimator="matheron"), type="l",
   main="sample variogram of residuals log(zinc)~sqrt(dist)+ffreq")
 lines(r.sv.spher <- fit.variogram.model(r.sv, variogram.mode="RMspheric",
-  param=c(variance=0.1, nugget=0.05, scale=1000), method="BFGS"))
+  param=c(variance=0.1, nugget=0.05, scale=1000)))
 @
 <<meuse-zinc-lm-res-sv-2,fig=TRUE,width=6,height=4,results=hide,echo=FALSE,eval=TRUE>>=
 library(georob)

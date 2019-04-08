@@ -537,3 +537,10 @@ processing col and pch arguments
 
 * georob.private.functions.R (f.aux.gcr) call to RFvariogram{RandomFields, version 3.1} replaced by call to RFfctn{RandomFields, version 3.3}
 * georob.simulation.R (condsim) conditioning data is passed as SpatialPointsDataFrame to RFsimulate 
+
+
+2019-04-07 Andreas Papritz  <papritz@env.ethz.ch>
+
+* georob.private.functions.R (f.aux.gcr) correction of error when computing semivariances for anisotropic variogram models (introduced on 2019-03-29)
+* variogram.R (control.fit.variogram.model) new function for providing sensible defaults to argument control of fit.variogram.model
+* variogram.R (fit.variogram.model) new control argument and possibility to choose between optim and nlminb for non-linear least squares 

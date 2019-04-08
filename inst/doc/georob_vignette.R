@@ -114,7 +114,7 @@ getOption("SweaveHooks")[["fig"]]()
 ##   estimator="matheron"), type="l",
 ##   main="sample variogram of residuals log(zinc)~sqrt(dist)+ffreq")
 ## lines(r.sv.spher <- fit.variogram.model(r.sv, variogram.mode="RMspheric",
-##   param=c(variance=0.1, nugget=0.05, scale=1000), method="BFGS"))
+##   param=c(variance=0.1, nugget=0.05, scale=1000)))
 
 
 ###################################################

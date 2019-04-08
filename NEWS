@@ -16,4 +16,5 @@
 2018-01-26  georob Version 0.3-6 released to CRAN, new function condsim() for (un)conditional simulation from a fitted georob object.
 2018-08-27  georob Version 0.3-6 released to CRAN, minor change of arguments of functions for model building.
 2018-11-25  georob Version 0.3-7 released to CRAN, minor change of function for (conditional) simulation.
-2019-03-29  georob Version 0.3-8 released to CRAN, changes required by new version 3.3.6 of package RandomFields
+2019-03-29  georob Version 0.3-8 released to CRAN, changes required by new version 3.3.6 of package RandomFields.
+2019-04-07  georob Version 0.3-9 released to CRAN, correction of error when computing semivariances for anisotropic variograms introduced in Version 0.3-8; possibility to choose optimizer in fit.variogram.model()

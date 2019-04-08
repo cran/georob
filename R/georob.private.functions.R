@@ -756,6 +756,7 @@ function(
   ## 2017-12-23 AP improved memory management in parallel computations
   ## 2019-03-29 AP call to RFvariogram{RandomFields, version 3.1} replaced by 
   ##               call to RFfctn{RandomFields, version 3.3}
+  ## 2019-04-07 AP correction of error when computing semivariances for anisotropic variogram models
 
   ## check consistency of arguments
   
@@ -822,7 +823,7 @@ function(
             RFfctn(
               x = lag.vectors[s[i]:e[i], ], model = model.list, 
               dim = attr( lag.vectors, "ndim.coords" ), grid = FALSE
-            ) - model.list[["var"]],
+            ),
             silent = TRUE
           )
 

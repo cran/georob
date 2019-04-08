@@ -94,7 +94,7 @@ control.nlminb(control = list(rel.tol = 1.e-5), lower = -Inf,
   (cf.  subsection \emph{Estimating variance parameters by Gaussian
   (RE)ML}, section \emph{Details} of \code{\link{georob}}).}
 
-  \item{maximizer}{character keyword defining the Gaussian (restricted)
+  \item{maximizer}{character keyword defining whether the Gaussian (restricted)
   log-likelihood is maximized by \code{\link[stats]{nlminb}} (default) or
   \code{\link[stats]{optim}}.}
 
