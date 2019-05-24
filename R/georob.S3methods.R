@@ -599,6 +599,7 @@ summary.georob <- function (
   ## 2014-08-26 AP changes to print ml.method
   ## 2015-04-07 AP changes for fitting anisotropic variograms
   ## 2016-08-05 AP changes for nested variogram models
+	## 2019-05-24 AP correction of error when printing confidence interval of variogram parameters
   
   d2r <- pi / 180.
   
@@ -706,7 +707,7 @@ summary.georob <- function (
         
         ## confidence intervals
         
-        ci <- t( sapply(
+       ci <- t( sapply(
             1L:length(se),
             function( i, m, se, signif ){
               m[i] + c(-1., 1.) * se[i] * qnorm( (1.-signif)/2., lower.tail = FALSE ) 
@@ -724,7 +725,9 @@ summary.georob <- function (
             )
           }, nme = names(se), bwd.tf = object[["control"]][["bwd.tf"]],
           param.tf = param.tf
-        )
+				)
+				
+				if(is.vector(ci)) ci <- matrix(ci, nrow = 1)
         
         colnames( ci ) <- c("Lower", "Upper")
         rownames( ci ) <- names( se )

@@ -54,6 +54,8 @@ condsim <- function(
   ## 2019-03-29 A. Papritz restore default for RFoption spConform
   ## 2019-03-29 A. Papritz conditioning data is passed as SpatialPointsDataFrame to
   ##                       RFsimulate (only applies for exact coordinates)
+	## 2019-05-24 A. Papritz correction of error that occured when preparing output consisting 
+	##                       of a single realization
   
   
   ## auxiliary function for aggregating a response variable x for the
@@ -695,7 +697,8 @@ condsim <- function(
     
     ## store realizations in a matrix 
     
-    sim.values <- res[[1]]
+    sim.values <- matrix(res[[1]], ncol = 1)
+		
     if( length(res) - 1L ){
       for( i in 2L:length(res) ){
         sim.values <- cbind( sim.values, res[[i]] )
@@ -902,7 +905,8 @@ condsim <- function(
     ## store unconditional realizations in a matrix consistent with
     ## dimensions of simulation grid
     
-    sim.values <- res[[1]]
+    sim.values <- matrix(res[[1]], ncol = 1)
+		
     if( length(res) - 1L ){
       for( i in 2L:length(res) ){
         sim.values <- abind( sim.values, res[[i]] )
