@@ -1,7 +1,7 @@
 % 2018-11-16 A. Papritz
 % R CMD Rdconv -t html -o bla.html georob.Rd ; open bla.html; R CMD Rd2pdf --force georob.Rd; 
 
-\encoding{macintosh}
+\encoding{utf8}
 \name{georob}
 \alias{georob}
 %
@@ -100,7 +100,7 @@ georob(formula, data, subset, weights, na.action, model = TRUE,
       \item{\code{scale}: range parameter (\eqn{\alpha}) of the variogram.}
      
       \item{names of additional variogram parameters such as the smoothness
-      parameter \eqn{\nu} of the Whittle-MatÂŽrn model (see
+      parameter \eqn{\nu} of the Whittle-Mat\'ern model (see
       \code{\link[RandomFields]{RMmodel}} and
       \code{\link{param.names}}).}
        
@@ -174,7 +174,7 @@ georob(formula, data, subset, weights, na.action, model = TRUE,
   } 
   
   Note that the arguments \code{variogram.model}, \code{param},
-  \code{fit.param}, \code{aniso} and \code{fit.aniso} are ignored when
+  \code{fit.param}, \code{aniso} and\cr \code{fit.aniso} are ignored when
   \code{variogram.object} is passed to \code{georob}. }
   
     
@@ -200,7 +200,7 @@ georob(formula, data, subset, weights, na.action, model = TRUE,
 }
 
 \details{\code{georob} fits a spatial linear model by robust or Gaussian RE(ML) 
-  (\cite{\enc{KŸnsch}{Kuensch} et al., 2011}, \cite{\enc{KŸnsch}{Kuensch}
+  (\cite{\enc{KÃ¼nsch}{Kuensch} et al., 2011}, \cite{\enc{KÃ¼nsch}{Kuensch}
   et al., in preparation}).  \code{\link{georobIntro}} describes the
   employed model and briefly sketches the robust REML estimation and the
   robust external drift Kriging method.  Here, we describe further details
@@ -222,7 +222,7 @@ georob(formula, data, subset, weights, na.action, model = TRUE,
     
     The arguments \code{fit.param} and \code{fit.aniso} are used to control
     what variogram and anisotropy parameters are estimated and which are
-    kept at the constant initial values.  The functions
+    kept at the constant initial values.  The functions\cr
     \code{\link{default.fit.param}} and \code{\link{default.fit.aniso}} set
     reasonable default values for these arguments.  Note, as an aside, that
     the function \code{\link{default.aniso}} sets (default) values of the
@@ -298,7 +298,7 @@ georob(formula, data, subset, weights, na.action, model = TRUE,
       
         \item \emph{Checking permissible ranges}: The additional parameters
         of the variogram models such as the smoothness parameter \eqn{\nu}
-        of the Whittle-MatÂŽrn model are forced to stay in the permissible
+        of the Whittle-Mat\'ern model are forced to stay in the permissible
         ranges by signalling an error to \code{nleqslv}, \code{nlminb} or
         \code{optim} if the current trial values are invalid.  These
         functions then graciously update the trial values of the parameters
@@ -432,10 +432,10 @@ fit of a spatial linear model.  See
 \references{
   Diggle, P. J. and Ribeiro, P. J. R. (2006) Model-based Geostatistics. Springer.
 
-  \enc{KŸnsch}{Kuensch}, H. R., Papritz, A., Schwierz, C. and Stahel, W. A. (in
+  \enc{KÃ¼nsch}{Kuensch}, H. R., Papritz, A., Schwierz, C. and Stahel, W. A. (in
   preparation) Robust Geostatistics.
 
-  \enc{KŸnsch}{Kuensch}, H. R., Papritz, A., Schwierz, C. and Stahel, W. A. (2011) Robust
+  \enc{KÃ¼nsch}{Kuensch}, H. R., Papritz, A., Schwierz, C. and Stahel, W. A. (2011) Robust
   estimation of the external drift and the variogram of spatial data.
   Proceedings of the ISI 58th World Statistics Congress of the International
   Statistical Institute.

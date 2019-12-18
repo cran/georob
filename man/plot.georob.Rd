@@ -1,7 +1,7 @@
 % 2016-02-25 A. Papritz
 % R CMD Rdconv -t html -o bla.html plot.georob.Rd ; open bla.html; R CMD Rd2pdf --force plot.georob.Rd; 
 
-\encoding{macintosh}
+\encoding{utf8}
 \name{plot.georob}
 \alias{plot.georob}
 \alias{lines.georob}

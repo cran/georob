@@ -1,7 +1,7 @@
 % 2018-04-25 A. Papritz
 % R CMD Rdconv -t html -o bla.html cv.georob.Rd ; open bla.html; R CMD Rd2pdf --force cv.georob.Rd; 
 
-\encoding{macintosh}
+\encoding{utf8}
 \name{cv.georob}
 \alias{cv.georob}
 
@@ -79,37 +79,37 @@
   \item{param}{a named numeric vector or a matrix or data frame with
   initial values of variogram parameters passed by
   \code{\link[stats]{update}} to \code{\link{georob}}.  If \code{param} is
-  a matrix (or a data frame) then it must have \code{nset} rows and
+  a matrix (or a data frame) then it must have \code{nset} rows and\cr
   \code{length(object[["variogram.object"]][[1]][["param"]])} columns with
   initial values of variogram parameters for the \code{nset}
-  cross-validation sets, and \code{colnames(param)} must match
+  cross-validation sets, and \code{colnames(param)} must match\cr
   \code{names(object[["variogram.object"]][[1]][["param"]])}.}
   
   \item{fit.param}{a named logical vector or a matrix or data frame
   defining which variogram parameters should be adjusted by
   \code{\link[stats]{update}}.  If \code{fit.param} is a matrix (or a data
-  frame) then it must have \code{nset} rows and
+  frame) then it must have \code{nset} rows and\cr
   \code{length(object[["variogram.object"]][[1]][["fit.param"]])} columns
   with variogram parameter fitting flags for the \code{nset}
-  cross-validation sets, and \code{colnames(param)} must match
+  cross-validation sets, and \code{colnames(param)} must match\cr
   \code{names(object[["variogram.object"]][[1]][["fit.param"]])}.}
   
   \item{aniso}{a named numeric vector or a matrix or data frame with
   initial values of anisotropy parameters passed by
   \code{\link[stats]{update}} to \code{\link{georob}}.  If \code{aniso} is
-  a matrix (or a data frame) then it must have \code{nset} rows and
+  a matrix (or a data frame) then it must have \code{nset} rows and\cr
   \code{length(object[["variogram.object"]][[1]][["aniso"]])} columns with
   initial values of anisotropy parameters for the \code{nset}
-  cross-validation sets, and \code{colnames(aniso)} must match
+  cross-validation sets, and \code{colnames(aniso)} must match\cr
   \code{names(object[["variogram.object"]][[1]][["aniso"]])}.}
   
   \item{fit.aniso}{a named logical vector or a matrix or data frame
   defining which anisotropy parameters should be adjusted by
   \code{\link[stats]{update}}.  If \code{fit.aniso} is a matrix (or a data
-  frame) then it must have \code{nset} rows and
+  frame) then it must have \code{nset} rows and\cr
   \code{length(object[["variogram.object"]][[1]][["fit.aniso"]])} columns
   with anisotropy parameter fitting flags for the \code{nset}
-  cross-validation sets, and \code{colnames(param)} must match
+  cross-validation sets, and \code{colnames(param)} must match\cr
   \code{names(object[["variogram.object"]][[1]][["fit.aniso"]])}.}
   
   \item{variogram.object}{an optional list that gives initial values of for
@@ -121,41 +121,41 @@
       \item{param}: an optional named numeric vector or a matrix or data
       frame with initial values of variogram parameters passed by
       \code{\link[stats]{update}} to \code{\link{georob}}.  If \code{param}
-      is a matrix (or a data frame) then it must have \code{nset} rows and
+      is a matrix (or a data frame) then it must have \code{nset} rows and\cr
       \code{length(object[["variogram.object"]][[i]][["param"]])} columns
       with initial values of variogram parameters for the \code{nset}
       cross-validation sets (\var{i} is the \var{i}th variogram structure),
-      and \code{colnames(param)} must match
+      and \code{colnames(param)} must match\cr
       \code{names(object[["variogram.object"]][[i]][["param"]])}.
       
       \item{fit.param}: an optional named logical vector or a matrix or data frame
       defining which variogram parameters should be adjusted by
       \code{\link[stats]{update}}.  If \code{fit.param} is a matrix (or a
-      data frame) then it must have \code{nset} rows and
+      data frame) then it must have \code{nset} rows and\cr
       \code{length(object[["variogram.object"]][[i]][["fit.param"]])}
       columns with variogram parameter fitting flags for the \code{nset}
       cross-validation sets (\var{i} is the \var{i}th variogram structure),
-      and \code{colnames(param)} must match
+      and \code{colnames(param)} must match\cr
       \code{names(object[["variogram.object"]][[i]][["fit.param"]])}.
       
       \item{aniso}: an optional named numeric vector or a matrix or data frame with
       initial values of anisotropy parameters passed by
       \code{\link[stats]{update}} to \code{\link{georob}}.  If \code{aniso}
-      is a matrix (or a data frame) then it must have \code{nset} rows and
+      is a matrix (or a data frame) then it must have \code{nset} rows and\cr
       \code{length(object[["variogram.object"]][[i]][["aniso"]])} columns
       with initial values of anisotropy parameters for the \code{nset}
       cross-validation sets (\var{i} is the \var{i}th variogram structure),
-      and \code{colnames(aniso)} must match
+      and \code{colnames(aniso)} must match\cr
       \code{names(object[["variogram.object"]][[i]][["aniso"]])}.
       
       \item{fit.aniso}: an optional named logical vector or a matrix or
       data frame defining which anisotropy parameters should be adjusted by
       \code{\link[stats]{update}}.  If \code{fit.aniso} is a matrix (or a
-      data frame) then it must have \code{nset} rows and
+      data frame) then it must have \code{nset} rows and\cr
       \code{length(object[["variogram.object"]][[i]][["fit.aniso"]])}
       columns with anisotropy parameter fitting flags for the \code{nset}
       cross-validation sets(\var{i} is the \var{i}th variogram structure),
-      and \code{colnames(param)} must match
+      and \code{colnames(param)} must match\cr
       \code{names(object[["variogram.object"]][[i]][["fit.aniso"]])}.
   
     }
@@ -246,13 +246,14 @@
   log-transformed response.}
   
   \item{lgn.se}{the Kriging standard errors of the back-transformed
-  predictions of a log-transformed response.}
+  predictions of a\cr log-transformed response.}
   
   The second component \code{fit} contains either the full outputs of
   \code{georob}, fitted for the \eqn{K} reduced data sets
   (\code{reduced.output = FALSE}), or \eqn{K} lists with the components
   \code{tuning.psi}, \code{converged}, \cr \code{convergence.code},
-  \code{gradient}, \code{variogram.object}, \code{coefficients} along with the standard errors of
+  \code{gradient}, \code{variogram.object}, \code{coefficients} along with
+  the standard errors of
   \eqn{\widehat{\mbox{\boldmath$\beta$\unboldmath}}}{hat\beta}, see
   \code{\link{georobObject}}.
  
@@ -310,8 +311,14 @@ r.logzn <- georob(log(zinc) ~ sqrt(dist), data = meuse, locations = ~ x + y,
     param = c(variance = 0.15, nugget = 0.05, scale = 200),
     tuning.psi = 1)
 
-r.logzn.cv.1 <- cv(r.logzn, seed = 1, lgn = TRUE)
-r.logzn.cv.2 <- cv(r.logzn, formula = .~. + ffreq, seed = 1, lgn = TRUE)
+r.logzn.cv.1 <- cv(r.logzn, seed = 1, lgn = TRUE, ncores = 1, verbose = 1)
+## using multiple cores
+## r.logzn.cv.1 <- cv(r.logzn, seed = 1, lgn = TRUE)
+r.logzn.cv.2 <- cv(r.logzn, formula = .~. + ffreq, seed = 1, lgn = TRUE, 
+    ncores = 1, verbose = 1)
+## using multiple cores
+## r.logzn.cv.2 <- cv(r.logzn, formula = .~. + ffreq, seed = 1, lgn = TRUE, 
+##    ncores = 1, verbose = 1)
 
 plot(r.logzn.cv.1, type = "bs")
 plot(r.logzn.cv.2, type = "bs", add = TRUE, col = "red")

@@ -1,7 +1,7 @@
 % 2018-01-24 A. Papritz
 % R CMD Rdconv -t html -o bla.html predict.georob.Rd ; open bla.html; R CMD Rd2pdf --force predict.georob.Rd; 
 
-\encoding{macintosh}
+\encoding{utf8}
 \name{predict.georob}
 \alias{predict.georob}
 \alias{control.predict.georob}
@@ -257,14 +257,13 @@ control.predict.georob(full.covmat = FALSE, extended.output = FALSE,
 }
 
 \references{
-  Nussbaum, M., Papritz, A., Baltensweiler, A. and Walthert, L. (2012)
-  \emph{Organic Carbon  Stocks of Swiss Forest Soils},
-  Institute of Terrestrial Ecosystems, ETH Zurich and 
-  Swiss Federal Institute for Forest, Snow and Landscape Research
-  (WSL), pp. 51. 
-  \url{http://dx.doi.org/10.3929/ethz-a-007555133}
+  Nussbaum, M., Papritz, A., Baltensweiler, A. and Walthert, L. (2014)
+  Estimating soil organic carbon stocks of {Swiss} forest soils by robust
+  external-drift kriging.  \emph{Geoscientific Model Development},
+  \bold{7}, 1197--1210.  \doi{10.5194/gmd-7-1197-2014}, 
+  \url{https://www.geosci-model-dev.net/7/1197/2014/}.
 
-  \enc{Knsch}{Kuensch}, H. R., Papritz, A., Schwierz, C. and Stahel, W. A. (2011) Robust
+  \enc{Künsch}{Kuensch}, H. R., Papritz, A., Schwierz, C. and Stahel, W. A. (2011) Robust
   estimation of the external drift and the variogram of spatial data.
   Proceedings of the ISI 58th World Statistics Congress of the International
   Statistical Institute.

@@ -1,7 +1,7 @@
 % 2018-08-27 A. Papritz
 % R CMD Rdconv -t html -o bla.html georobModelBuilding.Rd ; open bla.html; R CMD Rd2pdf --force georobModelBuilding.Rd; 
 
-\encoding{macintosh}
+\encoding{utf8}
 \name{georobModelBuilding}
 \alias{georobModelBuilding}
 \alias{add1.georob}
@@ -155,7 +155,7 @@ step(object, ...)
   heteroscedastic nugget (see above).
   
   The methods \code{extractAIC}, \code{add1}, \code{drop1} and \code{step}
-  are used for stepwise model building.  If \code{fixed==TRUE} or
+  are used for stepwise model building. \cr If \code{fixed==TRUE} or
   \code{fixed.add1.drop1==TRUE} (default) then the variogram parameters are
   kept fixed at the values of \code{object}.  For
   \code{fixed==FALSE} or \code{fixed.add1.drop1==FALSE} the variogram

@@ -3,6 +3,7 @@
 
 %  hunspell -d en_GB -t -i mac  *.Rd
 
+\encoding{utf8}
 \name{compress}
 \alias{compress}
 \alias{expand}
@@ -55,7 +56,8 @@
 }
 
 \author{
-  Andreas Papritz \email{andreas.papritz@env.ethz.ch}
+  Andreas Papritz \email{andreas.papritz@env.ethz.ch}\cr
+  \url{https://step.ethz.ch/people/scientific-staff/andreas-papritz.html}
 }
 
 \seealso{

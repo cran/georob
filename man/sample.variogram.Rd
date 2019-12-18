@@ -1,7 +1,7 @@
 % 2015-11-30 A. Papritz
 % R CMD Rdconv -t html -o bla.html sample.variogram.Rd ; open bla.html; R CMD Rd2pdf --force sample.variogram.Rd; 
 
-\encoding{macintosh}
+\encoding{utf8}
 \name{sample.variogram}
 \alias{sample.variogram}
 \alias{sample.variogram.default}
@@ -55,8 +55,8 @@ sample.variogram(object, ...)
   the sample variogram should be computed
   (\code{sample.variogram.default}), a formula, specifying in its left part
   the response variable (right part of formula is ignored,
-  \code{sample.variogram.formula}), an object of class \code{georob}
-  (\code{sample.variogram.georob}) or an object of class
+  \code{sample.variogram.formula}), an object of class \code{georob}\cr 
+  (\code{sample.variogram.georob}) or an object of class\cr
   \code{sample.variogram} (\code{summary.sample.variogram}).}
   
   \item{locations}{a numeric matrix with the coordinates of the locations
@@ -67,7 +67,7 @@ sample.variogram(object, ...)
   if a directional variogram is computed.}
   
   \item{data}{an optional data frame, list or environment (or another
-  object coercible by \code{\link{as.data.frame}} to a data frame)
+  object coercible by\cr \code{\link{as.data.frame}} to a data frame)
   containing the response variable and the coordinates where the data
   was recorded.  If not found in \code{data}, the variables are taken from
   \code{environment(formula)}, typically the environment from which

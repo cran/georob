@@ -16,8 +16,22 @@ control.condsim <- function(
   ## condsim
   
   ## 2018-01-12 A. Papritz
+  ## 2019-12-17 AP sanity checks of arguments and if()
   
+  ## check arguments
+  
+  stopifnot(identical(length(use.grid), 1L) && is.logical(use.grid))
+  stopifnot(identical(length(condsim), 1L) && is.logical(condsim))
+  stopifnot(identical(length(include.data.sites), 1L) && is.logical(include.data.sites))
+  stopifnot(identical(length(means), 1L) && is.logical(means))
+  stopifnot(identical(length(trend.covariates), 1L) && is.logical(trend.covariates))
+  stopifnot(identical(length(covariances), 1L) && is.logical(covariances))
+
+  stopifnot(identical(length(ncores), 1L) && is.numeric(ncores))
+
   if( grid.refinement < 1. ) warning( "grid refinement factor < 1")
+  
+  ## prepare list
   
   list(
     use.grid = use.grid,
@@ -34,6 +48,8 @@ control.condsim <- function(
 
 
 ##  ###########################################################################
+
+### condsim -------------
 
 condsim <- function(
   object, newdata, nsim, seed, 
@@ -56,7 +72,9 @@ condsim <- function(
   ##                       RFsimulate (only applies for exact coordinates)
 	## 2019-05-24 A. Papritz correction of error that occured when preparing output consisting 
 	##                       of a single realization
-  
+ 	## 2019-12-17 A. Papritz correction of errors in output from RFsimulate
+  ## 2019-12-17 AP sanity checks of arguments and if()
+ 
   
   ## auxiliary function for aggregating a response variable x for the
   ## levels of the variable by.one
@@ -66,7 +84,11 @@ condsim <- function(
     aggregate( x, list( by = by.one ), FUN = FUN, ...  )[, -1]
   }
   
+
+#### -- check arguments -------------
   
+  stopifnot(identical(length(verbose), 1L) && is.numeric(verbose))
+
   ## match arguments
   
   type <- match.arg( type )
@@ -100,7 +122,7 @@ condsim <- function(
   
   ## coordinates only as covariates for trend model if newdata is a Spatialxx object
   
-  if( class( newdata ) %in% c( "SpatialPoints", "SpatialPixels", "SpatialGrid" ) ){
+  if( all(class( newdata ) %in% c( "SpatialPoints", "SpatialPixels", "SpatialGrid" ) ) ){
     t.formula <- as.formula( paste( as.character( formula( object ) )[-2L], collapse = "" ) )
     tmp <- try(
       get_all_vars( t.formula, as.data.frame( coordinates( newdata ) ) ),
@@ -117,7 +139,9 @@ condsim <- function(
     "'trend.coef' inconsistent with trend model of 'object'"
   )
   
-    
+  
+#### -- re-fit model for new variogram -------------
+  
   ## re-fit model if variogram parameters have been specified
   
   ## setup or check contents of variogram.object
@@ -292,7 +316,9 @@ condsim <- function(
 
   }
   
-
+  
+#### -- prepare objects on support data -------------
+  
   ## extract required items about data sites (support data) from object
   
   ## terms
@@ -352,6 +378,8 @@ condsim <- function(
   )
   
   
+#### -- prepare objects on support data -------------
+  
   ## extract signal variance, xi, nugget and gcr.constant
   
   tmp <- f.reparam.fwd( object[["variogram.object"]] )
@@ -366,7 +394,9 @@ condsim <- function(
     object[["Valphaxi.objects"]][["Valpha"]],
     function(x) x[["gcr.constant"]]
   )
+   
   
+#### -- prepare variogram object for simulation -------------
   
   ## create variogram object for simulation by RFsimulate
   
@@ -402,6 +432,8 @@ condsim <- function(
   )
   
   
+#### -- prepare covariates for simulation -------------
+  
   ## covariates for trend model if required
   
   covariates.d <- NULL
@@ -419,18 +451,21 @@ condsim <- function(
   }
   
   
+#### -- (un-)conditional means at simlation sites -------------
+  
   ## prepare required items for simulation sites
   
   if( verbose > 0 ) cat( "  compute (conditional) mean ...\n" )
   
-  ## use provided trend function parameters
+  
+#### ---- using specified trend coefficients -------------
   
   if( !is.null( trend.coef ) ){
     
     ## get modelframe for newdata
     
     mf.s <- switch(
-      class( newdata ),
+      class( newdata )[1],
       "data.frame" = model.frame(
         Terms, newdata, na.action = na.pass, xlev = object[["xlevels"]]
       ),
@@ -478,7 +513,7 @@ condsim <- function(
     ## get matrix of coordinates of newdata for point kriging
     
     coords.s <- as.data.frame(switch(
-      class( newdata ),
+      class( newdata )[1],
       "data.frame" = model.matrix(
         Terms.loc,
         model.frame(
@@ -529,6 +564,9 @@ condsim <- function(
     }
   
   } else {
+  
+  
+#### ---- using fitted trend coefficients -------------
     
     ## compute (conditional) mean by predict.georob
     
@@ -550,11 +588,16 @@ condsim <- function(
   
   }
   
+#### -- (un-)conditional realizations at simlation sites -------------
+  
   ## compute (conditional) realizations ...
   
   if( !control[["use.grid"]] ){
     
     ## ... using exact coordinates of sites
+    
+    
+#### ---- exact coordinates -------------
     
     if( verbose > 0 ) cat( "  simulate with exact coordinates ...\n" )
     
@@ -602,7 +645,6 @@ condsim <- function(
       data <- NULL
     }
     
-    
     ## auxiliary function for simulating (conditional) realizations in parallel
     
     f.aux.sim.1 <- function( i ){
@@ -648,13 +690,17 @@ condsim <- function(
       
       RFoptions( spConform = TRUE )      
 
+      if(identical(as.integer(nsim), 1L)){
+        dim(res) <- c(dim(res), 1L)      
+      } 
+      
       res
       
     }
     
     ## determine number of cores
     
-    ncores <- control[["ncores"]]
+    ncores <- min(control[["ncores"]], nsim)
     
     ## definition of junks to be evaluated in parallel
     
@@ -697,13 +743,14 @@ condsim <- function(
     
     ## store realizations in a matrix 
     
-    sim.values <- matrix(res[[1]], ncol = 1)
+    sim.values <- res[[1]]
 		
     if( length(res) - 1L ){
       for( i in 2L:length(res) ){
         sim.values <- cbind( sim.values, res[[i]] )
       }
     }
+    
     colnames( sim.values ) <- paste0( "sim.", seq_len( nsim) )
     
     #     sv.exact <<- sim.values
@@ -734,6 +781,9 @@ condsim <- function(
     ## ---------- end !control[["use.grid"]]
     
   } else {
+    
+    
+#### ---- simulation grid -------------
     
     ## ... using simulation grid    
 
@@ -852,6 +902,10 @@ condsim <- function(
       }
       
       RFoptions( spConform = TRUE )
+      
+      if(identical(as.integer(nsim), 1L)){
+        dim(res) <- c(dim(res), 1L)      
+      } 
 
       res
       
@@ -861,7 +915,7 @@ condsim <- function(
     
     ## determine number of cores
     
-    ncores <- control[["ncores"]]
+    ncores <- min(control[["ncores"]], nsim)
     
     ## definition of junks to be evaluated in parallel
     
@@ -905,7 +959,7 @@ condsim <- function(
     ## store unconditional realizations in a matrix consistent with
     ## dimensions of simulation grid
     
-    sim.values <- matrix(res[[1]], ncol = 1)
+    sim.values <- res[[1]]
 		
     if( length(res) - 1L ){
       for( i in 2L:length(res) ){
@@ -1053,10 +1107,13 @@ condsim <- function(
     
   }
   
+    
+#### --- finalizing output -------------
+
   ## convert result to same class as newdata
   
   result <- switch(
-    class( newdata ),
+    class( newdata )[1],
     "data.frame" = result,
     "SpatialPoints" = ,
     "SpatialPointsDataFrame" = {

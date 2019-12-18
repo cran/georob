@@ -1,7 +1,7 @@
 % 2014-05-28 A. Papritz
 % R CMD Rdconv -t html -o bla.html param.names.Rd ; open bla.html; R CMD Rd2pdf --force param.names.Rd; 
 
-\encoding{macintosh}
+\encoding{utf8}
 \name{param.names}
 \alias{param.names}
 \alias{param.bounds}
@@ -27,7 +27,7 @@ param.bounds(model, d)
 
 \value{
   Either a character vector with the names of the additional variogram
-  parameters such as the smoothness parameter of the Whittle-Matérn model
+  parameters such as the smoothness parameter of the Whittle-Mat√©rn model
   (\code{param.names}) or a named list with the lower and upper bounds of
   permissible parameter ranges.  
 }

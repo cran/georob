@@ -1,6 +1,6 @@
 % 2016-02-29 A. Papritz
 % R CMD Rdconv -t html -o bla.html control.georob.Rd ; open bla.html; R CMD Rd2pdf --force control.georob.Rd; 
-\encoding{macintosh}
+\encoding{utf8}
 \name{control.georob}
 \alias{control.georob}
 \alias{param.transf}
@@ -189,7 +189,7 @@ control.nlminb(control = list(rel.tol = 1.e-5), lower = -Inf,
   see \emph{Details}.}
   
   \item{error.family.cov.residuals}{character keyword, defining the
-  probability distribution for \eqn{\varepsilon}{\epsilon} (default:
+  probability distribution for \eqn{\varepsilon}{\epsilon} (default:\cr
   \code{"long.tailed"}) that is used to approximate the covariances of
   \eqn{\widehat{\mbox{\boldmath$\varepsilon$\unboldmath}}=\mbox{\boldmath$Y$\unboldmath}
   - \mbox{\boldmath$X$\unboldmath}
@@ -365,7 +365,7 @@ control.nlminb(control = list(rel.tol = 1.e-5), lower = -Inf,
     of \eqn{\psi'(\varepsilon/\tau) (= \partial / \partial \varepsilon \,
     \psi(\varepsilon/\tau))}{\psi'(\epsilon/\tau) (= \partial / \partial
     \epsilon \psi(\epsilon/\tau))}.  The arguments
-    \code{error.family.estimation}, \code{error.family.cov.effects} and
+    \code{error.family.estimation}, \code{error.family.cov.effects} and\cr
     \code{error.family.cov.residuals} control what parametric distribution
     for \eqn{\varepsilon}{\epsilon} is used to compute the variance of
     \eqn{\varepsilon}{\epsilon},
@@ -391,7 +391,7 @@ control.nlminb(control = list(rel.tol = 1.e-5), lower = -Inf,
       \widehat{\mbox{\boldmath$B$\unboldmath}}
       =\mbox{\boldmath$Y$\unboldmath} - \mbox{\boldmath$X$\unboldmath}
       \widehat{\mbox{\boldmath$\beta$\unboldmath}}}{hat\epsilon+ hatB=Y-X
-      hat\beta} (\code{error.family.cov.residuals}).
+      hat\beta}\cr (\code{error.family.cov.residuals}).
         
     }
 

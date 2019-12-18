@@ -1,7 +1,7 @@
 % 2017-12-22 A. Papritz
 % R CMD Rdconv -t html -o bla.html pmm.Rd ; open bla.html; R CMD Rd2pdf --force pmm.Rd; 
 
-\encoding{macintosh}
+\encoding{utf8}
 \name{pmm}
 \alias{pmm}
 \alias{control.pcmp}
@@ -10,7 +10,7 @@
 
 \description{
   This page documents the function \code{pmm} for parallelized matrix
-  multiplication and the function \code{control.pcmp}, which controls
+  multiplication and the function\cr \code{control.pcmp}, which controls
   the behaviour of \code{pmm} and other functions that execute tasks in
   parallel.}
   
@@ -88,7 +88,7 @@ processes.
     
     \item{\code{control.pcmp}:}{a list with components
     \code{pmm.ncores}, \code{gcr.ncores}, \code{max.ncores}, \code{f},
-    \code{sfstop}, \code{allow.recursive}.} } }
+    \code{sfstop},\cr \code{allow.recursive}.} } }
    
 \author{
    Andreas Papritz \email{andreas.papritz@env.ethz.ch}
@@ -106,7 +106,8 @@ processes.
 A <- as.matrix(dist(rnorm(2000)))
 B <- as.matrix(dist(rnorm(2000)))
 system.time(C <- pmm(A, B, control = control.pcmp(pmm.ncores = 1)))
-system.time(C <- pmm(A, B, control = control.pcmp(pmm.ncores = 4)))
+## using 4 cores
+## system.time(C <- pmm(A, B, control = control.pcmp(pmm.ncores = 4)))
 }}
 
 \keyword{models}

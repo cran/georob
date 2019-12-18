@@ -1,7 +1,7 @@
 % 2019-04-07 A. Papritz
 % R CMD Rdconv -t html -o bla.html fit.variogram.model.Rd ; open bla.html; R CMD Rd2pdf --force fit.variogram.model.Rd; 
 
-\encoding{macintosh}
+\encoding{utf8}
 \name{fit.variogram.model}
 \alias{control.fit.variogram.model}
 \alias{fit.variogram.model}
@@ -150,7 +150,7 @@ control.fit.variogram.model(maximizer = c("nlminb", "optim"),
   } 
   
   Note that the arguments \code{variogram.model}, \code{param},
-  \code{fit.param}, \code{aniso} and \code{fit.aniso} are ignored when
+  \code{fit.param}, \code{aniso} and\cr \code{fit.aniso} are ignored when
   \code{variogram.object} is passed to \code{fit.variogram.model}. }    
   
   \item{max.lag}{a positive numeric defining the maximum lag distance to be

@@ -1,7 +1,7 @@
 % 2018-05-25 A. Papritz
 % R CMD Rdconv -t html -o bla.html georobObject.Rd ; open bla.html; R CMD Rd2pdf --force georobObject.Rd; 
 
-\encoding{macintosh}
+\encoding{utf8}
 \name{georobObject}
 \alias{georobObject}
 
@@ -93,7 +93,7 @@
     \psi(hat\epsilon_i/hat\tau) / (hat\epsilon_i/hat\tau)}.}
     
   \item{converged}{logical indicating whether numerical maximization of
-  the (restricted) log-likelihood by \code{nlminb} or \code{optim} or root
+  the (restricted)\cr log-likelihood by \code{nlminb} or \code{optim} or root
   finding by \code{nleqslv} converged.}
     
   \item{convergence.code}{a diagnostic integer issued by

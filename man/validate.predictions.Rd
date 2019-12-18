@@ -1,7 +1,7 @@
 % 2015-11-27 A. Papritz
 % R CMD Rdconv -t html -o bla.html validate.predictions.Rd ; open bla.html; R CMD Rd2pdf --force validate.predictions.Rd; 
 
-\encoding{macintosh}
+\encoding{utf8}
 \name{validate.predictions}
 \alias{validate.predictions}
 \alias{plot.cv.georob}
@@ -315,8 +315,9 @@ r.logzn <- georob(log(zinc) ~ sqrt(dist), data = meuse, locations = ~ x + y,
     param = c(variance = 0.15, nugget = 0.05, scale = 200),
     tuning.psi = 1)
 
-r.logzn.cv.1 <- cv(r.logzn, seed = 1, lgn = TRUE)
-r.logzn.cv.2 <- cv(r.logzn, formula = .~. + ffreq, seed = 1, lgn = TRUE)
+r.logzn.cv.1 <- cv(r.logzn, seed = 1, lgn = TRUE, ncores = 1, verbose = 1)
+r.logzn.cv.2 <- cv(r.logzn, formula = .~. + ffreq, seed = 1, lgn = TRUE, 
+    ncores = 1, verbose = 1)
 
 summary(r.logzn.cv.1, se = TRUE)
 summary(r.logzn.cv.2, se = TRUE)
@@ -328,7 +329,7 @@ abline(0, 1, lty= "dotted")
 plot(r.logzn.cv.1, type = "ta")
 plot(r.logzn.cv.2, type = "ta", add = TRUE, col = "red")
 abline(h=0, lty= "dotted")
-plot(r.logzn.cv.2, type = "mc", add = TRUE, col = "red")
+plot(r.logzn.cv.2, type = "mc", col = "red")
 plot(r.logzn.cv.1, type = "bs")
 plot(r.logzn.cv.2, type = "bs", add = TRUE, col = "red")
 legend("topright", lty = 1, col = c("black", "red"), bty = "n",

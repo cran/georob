@@ -1,8 +1,7 @@
-% 2018-05-30 A. Papritz
-% R CMD Rdconv -t html -o bla.html georobSimulation.Rd ; open bla.html; 
-% R CMD Rd2pdf --force georobSimulation.Rd; open georobSimulation.pdf
+% 2019-09-28 A. Papritz
+% R CMD Rdconv -t html -o bla.html georobSimulation.Rd ; open bla.html; R CMD Rd2pdf --force georobSimulation.Rd; open georobSimulation.pdf
 
-\encoding{macintosh}
+\encoding{utf8}
 \name{georobSimulation}
 \alias{georobSimulation}
 \alias{condsim}
@@ -77,7 +76,7 @@ parameters of a spatial linear model estimated by the function
   
   \item{trend.coef}{an optional numeric vector with the coefficients of the
   trend model to be used for computing the (conditional) mean function of
-  the random process.}
+  the random process see \emph{Details}.}
   
   \item{variogram.model}{an optional character keyword defining the
   variogram model to be used for the simulations, see \code{\link{georob}}
@@ -100,7 +99,7 @@ parameters of a spatial linear model estimated by the function
   \code{means}, \code{trend.covariates}, \code{covariances},
   \code{ncores}, and \code{pcmp} or a function such as
   \code{control.condsim} that generates such a list, see
-  arguments of \code{control.consim.georob} for details.}
+  arguments of \code{control.condsim} for details.}
   
   \item{verbose}{positive integer controlling logging of diagnostic
   messages to the console.\cr \code{verbose = 0} (default) suppresses
@@ -194,19 +193,18 @@ by \code{\link{georob}} and contained in \code{object}.
   arbitrary geometries of the simulation points.
 
   
-  For \code{use.grid == TRUE}, a rectangular grid is constructed from
-  the coordinates of the points in \code{newdata} and \code{object}.
-  The spacing of the grid is equal to the minimum differences of the
-  coordinates between any pair of points in \code{newdata}, divided by
-  \code{grid.refinement}.  The data related to the points in
-  \code{newdata} (covariates for the trend model) and of the data in
-  \code{object} (response values, covariates) are then assigned to the
-  nodes of the grid that are closest to the respective points.  If the
-  same grid node is assigned to several points in \code{newdata} (or
-  in \code{object}) then the data of the respective points are
-  averaged.  If the same node is assigned to a point in \code{object}
-  and \code{newdata} then the point in \code{object} is kept and the
-  concerned point in \code{newdata} is omitted.  
+	For \code{use.grid == TRUE}, a rectangular grid is constructed from the
+	coordinates of the points in \code{newdata} and \code{object}.  The
+	spacing of the grid is equal to the minimum distance between any pair of
+	points in \code{newdata}, divided by \code{grid.refinement}.  The data
+	related to the points in \code{newdata} (covariates for the trend model)
+	and of the data in \code{object} (response values, covariates) are then
+	assigned to the nodes of the grid that are closest to the respective
+	points.  If the same grid node is assigned to several points in
+	\code{newdata} (or in \code{object}) then the data of the respective
+	points are averaged.  If the same node is assigned to a point in
+	\code{object} and \code{newdata} then the point in \code{object} is kept
+	and the concerned point in \code{newdata} is omitted.
   
 }
 
@@ -215,7 +213,7 @@ by \code{\link{georob}} and contained in \code{object}.
   Simulations are conditioned to data either by exploiting the respective
   built-in functionality of \code{\link[RandomFields]{RFsimulate}}
   (\code{use.grid == FALSE}) or by the Kriging method (\code{use.grid ==
-  TRUE}, see \enc{Chilès}{Chiles} and Delfiner, 1999, sec.  7.3).  The
+  TRUE}, see \enc{Chil√®s}{Chiles} and Delfiner, 1999, sec.  7.3).  The
   latter approach may again be faster for large problems because it
   exploits the larger speed of unconditional simulations for rectangular
   grids.
@@ -272,13 +270,14 @@ by \code{\link{georob}} and contained in \code{object}.
 
 \references{ 
 
-  \enc{Chilès}{Chiles}, J.-P. and Delfiner, P. (1999) \emph{Geostatistics:
+  \enc{Chil√®s}{Chiles}, J.-P. and Delfiner, P. (1999) \emph{Geostatistics:
   Modeling Spatial Uncertainty}, John Wiley & Sons, New York.
 
 }
 
 \author{
-   Andreas Papritz \email{andreas.papritz@env.ethz.ch}
+   Andreas Papritz \email{andreas.papritz@env.ethz.ch}\cr
+  \url{https://step.ethz.ch/people/scientific-staff/andreas-papritz.html}
 }
 
 \seealso{
@@ -331,7 +330,10 @@ r.logzn.reml <- georob(log(zinc) ~ sqrt(dist), data = meuse, locations = ~ x + y
     tuning.psi = 1000)
     
 ## Conditional simulations
-r.sim <- condsim(r.logzn.reml, newdata = meuse.grid.sgdf, nsim = 100, seed = 1)
+r.sim <- condsim(r.logzn.reml, newdata = meuse.grid.sgdf, nsim = 100, seed = 1,
+    control = control.condsim(ncores = 1))
+## using multiple cores
+## r.sim <- condsim(r.logzn.reml, newdata = meuse.grid.sgdf, nsim = 100, seed = 1)
 str(r.sim, max=2)
 
 ## Display

@@ -187,7 +187,7 @@ processing col and pch arguments
 2014-03-05  Andreas Papritz  <papritz@env.ethz.ch>
 
 * georob.private.functions.R (compute.semivariance, gar): changes for RandomFields version 3
-* georob.predict.R (predict.georobcd R.	): changes for RandomFields version 3
+* georob.predict.R (predict.georobcd R. ): changes for RandomFields version 3
 * georob.S3methods.R (add1.georob, drop1.georob, step.georob): changes in functions for stepwise selection of fixed-effects terms
 * georob.cv.R (cv.georob): catching attempt to re-estimate variogram parameters when all parameters in object are fixed
 
@@ -544,3 +544,27 @@ processing col and pch arguments
 * georob.private.functions.R (f.aux.gcr) correction of error when computing semivariances for anisotropic variogram models (introduced on 2019-03-29)
 * variogram.R (control.fit.variogram.model) new function for providing sensible defaults to argument control of fit.variogram.model
 * variogram.R (fit.variogram.model) new control argument and possibility to choose between optim and nlminb for non-linear least squares 
+
+
+2019-05-25 Andreas Papritz  <papritz@env.ethz.ch>
+
+* georob.S3methods.R (summary.georob) correction of error when printing confidence intervals of variogram parameters
+* georob.simulation.R (condsim) correction of error that occurred when preparing output consisting of a single realization
+
+
+2019-10-04 Andreas Papritz  <papritz@env.ethz.ch>
+
+* NAMESPACE   correction of dependencies
+* DESCRIPTION correction of dependencies and licence information
+
+
+2019-10-22 Andreas Papritz  <papritz@env.ethz.ch>
+
+* georob.S3methods.R (summary.georob) terms component taken from georob object
+
+
+2019-12-18 Andreas Papritz  <papritz@env.ethz.ch>
+
+* georob.private.functions.R (f.diag) change in use of class() in and switch()
+* georob.simulation.R (condsim, control.condsim) sanity checks of specified function arguments and if()
+* georob.simulation.R (condsim) correction of errors when processing output from RFsimulate

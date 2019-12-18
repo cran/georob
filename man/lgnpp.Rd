@@ -1,7 +1,7 @@
 % 2015-07-30 A. Papritz
 % R CMD Rdconv -t html -o bla.html lgnpp.Rd ; open bla.html; R CMD Rd2pdf --force lgnpp.Rd; 
 
-\encoding{macintosh}
+\encoding{utf8}
 \name{lgnpp}
 \alias{lgnpp}
 
@@ -90,7 +90,7 @@ lgnpp(object, newdata, locations, is.block = FALSE, all.pred = NULL,
     }{\mu(s) = exp( x(s)^T hat\beta + 1/2 Var[Z(s)]).}
     
     The expressions for the required covariance terms can be found in the
-    Appendices of Nussbaum et al.  (2012).  Instead of the signal
+    Appendices of Nussbaum et al.  (2014).  Instead of the signal
     \eqn{Z(\mbox{\boldmath$s$\unboldmath})}{Z(s)}, predictions of the
     log-transformed response \eqn{Y(\mbox{\boldmath$s$\unboldmath})}{Z(s)}
     or the estimated trend
@@ -167,7 +167,7 @@ lgnpp(object, newdata, locations, is.block = FALSE, all.pred = NULL,
   \code{newdata} can be any spatial data frame accepted by
   \code{predict.georob}.  For evaluating
   \eqn{\mbox{\boldmath$M$\unboldmath}(A)}{M(A)} the geometry of the blocks
-  is taken from the \code{polygons} slot of the
+  is taken from the \code{polygons} slot of the\cr
   \code{SpatialPolygonsDataFrame} passed as \code{object} to \code{lgnpp}.
   
   }
@@ -200,7 +200,7 @@ lgnpp(object, newdata, locations, is.block = FALSE, all.pred = NULL,
  In most instances, the evaluation of the above double sum is not feasible
  because a large number of points is used to discretize the block \eqn{A}.
  \code{lgnpp} then uses the following approximations to compute the mean
- squared error (see also Appendix E of Nussbaum et al., 2012):
+ squared error (see also Appendix E of Nussbaum et al., 2014):
   
   \itemize{
   
@@ -306,12 +306,12 @@ lgnpp(object, newdata, locations, is.block = FALSE, all.pred = NULL,
   of customary and constrained lognormal block Kriging and conditional
   simulations. \emph{Geoderma}, \bold{193--194}, 200--212.
 
-  Nussbaum, M., Papritz, A., Baltensweiler, A. and Walthert, L. (2012)
-  \emph{Organic Carbon  Stocks of Swiss Forest Soils},
-  Institute of Terrestrial Ecosystems, ETH Zurich and 
-  Swiss Federal Institute for Forest, Snow and Landscape Research
-  (WSL), pp. 51. 
-  \url{http://dx.doi.org/10.3929/ethz-a-007555133}
+  Nussbaum, M., Papritz, A., Baltensweiler, A. and Walthert, L. (2014)
+  Estimating soil organic carbon stocks of {Swiss} forest soils by robust
+  external-drift kriging.  \emph{Geoscientific Model Development},
+  \bold{7}, 1197--1210.  \doi{10.5194/gmd-7-1197-2014}, 
+  \url{https://www.geosci-model-dev.net/7/1197/2014/}.
+
 }
 
 \author{

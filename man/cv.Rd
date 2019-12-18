@@ -1,7 +1,7 @@
 % 2012-12-14 A. Papritz
 % R CMD Rdconv -t html -o bla.html cv.Rd ; open bla.html; R CMD Rd2pdf --force cv.Rd; 
 
-\encoding{macintosh}
+\encoding{utf8}
 \name{cv}
 \alias{cv}
 

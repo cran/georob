@@ -5387,9 +5387,11 @@ f.aux.RSS <- function( res, TT, TtT, bhat, Valphaxi.inverse.bhat, eta ){
 ## auxiliary function to extract diagonal of square matrix and to return
 ## x unchanged otherwise
 
+## 2019-12-13 AP correcting use of class() in if() and switch()
+
 f.diag <- function( x ){
   switch(
-    class( x ),
+    class( x )[1],
     matrix = diag( x ),
     x
   )

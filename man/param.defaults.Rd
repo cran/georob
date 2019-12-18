@@ -1,7 +1,7 @@
 % 2015-11-27 A. Papritz
 % R CMD Rdconv -t html -o bla.html param.defaults.Rd ; open bla.html; R CMD Rd2pdf --force param.defaults.Rd; 
 
-\encoding{macintosh}
+\encoding{utf8}
 \name{default.aniso}
 \alias{default.aniso}
 \alias{default.fit.param}
@@ -44,7 +44,7 @@ default.fit.aniso(f1 = FALSE, f2 = FALSE, omega = FALSE,
  
   \item{alpha, beta, delta, gamma, kappa, lambda, mu, nu}{names of
   additional variogram parameters such as the smoothness parameter
-  \eqn{\nu} of the Whittle-Matérn model (see
+  \eqn{\nu} of the Whittle-Mat\'ern model (see
   \code{\link[RandomFields]{RMmodel}} and \code{\link{param.names}}).}
 
   \item{f1}{ratio \eqn{f_1} of lengths of second and first semi-principal
@@ -71,7 +71,7 @@ default.fit.aniso(f1 = FALSE, f2 = FALSE, omega = FALSE,
 \value{
   Either a named numeric with initial values of anisotropy parameters
   (\code{default.aniso}) or named logical vector, controlling
-  what parameters should be estimated (\code{default.fit.param}
+  what parameters should be estimated (\code{default.fit.param},\cr 
   \code{default.fit.aniso}).}
 
 \author{

@@ -1,7 +1,5 @@
 import( graphics, parallel, snowfall, sp, stats, utils )
 
-# importFrom( graphics, axis, hist, legend, lines, matplot, par, points, strheight, text)
-# importFrom( utils, combn)
 importFrom( abind, abind )
 importFrom( constrainedKriging, covmodel, f.point.block.cov, K, preCKrige )
 importFrom( fields, rdist )

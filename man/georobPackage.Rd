@@ -1,8 +1,8 @@
 % 2016-02-26 A. Papritz
 % R CMD Rd2pdf --force georobPackage.Rd;  R CMD Rdconv -t html -o bla.html georobPackage.Rd ; open bla.html; 
 % Rd2latex("georobPackage.Rd", "../vignettes/georobPackage.tex", outputEncoding="macintosh")
-
-\encoding{macintosh}
+%  cd R.user.home/georob/georob_03-11/pkg/man 
+\encoding{utf8}
 \name{georobPackage}
 \alias{georobPackage}
 \alias{georobIntro}
@@ -13,6 +13,7 @@
 \description{This is a summary of the features and functionality of
   \pkg{georob}, a package in \R for robust geostatistical analyses.}
 %
+	
 \details{
 
 % intro
@@ -25,8 +26,8 @@
   with covariate information
   \eqn{x_j(\mbox{\boldmath$s$\unboldmath}_i)}{x_j(s_i)}, \eqn{j=1,2,
   \ldots, p}.
-  
-%   model
+
+	%   model
     
   \subsection{Model}{
     We use the following model for the data 
@@ -207,7 +208,7 @@
    
     
   }
-  
+	
 %   estimation
   
   \subsection{Estimation}{
@@ -227,7 +228,7 @@
     robust restricted maximum likelihood (REML) or 
     Gaussian maximum likelihood (ML). Here \var{\ldots} 
     denote further parameters of the variogram such as the smoothness parameter
-    of the Whittle-\enc{Matrn}{Matern} model.
+    of the Whittle-\enc{Matérn}{Matern} model.
     
     In brief, the robust REML method is based on the insight that for
     given \eqn{\mbox{\boldmath$\theta$\unboldmath}}{\theta} and \eqn{\tau^2} the
@@ -300,7 +301,7 @@
       \item introducing suitable bias correction terms for Fisher consistency at 
         the Gaussian model,
     }
-    see \cite{\enc{Knsch}{Kuensch} et al. (2011)} for details. 
+    see \cite{Kuensch et al. (2011)} for details. 
     The robustified estimating equations
     are solved numerically by a combination of iterated re-weighted least squares
     (IRWLS) to estimate \eqn{\mbox{\boldmath$B$\unboldmath}}{B} and
@@ -338,7 +339,7 @@
     \nu}{d\gamma/d\nu} is evaluated numerically by the function
     \code{\link[stats]{numericDeriv}}, and this results in an increase in
     computing time when \eqn{\nu} is estimated.  }
-  
+		
   %     prediction
   
   \subsection{Prediction}{ 
@@ -377,16 +378,16 @@
     Kriging variances can be computed as well, based on approximated covariances of 
     \eqn{\widehat{\mbox{\boldmath$B$\unboldmath}}}{hatB} and 
     \eqn{\widehat{\mbox{\boldmath$\beta$\unboldmath}}}{hat\beta}
-    (see \cite{Knsch et al., 2011}, and appendices of
-    \cite{Nussbaum et al., 2012}, for details).
+    (see \cite{\enc{Künsch}{Kuensch} et al., 2011}, and appendices of
+    \cite{Nussbaum et al., 2014}, for details).
     
     The package \pkg{georob} provides in addition software for computing
     robust external drift \emph{block} Kriging predictions.  The required
     integrals of the generalized covariance function are computed by
     functions of the \R package \pkg{constrainedKriging}.
   }
-
-% functionality
+	
+	% functionality
   
   \subsection{Functionality}{
     For the time being, the functionality of \pkg{georob} is limited 
@@ -429,17 +430,16 @@
 }
 
 \references{
-  Nussbaum, M., Papritz, A., Baltensweiler, A. and Walthert, L. (2012)
-  \emph{Organic Carbon  Stocks of Swiss Forest Soils},
-  Institute of Terrestrial Ecosystems, ETH Zurich and 
-  Swiss Federal Institute for Forest, Snow and Landscape Research
-  (WSL), pp. 51. 
-  \url{http://dx.doi.org/10.3929/ethz-a-007555133}
+  Nussbaum, M., Papritz, A., Baltensweiler, A. and Walthert, L. (2014)
+  Estimating soil organic carbon stocks of {Swiss} forest soils by robust
+  external-drift kriging.  \emph{Geoscientific Model Development},
+  \bold{7}, 1197--1210.  \doi{10.5194/gmd-7-1197-2014}, 
+  \url{https://www.geosci-model-dev.net/7/1197/2014/}.
 
-  \enc{Knsch}{Kuensch}, H. R., Papritz, A., Schwierz, C. and Stahel, W. A. (in
+  \enc{Künsch}{Kuensch}, H. R., Papritz, A., Schwierz, C. and Stahel, W. A. (in
   preparation) Robust Geostatistics.
 
-  \enc{Knsch}{Kuensch}, H. R., Papritz, A., Schwierz, C. and Stahel, W. A. (2011) Robust
+  \enc{Künsch}{Kuensch}, H. R., Papritz, A., Schwierz, C. and Stahel, W. A. (2011) Robust
   estimation of the external drift and the variogram of spatial data.
   Proceedings of the ISI 58th World Statistics Congress of the International
   Statistical Institute.
@@ -453,7 +453,6 @@
    Andreas Papritz \email{andreas.papritz@env.ethz.ch}\cr
   \url{http://www.step.ethz.ch/people/scientific-staff/andreas-papritz.html}
 }
-
 
 \seealso{
 %  \code{\link{georobIntro}} for a description of the model and a brief summary of the algorithms; 

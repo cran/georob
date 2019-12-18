@@ -600,6 +600,7 @@ summary.georob <- function (
   ## 2015-04-07 AP changes for fitting anisotropic variograms
   ## 2016-08-05 AP changes for nested variogram models
 	## 2019-05-24 AP correction of error when printing confidence interval of variogram parameters
+  ## 2019-10-22 AP terms component taken from georob object
   
   d2r <- pi / 180.
   
@@ -608,10 +609,9 @@ summary.georob <- function (
   ans <- object[c(
     "call", "residuals", "bhat", "rweights", "converged", "convergence.code", 
     "iter", "loglik", "variogram.object", "gradient",
-    "tuning.psi", "df.residual", "control"
+    "tuning.psi", "df.residual", "control", "terms"
   )]
   
-  ans[["terms"]] <- NA
   ans[["scale"]] <- sqrt(object[["variogram.object"]][[1L]][["param"]]["nugget"])
   ans[["control"]][["method"]] <- "TODO: PRINT GLSROB CONTROL PARAMETERS HERE"
   
@@ -707,7 +707,7 @@ summary.georob <- function (
         
         ## confidence intervals
         
-       ci <- t( sapply(
+        ci <- t( sapply(
             1L:length(se),
             function( i, m, se, signif ){
               m[i] + c(-1., 1.) * se[i] * qnorm( (1.-signif)/2., lower.tail = FALSE ) 

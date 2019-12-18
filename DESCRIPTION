@@ -1,13 +1,14 @@
 Package: georob
 Type: Package
 Title: Robust Geostatistical Analysis of Spatial Data
-Version: 0.3-10
-Date: 2019-05-24
+Version: 0.3-11
+Date: 2019-12-18
 Authors@R: c(
   person( "Andreas", "Papritz", role = c( "cre", "aut" ), 
           email =  "andreas.papritz@env.ethz.ch" ),
   person( "Cornelia", "Schwierz", role = "ctb" ))
-Depends: R(>= 2.14.0), parallel, snowfall, sp(>= 0.9-60), stats
+Depends: R(>= 2.14.0), graphics, parallel, snowfall, sp(>= 0.9-60),
+        stats, utils
 Imports: abind, constrainedKriging(>= 0.2-1), fields, lmtest, methods,
         nlme, nleqslv, quantreg, RandomFields(>= 3.3.6), robustbase(>=
         0.90-2)
@@ -20,11 +21,11 @@ Description: Provides functions for efficiently fitting linear models with
          model building, model evaluation by cross-validation, (conditional) 
          simulation of Gaussian processes, unbiased back-transformation of 
          Kriging predictions of log-transformed data.
-License: GPL (>= 2)
+License: GPL (>= 2) | LGPL (>= 2)
 NeedsCompilation: no
-Packaged: 2019-05-24 08:17:07 UTC; papritz
+Packaged: 2019-12-18 08:56:21 UTC; papritz
 Author: Andreas Papritz [cre, aut],
   Cornelia Schwierz [ctb]
 Maintainer: Andreas Papritz <andreas.papritz@env.ethz.ch>
 Repository: CRAN
-Date/Publication: 2019-05-24 16:30:06 UTC
+Date/Publication: 2019-12-18 10:20:02 UTC

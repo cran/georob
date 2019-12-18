@@ -1,7 +1,7 @@
 % 2015-11-27 A. Papritz
 % R CMD Rdconv -t html -o bla.html profilelogLik.Rd ; open bla.html; R CMD Rd2pdf --force profilelogLik.Rd; 
 
-\encoding{macintosh}
+\encoding{utf8}
 \name{profilelogLik}
 \alias{profilelogLik}
 
@@ -120,7 +120,9 @@ r.logzn.ml <- georob(log(zinc)~sqrt(dist), data=meuse, locations=~x+y,
     variogram.model="RMexp", param=c(variance=0.15, nugget=0.05, scale=200),
     tuning.psi=1000, control=control.georob(ml.method="ML"))
   
-r.prflik <- profilelogLik(r.logzn.ml, values=expand.grid(scale=seq(75, 600, by=25)))
+r.prflik <- profilelogLik(r.logzn.ml, values=expand.grid(scale=seq(75, 600, by=25)), ncores = 1)
+## using multiple cores
+## r.prflik <- profilelogLik(r.logzn.ml, values=expand.grid(scale=seq(75, 600, by=25)))
 plot(loglik~scale, r.prflik, type="l")
 abline(v=r.logzn.ml$variogram.object[[1]]$param["scale"], lty="dotted")
 abline(h=r.logzn.ml$loglik-0.5*qchisq(0.95, 1), lty="dotted")

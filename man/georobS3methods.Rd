@@ -1,7 +1,7 @@
-% 2018-05-30 A. Papritz
-% R CMD Rdconv -t html -o bla.html S3methods.georob.Rd ; open bla.html; R CMD Rd2pdf --force S3methods.georob.Rd; 
+% 2019-10-22 A. Papritz
+% R CMD Rdconv -t html -o bla.html georobS3methods.Rd ; open bla.html; R CMD Rd2pdf --force georobS3methods.Rd; 
 
-\encoding{macintosh}
+% \encoding{utf8}
 \name{georobS3methods}
 \alias{georobS3methods}
 \alias{georobMethods}
@@ -37,7 +37,7 @@
   the respective components or summarize a \code{georob} object.}
 
 \usage{
-\method{coef}{georob}(object, what, ...)
+\method{coef}{georob}(object, what = c("trend", "variogram"), ...)
 
 \method{fixef}{georob}(object, ...)
 
@@ -137,8 +137,26 @@
   \code{rstandard} does the same but standardizes the residuals to unit
   variance.  \code{ranef} (\code{random.effects}) extracts the spatial
   random effects with the option to standardize them as well, and
-  \code{fixef} (\code{fixed.effects}) extracts the fitted regression
-  coefficients, which may of course also be obtained by \code{coef}.
+  \code{fixef} (\code{fixed.effects}) extracts the fitted fixed-effects
+  regression coefficients, which may of course also be obtained by
+  \code{coef}.
+  
+  For Gaussian REML the method \code{summary} computes confidence intervals
+  of the estimated variogram and anisotropy parameters from the Hessian
+  matrix of the (restricted) log-likelihood (= observed Fisher
+  information), based on the asymptotic normal distribution of (RE)ML
+  estimates.  Note that the Hessian matrix is computed with respect to the
+  \emph{transformed} variogram and anisotropy parameters, see
+  \code{\link{param.transf}}.  Hence the inverse Hessian matrix is the
+  covariance matrix of the transformed parameters, confidence intervals are
+  first computed for the transformed parameters and the limits of these
+  intervals are transformed back to the orginal scale of the parameters.
+  Optionally, \code{summary} reports the correlation matrix of the
+  \emph{transformed} parameters, also computed from the Hessian matrix.
+  
+  Note that the methods \code{coef} and \code{summary} generate objects of
+  class \code{coef.georob} and \code{summary.georob}, respectively, for
+  which only \code{print} methods are available.
   
   Besides, the default methods of the generic functions
   \code{\link[stats]{confint}},
@@ -148,6 +166,59 @@
   \code{georob}.
   
 }
+
+\value{
+
+  The methods \code{fixef}, \code{fixed.effects} and \code{coef} return the
+  numeric vector of estimated fixed-effects regression coefficients or
+  variogram and anisotropy parameters (\code{coef} only), and \code{vcov}
+  returns the covariance matrix of the estimated regression coefficients.
+  
+  The methods \code{resid}, \code{residuals} and \code{rstandard} return
+  numeric vectors of (standardized) residuals, and \code{ranef} and
+  \code{random.effects} the numeric vector of (standardized) spatial random
+  effects, see \emph{Details}.
+  
+  The methods \code{model.frame} and \code{model.matrix} return a model
+  frame and the fixed-effects model matrix, respectively, and \code{nobs}
+  returns the number of observations used to fit a spatial linear model.
+  
+  The method \code{summary} generates a list with components extracted
+  directly from \code{object} (\code{call}, \code{residuals}, \code{bhat},
+  \code{rweights}, \code{converged}, \code{convergence.code}, \code{iter},
+  \code{loglik}, \code{variogram.object}, \code{gradient},
+  \code{tuning.psi}, \code{df.residual}, \code{control}, \code{terms}) and
+  complements the list by the following components:
+  %
+  \describe{ 
+    
+    \item{\code{scale}}{the square root of the estimated nugget effect
+    \eqn{\tau^2}.}
+    
+    \item{\code{coefficients}}{a 4-column matrix with estimated regression
+    coefficients, their standard errors \var{t}-statistics and
+    corresponding (two-sided) \var{p}-values.}
+    
+    \item{\code{correlation}}{an optional lower-triagonal matrix with the
+    Pearson correlation coefficients of the estimated regression
+    coefficients.}
+    
+    \item{\code{param.aniso}}{either a vector (robust REML) or a 3-column
+    matrix (Gaussian REML) with estimated variogram and anisotropy
+    parameters, complemented for Gaussian REML with confidence limits, see
+    \emph{Details}.}
+    
+    \item{\code{cor.tf.param}}{an optional lower-triagonal matrix with the
+    Pearson correlation coefficients of estimated transformed variogram and
+    anisotropy parameters, see \emph{Details}.}
+    
+    \item{\code{se.residuals}}{a vector with the standard errors of the
+    estimated \eqn{\varepsilon}{\epsilon}.}
+     
+  }
+   
+}
+
 
 \author{
    Andreas Papritz \email{andreas.papritz@env.ethz.ch}
@@ -224,6 +295,8 @@ par(old.par)
 \keyword{models}
 \keyword{spatial}
 \keyword{robust}
+\keyword{methods}
+\keyword{print}
 
 % \method{rstudent}{georob}(model, ...)
 

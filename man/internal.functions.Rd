@@ -1,5 +1,7 @@
 % 208-01-24 A. Papritz
 % R CMD Rdconv -t html -o bla.html internal.functions.Rd ; open bla.html; R CMD Rd2pdf --force internal.functions.Rd 
+
+\encoding{utf8}
 \name{internal.functions}
 \alias{covariances.fixed.random.effects}
 \alias{crpsnorm}
@@ -95,7 +97,7 @@ The unexported internal functions
     % \item{\code{var.pd.resp.rob}}
     \item{\code{update.zhat}}
 }
-are not intended for direct use.  However, as any unexported function they
+are not intended for direct use.  However, as any unexported function, they
 can be accessed by typing \code{georob:::\var{function-name}}.  
 
 In addition, the function \code{K}, which is re-exported by the package
