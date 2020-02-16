@@ -130,7 +130,7 @@ control.nlminb(control = list(rel.tol = 1.e-5), lower = -Inf,
   \code{\link{georob}}; default \code{0.25}).}
   
   \item{param.tf}{a function such as \code{param.transf}, which returns a
-  named vector of character strings that define the transformations to be
+  named list of character strings that define the transformations to be
   applied to the variogram parameters for model fitting, see
   \emph{Details}.}
   
@@ -158,9 +158,9 @@ control.nlminb(control = list(rel.tol = 1.e-5), lower = -Inf,
   \eqn{\mbox{\boldmath$B$\unboldmath}}{B} and
   \eqn{\mbox{\boldmath$\beta$\unboldmath}}{\beta} (default \code{50}).}
    
-  \item{irwls.ftol}{numeric convergence criterion for IRWLS. Convergence is
-  assumed if the objective function changes in one IRWLS iteration does not
-  exceed \code{ftol}.}
+  \item{irwls.ftol}{positive numeric convergence criterion for IRWLS.
+  Convergence is assumed if the objective function changes in one IRWLS
+  iteration does not exceed \code{ftol}.}
   
   \item{force.gradient}{logical controlling whether the estimating
   equations or the gradient of the Gaussian restricted log-likelihood are

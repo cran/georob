@@ -1,4 +1,4 @@
-% 2019-04-07 A. Papritz
+% 2020-02-05 A. Papritz
 % R CMD Rdconv -t html -o bla.html fit.variogram.model.Rd ; open bla.html; R CMD Rd2pdf --force fit.variogram.model.Rd; 
 
 \encoding{utf8}
@@ -387,11 +387,11 @@ mechanisms are used in \code{fit.variogram.model}.
 }
 
 \examples{
-data(wolfcamp, package = "geoR")
+data(wolfcamp)
 
 ## fitting an isotropic IRF(0) model
-r.sv.iso <- sample.variogram(wolfcamp[["data"]], locations = wolfcamp[[1]], 
-    lag.dist.def = seq(0, 200, by = 15))
+r.sv.iso <- sample.variogram(pressure~1, data = wolfcamp, 
+    locations = ~x + y, lag.dist.def = seq(0, 200, by = 15))
 
 \dontrun{
 r.irf0.iso <- fit.variogram.model(r.sv.iso, variogram.model = "RMfbm",
@@ -403,8 +403,8 @@ plot(r.sv.iso, type = "l")
 lines(r.irf0.iso, line.col = "red")}
 
 ## fitting an anisotropic IRF(0) model
-r.sv.aniso <- sample.variogram(wolfcamp[["data"]],
-    locations = wolfcamp[[1]], lag.dist.def = seq(0, 200, by = 15),
+r.sv.aniso <- sample.variogram(pressure~1, data = wolfcamp, 
+    locations = ~x + y, lag.dist.def = seq(0, 200, by = 15),
     xy.angle.def = c(0., 22.5, 67.5, 112.5, 157.5, 180.))
   
 \dontrun{

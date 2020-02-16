@@ -1,4 +1,4 @@
-% 2018-11-16 A. Papritz
+% 2020-02-05 A. Papritz
 % R CMD Rdconv -t html -o bla.html georob.Rd ; open bla.html; R CMD Rd2pdf --force georob.Rd; 
 
 \encoding{utf8}
@@ -481,7 +481,7 @@ fit of a spatial linear model.  See
 
 \examples{
 \dontrun{
-################
+% ################
 ## meuse data ##
 ################
 data(meuse)
@@ -505,13 +505,11 @@ lines(r.logzn.rob, col = "red")
 ###################
 ## wolfcamp data ##
 ###################
-data(wolfcamp, package = "geoR")
-d.wolfcamp <- data.frame(x = wolfcamp[[1]][,1], y = wolfcamp[[1]][,2],
-    pressure = wolfcamp[[2]])
+data(wolfcamp)
 
 ## fitting isotropic IRF(0) model
   
-r.irf0.iso <- georob(pressure ~ 1, data = d.wolfcamp, locations = ~ x + y, 
+r.irf0.iso <- georob(pressure ~ 1, data = wolfcamp, locations = ~ x + y, 
     variogram.model = "RMfbm",
     param = c(variance = 10, nugget = 1500, scale = 1, alpha = 1.5),
     fit.param = default.fit.param(scale = FALSE, alpha = TRUE),
@@ -521,7 +519,7 @@ summary(r.irf0.iso)
 
 ## fitting anisotropic IRF(0) model
   
-r.irf0.aniso <- georob(pressure ~ 1, data = d.wolfcamp, locations = ~ x + y, 
+r.irf0.aniso <- georob(pressure ~ 1, data = wolfcamp, locations = ~ x + y, 
     variogram.model = "RMfbm",
     param = c(variance = 5.9, nugget = 1450, scale = 1, alpha = 1),
     fit.param = default.fit.param(scale = FALSE, alpha = TRUE),

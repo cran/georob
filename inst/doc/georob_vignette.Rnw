@@ -14,6 +14,7 @@
 % 2017-10-20 AP Korrektur von Fehler bei Plot von Profillikelihood
 % 2018-11-16 AP Kleine Erg\"{a}nzung Abschnitt \"{u}ber Berechnung von robusten Startwerten
 % 2019-04-07 AP Anpassung fuer neue Argumente von fit.variogram.model
+% 2020-02-05 AP Anpassung konditionale Verwendung von Objekten aus suggested packages
 
 % cd ~/R.user.home/georob/vignettes/
 % R CMD Sweave georob_vignette.Rnw;  R CMD Stangle georob_vignette.Rnw; pdflatex georob_vignette.tex; open georob_vignette.pdf;
@@ -203,7 +204,7 @@ of (i) (robust) parameter estimation (ii) computing predictions by
  %%
 
 % material taken from
-% tools::Rd2latex("georob-package.Rd", "georob-package.tex", outputEncoding="macintosh")
+% tools::Rd2latex("georob-package.Rd", "georob-package.tex", outputEncoding="utf-8")
 
 \section{Introduction} \label{sec:introduction}
 
@@ -849,10 +850,21 @@ We can test equality of all pairs of intercepts
  by functions of the package \pkg{multcomp}
 %
 <<meuse-zinc-georob-reml-multcomp,eval=TRUE>>=
-library(multcomp)
-summary(glht(r.georob.m0.spher.reml, 
-  linfct = mcp(ffreq = c("ffreq1 - ffreq2 = 0", "ffreq1 - ffreq3 = 0",
-  "ffreq2 - ffreq3 = 0"))))
+if(requireNamespace("multcomp", quietly = TRUE)){
+  summary(multcomp::glht(r.georob.m0.spher.reml, 
+    linfct = multcomp::mcp(ffreq = c("ffreq1 - ffreq2 = 0", "ffreq1 - ffreq3 = 0",
+    "ffreq2 - ffreq3 = 0"))))
+} else {
+  install.packages("multcomp")
+  requireNamespace("multcomp", quietly = TRUE)
+  summary(multcomp::glht(r.georob.m0.spher.reml, 
+    linfct = multcomp::mcp(ffreq = c("ffreq1 - ffreq2 = 0", "ffreq1 - ffreq3 = 0",
+    "ffreq2 - ffreq3 = 0"))))
+}
+# library(multcomp)
+# summary(glht(r.georob.m0.spher.reml, 
+#   linfct = mcp(ffreq = c("ffreq1 - ffreq2 = 0", "ffreq1 - ffreq3 = 0",
+#   "ffreq2 - ffreq3 = 0"))))
 @
 %
 As suspected only the intercept of \code{ffreq1} differs from the
@@ -1295,9 +1307,9 @@ palette("default")
 @
 
 <<meuse-zinc-cleanup-2,echo=FALSE>>=
-# save(list=ls(pattern="^r\\."), file="r_meuse_zinc_objects.RData")
+# save(list=ls(pattern="^r\\."), file="r_meuse_zinc_objects.RData", version = 2)
 save(list=c("r.sv", "r.sv.spher", "r.prfl.m0.spher.reml.scale", "r.cv.m0.spher.reml", 
-    "r.cv.m1.spher.reml", "r.bk", "r.blks"), file="r_meuse_zinc_objects.RData")
+    "r.cv.m1.spher.reml", "r.bk", "r.blks"), file="r_meuse_zinc_objects.RData", version = 2)
 rm(list=ls(pattern="^r\\."))
 @
 
@@ -1330,8 +1342,17 @@ The subset of the data analyzed by Cressie is available from the R package
 \pkg{gstat} \citep{Pebesma-2004} as data frame \code{coalash}:
 %
 <<ash-data,eval=TRUE>>=
-data(coalash, package="gstat")
-summary(coalash)
+if(requireNamespace("gstat", quietly = TRUE)){
+  data(coalash, package="gstat")
+  summary(coalash)
+} else {
+  install.packages("gstat")
+  requireNamespace("gstat", quietly = TRUE)
+  data(coalash, package="gstat")
+  summary(coalash)
+}
+# data(coalash, package="gstat")
+# summary(coalash)
 @
 %
 The coordinates are given as column and row numbers,  the spacing
@@ -2077,11 +2098,11 @@ means and robust block Kriging is again more efficient than Gaussian
 block Kriging.
 
 <<ash-results-save-1,echo=FALSE>>=
-# save(list=ls(pattern="^r\\."), file="r_coalash_objects.RData")
+# save(list=ls(pattern="^r\\."), file="r_coalash_objects.RData", version = 2)
 save(list=c(
     "r.cv.georob.m1.exp.c2", "r.cv.georob.m1.exp.c1000", 
     "r.pk.m1.exp.c2", "r.pk.m1.exp.c1000", "r.bk.m1.exp.c2", "r.bk.m1.exp.c1000"
-  ), file="r_coalash_objects.RData")
+  ), file="r_coalash_objects.RData", version = 2)
 rm(list=ls(pattern="^r\\."))
 @
 
@@ -2095,8 +2116,8 @@ rm(list=ls(pattern="^r\\."))
  %%
 
 % material taken from
-% tools::Rd2latex("georob.Rd", "../../../vignettes/georob.tex", outputEncoding="macintosh")
-% tools::Rd2latex("control.georob.Rd", "../../../vignettes/control.georob.tex", outputEncoding="macintosh")
+% tools::Rd2latex("georob.Rd", "../../../vignettes/georob.tex", outputEncoding="utf-8")
+% tools::Rd2latex("control.georob.Rd", "../../../vignettes/control.georob.tex", outputEncoding="utf-8")
 
 \section{Details about parameter estimation}\label{sec:est-details}
 
@@ -2490,8 +2511,8 @@ set to zero for $k > 1$.
 
 \subsection{Controlling \code{georob()} by the function \code{control.georob()}}\label{sec:control-georob}
 
-% tools::Rd2latex("control.georob.Rd", "../../../vignettes/control.georob.tex", outputEncoding="macintosh")
-% tools::Rd2latex("pmm.Rd", "../../../vignettes/pmm.tex", outputEncoding="macintosh")
+% tools::Rd2latex("control.georob.Rd", "../../../vignettes/control.georob.tex", outputEncoding="utf-8")
+% tools::Rd2latex("pmm.Rd", "../../../vignettes/pmm.tex", outputEncoding="utf-8")
 
 All control and tuning parameters except the robustness tuning
 constant $c$ of the $\psi_{c}$-function (argument \code{tuning.psi} of
@@ -2798,9 +2819,9 @@ multiplication, and one should therefore use the default argument
  %%
 
 % material taken from
-% tools::Rd2latex("predict.georob.Rd", "../../../vignettes/predict.georob.tex", outputEncoding="macintosh")
-% tools::Rd2latex("lgnpp.Rd", "../../../vignettes/lgnpp.tex", outputEncoding="macintosh")
-% tools::Rd2latex("validate.predictions.Rd", "../../../vignettes/validate.predictions.tex", outputEncoding="macintosh")
+% tools::Rd2latex("predict.georob.Rd", "../../../vignettes/predict.georob.tex", outputEncoding="utf-8")
+% tools::Rd2latex("lgnpp.Rd", "../../../vignettes/lgnpp.tex", outputEncoding="utf-8")
+% tools::Rd2latex("validate.predictions.Rd", "../../../vignettes/validate.predictions.tex", outputEncoding="utf-8")
 
 \section{Details about Kriging}\label{sec:krig-details}
 
@@ -3334,11 +3355,11 @@ mean squared error
  %%
 
 % material taken from
-% tools::Rd2latex("georobModelBuilding.Rd", "../../../vignettes/georobModelBuilding.tex", outputEncoding="macintosh")
-% tools::Rd2latex("S3methods.georob.Rd", "../../../vignettes/S3methods.georob.tex", outputEncoding="macintosh")
-% tools::Rd2latex("plot.georob.Rd", "../../../vignettes/plot.georob.tex", outputEncoding="macintosh")
-% tools::Rd2latex("profilelogLik.Rd", "../../../vignettes/profilelogLik.tex", outputEncoding="macintosh")
-% tools::Rd2latex("cv.georob.Rd", "../../../vignettes/cv.georob.tex", outputEncoding="macintosh")
+% tools::Rd2latex("georobModelBuilding.Rd", "../../../vignettes/georobModelBuilding.tex", outputEncoding="utf-8")
+% tools::Rd2latex("S3methods.georob.Rd", "../../../vignettes/S3methods.georob.tex", outputEncoding="utf-8")
+% tools::Rd2latex("plot.georob.Rd", "../../../vignettes/plot.georob.tex", outputEncoding="utf-8")
+% tools::Rd2latex("profilelogLik.Rd", "../../../vignettes/profilelogLik.tex", outputEncoding="utf-8")
+% tools::Rd2latex("cv.georob.Rd", "../../../vignettes/cv.georob.tex", outputEncoding="utf-8")
 
 \section{Building models and assessing fitted models}\label{sec:model-building-assessment}
 

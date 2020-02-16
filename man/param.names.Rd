@@ -22,7 +22,7 @@ param.bounds(model, d)
   \item{model}{character keyword denoting a valid variogram,
   see \code{\link{georob}} and \code{\link{georobIntro}}.} 
   
-  \item{d}{integer equal number of dimensions of the survey domain.}
+  \item{d}{number of dimensions of the survey domain.}
 }
 
 \value{

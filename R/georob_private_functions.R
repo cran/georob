@@ -5,6 +5,7 @@
 ####################################
 
 ##  ##############################################################################
+### covariances.fixed.random.effects
 
 covariances.fixed.random.effects <-
   function(
@@ -56,6 +57,9 @@ covariances.fixed.random.effects <-
   ## 2015-07-17 AP TtT passed to function, new name for function
   ## 2015-08-19 AP changes for computing covariances under long-tailed distribution of epsilon
   ## 2016-07-20 AP changes for parallel computations
+  ## 2020-02-07 AP sanity checks for switch() and if()
+
+#### -- preparation
 
   family = match.arg( family )
 
@@ -148,7 +152,7 @@ covariances.fixed.random.effects <-
   #   tmp1 <- solve( crossprod( XX, Gammati ) %*% XX )
   #   tmp2 <- XX[TT,] %*% tmp1 %*% t(XX[TT,])
 
-  ## compute S_alphaxi
+#### -- compute S_alphaxi
 
   aux <- Valphaxi.inverse.Palphaxi / ( exp.dpsi * eta )
   diag( aux ) <- diag( aux ) + TtT
@@ -159,7 +163,7 @@ covariances.fixed.random.effects <-
   }
   Salphaxi <- chol2inv( aux )
 
-  ## factors to compute bhat and betahat from zhat
+#### -- factors to compute bhat and betahat from zhat
 
   if( any( c( cov.ystar, cov.bhat.b, cov.bhat.e, cov.bhat, cov.bhat.betahat ) ) ){
     PaSa <- pmm( Palphaxi, Salphaxi, control.pcmp )
@@ -169,7 +173,7 @@ covariances.fixed.random.effects <-
     AaSa <- Aalphaxi %*% Salphaxi
   }
 
-  ## covariance of huberized observations
+#### -- covariance of huberized observations
 
   if( cov.ystar ){
     cov.ystar <- TtT * VTtT
@@ -177,7 +181,7 @@ covariances.fixed.random.effects <-
     PaSa.cov.ystar <- pmm( PaSa, cov.ystar, control.pcmp )
   }
 
-  ## covariance of bhat and betahat with B and epsilon
+#### -- covariance of bhat and betahat with B and epsilon
 
   if( cov.bhat.b )    cov.bhat.b      <- pmm( PaSa, t( VTtT ), control.pcmp )
   if( cov.bhat.e )    cov.bhat.e      <- (nugget / exp.dpsi * cov.psi.eps * PaSa)[, TT]
@@ -193,7 +197,7 @@ covariances.fixed.random.effects <-
 
   ## compute now the requested covariances ...
 
-  ## ... of bhat (debugging status ok)
+#### -- covariance of bhat (debugging status ok)
 
   if( cov.bhat ){
     t.cov.bhat <- if( full.cov.bhat )
@@ -222,7 +226,7 @@ covariances.fixed.random.effects <-
   #     )
   #   )
 
-  ## ... of betahat (debugging status ok)
+#### -- covariance of betahat (debugging status ok)
 
   if( cov.betahat ){
     t.cov.betahat <- tcrossprod( tcrossprod( AaSa, cov.ystar ), AaSa )
@@ -246,7 +250,7 @@ covariances.fixed.random.effects <-
 
   #   print( summary( c( t.cov.bhat.betahat ) ) )
 
-  ## ... of (b - bhat) (debugging status ok)
+#### -- covariance of (b - bhat) (debugging status ok)
 
   if( cov.delta.bhat ){
     t.cov.delta.bhat <- if( full.cov.delta.bhat ){
@@ -280,7 +284,7 @@ covariances.fixed.random.effects <-
   #     )
   #   )
 
-  ## ... of (b - bhat) and betahat (debugging status ok)
+#### -- covariance of (b - bhat) and betahat (debugging status ok)
 
   if( cov.delta.bhat.betahat ){
     t.cov.delta.bhat.betahat <- t( cov.betahat.b ) - t.cov.bhat.betahat
@@ -346,7 +350,7 @@ covariances.fixed.random.effects <-
   #   )
 
 
-  ## ... of ehat + bhat (debugging status ok)
+#### -- covariance of ehat + bhat (debugging status ok)
 
   if( cov.ehat.p.bhat ){
     result.new[["cov.ehat.p.bhat"]] <- if( full.cov.ehat.p.bhat )
@@ -379,7 +383,7 @@ covariances.fixed.random.effects <-
   #     )
   #   )
 
-  ## ...  auxiliary item to compute covariance of kriging predictions
+#### -- auxiliary item to compute covariance of kriging predictions
   ## and observations
 
   if( aux.cov.pred.target ){
@@ -480,7 +484,7 @@ update.zhat <-
     ##  collect output
 
     result[["error"]]      <- FALSE
-    result[["zhat"]]      <- r.solve
+    result[["zhat"]]       <- r.solve
     result[["residuals"]]  <- yy - result[["zhat"]][TT]
     result[["rweights"]]   <- Wi
 
@@ -493,7 +497,7 @@ update.zhat <-
 
 ##    ##############################################################################
 
-estimating.equations.B <- function(
+estimating.equations.z <- function(
   res, TT, zhat,
   nugget, eta, reparam,
   Valphaxi.inverse.Palphaxi,
@@ -525,6 +529,7 @@ estimating.equations.B <- function(
 }
 
 ##    ##############################################################################
+### estimate.zhat
 
 estimate.zhat <-
   function(
@@ -554,27 +559,27 @@ estimate.zhat <-
   ## (2) the weights of the IRWLS, (3) the unstandardized residuals
   ## (= estimated epsilons); the results are returned as a list
 
-  ##  compute projection matrix Palphaxi and related items
+#### -- compute projection matrix Palphaxi and related items
 
   result <- list( error = FALSE )
 
-  aux <- crossprod( XX, Valphaxi.inverse )
+  aux1 <- crossprod( XX, Valphaxi.inverse )
 
   if( col.rank.XX[["deficient"]] ){
-    s <- svd( aux %*% XX )
+    s <- svd( aux1 %*% XX )
     s[["d"]] <- ifelse( s[["d"]] / max( s[["d"]] ) <= min.condnum, 0., 1. / s[["d"]] )
-    Palphaxi <- s[["v"]] %*% ( s[["d"]] * t( s[["u"]] ) )                # Moore-Penrose inverse
+    aux2 <- s[["v"]] %*% ( s[["d"]] * t( s[["u"]] ) )                # Moore-Penrose inverse
   } else {
-    t.chol <- try( chol( aux %*% XX ), silent = TRUE )
+    t.chol <- try( chol( aux1 %*% XX ), silent = TRUE )
     if( !identical( class( t.chol ), "try-error" ) ){
-      Palphaxi <- chol2inv( t.chol )
+      aux2 <- chol2inv( t.chol )
     } else {
       result[["error"]] <- TRUE
       return( result )
     }
   }
 
-  result[["Aalphaxi"]]             <- Palphaxi %*% aux
+  result[["Aalphaxi"]]             <- aux2 %*% aux1
   dimnames( result[["Aalphaxi"]] ) <- dimnames( t(XX) )
 
   result[["Palphaxi"]]             <- -XX %*% result[["Aalphaxi"]]
@@ -589,11 +594,13 @@ estimate.zhat <-
   colnames( result[["Valphaxi.inverse.Palphaxi"]] )      <- rownames( XX )
   attr( result[["Valphaxi.inverse.Palphaxi"]], "struc" ) <- "sym"
 
+#### -- estimate signal zhat by IRWLS
+
   if( compute.zhat ){
 
     res <- yy - zhat[TT]
 
-    eeq.old <- estimating.equations.B(
+    eeq.old <- estimating.equations.z(
       res, TT, zhat,
       nugget, eta, reparam,
       result[["Valphaxi.inverse.Palphaxi"]],
@@ -617,7 +624,7 @@ estimate.zhat <-
 
     for( i in 1L:maxit ){
 
-      ##  compute new estimates
+#### --- compute new estimates
 
       new <- update.zhat(
         XX, yy, res, TT,
@@ -632,9 +639,9 @@ estimate.zhat <-
         return( result )
       }
 
-      ##  evaluate estimating equations for xi and compute its l2 norm
+#### --- evaluate estimating equations for z and compute its l2 norm
 
-      eeq.new <- estimating.equations.B(
+      eeq.new <- estimating.equations.z(
         new[["residuals"]], TT, new[["zhat"]],
         nugget, eta, reparam,
         result[["Valphaxi.inverse.Palphaxi"]],
@@ -656,14 +663,14 @@ estimate.zhat <-
         ), "\n", sep = ""
       )
 
-      ##  check for convergence
+#### --- check for convergence
 
       if( max( abs( eeq.new ) ) <= ftol && i >= 2L ){
         converged <- TRUE
         break
       }
 
-      ##  update zhat, residuals and eeq.old.l2
+#### --- update zhat, residuals and eeq.old.l2
 
       eeq.old.l2 <- eeq.new.l2
       zhat      <- new[["zhat"]]
@@ -671,7 +678,7 @@ estimate.zhat <-
 
     }
 
-    ## compute scaled residuals sum of squares
+#### -- compute scaled residuals sum of squares
 
     ##  collect output
 
@@ -705,6 +712,8 @@ estimate.zhat <-
 
   }
 
+#### -- prepare output
+
   result[["bhat"]]             <- drop( result[["Palphaxi"]] %*% result[["zhat"]] )
   names( result[["bhat"]] )    <- rownames( XX )
 
@@ -727,6 +736,7 @@ estimate.zhat <-
 
 
 ##    ##############################################################################
+### f.aux.gcr
 
 f.aux.gcr <-
 function(
@@ -754,81 +764,83 @@ function(
   ## 2016-08-09 AP changes for nested variogram models
   ## 2016-08-10 AP changes for isotropic variogram models
   ## 2017-12-23 AP improved memory management in parallel computations
-  ## 2019-03-29 AP call to RFvariogram{RandomFields, version 3.1} replaced by 
+  ## 2019-03-29 AP call to RFvariogram{RandomFields, version 3.1} replaced by
   ##               call to RFfctn{RandomFields, version 3.3}
   ## 2019-04-07 AP correction of error when computing semivariances for anisotropic variogram models
 
-  ## check consistency of arguments
-  
+#### -- check consistency of arguments
+
   if( !is.null( gcr.constant ) ){
-    if( !is.list( gcr.constant ) || 
-      !identical( length(gcr.constant), length(variogram.object) ) 
-    ) stop( "lengths of 'gcr.constant' and 'variogram.object' differ" )  
+    if( !is.list( gcr.constant ) ||
+      !identical( length(gcr.constant), length(variogram.object) )
+    ) stop( "lengths of 'gcr.constant' and 'variogram.object' differ" )
   } else {
     gcr.constant <- as.list( rep( NA_real_, length(variogram.object) ) )
   }
-  
+
+#### -- compute generalized covariances
+
   res <- lapply(
     1L:length(variogram.object),
     function( i, x, gcr.constant, lag.vectors, control.pcmp ){
-      
+
       variogram.model <- x[[i]][["variogram.model"]]
       param           <- x[[i]][["param"]]
       param           <- param[!names(param) %in% c( "variance", "snugget", "nugget")]
       aniso           <- x[[i]][c("aniso", "sclmat", "rotmat")]
       gcr.constant    <- gcr.constant[[i]]
 
-      result <- list( error = TRUE )      
-      
+      result <- list( error = TRUE )
+
       #       RFoptions(newAniso=FALSE) ## moved to georob.fit
-        
-      ## anisotropic model 
-      
-      if( NCOL( lag.vectors ) > 1L ){ 
-        
+
+#### --- preparation: anisotropic model
+
+      if( NCOL( lag.vectors ) > 1L ){
+
         ## matrix for coordinate transformation
-        
+
         A <- aniso[["sclmat"]] * aniso[["rotmat"]] / param["scale"]
-        
+
         ## prepare model
-        
+
         model.list <- list( variogram.model )
         model.list <- c( model.list, as.list( param[-1L] ) )
         model.list <- list( "$", var = 1., A = A, model.list )
-        
+
         ##  negative semivariance matrix
-        
+
         ## functions of version 3 of RandomFields
-        
+
         ## auxiliary function to compute generalized correlations in parallel
-        
+
         f.aux <- function( i ){
-          
+
           ## objects s, e, lag.vectors, model.list taken from parent environment
 
           #           RandomFields Version 3.1
           #           result <- try(
           #             -RFvariogram(
-          #               x = lag.vectors[s[i]:e[i], ], model = model.list, 
+          #               x = lag.vectors[s[i]:e[i], ], model = model.list,
           #               dim = attr( lag.vectors, "ndim.coords" ), grid = FALSE
           #             ),
           #             silent = TRUE
           #           )
-          
+
           RFoptions( allow_duplicated_locations = TRUE )
 
           ## note: RFfctn computes covariance for stationary and negative
           ## semivariance for IRF models, required is negative semivariance
           result <- try(
             RFfctn(
-              x = lag.vectors[s[i]:e[i], ], model = model.list, 
+              x = lag.vectors[s[i]:e[i], ], model = model.list,
               dim = attr( lag.vectors, "ndim.coords" ), grid = FALSE
             ),
             silent = TRUE
           )
 
           RFoptions( allow_duplicated_locations = FALSE )
-          
+
           if( !(identical( class( result ), "try-error" ) || any( is.na( result ) )) ){
             if(!variogram.model %in% irf.models){
               ## subtract variance for stationary models
@@ -839,52 +851,52 @@ function(
             "RFvariogram.error"
           }
         }
-        
+
       } else {
-        
-        ## isotropic model
-        
+
+#### --- preparation: isotropic model
+
         ## matrix for coordinate transformation
-        
+
         A <- 1. / param["scale"]
-        
+
         ## prepare model
-        
+
         model.list <- list( variogram.model )
         model.list <- c( model.list, as.list( param[-1L] ) )
         model.list <- list( "$", var = 1., A = A, model.list )
-        
+
         ##  negative semivariance matrix
-        
+
         ## functions of version 3 of RandomFields
-        
+
         ## auxiliary function to compute generalized correlations in parallel
-        
+
         f.aux <- function( i ){
-          
+
           ## objects s, e, lag.vectors, model.list taken from parent environment
-          
+
           #           RandomFields Version 3.1
           #           result <- try(
           #             -RFvariogram(
-          #               x = lag.vectors[s[i]:e[i]], model = model.list, 
-          #               grid = FALSE 
+          #               x = lag.vectors[s[i]:e[i]], model = model.list,
+          #               grid = FALSE
           #             ),
           #             silent = TRUE
           #           )
-          
+
           RFoptions( allow_duplicated_locations = TRUE )
 
           ## note: RFfctn computes covariance for stationary and negative
           ## semivariance for IRF models, required is negative semivariance
           result <- try(
             RFfctn(
-              x = lag.vectors[s[i]:e[i]], model = model.list, 
-              grid = FALSE 
+              x = lag.vectors[s[i]:e[i]], model = model.list,
+              grid = FALSE
             ),
             silent = TRUE
           )
-          
+
           RFoptions( allow_duplicated_locations = FALSE )
 
           if( !(identical( class( result ), "try-error" ) || any( is.na( result ) )) ){
@@ -897,9 +909,11 @@ function(
             "RFvariogram.error"
           }
         }
-        
+
       }
-              
+
+#### --- compute covariances
+
       ## determine number of cores
 
       ncores <- control.pcmp[["gcr.ncores"]]
@@ -913,48 +927,48 @@ function(
       s <- ( (0L:(k-1L)) * dn ) + 1L
       e <- (1L:k) * dn
       e[k] <- n
-      
+
       ## set default value for control of forking if missing (required for backward compatibility)
-      
+
       if( is.null( control.pcmp[["fork"]] ) ){
         control.pcmp[["fork"]] <- !identical( .Platform[["OS.type"]], "windows" )
       }
-      
+
       ## compute generalized correlations in parallel
 
       if( ncores > 1L && !control.pcmp[["fork"]] ){
 
         if( !sfIsRunning() ){
           options( error = f.stop.cluster )
-          
+
           junk <- sfInit( parallel = TRUE, cpus = ncores )
-          
+
           junk <- sfLibrary( georob, verbose = FALSE )
           #         junk <- sfLibrary( RandomFields, verbose = FALSE )
-          
+
           junk <- sfExport( "s", "e", "lag.vectors", "model.list" )
-          
+
          }
-        
-        
+
+
         Valpha <- sfLapply( 1L:k, f.aux )
-        
+
         if( control.pcmp[["sfstop"]] ){
           junk <- sfStop()
           options( error = NULL )
         }
-        
+
       } else {
-        
+
         Valpha <- mclapply( 1L:k, f.aux, mc.cores = ncores )
-        
+
       }
-      
-      not.ok <- any( sapply( 
-          Valpha, 
+
+      not.ok <- any( sapply(
+          Valpha,
           function( x ) identical( x, "RFvariogram.error" ) || any(is.na(x))
         ))
-      
+
       if( !not.ok ){
 
         Valpha <- unlist( Valpha )
@@ -962,7 +976,7 @@ function(
         ##  compute additive constant for positive definiteness, this
         ##  implements a sufficient condition for positive definiteness of
         ##  Valpha (strong row sum criterion)
-        
+
         if( is.na( gcr.constant ) ){
           if( variogram.model %in% irf.models ){
             gcr.constant <- -min( Valpha ) * 2.
@@ -970,13 +984,13 @@ function(
             gcr.constant <- 1.
           }
         }
-        
+
         ## compute generalized correlation
-        
+
         Valpha <- gcr.constant + Valpha
-        
+
         ## convert generalized correlation vector to symmetric correlation matrices
-        
+
         if( symmetric ){
           Valpha <- list(
             diag = rep( gcr.constant, 0.5 * ( 1. + sqrt( 1. + 8L * length( Valpha ) ) ) ),
@@ -984,8 +998,8 @@ function(
           )
           attr( Valpha, "struc" ) <- "sym"
         }
-        
-        ##  collect results
+
+#### --- collect results
 
         result[["error"]]        <- FALSE
         result[["gcr.constant"]] <- gcr.constant
@@ -1012,6 +1026,7 @@ function(
 
 
 ##    ##############################################################################
+### likelihood.calculations
 
 likelihood.calculations <-
   function(
@@ -1059,12 +1074,14 @@ likelihood.calculations <-
   ##  bhat and further associates items; and (4) computes the
   ##  matrices A and the cholesky factor of the matrix Q
 
+#### -- preparations
+
   d2r <- pi / 180.
 
   ## load lik.item object
 
   lik.item <- get( "lik.item", pos = as.environment( envir ) )
-  
+
   #   print(str(lik.item[c("variogram.object", "eta", "xi")]))
 
   ##  transform variogram parameters back to original scale
@@ -1124,7 +1141,7 @@ likelihood.calculations <-
     ))
 
   if( same.param && !is.null( lik.item[["zhat"]] ) ){
-    
+
     if( verbose > 4. ) cat(
       "\n     likelihood.calculations: exit without computing any objects\n"
     )
@@ -1173,7 +1190,7 @@ likelihood.calculations <-
     return( lik.item )
 
   }
-  
+
   ## check whether extra variogram parameters are within allowed bounds and
   ## return an error otherwise
 
@@ -1199,26 +1216,28 @@ likelihood.calculations <-
   )
 
   ##  update variogram and parameters
-  
+
 #   f.rotate <- function( omega=90, phi=90, zeta=0 ){
 #     omega <- omega / 180 * pi
 #     phi <- phi / 180 * pi
 #     zeta <- zeta / 180 * pi
-#     
+#
 #     co = cos(omega)
 #     so = sin(omega)
 #     cp = cos(phi)
 #     sp = sin(phi)
 #     cz = cos(zeta)
 #     sz = sin(zeta)
-#     
+#
 #     rbind(
 #       c(             so*sp,             co*sp,       cp ),
 #       c( -co*cz - so*cp*sz,  so*cz - co*cp*sz,    sp*sz ),
 #       c(  co*sz - so*cp*cz, -so*sz - co*cp*cz,    sp*cz )
 #     )
 #   }
-  
+
+#### -- update objects in lik.item
+
   lik.item[["variogram.object"]] <- lapply(
     1L:length(variogram.object),
     function( i, x, vo, n ){
@@ -1255,8 +1274,8 @@ likelihood.calculations <-
       }
 
       vo
-    }, 
-    x = variogram.object, vo = lik.item[["variogram.object"]], 
+    },
+    x = variogram.object, vo = lik.item[["variogram.object"]],
     n = attr( lag.vectors, "ndim.coords" )
   )
 
@@ -1319,7 +1338,7 @@ likelihood.calculations <-
 
   #   print(str(lik.item))
 
-  ##  compute updates of required likelihood items if the variogram
+#### -- compute updates of required likelihood items if the variogram
   ##  parameters differ and are all within allowed bounds
 
   if( !same.param || is.null( lik.item[["Valphaxi"]] ) ){
@@ -1330,7 +1349,7 @@ likelihood.calculations <-
 
     lik.item[["Valphaxi"]][["error"]] <- TRUE
 
-    ##  calculate generalized correlation matrix, its inverse and its
+#### --- calculate generalized correlation matrix, its inverse and its
     ##  inverse cholesky factor
 
     t.Valphaxi <- f.aux.Valphaxi(
@@ -1351,7 +1370,7 @@ likelihood.calculations <-
 
   #     print(str(lik.item))
 
-  ##  estimate fixed and random effects (zhat, betahat, bhat, residuals )
+#### --- estimate fixed and random effects (zhat, betahat, bhat, residuals )
   ##  and estimate of signal variance for Gaussian (RE)ML
 
   if( verbose > 4. ) cat(
@@ -1380,7 +1399,7 @@ likelihood.calculations <-
 
   if( lik.item[["zhat"]][["error"]] ) return( lik.item )     ##  an error occurred
 
-  ##  compute Q matrix and its Cholesky factor (required for Gaussian
+#### --- compute Q matrix and its Cholesky factor (required for Gaussian
   ##  (RE)ML estimation)
 
   if( tuning.psi >= tuning.psi.nr ) {
@@ -1407,7 +1426,7 @@ likelihood.calculations <-
 
   }
 
-  ##  store updated lik.item object
+#### -- store updated lik.item object
 
   assign( "lik.item", lik.item, pos = as.environment( envir ) )
 
@@ -1419,6 +1438,7 @@ likelihood.calculations <-
 
 
 ##   ##############################################################################
+### partial.derivatives.variogram
 
 partial.derivatives.variogram <-
   function(
@@ -1441,30 +1461,31 @@ partial.derivatives.variogram <-
   ##  2015-07-17 AP new name of function, scaling with 1-xi eliminated
   ##  2016-08-04 AP changes for nested variogram models
   ##  2016-11-14 AP correcting error in 3d rotation matrix for geometrically anisotropic variograms
+  ##  2020-02-07 AP sanity checks for switch() and if()
 
   aniso.name <- names( aniso )
   alpha <- unname( param["scale"] )
   n = NCOL( x )
-  
+
   if( n > 1L ){
-    
+
     aux <- rotmat %*% t(x)
-    
+
     ## scaled lag distance
-    
+
     hs <- sqrt( colSums( ( sclmat * aux )^2 ) ) / alpha
-    
+
   } else {
-    
+
     hs <- x / alpha
   }
-      
-  ## partial derivatives of scaled lag distance with respect to
+
+#### -- partial derivatives of scaled lag distance with respect to
   ## anisotropy parameters
 
   dhs.daniso <- switch(
 
-    d.param,
+    d.param[1],
 
     f1 = {
       colSums(
@@ -1522,17 +1543,18 @@ partial.derivatives.variogram <-
     NA
   ) / ( hs * alpha^2 )
 
-  ##  partial derivative of scaled lag distance with respect to scale
+#### -- partial derivative of scaled lag distance with respect to scale
   ##  parameter
 
   dhs.dscale <- -hs / alpha
 
-  ##  compute derivative of generalized correlation matrix with
+#### -- compute derivative of generalized correlation matrix with
   ##  respect to scale and extra parameters
 
   result <- switch(
-    variogram.model,
+    variogram.model[1],
 
+#### --- RMbessel
     RMbessel = {
 
       A <- unname( param["nu"] )
@@ -1549,7 +1571,7 @@ partial.derivatives.variogram <-
 
 
       switch(
-        d.param,
+        d.param[1],
         scale = dgc.dhs * dhs.dscale,
         nu = {
           myenv <- new.env()
@@ -1572,6 +1594,7 @@ partial.derivatives.variogram <-
       )
     }, ##  end case RMbessel
 
+#### --- RMcauchy
     RMcauchy = {
 
       A <- unname( param["gamma"] )
@@ -1582,7 +1605,7 @@ partial.derivatives.variogram <-
       dgc.dhs <- -2. * A * hs * ( 1.+hs^2 )^(-1.-A)
 
       switch(
-        d.param,
+        d.param[1],
         scale = dgc.dhs * dhs.dscale,
         gamma = {
           -( 1. + hs^2 )^(-A) * log( 1. + hs^2 )
@@ -1619,7 +1642,7 @@ partial.derivatives.variogram <-
 #
 #
 #       switch(
-#         d.param,
+#         d.param[1],
 #         scale = dgc.dhs * dhs.dscale,
 #         # scale = {
 #         #   ( B * hs^A * (1.+hs^A)^(-2.-B/A) * (A + C + (-B+C) * hs^A ) ) / ( C * scale )
@@ -1653,6 +1676,7 @@ partial.derivatives.variogram <-
 #       )
 #     }, ##  end case RMcauchytbm
 
+#### --- RMcircular
     RMcircular = {
 
       ## derivative with of generalized covariance with respect to
@@ -1663,12 +1687,13 @@ partial.derivatives.variogram <-
       dgc.dhs[sel] <- ( -4. * sqrt( 1.-hs[sel]^2 ) ) / pi
 
       switch(
-        d.param,
+        d.param[1],
         scale = dgc.dhs * dhs.dscale,
         dgc.dhs * dhs.daniso
       )
     }, ##  end case RMcircular
 
+#### --- RMcubic
     RMcubic = {
 
       ## derivative with of generalized covariance with respect to
@@ -1679,12 +1704,13 @@ partial.derivatives.variogram <-
       dgc.dhs[sel] <- hs[sel] * ( -14. + 26.25*hs[sel] - 17.5*hs[sel]^3 + 5.25*hs[sel]^5 )
 
       switch(
-        d.param,
+        d.param[1],
         scale = dgc.dhs * dhs.dscale,
         dgc.dhs * dhs.daniso
       )
     }, ##  end case RMcubic
 
+#### --- RMdagum
     RMdagum = {
 
       A <- unname( param["beta"] )
@@ -1701,7 +1727,7 @@ partial.derivatives.variogram <-
       # )
 
       switch(
-        d.param,
+        d.param[1],
         scale = dgc.dhs * dhs.dscale,
         # scale = {
         #   ifelse(
@@ -1736,6 +1762,7 @@ partial.derivatives.variogram <-
       )
     }, ##  end case RMdagum
 
+#### --- RMdampedcos
     RMdampedcos = {
 
       A <- unname( param["lambda"] )
@@ -1746,7 +1773,7 @@ partial.derivatives.variogram <-
       dgc.dhs <- -( ( A * cos(hs) + sin(hs) ) / exp( A*hs ) )
 
       switch(
-        d.param,
+        d.param[1],
         scale = dgc.dhs * dhs.dscale,
         lambda = {
           -exp( -A * hs ) * hs * cos( hs )
@@ -1755,6 +1782,7 @@ partial.derivatives.variogram <-
       )
     }, ##  end case RMdampedcos
 
+#### --- RMdewijsian
     RMdewijsian = {
 
 
@@ -1777,7 +1805,7 @@ partial.derivatives.variogram <-
       # )
 
       switch(
-        d.param,
+        d.param[1],
         scale = dgc.dhs * dhs.dscale,
         # scale = {
         #   ( A * hs^A )/( scale + hs^A * scale )
@@ -1797,6 +1825,7 @@ partial.derivatives.variogram <-
     }, ##  end case RMdewijsian
 
 
+#### --- RMexp
     RMexp = {
 
       ## derivative with of generalized covariance with respect to
@@ -1805,12 +1834,13 @@ partial.derivatives.variogram <-
       dgc.dhs <- -exp( -hs )
 
       switch(
-        d.param,
+        d.param[1],
         scale = dgc.dhs * dhs.dscale,
         dgc.dhs * dhs.daniso
       )
     }, ##  end case exponential
 
+#### --- RMfbm
     RMfbm = {
 
       A <- unname( param["alpha"] )
@@ -1832,7 +1862,7 @@ partial.derivatives.variogram <-
       # )
 
       switch(
-        d.param,
+        d.param[1],
         scale = dgc.dhs * dhs.dscale,
         # scale = {
         #   A * hs^A / scale
@@ -1851,6 +1881,7 @@ partial.derivatives.variogram <-
       )
     }, ##  end case RMfbm
 
+#### --- RMgauss
     RMgauss = {
 
       ## derivative with of generalized covariance with respect to
@@ -1859,12 +1890,13 @@ partial.derivatives.variogram <-
       dgc.dhs <- -2. * hs / exp( hs^2 )
 
       switch(
-        d.param,
+        d.param[1],
         scale = dgc.dhs * dhs.dscale,
         dgc.dhs * dhs.daniso
       )
     }, ##  end case RMgauss
 
+#### --- RMgenfbm
     RMgenfbm = {
 
       A <- unname( param["alpha"] )
@@ -1887,7 +1919,7 @@ partial.derivatives.variogram <-
       # )
 
       switch(
-        d.param,
+        d.param[1],
         scale = dgc.dhs * dhs.dscale,
         # scale = {
         #   ( A * B * hs^A * (1.+hs^A)^(-1.+B) ) / scale
@@ -1909,6 +1941,7 @@ partial.derivatives.variogram <-
       )
     }, ##  end case RMgenfbm
 
+#### --- RMgencauchy
     RMgencauchy = {
 
       A <- unname( param["alpha"] )
@@ -1931,7 +1964,7 @@ partial.derivatives.variogram <-
       # )
 
       switch(
-        d.param,
+        d.param[1],
         scale = dgc.dhs * dhs.dscale,
         # scale = {
         #   ( B * hs^A ) / ( (  1.+hs^A)^((A+B)/A) * scale )
@@ -1985,7 +2018,7 @@ partial.derivatives.variogram <-
     #       result <- rep( 0., length( hs ) )
     #
     #       switch(
-    #         d.param,
+    #         d.param[1],
     #         scale = dgc.dhs * dhs.dscale,
     #         alpha = {
     #           result[sel] <- if( identical( A, 1 ) ){
@@ -2015,6 +2048,7 @@ partial.derivatives.variogram <-
     #
     #     }, ##  end case Gengneiting
 
+#### --- RMgengneiting
     RMgengneiting = {
 
 
@@ -2046,7 +2080,7 @@ partial.derivatives.variogram <-
       result <- rep( 0., length( hs ) )
 
       switch(
-        d.param,
+        d.param[1],
         scale = dgc.dhs * dhs.dscale,
         mu = {
           result[sel] <- if( identical( as.integer(A), 1L ) ){
@@ -2077,6 +2111,7 @@ partial.derivatives.variogram <-
     }, ##  end case Gengneiting
 
 
+#### --- RMgneiting
     RMgneiting = {
 
       ## derivative with of generalized covariance with respect to
@@ -2089,7 +2124,7 @@ partial.derivatives.variogram <-
       )
 
       switch(
-        d.param,
+        d.param[1],
         scale = dgc.dhs * dhs.dscale,
         dgc.dhs * dhs.daniso
       )
@@ -2122,7 +2157,7 @@ partial.derivatives.variogram <-
       # )
 
       switch(
-        d.param,
+        d.param[1],
         scale = dgc.dhs * dhs.dscale,
         # scale = {
         #   ifelse(
@@ -2173,6 +2208,7 @@ partial.derivatives.variogram <-
       )
     }, ##  end case RMlgd
 
+#### --- RMmatern
     RMmatern = {
 
       A <- unname( param["nu"] )
@@ -2199,7 +2235,7 @@ partial.derivatives.variogram <-
       # )
 
       switch(
-        d.param,
+        d.param[1],
         scale = dgc.dhs * dhs.dscale,
         # scale = {
         #   ifelse(
@@ -2232,6 +2268,7 @@ partial.derivatives.variogram <-
       )
     }, ##  end case RMmatern
 
+#### --- RMpenta
     RMpenta = {
 
       ## derivative with of generalized covariance with respect to
@@ -2242,12 +2279,13 @@ partial.derivatives.variogram <-
       dgc.dhs[sel] <- ( 11. * (-1.+hs[sel])^5 * hs[sel] * (2.+hs[sel]) * ( 4. + hs[sel] * ( 18. + 5. * hs[sel] * (3.+hs[sel]) ) ) ) / 6.
 
       switch(
-        d.param,
+        d.param[1],
         scale = dgc.dhs * dhs.dscale,
         dgc.dhs * dhs.daniso
       )
     }, ##  end case RMpenta
 
+#### --- RMaskey
     RMaskey = {
 
       A <- unname( param["alpha"] )
@@ -2260,7 +2298,7 @@ partial.derivatives.variogram <-
       dgc.dhs[sel] <- -(A * (1.-hs[sel])^(-1.+A))
 
       switch(
-        d.param,
+        d.param[1],
         scale = dgc.dhs * dhs.dscale,
         alpha = {
           result <- rep( 0., length( hs ) )
@@ -2272,6 +2310,7 @@ partial.derivatives.variogram <-
       )
     }, ##  end case RMaskey
 
+#### --- RMqexp
     RMqexp = {
 
       A <- unname( param["alpha"] )
@@ -2282,7 +2321,7 @@ partial.derivatives.variogram <-
       dgc.dhs <- 2. * (-A + exp(hs) ) / ( (-2.+A ) * exp(2.*hs) )
 
       switch(
-        d.param,
+        d.param[1],
         scale = dgc.dhs * dhs.dscale,
         alpha = {
           ( 2. * exp( -2.*hs ) * ( -1. + exp( hs ) ) ) / (-2.+A)^2
@@ -2292,6 +2331,7 @@ partial.derivatives.variogram <-
     }, ##  end case RMqexp
 
 
+#### --- RMspheric
     RMspheric = {
 
       ## derivative with of generalized covariance with respect to
@@ -2302,12 +2342,13 @@ partial.derivatives.variogram <-
       dgc.dhs[sel] <- -1.5 + 1.5 * hs[sel]^2
 
       switch(
-        d.param,
+        d.param[1],
         scale = dgc.dhs * dhs.dscale,
         dgc.dhs * dhs.daniso
       )
     }, ##  end case RMspheric
 
+#### --- RMstable
     RMstable = {
 
       A <- unname( param["alpha"] )
@@ -2329,7 +2370,7 @@ partial.derivatives.variogram <-
       # )
 
       switch(
-        d.param,
+        d.param[1],
         scale = dgc.dhs * dhs.dscale,
         # scale = {
         #   ( A * exp( -hs^A ) * hs^A ) / scale
@@ -2348,6 +2389,7 @@ partial.derivatives.variogram <-
       )
     }, ##  end case RMstable
 
+#### --- RMwave
     RMwave = {
 
       ## derivative with of generalized covariance with respect to
@@ -2361,12 +2403,13 @@ partial.derivatives.variogram <-
       # )
 
       switch(
-        d.param,
+        d.param[1],
         scale = dgc.dhs * dhs.dscale,
         dgc.dhs * dhs.daniso
       )
     }, ##  end case wave
 
+#### --- RMwhittle
     RMwhittle = {
 
       A <- unname( param["nu"] )
@@ -2388,7 +2431,7 @@ partial.derivatives.variogram <-
       # )
 
       switch(
-        d.param,
+        d.param[1],
         scale = dgc.dhs * dhs.dscale,
         # scale = {
         #   ifelse(
@@ -2430,7 +2473,7 @@ partial.derivatives.variogram <-
 
   ) ##  end switch cov.model
 
-  ##  convert to matrix
+#### -- convert to matrix
 
   result <- list(
     diag = rep( 0., 0.5 * ( 1. + sqrt( 1. + 8. * length( result ) ) ) ),
@@ -2444,6 +2487,7 @@ partial.derivatives.variogram <-
 }
 
 ##   ##############################################################################
+### estimating.equations.theta
 
 estimating.equations.theta <-
   function(
@@ -2485,7 +2529,7 @@ estimating.equations.theta <-
   ## 2016-07-20 AP changes for parallel computations
   ## 2016-08-04 AP changes for nested variogram models
 
-  ##  get lik.item
+#### -- get new lik.item
 
   lik.item <- likelihood.calculations(
     envir,
@@ -2532,11 +2576,11 @@ estimating.equations.theta <-
     adjustable.param.aniso <- fixed.param.aniso
   }
 
-  ##  evaluate estimating equations
+#### -- evaluate estimating equations
 
   if( length( adjustable.param.aniso ) > 0L ){
 
-    ##  compute Cov[bhat]
+#### --- compute Cov[bhat]
 
     r.cov <- covariances.fixed.random.effects(
       Valphaxi.objects = lik.item[["Valphaxi"]][c("Valphaxi", "Valphaxi.inverse")],
@@ -2579,7 +2623,7 @@ estimating.equations.theta <-
       control.pcmp
     )
 
-    ##  computation of estimating equations for all elements of adjustable.param.aniso
+#### --- computation of estimating equations for all elements of adjustable.param.aniso
 
     t.eeq <- sapply(
       names( adjustable.param.aniso ),
@@ -2654,7 +2698,7 @@ estimating.equations.theta <-
 
     }
 
-    ##  store terms in lik.item object
+#### -- store objects in lik.item object
 
     lik.item[["eeq"]] <- list(
       eeq.emp = eeq.emp,
@@ -3062,6 +3106,7 @@ gradient.negative.loglikelihood <-
 ##      }
 
 ##   ##############################################################################
+### georob.fit
 
 georob.fit <-
   function(
@@ -3157,11 +3202,13 @@ georob.fit <-
   ## 2016-11-28 AP checking ml.method and presence of intercept for intrinsic models
   ## 2017-02-24 AP warning for negative definite hessian
   ## 2017-07-26 AP changes to allow non-zero snugget if there are no replicated observations
-  
+
   ##  ToDos:
 
+#### -- preparations
+
   ##  main body of georob.fit
-  
+
   RFoptions(newAniso=FALSE)
 
   d2r <- pi / 180.
@@ -3237,12 +3284,12 @@ georob.fit <-
     )
   }
 
-  ## process contents of variogram.object
+#### -- process contents of variogram.object
 
    variogram.object <- lapply(
     variogram.object,
     function( x, TT, d2r, n, has.intercept ){
-      
+
       ## create local copies of objects
 
       variogram.model <- x[["variogram.model"]]
@@ -3255,18 +3302,18 @@ georob.fit <-
       ##  return names of extra parameters (if any)
 
       ep <- param.names( model = variogram.model )
-      
+
       ## check whether reml method is chosen to fit intrinsic variogram
-      
+
       if( variogram.model %in% control.georob()[["irf.models"]] ){
-        if( ml.method == "ML" && tuning.psi >= tuning.psi.nr ) stop( 
+        if( ml.method == "ML" && tuning.psi >= tuning.psi.nr ) stop(
           "models with intrinsic variograms must be estimated by REML"
         )
         if( !has.intercept ) stop(
           "models with intrinsic variograms require a drift model with an intercept"
         )
       }
-      
+
       ## check names of initial variogram parameters and flags for fitting
 
       param.name <- c( "variance", "snugget", "nugget", "scale", ep )
@@ -3320,7 +3367,7 @@ georob.fit <-
         bounds = param.bounds
       )
 
-      ##  rearrange and check flags controlling variogram parameter fitting
+      ## rearrange and check flags controlling variogram parameter fitting
 
       if(
         variogram.model %in% (t.models <- c( "RMfbm" ) ) &&
@@ -3359,7 +3406,7 @@ georob.fit <-
         "fitting control flags of anisotropy parameters must be of mode 'logical'"
       )
 
-      ##  rearrange initial anisotropy parameters
+      ## rearrange initial anisotropy parameters
 
       aniso <- aniso[aniso.name]
       fit.aniso <- fit.aniso[aniso.name]
@@ -3388,7 +3435,7 @@ georob.fit <-
         isotropic <- TRUE
       } else {
         isotropic <- FALSE
-      }      
+      }
 
       ## adjust default initial values of anisotropy parameters if these are
       ## fitted
@@ -3406,7 +3453,7 @@ georob.fit <-
       }
 
 
-      ##  convert angles to radian
+      ## convert angles to radian
 
       aniso[c("omega", "phi", "zeta" )] <- aniso[c("omega", "phi", "zeta" )] * d2r
 
@@ -3459,7 +3506,8 @@ georob.fit <-
 
   #   print(str(variogram.object))
 
-  ## set consistent values for nugget and snugget of nested variogram models
+#### -- set consistent values for nugget and snugget of nested variogram
+  ## models
 
   ## no nugget and snugget in any model component
 
@@ -3555,7 +3603,7 @@ georob.fit <-
 
   #   print(str(variogram.object))
 
-  ## reparametrize variograms for Gaussian (RE)ML
+#### -- reparametrize variograms for Gaussian (RE)ML
 
   ## reparametrize if there is more than one variance parameter to fit
 
@@ -3576,8 +3624,8 @@ georob.fit <-
   }
 
   #   print(str(variogram.object))
-  
-  ## transform variogram parameters
+
+#### -- transform variogram parameters
 
   tmp <- f.aux.tf.param.fwd( variogram.object, param.tf, fwd.tf )
 
@@ -3607,10 +3655,10 @@ georob.fit <-
     }
     attr( lag.vectors, "ndim.coords" ) <- NCOL(coordinates)
   }
-  
+
   #   print(str(lag.vectors))
 
-  ##  create environment to store items required to compute likelihood and
+ #### -- create environment to store items required to compute likelihood and
   ##  estimating equations that are provided by
   ##  likelihood.calculations
 
@@ -3630,7 +3678,7 @@ georob.fit <-
       reparam.variogram.object, function(x) x[["param"]]["variance"]
     ))
 
-  ## restore Valphaxi object from georob.object if available and variogram
+#### -- restore Valphaxi object from georob.object if available and variogram
   ## parameters are the same
 
   if( !is.null( georob.object ) ){
@@ -3671,7 +3719,7 @@ georob.fit <-
 
   assign( "lik.item", lik.item, pos = as.environment( envir ) )
 
-  ##  compute various expectations of psi, and its derivative etc.
+#### -- compute various expectations of psi, and its derivative etc.
 
   expectations <- numeric()
 
@@ -3758,7 +3806,7 @@ georob.fit <-
   )
 
 
-  ## zhat
+ #### -- compute signal zhat
 
   sel <- !is.na (betahat )
   zhat <- drop( XX[, sel, drop=FALSE] %*% betahat[sel] + bhat )
@@ -3768,7 +3816,7 @@ georob.fit <-
 
   if( tuning.psi < tuning.psi.nr ) {
 
-    ## robust REML estimation
+#### -- robust REML estimation
 
     hessian <- FALSE
 
@@ -3860,7 +3908,7 @@ georob.fit <-
 
     if( any( fit.param.aniso ) ){
 
-      ##  Gaussian REML estimation
+#### -- Gaussian REML estimation
 
       error.family.cov.effects <- error.family.cov.residuals <- "gaussian"
 
@@ -4046,7 +4094,7 @@ georob.fit <-
 #     names( r.gradient ) <- tmp
 #   }
 
-  ##  get the other fitted items
+#### -- get the other fitted items
 
   lik.item <- get( "lik.item", pos = as.environment( envir ) )
 
@@ -4113,14 +4161,14 @@ georob.fit <-
     }, ori = original.variogram.object, fit = lik.item[["variogram.object"]], d2r = d2r
   )
 
-  ## extract or recompute Hessian for Gaussian (RE)ML
+#### -- extract or recompute Hessian for Gaussian (RE)ML
 
   if( hessian ){
 
     #     if( reparam || identical( maximizer, "nlminb" ) ){
 
     ## transform variogram parameters
-    
+
     if( reparam ) param.tf[c("variance", "snugget")] <- param.transf()[c("variance", "snugget")]
 
     tmp <- f.aux.tf.param.fwd(
@@ -4160,10 +4208,10 @@ georob.fit <-
       verbose = 0.,
       force.gradient = force.gradient
     )
-    
+
     ## check whether hessian is positive definite
-    
-    if( any( eigen(r.hessian)$values < 0. ) ) warning( 
+
+    if( any( eigen(r.hessian)[["values"]] < 0. ) ) warning(
       "hessian not positive definite, check whether local minimum of log-likelihood has been found"
     )
 
@@ -4177,7 +4225,7 @@ georob.fit <-
 
   }
 
-  ##  compute the covariances of fixed and random effects under nominal
+ #### -- compute the covariances of fixed and random effects under nominal
   ##  Gaussian model
 
   r.cov <- list()
@@ -4226,7 +4274,7 @@ georob.fit <-
 
   }
 
-  ##  compute covariances of residuals under assumed long-tailed error distribution
+#### -- compute covariances of residuals under assumed long-tailed error distribution
 
   if( any( c( cov.ehat, cov.ehat.p.bhat ) ) ){
 
@@ -4303,6 +4351,8 @@ georob.fit <-
   ##          XX = XX,
   ##          param = lik.item[["param"]]
   ##      )
+
+#### -- prepare output
 
   result.list <- list(
     loglik = -r.opt.neg.loglik,
@@ -4410,6 +4460,7 @@ f.aux.eeq <- function(
   ## 2015-07-27 AP changes to further improve efficiency
   ## 2016-07-20 AP changes for parallel computations
   ## 2016-08-04 AP changes for nested variogram models
+  ## 2020-02-07 AP sanity checks for switch() and if()
 
   ## correct parameters names and determine model component
 
@@ -4431,7 +4482,7 @@ f.aux.eeq <- function(
   }
 
   switch(
-    x,
+    x[1],
     nugget = {
 
       ## nugget
@@ -4559,6 +4610,7 @@ f.aux.gradient.nll <- function(
   ## 2015-07-27 AP changes to further improve efficiency
   ## 2016-07-20 AP changes for parallel computations
   ## 2016-08-04 AP changes for nested variogram models
+  ## 2020-02-07 AP sanity checks for switch() and if()
 
   ## correct parameters names and determine model component
 
@@ -4585,7 +4637,7 @@ f.aux.gradient.nll <- function(
   t.q <- NROW(Vi)
 
   switch(
-    x,
+    x[1],
     nugget = {
 
       ## compute partial derivative of (restricted) log-likelihood with
@@ -4783,6 +4835,7 @@ f.aux.gradient.npll <- function(
   ## 2015-07-27 AP changes to improve efficiency
   ## 2016-07-20 AP changes for parallel computations
   ## 2016-08-04 AP changes for nested variogram models
+  ## 2020-02-07 AP sanity checks for switch() and if()
 
   ## correct parameters names and determine model component
 
@@ -4814,7 +4867,7 @@ f.aux.gradient.npll <- function(
   }
 
   switch(
-    x,
+    x[1],
     nugget = {
 
       ## compute partial derivative of (restricted) profile log-likelihood
@@ -5115,11 +5168,12 @@ f.psi.function <- function( x = c( "logistic", "t.dist", "huber" ), tp ){
   ## 2015-03-16 A. Papritz
   ## 2015-08-19 AP pdf and variances of eps and psi(eps/sigma) for long-tailed error distribution,
   ##               new parametrisation for t-dist family
+  ## 2020-02-07 AP sanity checks for switch() and if()
 
   x <- match.arg( x )
 
   switch(
-    x,
+    x[1],
     logistic = list(
       #       rho.function = function( x, tuning.psi ) {
       #         tuning.psi * (-x + tuning.psi *
@@ -5260,6 +5314,7 @@ f.psi.function <- function( x = c( "logistic", "t.dist", "huber" ), tp ){
 
 ## 2016-08-03 A. Papritz
 ## 2016-08-04 AP changes for nested variogram models
+## 2020-02-07 AP sanity checks for switch() and if()
 
 f.reparam.fwd <- function( object, set.fit.param = FALSE ){
 
@@ -5634,7 +5689,7 @@ f.call.set_allfitxxx_to_false <- function( cl ){
 
   ## cl:   a call to function georob
 
-  if( !identical( class(cl), "call" ) ) stop(
+  if( !identical( class(cl)[1], "call" ) ) stop(
     "'cl' must be of class 'call'"
   )
 
@@ -5713,136 +5768,136 @@ f.call.set_onefitxxx_to_value <- function( cl, nme, value, i = NULL ){
   ## nme:    name of parameter that should be change
   ## value:  new value for nme
   ## i:      index of variogram component for which parameter should be fixed
-  
-  
+
+
   ## auxiliary function
-  
+
   f.aux <- function( x, nme, value ){
-    
+
     if( nme %in% c( "f1", "f2", "omega", "phi", "zeta" ) ){
-      
+
       ## anisotropy parameter
-      
+
       sel <- grep( "^fit.a", names(x), fixed = FALSE )
-      
+
       if( length(sel) ){
-        
+
         ## fit.aniso argument present in cl
-        
+
         fit.aniso <- as.list(x[[sel]])
-        
+
         ## match names of fit.aniso
-        
+
         if( length(names(fit.aniso)) > 1L ){
           tmp <- sapply( names(fit.aniso)[-1L], match.arg, choices = names(default.fit.aniso()) )
           names(fit.aniso) <- c( "", tmp )
         }
-        
+
         ## set new value for nme
-        
+
         if( nme %in% names(fit.aniso) ){
-          
+
           ## nme present in fit.aniso
-          
+
           fit.aniso[nme] <- value
-          
+
         } else {
-          
+
           ## nme not present in fit.aniso
-          
+
           tmp <- list( value )
           names( tmp ) <- nme
           fit.aniso <- c( fit.aniso, tmp )
-          
+
         }
-        
+
       } else {
-        
+
         ## no fit.aniso argument in cl
-        
+
         fit.aniso <- c( list( as.symbol("default.fit.aniso" ) ), list( value ) )
         names(fit.aniso) <- c( "", nme )
-        
+
       }
-      
+
       cl <- as.call(
         c(
           if( length(sel) ) x[-sel] else x,
           list( fit.aniso = as.call( fit.aniso ) )
         )
       )
-      
-      
+
+
     } else {
-      
+
       ## variogram parameter
-      
+
       sel <- grep( "^fit.p", names(x), fixed = FALSE )
-      
+
       if( length(sel) ){
-        
+
         ## fit.param argument present in cl
-        
+
         fit.param <- as.list(x[[sel]])
 
         ## match names of fit.param
-        
+
         if( length(names(fit.param)) > 1L ){
           tmp <- sapply( names(fit.param)[-1L], match.arg, choices = names(default.fit.param()) )
           names(fit.param) <- c( "", tmp )
         }
-        
+
         ## set new value for nme
-        
+
         if( nme %in% names(fit.param) ){
-          
+
           ## nme present in fit.param
-          
+
           fit.param[nme] <- value
-          
+
         } else {
-          
+
           ## nme not present in fit.param
-          
+
           tmp <- list( value )
           names( tmp ) <- nme
           fit.param <- c( fit.param, tmp )
         }
-        
-        
+
+
       } else {
-        
+
         ## no fit.param argument in cl
-        
+
         fit.param <- c( list( as.symbol("default.fit.param" ) ), list( value ) )
         names(fit.param) <- c( "", nme )
-        
+
       }
-      
+
       cl <- as.call(
         c(
           if( length(sel) ) x[-sel] else x,
           list( fit.param = as.call( fit.param ) )
         )
       )
-      
+
     }
   }
-  
-  ## start of main body  
-  
-  if( !identical( class(cl), "call" ) ) stop(
+
+  ## start of main body
+
+  if( !identical( class(cl)[1], "call" ) ) stop(
     "'cl' must be of class 'call'"
   )
 
   if( !"variogram.object" %in% names(cl) ){
-    
+
     x <- as.list(cl)
-    
-    cl.new <- f.aux( x, nme, value )    
+
+    cl.new <- f.aux( x, nme, value )
 
   } else {
-    
+
     cl.vo <- cl[["variogram.object"]]
     cl.m.vo <- cl[ -match("variogram.object", names(cl)) ]
 
@@ -5851,19 +5906,19 @@ f.call.set_onefitxxx_to_value <- function( cl, nme, value, i = NULL ){
     tmp <- lapply(
       1L:length( as.list( cl.vo[-1L] ) ),
       function( i, x, ii, nme, value ){
-        
+
         x <- as.list(x[[i]])
-        
+
         if( identical( i, ii ) ){
-          
+
           f.aux( x, nme, value )
-          
+
         } else {
-        
+
           as.call( x )
-        
+
         }
-        
+
       }, x = as.list( cl.vo[-1L] ), ii = as.integer(i), nme = nme, value = value
     )
 
@@ -5888,10 +5943,10 @@ f.call.set_allxxx_to_fitted_values <- function( object ){
   ## arguments
 
   ## object:   a georob object
-  
-  ## 2018-01-17 ap	also update of variogram.model
-  
-  if( !identical( class(object), "georob" ) ) stop(
+
+  ## 2018-01-17 ap  also update of variogram.model
+
+  if( !identical( class(object)[1], "georob" ) ) stop(
     "'object' must be of class 'georob'"
   )
 
@@ -5932,17 +5987,17 @@ f.call.set_allxxx_to_fitted_values <- function( object ){
 
         x <- as.list( x[[i]] )
         vo <- vo[[i]]
-        
+
         sel <- c(
           grep( "^v", names(x), fixed = FALSE ),
           grep( "^p", names(x), fixed = FALSE ),
           grep( "^a", names(x), fixed = FALSE )
         )
-        
+
         variogram.model <- c( list(as.symbol("c")), as.list( vo[["variogram.model"]] ))
         param <- c( list(as.symbol("c")), as.list( vo[["param"]] ))
         aniso <- c( list(as.symbol("c")), as.list( vo[["aniso"]] ))
-        
+
         as.call(
           c(
             if( length(sel) ) x[-sel] else x,
@@ -5951,7 +6006,7 @@ f.call.set_allxxx_to_fitted_values <- function( object ){
             list( aniso = as.call( aniso ))
           )
         )
-                
+
       }, x = as.list( cl.vo[-1L] ), vo = object[["variogram.object"]]
     )
 
@@ -5977,137 +6032,137 @@ f.call.set_onexxx_to_value <- function( cl, nme, value, i = NULL ){
   ## nme:    name of parameter that should be changed
   ## value:  new value for nme
   ## i:      index of variogram component for which parameter should be fixed
-  
-  
+
+
   ## auxiliary function
-  
+
   f.aux <- function( x, nme, value ){
-    
+
     if( nme %in% c( "f1", "f2", "omega", "phi", "zeta" ) ){
-      
+
       ## anisotropy parameter
-      
+
       sel <- grep( "^a", names(x), fixed = FALSE )
-      
+
       if( length(sel) ){
-        
+
         ## aniso argument present in cl
-        
+
         aniso <- as.list(x[[sel]])
-        
+
         ## match names of aniso
-        
+
         if( length(names(aniso)) > 1L ){
           tmp <- sapply( names(aniso)[-1L], match.arg, choices = names(default.aniso()) )
           names(aniso) <- c( "", tmp )
         }
-        
+
         ## set new value for nme
-        
+
         if( nme %in% names(aniso) ){
-          
+
           ## nme present in aniso
-          
+
           aniso[nme] <- value
-          
+
         } else {
-          
+
           ## nme not present in aniso
-          
+
           tmp <- list( value )
           names( tmp ) <- nme
           aniso <- c( aniso, tmp )
-          
+
         }
-        
+
       } else {
-        
+
         ## no aniso argument in cl
-        
+
         aniso <- c( list( as.symbol("c" ) ), list( value ) )
         names(aniso) <- c( "", nme )
-        
+
       }
-      
+
       cl <- as.call(
         c(
           if( length(sel) ) x[-sel] else x,
           list( aniso = as.call( aniso ) )
         )
       )
-      
-      
+
+
     } else {
-      
+
       ## variogram parameter
-      
+
       sel <- grep( "^p", names(x), fixed = FALSE )
-      
+
       if( length(sel) ){
-        
+
         ## param argument present in cl
-        
+
         param <- as.list(x[[sel]])
 
         ## match names of param
-        
+
         if( length(names(param)) > 1L ){
-          tmp <- sapply( names(param)[-1L], match.arg, 
+          tmp <- sapply( names(param)[-1L], match.arg,
             choices = names(param.transf()) )
           names(param) <- c( "", tmp )
         }
-        
+
         ## set new value for nme
-        
+
         if( nme %in% names(param) ){
-          
+
           ## nme present in param
-          
+
           param[nme] <- value
-          
+
         } else {
-          
+
           ## nme not present in param
-          
+
           tmp <- list( value )
           names( tmp ) <- nme
           param <- c( param, tmp )
         }
-        
-        
+
+
       } else {
-        
+
         ## no param argument in cl
-        
+
         param <- c( list( as.symbol("c" ) ), list( value ) )
         names(param) <- c( "", nme )
-        
+
       }
-      
+
       cl <- as.call(
         c(
           if( length(sel) ) x[-sel] else x,
           list( param = as.call( param ) )
         )
       )
-      
+
     }
   }
-  
-  ## start of main body  
-  
-  if( !identical( class(cl), "call" ) ) stop(
+
+  ## start of main body
+
+  if( !identical( class(cl)[1], "call" ) ) stop(
     "'cl' must be of class 'call'"
   )
 
   if( !"variogram.object" %in% names(cl) ){
-    
+
     x <- as.list(cl)
-    
-    cl.new <- f.aux( x, nme, value )    
+
+    cl.new <- f.aux( x, nme, value )
 
   } else {
-    
+
     cl.vo <- cl[["variogram.object"]]
     cl.m.vo <- cl[ -match("variogram.object", names(cl)) ]
 
@@ -6116,19 +6171,19 @@ f.call.set_onexxx_to_value <- function( cl, nme, value, i = NULL ){
     tmp <- lapply(
       1L:length( as.list( cl.vo[-1L] ) ),
       function( i, x, ii, nme, value ){
-        
+
         x <- as.list(x[[i]])
-        
+
         if( identical( i, ii ) ){
-          
+
           f.aux( x, nme, value )
-          
+
         } else {
-        
+
           as.call( x )
-        
+
         }
-        
+
       }, x = as.list( cl.vo[-1L] ), ii = as.integer(i), nme = nme, value = value
     )
 
@@ -6140,8 +6195,3 @@ f.call.set_onexxx_to_value <- function( cl, nme, value, i = NULL ){
   cl.new
 
 }
-
-
-
-
-

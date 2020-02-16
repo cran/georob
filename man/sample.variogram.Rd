@@ -1,4 +1,4 @@
-% 2015-11-30 A. Papritz
+% 2020-02-05 A. Papritz
 % R CMD Rdconv -t html -o bla.html sample.variogram.Rd ; open bla.html; R CMD Rd2pdf --force sample.variogram.Rd; 
 
 \encoding{utf8}
@@ -83,10 +83,11 @@ sample.variogram(object, ...)
   Another possible value is \code{NULL}, no action.  Value
   \code{\link{na.exclude}} can be useful.}
   
-  \item{lag.dist.def}{a numeric scalar defining a constant bin width for
-  grouping the lag distances or a numeric vector with the bounds of a set
-  of contiguous bins (upper bounds of bins except for the first element of
-  \code{lag.dist.def} which is the lower bound of the first bin).}
+  \item{lag.dist.def}{a numeric scalar defining a constant bin
+  width for grouping the lag distances or a numeric vector with the bounds
+  of a set of contiguous bins (upper bounds of bins except for the first
+  element of \code{lag.dist.def} which is the lower bound of the first
+  bin). This argument is mandatory.}
   
   \item{xy.angle.def}{an numeric vector defining angular classes
   in the horizontal plane for computing directional variograms.
@@ -255,18 +256,18 @@ with the following components:
 }
 
 \examples{
-data(wolfcamp, package = "geoR")
+data(wolfcamp)
 
 ## fitting an isotropic IRF(0) model
-r.sv.iso <- sample.variogram(wolfcamp[["data"]], locations = wolfcamp[[1]], 
-    lag.dist.def = seq(0, 200, by = 15))
+r.sv.iso <- sample.variogram(pressure~1, data = wolfcamp, 
+    locations = ~x + y, lag.dist.def = seq(0, 200, by = 15))
 
 \dontrun{
 plot(r.sv.iso, type = "l")}
 
 ## fitting an anisotropic IRF(0) model
-r.sv.aniso <- sample.variogram(wolfcamp[["data"]],
-    locations = wolfcamp[[1]], lag.dist.def = seq(0, 200, by = 15),
+r.sv.aniso <- sample.variogram(pressure~1, data = wolfcamp, 
+    locations = ~x + y, lag.dist.def = seq(0, 200, by = 15),
     xy.angle.def = c(0., 22.5, 67.5, 112.5, 157.5, 180.))
 \dontrun{
 plot(r.sv.aniso, type = "l", add = TRUE, col = 2:5)}

@@ -188,10 +188,21 @@ waldtest(r.georob.m0.spher.reml, .~.-ffreq)
 ###################################################
 ### code chunk number 20: meuse-zinc-georob-reml-multcomp
 ###################################################
-library(multcomp)
-summary(glht(r.georob.m0.spher.reml, 
-  linfct = mcp(ffreq = c("ffreq1 - ffreq2 = 0", "ffreq1 - ffreq3 = 0",
-  "ffreq2 - ffreq3 = 0"))))
+if(requireNamespace("multcomp", quietly = TRUE)){
+  summary(multcomp::glht(r.georob.m0.spher.reml, 
+    linfct = multcomp::mcp(ffreq = c("ffreq1 - ffreq2 = 0", "ffreq1 - ffreq3 = 0",
+    "ffreq2 - ffreq3 = 0"))))
+} else {
+  install.packages("multcomp")
+  requireNamespace("multcomp", quietly = TRUE)
+  summary(multcomp::glht(r.georob.m0.spher.reml, 
+    linfct = multcomp::mcp(ffreq = c("ffreq1 - ffreq2 = 0", "ffreq1 - ffreq3 = 0",
+    "ffreq2 - ffreq3 = 0"))))
+}
+# library(multcomp)
+# summary(glht(r.georob.m0.spher.reml, 
+#   linfct = mcp(ffreq = c("ffreq1 - ffreq2 = 0", "ffreq1 - ffreq3 = 0",
+#   "ffreq2 - ffreq3 = 0"))))
 
 
 ###################################################
@@ -440,9 +451,9 @@ palette("default")
 ###################################################
 ### code chunk number 47: meuse-zinc-cleanup-2 (eval = FALSE)
 ###################################################
-## # save(list=ls(pattern="^r\\."), file="r_meuse_zinc_objects.RData")
+## # save(list=ls(pattern="^r\\."), file="r_meuse_zinc_objects.RData", version = 2)
 ## save(list=c("r.sv", "r.sv.spher", "r.prfl.m0.spher.reml.scale", "r.cv.m0.spher.reml", 
-##     "r.cv.m1.spher.reml", "r.bk", "r.blks"), file="r_meuse_zinc_objects.RData")
+##     "r.cv.m1.spher.reml", "r.bk", "r.blks"), file="r_meuse_zinc_objects.RData", version = 2)
 ## rm(list=ls(pattern="^r\\."))
 
 
@@ -455,8 +466,17 @@ if(file.exists("r_coalash_objects.RData")) load("r_coalash_objects.RData")
 ###################################################
 ### code chunk number 49: ash-data
 ###################################################
-data(coalash, package="gstat")
-summary(coalash)
+if(requireNamespace("gstat", quietly = TRUE)){
+  data(coalash, package="gstat")
+  summary(coalash)
+} else {
+  install.packages("gstat")
+  requireNamespace("gstat", quietly = TRUE)
+  data(coalash, package="gstat")
+  summary(coalash)
+}
+# data(coalash, package="gstat")
+# summary(coalash)
 
 
 ###################################################
@@ -859,11 +879,11 @@ plot(se.gauss, pos=c(0.5, 0, 1, 0.5), more=FALSE)
 ###################################################
 ### code chunk number 87: ash-results-save-1 (eval = FALSE)
 ###################################################
-## # save(list=ls(pattern="^r\\."), file="r_coalash_objects.RData")
+## # save(list=ls(pattern="^r\\."), file="r_coalash_objects.RData", version = 2)
 ## save(list=c(
 ##     "r.cv.georob.m1.exp.c2", "r.cv.georob.m1.exp.c1000", 
 ##     "r.pk.m1.exp.c2", "r.pk.m1.exp.c1000", "r.bk.m1.exp.c2", "r.bk.m1.exp.c1000"
-##   ), file="r_coalash_objects.RData")
+##   ), file="r_coalash_objects.RData", version = 2)
 ## rm(list=ls(pattern="^r\\."))
 
 

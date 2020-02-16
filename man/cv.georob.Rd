@@ -22,7 +22,7 @@
   
 \usage{
 \method{cv}{georob}(object, formula = NULL, subset = NULL, 
-    method = c("block", "random"), nset = 10, seed = NULL, 
+    method = c("block", "random"), nset = 10L, seed = NULL, 
     sets = NULL, duplicates.in.same.set = TRUE, re.estimate = TRUE, 
     param = object[["variogram.object"]][[1]][["param"]],
     fit.param = object[["variogram.object"]][[1]][["fit.param"]],

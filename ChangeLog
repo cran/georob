@@ -568,3 +568,23 @@ processing col and pch arguments
 * georob.private.functions.R (f.diag) change in use of class() in and switch()
 * georob.simulation.R (condsim, control.condsim) sanity checks of specified function arguments and if()
 * georob.simulation.R (condsim) correction of errors when processing output from RFsimulate
+
+
+2020-02-05 Andreas Papritz  <papritz@env.ethz.ch>
+
+* DESCRIPTION deleting suggested orphaned package geoR
+* georob_vignette.Rnw changes for conditional use of object of suggest packages gstat and multcomp
+* wolfcamp data set included
+
+
+2020-02-14 Andreas Papritz  <papritz@env.ethz.ch>
+
+* all codes files renamed
+* georob_cv.R (cv.georob, plot.cv.georob, summary.cv.georob, validate.predictions) sanity checks of arguments and for if() and switch()
+* georob_exported_functions.R (georob, control.georob, bwd.transf, control.rq, control.nleqslv, control.optim, control.nlminb, control.pcmp, compress, expand, param.names, param.bounds, default.fit.param, default.fit.aniso, default.aniso, profilelogLik) sanity checks of arguments and for if() and switch()
+* georob_lgnpp.R (lgnpp) sanity checks of arguments and for if() and switch()
+* georob_predict.R (control.predict.georob, predict.georob, check.newdata) sanity checks of arguments and for if() and switch()
+* georob_S3methods.R (ranef.georob, summary.georob, waldtest.georob, logLik.georob, deviance.georob, extractAIC.georob, add1.georob, drop1.georob, step.georob) sanity checks of arguments and for if() and switch()
+* georob_simulation.R (control.condsim, condsim) sanity checks of arguments and for if() and switch()
+* georob_variogram.R (sample.variogram.default, plot.sample.variogram, control.fit.variogram.model, fit.variogram.model, summary.fitted.variogram, plot.georob, lines.georob) sanity checks of arguments and for if() and switch()
+* new data sets: wolfcamp, elevation

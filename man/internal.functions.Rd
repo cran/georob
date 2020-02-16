@@ -3,12 +3,13 @@
 
 \encoding{utf8}
 \name{internal.functions}
+\alias{check.newdata}
 \alias{covariances.fixed.random.effects}
 \alias{crpsnorm}
 % \alias{crpspd.resp.rob}
 \alias{estimate.zhat}
 \alias{estimating.equations.theta}
-\alias{estimating.equations.B}
+\alias{estimating.equations.z}
 \alias{f.aux.Qstar}
 \alias{f.aux.RSS}
 \alias{f.aux.Valphaxi}
@@ -53,12 +54,13 @@
 \description{
 The unexported internal functions 
   \itemize{
+    \item{\code{check.newdata}}
     \item{\code{covariances.fixed.random.effects}}
     \item{\code{crpsnorm}}
     % \item{\code{crpspd.resp.rob}}
     \item{\code{estimate.zhat}}
     \item{\code{estimating.equations.theta}}
-    \item{\code{estimating.equations.B}}
+    \item{\code{estimating.equations.z}}
     \item{\code{f.aux.Qstar}}
     \item{\code{f.aux.RSS}}
     \item{\code{f.aux.Valphaxi}}
@@ -101,7 +103,7 @@ are not intended for direct use.  However, as any unexported function, they
 can be accessed by typing \code{georob:::\var{function-name}}.  
 
 In addition, the function \code{K}, which is re-exported by the package
-\pkg{georob} is required for computing block Kriging predictions by the
+\pkg{georob}, is required for computing block Kriging predictions by the
 function \code{f.point.block.cov} of the package \pkg{constrainedKriging}.
 
 Furthermore, the (re-exported) function

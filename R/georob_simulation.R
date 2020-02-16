@@ -11,28 +11,31 @@ control.condsim <- function(
   ncores = detectCores(),
   pcmp = control.pcmp()
 ){
-  
-  ## auxiliary function to set meaningful default values for 
-  ## condsim
-  
-  ## 2018-01-12 A. Papritz
-  ## 2019-12-17 AP sanity checks of arguments and if()
-  
-  ## check arguments
-  
-  stopifnot(identical(length(use.grid), 1L) && is.logical(use.grid))
-  stopifnot(identical(length(condsim), 1L) && is.logical(condsim))
-  stopifnot(identical(length(include.data.sites), 1L) && is.logical(include.data.sites))
-  stopifnot(identical(length(means), 1L) && is.logical(means))
-  stopifnot(identical(length(trend.covariates), 1L) && is.logical(trend.covariates))
-  stopifnot(identical(length(covariances), 1L) && is.logical(covariances))
 
-  stopifnot(identical(length(ncores), 1L) && is.numeric(ncores))
+  ## auxiliary function to set meaningful default values for
+  ## condsim
+
+  ## 2018-01-12 A. Papritz
+  ## 2020-02-14 AP sanity checks of arguments and for if() and switch()
+
+  ## check arguments
+
+  stopifnot(identical(length(use.grid), 1L)           && is.logical(use.grid))
+  stopifnot(identical(length(condsim), 1L)            && is.logical(condsim))
+  stopifnot(identical(length(include.data.sites), 1L) && is.logical(include.data.sites))
+  stopifnot(identical(length(means), 1L)              && is.logical(means))
+  stopifnot(identical(length(trend.covariates), 1L)   && is.logical(trend.covariates))
+  stopifnot(identical(length(covariances), 1L)        && is.logical(covariances))
+
+  stopifnot(identical(length(grid.refinement), 1L) && is.numeric(grid.refinement) && grid.refinement > 1)
+  stopifnot(identical(length(ncores), 1L)          && is.numeric(ncores)          && ncores >= 1)
+
+  stopifnot(is.list(pcmp))
 
   if( grid.refinement < 1. ) warning( "grid refinement factor < 1")
-  
+
   ## prepare list
-  
+
   list(
     use.grid = use.grid,
     grid.refinement = grid.refinement,
@@ -43,7 +46,7 @@ control.condsim <- function(
     covariances = covariances,
     ncores = ncores, pcmp = pcmp
   )
-  
+
 }
 
 
@@ -52,76 +55,90 @@ control.condsim <- function(
 ### condsim -------------
 
 condsim <- function(
-  object, newdata, nsim, seed, 
+  object, newdata, nsim, seed,
   type = c("response", "signal"),
   locations,
-  trend.coef = NULL, 
+  trend.coef = NULL,
   variogram.model = NULL, param = NULL, aniso = NULL,
   variogram.object = NULL,
   control = control.condsim(),
   verbose = 0
 ){
-  
+
   ## simulate (un)conditional realizations of Gaussian processes with the
   ## parameters estimated by georob for a spatial linear model
-  
+
   ## 2018-01-27 A. Papritz
-  ## 2018-11-25	A. Papritz small change in function f.aux.sim.1
+  ## 2018-11-25 A. Papritz small change in function f.aux.sim.1
   ## 2019-03-29 A. Papritz restore default for RFoption spConform
   ## 2019-03-29 A. Papritz conditioning data is passed as SpatialPointsDataFrame to
   ##                       RFsimulate (only applies for exact coordinates)
-	## 2019-05-24 A. Papritz correction of error that occured when preparing output consisting 
-	##                       of a single realization
- 	## 2019-12-17 A. Papritz correction of errors in output from RFsimulate
-  ## 2019-12-17 AP sanity checks of arguments and if()
- 
-  
+  ## 2019-05-24 A. Papritz correction of error that occured when preparing output consisting
+  ##                       of a single realization
+  ## 2019-12-17 A. Papritz correction of errors in output from RFsimulate
+  ## 2020-02-14 AP sanity checks of arguments and for if() and switch()
+
+
   ## auxiliary function for aggregating a response variable x for the
   ## levels of the variable by.one
-  
-  f.aggregate.by.one <- function(x, by.one, FUN = mean, ...){ 
-    by.one <- as.numeric( factor( by.one, levels = unique( by.one ) ) ) 
+
+  f.aggregate.by.one <- function(x, by.one, FUN = mean, ...){
+    by.one <- as.numeric( factor( by.one, levels = unique( by.one ) ) )
     aggregate( x, list( by = by.one ), FUN = FUN, ...  )[, -1]
   }
-  
 
 #### -- check arguments -------------
-  
-  stopifnot(identical(length(verbose), 1L) && is.numeric(verbose))
 
   ## match arguments
-  
+
   type <- match.arg( type )
-  
+
+  ## mandatory argument
+
+  if( missing( object ) || missing( newdata ) || missing( nsim ) || missing( seed ) ) stop(
+    "some mandatory arguments are missing"
+  )
+
+  stopifnot(identical(class(object)[1], "georob"))
+
+  if(!missing(newdata)) check.newdata(newdata)
+
+  stopifnot(identical(length(nsim), 1L)    && is.numeric(nsim)    && nsim >= 1)
+  stopifnot(identical(length(seed), 1L)    && is.numeric(seed))
+  stopifnot(identical(length(verbose), 1L) && is.numeric(verbose) && verbose >= 0)
+
+  stopifnot(is.null(trend.coef) || is.numeric(trend.coef))
+  stopifnot(is.null(param)      || is.numeric(param))
+  stopifnot(is.null(aniso)      || is.numeric(aniso))
+
+  stopifnot(is.null(variogram.model)  || (identical(length(variogram.model), 1L) && is.character(variogram.model)))
+
+  stopifnot(is.list(control))
+  stopifnot(is.null(variogram.object) || is.list(variogram.object))
+
   if( verbose > 0 ) cat( "  prepare data ...\n" )
-  
-  
+
+
   ## check consistency of provided arguments
-  
+
   ## conditionally simulating signal
-  
+
   if( identical(type, "signal") && control[["condsim"]] && !control[["use.grid"]] ) stop(
     "conditional simulation of signal requires control argument 'use.grid = TRUE'"
   )
-  
-  ## mandatory argument
-  
-  if( missing( object ) || missing( newdata ) || missing( nsim ) || missing( seed ) ) stop(  
-    "some mandatory arguments are missing" 
-  )
-  
+
   ## class
-  
+
   if( !identical( class( object ) , "georob") ) stop(
     "object must be of class georob"
   )
-  
+
   if( identical( class( newdata ) , "SpatialPolygonsDataFrame") ) stop(
     "newdata is a SpatialPolygonsDataFrame; simulation for such targetst is not yet implemented"
   )
-  
+
   ## coordinates only as covariates for trend model if newdata is a Spatialxx object
-  
+
   if( all(class( newdata ) %in% c( "SpatialPoints", "SpatialPixels", "SpatialGrid" ) ) ){
     t.formula <- as.formula( paste( as.character( formula( object ) )[-2L], collapse = "" ) )
     tmp <- try(
@@ -132,51 +149,51 @@ condsim <- function(
       "'newdata' is a SpatialPoints, SpatialPixels or SpatialGrid object\n but drift covariates are not functions of coordinates"
     )
   }
-  
+
   ## mean parameters
-  
+
   if( !is.null( trend.coef) && !identical(length(trend.coef), length(coef(object)) ) ) stop(
     "'trend.coef' inconsistent with trend model of 'object'"
   )
-  
-  
+
+
 #### -- re-fit model for new variogram -------------
-  
+
   ## re-fit model if variogram parameters have been specified
-  
+
   ## setup or check contents of variogram.object
-  
-  if( !all( 
-      is.null(variogram.model), is.null(param),  is.null(aniso), 
+
+  if( !all(
+      is.null(variogram.model), is.null(param),  is.null(aniso),
       is.null(variogram.object)
     )
   ){
-    
+
     cl <- object[["call"]]
-    
+
     if( is.null( variogram.object ) ){
-      
+
       ## either variogram.model, param, or aniso have been specified
-           
+
       if( "variogram.object" %in% names(cl) ) stop(
         "variogram parameters were specified for 'object' as argument 'variogram.object'",
         " --- specifiy new variogram model in the same way"
       )
-      
+
       if( !is.null(variogram.model) ){
         variogram.model <- match.arg(
           variogram.model,
-          c( "RMexp", "RMaskey", "RMbessel", "RMcauchy", 
+          c( "RMexp", "RMaskey", "RMbessel", "RMcauchy",
             "RMcircular", "RMcubic", "RMdagum", "RMdampedcos", "RMdewijsian", "RMfbm",
             "RMgauss", "RMgencauchy", "RMgenfbm", "RMgengneiting", "RMgneiting", "RMlgd",
             "RMmatern", "RMpenta", "RMqexp", "RMspheric", "RMstable",
             "RMwave", "RMwhittle"
-          ) 
+          )
         )
       } else variogram.model <- object[["variogram.object"]][[1]][["variogram.model"]]
-              
+
       ## match names of param, aniso, fit.param, fit.aniso
-      
+
       if( !is.null(param) ){
         if( is.numeric(param) ){
           tmp <- names( param )
@@ -188,9 +205,9 @@ condsim <- function(
           names( param ) <- nme.param <- tmp
         } else stop( "'param' must be a numeric vector" )
       } else param <- object[["variogram.object"]][[1]][["param"]]
-      
+
       fit.param <- default.fit.param( variance = FALSE, nugget = FALSE, scale = FALSE )
-      
+
       if( !is.null(aniso) ){
         if( is.numeric(aniso) ){
           tmp <- names( aniso )
@@ -200,11 +217,11 @@ condsim <- function(
           names( aniso ) <- tmp
         } else stop( "'aniso' must be a numeric vector" )
       } else aniso <- object[["variogram.object"]][[1]][["aniso"]]
-      
+
       fit.aniso <- default.fit.aniso()
-      
+
       ## create variogram.object
-      
+
       variogram.object <- list(
         list(
           variogram.model = variogram.model,
@@ -212,40 +229,40 @@ condsim <- function(
           aniso = aniso, fit.aniso = fit.aniso
         )
       )
-      
+
     } else {
-      
+
       ## variogram.object has been passed to function, check contents
-      
+
       if( !"variogram.object" %in% names(cl) ) stop(
         "variogram parameters were not specified for 'object' as argument 'variogram.object'",
         " --- specifiy new variogram model in the same way"
       )
-      
+
       variogram.object <- lapply(
         variogram.object,
         function( y ){
-          
+
           variogram.model <- y[["variogram.model"]]
           param      <- y[["param"]]
           aniso      <- y[["aniso"]]
-          
+
           if( !is.null(variogram.model) ){
             y[["variogram.model"]] <- match.arg(
               variogram.model,
-              c( "RMexp", "RMaskey", "RMbessel", "RMcauchy", 
+              c( "RMexp", "RMaskey", "RMbessel", "RMcauchy",
                 "RMcircular", "RMcubic", "RMdagum", "RMdampedcos", "RMdewijsian", "RMfbm",
                 "RMgauss", "RMgencauchy", "RMgenfbm", "RMgengneiting", "RMgneiting", "RMlgd",
                 "RMmatern", "RMpenta", "RMqexp", "RMspheric", "RMstable",
                 "RMwave", "RMwhittle"
-              ) 
-            )          
+              )
+            )
           } else stop( "component 'variogram.model' missing in 'variogram.object'")
-          
+
           ## match names of components
-          
+
           nme.param <- NULL
-          
+
           if( !is.null(param) ){
             if( is.numeric(param) ){
               tmp <- names( param )
@@ -258,9 +275,9 @@ condsim <- function(
             } else stop( "'param' must be a numeric vector" )
             y[["param"]] <- param
           } else stop( "component 'param' missing in 'variogram.object'")
-          
+
           y[["fit.param"]] <- default.fit.param( variance = FALSE, nugget = FALSE, scale = FALSE )
-                    
+
           if( !is.null(aniso) ){
             if( is.numeric(aniso) ) {
               tmp <- names( aniso )
@@ -271,199 +288,199 @@ condsim <- function(
             } else stop( "'aniso' must be a numeric vector" )
             y[["aniso"]] <- aniso
           } else y[["aniso"]] <- default.aniso()
-          
+
           y[["fit.aniso"]] <- default.fit.aniso()
-                    
+
           y
-          
+
         }
       )
     }
-    
+
     ## replace variogram.object in object
-    
+
     object[["variogram.object"]] <- variogram.object
-    
+
     ## set all initial values to specified parameter values
-    
+
     object[["call"]] <- f.call.set_allxxx_to_fitted_values( object )
-    
+
     ## fix all variogram parameters
-    
+
     cl <- object[["call"]]
-    
+
     cl <- f.call.set_allfitxxx_to_false( cl )
-    
+
     ## set hessian equal to FALSE and avoid computation of unneeded
     ## covariance matrices
-    
+
     cl <- f.call.set_x_to_value_in_fun( cl, "control", "control.georob", "hessian", FALSE )
     cl <- f.call.set_x_to_value_in_fun( cl, "control", "control.georob", "cov.bhat", FALSE )
     cl <- f.call.set_x_to_value_in_fun( cl, "control", "control.georob", "cov.ehat", FALSE )
     cl <- f.call.set_x_to_value_in_fun( cl, "control", "control.georob", "cov.ehat.p.bhat", FALSE )
-    
+
     ## set verbose argument
-    
+
     cl <- f.call.set_x_to_value( cl, "verbose", 0 )
-    
+
     ## update call in object
-    
+
     object[["call"]] <- cl
-    
+
     ## re-fit object
-    
+
     object <- update( object )
 
   }
-  
-  
+
+
 #### -- prepare objects on support data -------------
-  
+
   ## extract required items about data sites (support data) from object
-  
+
   ## terms
-  
+
   tt <- terms( object )
   Terms <- delete.response( tt )
-  
+
   ## model.frame
-  
+
   mf.d <- model.frame( object )
-  
+
   ## design matrix
-  
+
   X.d <- model.matrix( object )[!duplicated( object[["Tmat"]] ), , drop = FALSE]
-  
+
   ## unconditional mean (fitted values)
-  
+
   if( !is.null( trend.coef ) ){
-    
-    ## deal with non-NULL offset    
-    
+
+    ## deal with non-NULL offset
+
     if( !is.null( attr( tt, "offset" ) ) || !is.null( object[["call"]][["offset"]] ) ){
       offset <- model.offset( mf.d )[!duplicated( object[["Tmat"]] )]
     } else offset <- rep( 0., NROW(X.d) )
-    
+
     mean.d <- drop( X.d %*% trend.coef ) + offset
-    
+
   } else {
-    
+
     mean.d <- fitted( object )[!duplicated( object[["Tmat"]] )]
-    
+
   }
-  
+
   ## response (compute arith. average for replicated locations) or trend
-  
+
   if( control[["condsim"]] ){
-    
+
     y.d <- f.aggregate.by.one( model.response( mf.d ), object[["Tmat"]], na.rm = TRUE )
-    
+
   } else {
-    
+
     y.d <- mean.d
-    
-  }  
-  
+
+  }
+
   ## coordinates
-  
+
   if( missing( locations ) ){
     locations <- object[["locations.objects"]][["locations"]]
   }
-  
+
   Terms.loc <- terms( locations )
   attr( Terms.loc, "intercept" ) <- 0
-  
+
   coords.d <- as.data.frame(
     object[["locations.objects"]][["coordinates"]][!duplicated( object[["Tmat"]] ), , drop = FALSE]
   )
-  
-  
+
+
 #### -- prepare objects on support data -------------
-  
+
   ## extract signal variance, xi, nugget and gcr.constant
-  
+
   tmp <- f.reparam.fwd( object[["variogram.object"]] )
-  
+
   var.signal <- attr(tmp, "var.signal" )
   xi <- sapply( tmp, function(x) x[["param"]]["variance"] )
   nugget <- object[["variogram.object"]][[1L]][["param"]]["nugget"]
-  
+
   isotropic <- all( sapply( object[["variogram.object"]], function(x) x[["isotropic"]] ) )
-  
-  gcr.constant <- lapply( 
+
+  gcr.constant <- lapply(
     object[["Valphaxi.objects"]][["Valpha"]],
     function(x) x[["gcr.constant"]]
   )
-   
-  
+
+
 #### -- prepare variogram object for simulation -------------
-  
+
   ## create variogram object for simulation by RFsimulate
-  
+
   variogram <- lapply(
     object[["variogram.object"]],
     function( x, type ){
-      
+
       param           <- x[["param"]]
       aniso           <- x[c("aniso", "sclmat", "rotmat")]
-      
+
       ## continous part of signal
-      
+
       A <- aniso[["sclmat"]] * aniso[["rotmat"]] / param["scale"]
-      
+
       signal <- list( x[["variogram.model"]] )
-      signal <- c( 
-        signal, 
-        as.list( param[!names(param) %in% c("variance", "snugget", "nugget", "scale")] ) 
+      signal <- c(
+        signal,
+        as.list( param[!names(param) %in% c("variance", "snugget", "nugget", "scale")] )
       )
       signal <- list( "$", var = param["variance"], A = A, signal )
-      
+
       ## non-continuous part of signal and independent error
-      
+
       nugget <- 0.
       if( "snugget" %in% names(param) ) nugget <- nugget + param["snugget"]
       if( identical( type, "response" ) && "nugget" %in% names(param) ){
         nugget <- nugget + param["nugget"]
       }
-      
+
       list( signal = signal, nugget = nugget )
-      
+
     }, type = type
   )
-  
-  
+
+
 #### -- prepare covariates for simulation -------------
-  
+
   ## covariates for trend model if required
-  
+
   covariates.d <- NULL
   covariates.s <- NULL
-  
+
   if( control[["trend.covariates"]] ){
-    
+
     t.formula <- as.formula( paste( as.character( formula(object))[-2L], collapse = " " ) )
-    
+
     covariates.d <- get_all_vars( t.formula,  data = eval( getCall(object)[["data"]] ) )
     covariates.d <- covariates.d[!duplicated( object[["Tmat"]] ), , drop = FALSE]
-    
+
     covariates.s <- get_all_vars( t.formula,  data = as.data.frame( newdata ) )
-    
+
   }
-  
-  
+
+
 #### -- (un-)conditional means at simlation sites -------------
-  
+
   ## prepare required items for simulation sites
-  
+
   if( verbose > 0 ) cat( "  compute (conditional) mean ...\n" )
-  
-  
+
+
 #### ---- using specified trend coefficients -------------
-  
+
   if( !is.null( trend.coef ) ){
-    
+
     ## get modelframe for newdata
-    
+
     mf.s <- switch(
       class( newdata )[1],
       "data.frame" = model.frame(
@@ -487,19 +504,19 @@ condsim <- function(
         class( newdata )
       )
     )
-    
+
     ## check whether variables that will be used to compute the
     ## predictions agree with those in object
-    
+
     if( !is.null( cl <- attr(Terms, "dataClasses" ) ) )
       .checkMFClasses( cl, mf.s )
-    
+
     ## get fixed effects design matrix for newdata
-    
+
     X.s <- model.matrix( Terms, mf.s, contrasts.arg = object[["contrasts"]] )
-    
+
     ## deal with non-NULL offset
-    
+
     offset <- rep( 0., NROW(X.s) )
     if( !is.null( off.num <- attr( tt, "offset" ) ) ){
       for( i in off.num ) {
@@ -509,9 +526,9 @@ condsim <- function(
     if( !is.null( object[["call"]][["offset"]] ) ){
       offset <- offset + eval( object[["call"]][["offset"]], newdata )
     }
-    
+
     ## get matrix of coordinates of newdata for point kriging
-    
+
     coords.s <- as.data.frame(switch(
       class( newdata )[1],
       "data.frame" = model.matrix(
@@ -528,148 +545,148 @@ condsim <- function(
       "SpatialGridDataFrame" = coordinates( newdata ),
       "SpatialPolygonsDataFrame" = NULL
     ))
-    
+
     if( !is.null( coords.s ) &&
       !(
         NCOL( coords.d ) == NCOL( coords.s ) &&
-        all( colnames( coords.s ) == 
+        all( colnames( coords.s ) ==
           colnames(object[["locations.objects"]][["coordinates"]]) )
       )
     ) stop(
       "inconsistent number and/or names of coordinates in 'object' and in 'newdata'"
     )
-    
+
     ## compute unconditional mean
-    
+
     y.s <- drop( X.s %*% trend.coef ) + offset
-    
+
     ## compute conditional mean
-    
+
     if( control[["condsim"]] ){
-      
+
       ## simple kriging weights
-      
-      skw <- simple.kriging.weights( 
+
+      skw <- simple.kriging.weights(
         pred.coords = coords.s,
-        object = object, 
+        object = object,
         type = type,
         covariances = FALSE,
         control = control.predict.georob(ncores = control[["ncores"]])
       )
-            
+
       ## conditional mean
-      
+
       y.s <- y.s + drop( skw %*% ( y.d - mean.d ) )
-      
+
     }
-  
+
   } else {
-  
-  
+
+
 #### ---- using fitted trend coefficients -------------
-    
+
     ## compute (conditional) mean by predict.georob
-    
-    tmp <- predict( 
+
+    tmp <- predict(
       object, newdata = newdata, locations = locations,
       type = if( control[["condsim"]] ) "response" else "trend"
     )
-    
+
     ## convert to  dataframe if newdata is a Spatial... object
-    
+
     if( !identical( class(tmp), "data.frame") )  tmp <- as.data.frame(tmp)
-    
+
     ## get coordinates and (conditional) mean
-    
+
     coords.s <- tmp[, attr(terms(locations), "term.labels"), drop = FALSE]
     y.s <- tmp[, "pred"]
-    
-    rm( tmp ); gc()    
-  
+
+    rm( tmp ); gc()
+
   }
-  
+
 #### -- (un-)conditional realizations at simlation sites -------------
-  
+
   ## compute (conditional) realizations ...
-  
+
   if( !control[["use.grid"]] ){
-    
+
     ## ... using exact coordinates of sites
-    
-    
+
+
 #### ---- exact coordinates -------------
-    
+
     if( verbose > 0 ) cat( "  simulate with exact coordinates ...\n" )
-    
+
     if( control[["include.data.sites"]] && !control[["condsim"]] ){
-      
+
       ## include also data sites
-      
+
       ## omit simulation sites that coincide with data sites
-      
+
       key <-  apply( coords.d, 1, paste, collapse = " " )
       sel <- !apply( coords.s, 1, paste, collapse = " " ) %in% key
-      
+
       coords.s <- coords.s[sel, , drop = FALSE]
       y.s <- y.s[sel]
       if( !is.null( covariates.s ) ) covariates.s <- covariates.s[sel, , drop = FALSE]
-      
+
       ## prepare coordinates and data
-      
+
       n.d <- length( y.d )
       n.s <- length( y.s )
-      
+
       coords <- rbind( coords.d, coords.s )
       y <- c( y.d, y.s )
-      if( !is.null( covariates.s ) ) covariates <- rbind( covariates.d, covariates.s )      
-      
+      if( !is.null( covariates.s ) ) covariates <- rbind( covariates.d, covariates.s )
+
     } else {
-      
+
       # only simulation sites
-      
+
       n.d <- 0L
       n.s <- length( y.s )
-      
+
       coords <- coords.s
       y <- y.s
-      if( !is.null( covariates.s ) ) covariates <- covariates.s    
-      
+      if( !is.null( covariates.s ) ) covariates <- covariates.s
+
     }
-    
+
     ## prepare conditioning data
-    
+
     if( control[["condsim"]] ){
       data <- cbind( coords.d, values = rep( 0., NROW(coords.d) ) )
       coordinates(data) <- colnames(coords.d)
     } else {
       data <- NULL
     }
-    
+
     ## auxiliary function for simulating (conditional) realizations in parallel
-    
+
     f.aux.sim.1 <- function( i ){
-      
+
       ## s, e, sim.seed, variogram, coords, data are used from .GlobalEnv
-      
+
       RFoptions( spConform = FALSE )
-      
+
       set.seed( sim.seed[i] )
-      
+
       nsim <- e[i] - s[i] + 1L
-      
+
       tmp <- lapply(
         variogram,
-        
+
         function( x, nsim ){
-          
+
           signal <- RFsimulate(
             model = x[["signal"]], n = nsim,
-            x = coords[, 1], 
+            x = coords[, 1],
             y = if( NCOL(coords) > 1 ) coords[, 2] else NULL,
             z = if( NCOL(coords) > 2 ) coords[, 3] else NULL,
             data = data
           )
-          
+
           if( x[["nugget"]] > 0. ){
             nugget <- rnorm( prod( dim( signal ) ), mean = 0., sd = sqrt( x[["nugget"]] ) )
             dim( nugget ) <- dim( signal )
@@ -677,138 +694,138 @@ condsim <- function(
           } else {
             signal
           }
-                    
+
         }, nsim = nsim
       )
-      
+
       res <- tmp[[1]]
       if( length(tmp) - 1L ){
         for( i in 2L:length(tmp) ){
           res <- res + tmp[[i]]
         }
       }
-      
-      RFoptions( spConform = TRUE )      
+
+      RFoptions( spConform = TRUE )
 
       if(identical(as.integer(nsim), 1L)){
-        dim(res) <- c(dim(res), 1L)      
-      } 
-      
+        dim(res) <- c(dim(res), 1L)
+      }
+
       res
-      
+
     }
-    
+
     ## determine number of cores
-    
+
     ncores <- min(control[["ncores"]], nsim)
-    
+
     ## definition of junks to be evaluated in parallel
-    
+
     k <- ncores
     n <- nsim
     dn <- floor( n / k )
     s <- ( (0L:(k-1L)) * dn ) + 1L
     e <- (1L:k) * dn
     e[k] <- n
-    
+
     ## random number generator seed used in junks
-    
+
     set.seed( seed )
     sim.seed <- sample.int( 100000, k)
-        
+
     ## simulate (unconditional) realizations in parallel
-    
+
     if( ncores > 1L && !control[["pcmp"]][["fork"]] ){
-      
+
       if( !sfIsRunning() ){
         options( error = f.stop.cluster )
         junk <- sfInit( parallel = TRUE, cpus = ncores )
       }
-      
+
       #       junk <- sfLibrary( RandomFields, verbose = FALSE )
-      junk <- sfExport( "s", "e", "sim.seed", "variogram", "coords", "data" ) 
+      junk <- sfExport( "s", "e", "sim.seed", "variogram", "coords", "data" )
 
       res <- sfLapply( 1L:k, f.aux.sim.1)
-      
+
       if( control[["pcmp"]][["sfstop"]] ){
         junk <- sfStop()
         options( error = NULL )
       }
-      
+
     } else {
 
       res <- mclapply( 1L:k, f.aux.sim.1, mc.cores = ncores )
 
     }
-    
-    ## store realizations in a matrix 
-    
+
+    ## store realizations in a matrix
+
     sim.values <- res[[1]]
-		
+
     if( length(res) - 1L ){
       for( i in 2L:length(res) ){
         sim.values <- cbind( sim.values, res[[i]] )
       }
     }
-    
+
     colnames( sim.values ) <- paste0( "sim.", seq_len( nsim) )
-    
+
     #     sv.exact <<- sim.values
-    
+
     junk <- gc()
-    
+
     tmp <- coords
     if( control[["means"]] ) tmp <- cbind( tmp, expct = y )
     if( control[["trend.covariates"]] ) tmp <- cbind( tmp, covariates )
     result <- cbind( tmp, sim.values + y )
-    
+
     ## add conditioning data
-    
+
     if( control[["include.data.sites"]] & control[["condsim"]] ){
-      
+
       n.d <- length( y.d )
-      
+
       tmp <- coords.d
       if( control[["means"]] ) tmp <- cbind( tmp, expct = y.d )
       if( control[["trend.covariates"]] ) tmp <- cbind( tmp, covariates.d )
       tmp <- cbind( tmp, matrix( rep( y.d, nsim ), ncol = nsim ) )
       colnames( tmp ) <- colnames( result )
-      
+
       result <- rbind( tmp, result )
-      
+
     }
-    
+
     ## ---------- end !control[["use.grid"]]
-    
+
   } else {
-    
-    
+
+
 #### ---- simulation grid -------------
-    
-    ## ... using simulation grid    
+
+    ## ... using simulation grid
 
     if( verbose > 0 ) cat( "  simulate with coordinates assigned to grid  ...\n" )
-    
+
     if( verbose > 1 ) cat( "   assign grid nodes to points  ...\n" )
-    
+
     ## ... assigning sites to grid
-    
+
     ## define (refined) grid for simulating conditional realizations
-    
+
     ## (refined) grid increment
-    
+
     incr.grid <- sapply(
       coords.s,
       function( x ) min( diff( sort( unique( x ) ) ) )
     ) / control[["grid.refinement"]]
-    
+
     ## extremal coordinates of data and simulation sites
-    
+
     range.coords.d <- sapply( coords.d, range, na.rm = TRUE )
     range.coords.s <- sapply( coords.s, range, na.rm = TRUE )
-    
+
     ## nodes of simulation grid covering data and simulation sites
-    
+
     grid.nodes <- lapply(
       1:NCOL( coords.d ),
       function(i, incr, rc.d, rc.s){
@@ -819,70 +836,70 @@ condsim <- function(
       }, incr = incr.grid, rc.d = range.coords.d, rc.s = range.coords.s
     )
     names( grid.nodes ) <- colnames( coords.d )
-    
+
     ## simulation grid
-    
+
     sim.grid <- expand.grid( grid.nodes )
-    
+
     ## convert to SpatialPixelsDataFrame and SpatialPoints for overlay
-    
+
     sg <- sim.grid
     coordinates( sg )  <- locations
     gridded( sg )      <- TRUE
-    
+
     c.d <- coords.d
     c.s <- coords.s
     coordinates( c.d ) <- locations
     coordinates( c.s ) <- locations
-    
+
     ## determine indices of grid nodes closest to coords.d and coords.s
-    
+
     i.d <- over( c.d, sg )
     i.s <- over( c.s, sg )
-    
+
     ## omit data sites that could not be assigned to grid nodes
-    
+
     if( sum( sel <- is.na( i.d ) ) ){
       warning( "some data sites could not be assigned to grid" )
-      y.d 			 <- y.d[!sel]
+      y.d        <- y.d[!sel]
       coords.d  <- coords.d[!sel, ]
       i.d <- i.d[!sel]
       if( !is.null( covariates.d ) ) covariates.d <- covariates.d[!sel, , drop = FALSE]
     }
-    
+
     ## omit simulation sites that could not be assigned to grid nodes
-    
+
     if( sum( sel <- is.na( i.s) ) ){
       warning( "some simulation sites could not be assigned to grid" )
-      y.s 			 <- y.s[!sel]
+      y.s        <- y.s[!sel]
       coords.s  <- coords.s[!sel, ]
       i.s <- i.s[!sel]
       if( !is.null( covariates.s ) ) covariates.s <- covariates.s[!sel, , drop = FALSE]
     }
-    
+
     ## auxiliary function for simulating unconditional realizations in parallel
-    
+
     f.aux.sim.2 <- function( i ){
-      
+
       ## s, e, sim.seed, variogram, grid.nodes are used from .GlobalEnv
-      
+
       RFoptions( spConform = FALSE )
-      
+
       set.seed( sim.seed[i] )
-      
+
       nsim <- e[i] - s[i] + 1L
-      
+
       tmp <- lapply(
         variogram,
         function( x, grid.nodes, nsim ){
-          
+
           signal <- RFsimulate(
             model = x[["signal"]], grid = TRUE, n = nsim,
-            x = grid.nodes[[1]], 
+            x = grid.nodes[[1]],
             y = if( length(grid.nodes) > 1 ) grid.nodes[[2]] else NULL,
             z = if( length(grid.nodes) > 2 ) grid.nodes[[3]] else NULL
           )
-          
+
           if( x[["nugget"]] > 0. ){
             nugget <- rnorm( prod( dim( signal ) ), mean = 0., sd = sqrt( x[["nugget"]] ) )
             dim( nugget ) <- dim( signal )
@@ -890,176 +907,176 @@ condsim <- function(
           } else {
             signal
           }
-          
+
         }, grid.nodes = grid.nodes, nsim = nsim
       )
-      
+
       res <- tmp[[1]]
       if( length(tmp) - 1L ){
         for( i in 2L:length(tmp) ){
           res <- res + tmp[[i]]
         }
       }
-      
+
       RFoptions( spConform = TRUE )
-      
+
       if(identical(as.integer(nsim), 1L)){
-        dim(res) <- c(dim(res), 1L)      
-      } 
+        dim(res) <- c(dim(res), 1L)
+      }
 
       res
-      
+
     }
-    
+
     if( verbose > 1 ) cat( "    simulate unconditional realizations  ...\n" )
-    
+
     ## determine number of cores
-    
+
     ncores <- min(control[["ncores"]], nsim)
-    
+
     ## definition of junks to be evaluated in parallel
-    
+
     k <- ncores
     n <- nsim
     dn <- floor( n / k )
     s <- ( (0L:(k-1L)) * dn ) + 1L
     e <- (1L:k) * dn
     e[k] <- n
-    
+
     ## random number generator seed used in junks
-    
+
     set.seed( seed )
     sim.seed <- sample.int( 100000, k)
-        
+
     ## simulate (unconditional) realizations in parallel
-    
+
     if( ncores > 1L && !control[["pcmp"]][["fork"]] ){
-            
+
       if( !sfIsRunning() ){
         options( error = f.stop.cluster )
         junk <- sfInit( parallel = TRUE, cpus = ncores )
       }
-      
+
       #       junk <- sfLibrary( RandomFields, verbose = FALSE )
-      junk <- sfExport( "s", "e", "sim.seed", "variogram", "grid.nodes" ) 
-      
+      junk <- sfExport( "s", "e", "sim.seed", "variogram", "grid.nodes" )
+
       res <- sfLapply( 1L:k, f.aux.sim.2 )
-      
+
       if( control[["pcmp"]][["sfstop"]] ){
         junk <- sfStop()
         options( error = NULL )
       }
-      
+
     } else {
-      
+
       res <- mclapply( 1L:k, f.aux.sim.2, mc.cores = ncores )
-      
+
     }
-    
+
     ## store unconditional realizations in a matrix consistent with
     ## dimensions of simulation grid
-    
+
     sim.values <- res[[1]]
-		
+
     if( length(res) - 1L ){
       for( i in 2L:length(res) ){
         sim.values <- abind( sim.values, res[[i]] )
       }
     }
-        
+
     dim( sim.values ) <- c( NROW( sim.grid ), nsim )
     colnames( sim.values ) <- paste0( "sim.", seq_len( nsim) )
-    
+
     #     sv.grid <<- sim.values[i.s, , drop = FALSE]
-    
+
     junk <- gc()
-    
+
     if( !control[["condsim"]] ){
-      
+
       ## extract unconditionally simulated values for simulation sites
-      
+
       n.s <- length(i.s)
       n.d <- 0L
-      
+
       tmp <- sim.grid[i.s, , drop = FALSE]
       if( control[["means"]] ) tmp <- cbind( tmp, expct = y.s )
       if( control[["trend.covariates"]] ) tmp <- cbind( tmp, covariates.s )
-      
+
       result <- cbind( tmp, sim.values[i.s, , drop = FALSE] + y.s )
-      
+
       if( control[["include.data.sites"]] ){
-        
+
         ## include also data sites
-        
+
         ## omit simulation sites that coincide with data sites
-        
+
         i.s <- i.s[!i.s %in% i.d]
         n.s <- length(i.s)
         n.d <- length(i.d)
-        
+
         tmp <- sim.grid[i.d, , drop = FALSE]
         if( control[["means"]] ) tmp <- cbind(tmp, expct = y.d )
         if( control[["trend.covariates"]] ) tmp <- cbind(tmp, covariates.d )
-        
+
         result <- rbind(
           cbind( tmp, sim.values[ i.d, , drop = FALSE] + y.d ),
           result[i.s, ]
         )
-        
+
       }
-      
+
       #     library(lattice)
       #     levelplot(sim.1 ~ x + y, result, aspect  ="iso")
-      
+
     } else {
-      
+
        ## condition to data by kriging method
-      
+
       if( verbose > 1 ) cat( "    condition to data by kriging method ...\n" )
-      
+
       ## assign grid nodes that were assigned both to simulation and data
       ## locations only to the latter
-      
+
       sel <- !i.s %in% i.d
-      
-      y.s 			 <- y.s[sel]
+
+      y.s        <- y.s[sel]
       coords.s  <- coords.s[sel, ]
       i.s <- i.s[sel]
       if( !is.null( covariates.s ) ) covariates.s <- covariates.s[sel, , drop = FALSE]
-      
+
       ## average data for data sites that were assigned to same grid node
-      
+
       if( sum( duplicated( i.d ) ) ){
-        y.d 				<- f.aggregate.by.one( y.d, i.d, na.rm = TRUE)
-        #       X.d 				<- f.aggregate.by.one( X.d, i.d, na.rm = TRUE)
-        coords.d 	<- f.aggregate.by.one( coords.d, i.d, na.rm = TRUE)
-        i.d	<- i.d[!duplicated(i.d)]
+        y.d         <- f.aggregate.by.one( y.d, i.d, na.rm = TRUE)
+        #       X.d         <- f.aggregate.by.one( X.d, i.d, na.rm = TRUE)
+        coords.d  <- f.aggregate.by.one( coords.d, i.d, na.rm = TRUE)
+        i.d <- i.d[!duplicated(i.d)]
         if( !is.null( covariates.d ) ) covariates.d <- covariates.s[!duplicated(i.d), , drop = FALSE]
       }
-      
+
       ## average data for simulation sites that were assigned to same grid node
-      
+
       if( sum( duplicated( i.s ) ) ){
-        y.s 				<- f.aggregate.by.one( y.s, i.s, na.rm = TRUE)
-        #       X.s 				<- f.aggregate.by.one( X.s, i.s, na.rm = TRUE)
-        coords.s 	<- f.aggregate.by.one( coords.s, i.s, na.rm = TRUE)
-        i.s	<- i.s[!duplicated(i.s)]
+        y.s         <- f.aggregate.by.one( y.s, i.s, na.rm = TRUE)
+        #       X.s         <- f.aggregate.by.one( X.s, i.s, na.rm = TRUE)
+        coords.s  <- f.aggregate.by.one( coords.s, i.s, na.rm = TRUE)
+        i.s <- i.s[!duplicated(i.s)]
         if( !is.null( covariates.s ) ) covariates.s <- covariates.s[!duplicated(i.s), , drop = FALSE]
 
       }
-      
+
       n.d <- length( i.d )
       n.s <- length( i.s )
-      
+
       c.d <- sim.grid[i.d, , drop = FALSE]
       c.s <- sim.grid[i.s, , drop = FALSE]
-      
-       
+
+
       ## compute simple kriging weights and covariances
-      
+
       if( verbose > 2 ) cat( "      compute simple kriging weights ...\n" )
-      
-      skw <- simple.kriging.weights( 
+
+      skw <- simple.kriging.weights(
         pred.coords = c.s,
         support.coords = c.d,
         locations = locations,
@@ -1068,82 +1085,82 @@ condsim <- function(
         covariances = control[["covariances"]],
         control = control.predict.georob(ncores = control[["ncores"]])
       )
-      
+
       if( control[["covariances"]] ){
-        lambdaT <- skw[["skw"]]      
+        lambdaT <- skw[["skw"]]
       } else {
         lambdaT <- skw
       }
-            
+
       ## compute conditional realizations at data and simulation sites
-      
+
       result <- y.s + sim.values[i.s, , drop = FALSE] - pmm(
         lambdaT,
         sim.values[i.d, , drop = FALSE],
         control = control[["pcmp"]]
       )
-      
+
       tmp <- c.s
       if( control[["means"]] ) tmp <- cbind( tmp, expct = y.s )
       if( control[["trend.covariates"]] ) tmp <- cbind( tmp, covariates.s )
-      
+
       result <- cbind( tmp, result )
-      
+
       if( control[["include.data.sites"]] ){
         tmp <- matrix( y.d, nrow = n.d, ncol = nsim )
         colnames( tmp ) <- paste0( "sim.", seq_len( nsim) )
-        
+
         tmp1 <- c.d
         if( control[["means"]] ) tmp1 <- cbind( tmp1, expct = y.d )
         if( control[["trend.covariates"]] ) tmp1 <- cbind( tmp1, covariates.d )
         tmp <- cbind( tmp1, tmp)
         colnames( tmp ) <- colnames( result )
-        
+
         result <- rbind( tmp, result )
       }
-      
+
     }
-    
-    
+
+
   }
-  
-    
+
+
 #### --- finalizing output -------------
 
   ## convert result to same class as newdata
-  
+
   result <- switch(
     class( newdata )[1],
     "data.frame" = result,
     "SpatialPoints" = ,
     "SpatialPointsDataFrame" = {
       coordinates( result ) <- locations
-      result    
+      result
     },
     "SpatialPixels" = ,
     "SpatialPixelsDataFrame" = {
       coordinates( result ) <- locations
       gridded( result ) <- TRUE
-      result    
+      result
     },
     "SpatialGrid" = ,
     "SpatialGridDataFrame" = {
       coordinates( result ) <- locations
       gridded( result ) <- TRUE
       fullgrid( result ) <- TRUE
-      result    
-    } 
+      result
+    }
   )
-  
+
   attr( result, "n" ) <- c(n.d = n.d, n.s = n.s )
-  
+
   if( control[["use.grid"]] & control[["covariances"]] & control[["condsim"]] ){
-    
+
     attr( result, "gcvmat.d.d" ) <- skw[["gcvmat"]]
     attr( result, "gcvmat.s.d" ) <- skw[["gcvmat.pred"]]
-    
+
   }
-  
+
   result
-  
+
 }

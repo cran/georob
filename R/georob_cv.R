@@ -18,12 +18,12 @@ cv <- function( object, ... ) UseMethod( "cv" )
 
 ##  ############################################################################
 
+### cv.georob
+
 cv.georob <-
   function(
-    object,
-    formula = NULL, subset = NULL,
-    method = c( "block", "random" ), nset = 10, seed = NULL, sets = NULL,
-    duplicates.in.same.set = TRUE,
+    object, formula = NULL, subset = NULL, method = c( "block", "random" ),
+    nset = 10L, seed = NULL, sets = NULL, duplicates.in.same.set = TRUE,
     re.estimate = TRUE,
     param = object[["variogram.object"]][[1]][["param"]],
     fit.param = object[["variogram.object"]][[1]][["fit.param"]],
@@ -42,7 +42,6 @@ cv.georob <-
 
   ## Function computes nset-fold cross-validation predictions from a
   ## fitted georob object
-
 
   ## History:
 
@@ -80,18 +79,20 @@ cv.georob <-
   ## 2016-08-17 AP changes for nested variogram models
   ## 2016-08-22 AP correcting error when computing  standard errors of cv kriging predictions
   ## 2018-01-05 AP improved memory management in parallel computations
-  ##							 improved error handling during parallel computations
+  ##               improved error handling during parallel computations
+  ## 2020-02-14 AP sanity checks of arguments and for if() and switch()
 
+#### -- auxiliary function
 
   ## auxiliary function that fits the model and computes the predictions of
   ## a cross-validation set
 
   f.aux <- function( ..i..,  ... ){  ## cv function
-    
+
     ## object, formula, data, sets, variogram.object, is.mat.param.aniso,
     ## lgn, verbose are taken from parent enviroment
 
-    if (verbose) cat( "\n\n  processing cross-validation set", ..i.., "\n" )
+    if( verbose ) cat( "\n\n  processing cross-validation set", ..i.., "\n" )
 
     ## change environment of terms and formula so that subset selection works for update
 
@@ -197,9 +198,36 @@ cv.georob <-
 
   ## begin of main body of function
 
-  method <- match.arg( method )
+#### -- check arguments
 
+  ## match arguments
+
+  method <- match.arg( method )
   mfl.action <- match.arg( mfl.action )
+
+  ## check validity of arguments
+  ## validity of formula, param, fit.param, aniso, fit.aniso are checked later
+
+  stopifnot(is.null(subset) || is.logical(subset) || is.character(subset) || is.numeric(subset))
+
+  stopifnot(identical(length(duplicates.in.same.set), 1L)   && is.logical(duplicates.in.same.set) )
+  stopifnot(identical(length(re.estimate), 1L)              && is.logical(re.estimate))
+  stopifnot(identical(length(use.fitted.param), 1L)         && is.logical(use.fitted.param))
+  stopifnot(identical(length(return.fit), 1L)               && is.logical(return.fit))
+  stopifnot(identical(length(reduced.output), 1L)           && is.logical(reduced.output))
+  stopifnot(identical(length(lgn), 1L)                      && is.logical(lgn))
+
+  stopifnot(identical(length(nset), 1L)    && is.numeric(nset)    && nset >= 1)
+  stopifnot(identical(length(ncores), 1L)  && is.numeric(ncores)  && ncores >= 1)
+  stopifnot(identical(length(verbose), 1L) && is.numeric(verbose) && verbose >= 0)
+
+  stopifnot(is.null(seed) || is.numeric(seed))
+  stopifnot(is.null(sets) || is.numeric(sets) && all(sets > 0))
+
+  stopifnot(is.null(variogram.object) || is.list(variogram.object))
+
+
+#### -- prepare data
 
   ## update terms of object is formula is provided
 
@@ -209,6 +237,7 @@ cv.georob <-
   } else {
     formula <- formula( object )
   }
+
 
   ## get data.frame with required variables (note that the data.frame passed
   ## as data argument to georob must exist in GlobalEnv)
@@ -233,7 +262,8 @@ cv.georob <-
    data <- data[eval( getCall(object)[["subset"]] ), ]
   }
 
-#   if( !is.null( getCall(object)[["subset"]] ) )
+
+#### -- define cross-validation sets
 
   ## define cross-validation sets
 
@@ -278,6 +308,9 @@ cv.georob <-
     sets,
     function( x ) x
   )
+
+
+#### -- define offset terms if necessary
 
   ## check whether all levels of factors are present in all calibration sets
 
@@ -344,6 +377,8 @@ cv.georob <-
     class( object[["na.action"]] ) <- "omit"
   }
 
+
+#### -- setup variogram.object
 
   ## setup or check contents of variogram.object
 
@@ -598,6 +633,9 @@ cv.georob <-
     }, nset = nset
   ))
 
+
+#### -- update call
+
   ## set initial values of variogram parameters equal to fitted values
 
   if( use.fitted.param ) object[["call"]] <- f.call.set_allxxx_to_fitted_values( object )
@@ -608,7 +646,7 @@ cv.georob <-
 
   if( !re.estimate ) cl <- f.call.set_allfitxxx_to_false( cl )
 
-  ## set hessian equal to FALSE and  avoid computation of covariance matrices
+  ## set hessian equal to FALSE and avoid computation of covariance matrices
 
   if( reduced.output || !return.fit ){
     cl <- f.call.set_x_to_value_in_fun( cl, "control", "control.georob", "hessian", FALSE )
@@ -627,10 +665,13 @@ cv.georob <-
 
   object[["call"]] <- cl
 
+
+#### -- loop over all cross-validation sets
+
   ## loop over all cross-validation sets
-  
+
   ## set default value for control of forking if missing (required for backward compatibility)
-  
+
   if( is.null( object[["control"]][["pcmp"]][["fork"]] ) ){
     object[["control"]][["pcmp"]][["fork"]] <- !identical( .Platform[["OS.type"]], "windows" )
   }
@@ -646,15 +687,15 @@ cv.georob <-
     ## export required items to workers
 
     junk <- clusterEvalQ( clstr, require( georob, quietly = TRUE ) )
-    junk <- clusterExport( 
+    junk <- clusterExport(
       clstr,
-      c( 
-        "object", "formula", "data", "sets", "variogram.object", 
+      c(
+        "object", "formula", "data", "sets", "variogram.object",
         "is.mat.param.aniso", "lgn", "verbose"
       ),
-      envir =  environment() 
+      envir =  environment()
     )
-    
+
     t.result <- try(
       parLapply(
         clstr,
@@ -694,6 +735,9 @@ cv.georob <-
     stop()
 
   }
+
+
+#### -- prepare output
 
   ## create single data frame with cross-validation results
 
@@ -782,6 +826,8 @@ cv.georob <-
 
 ##  ###########################################################################
 
+### plot.cv.georob
+
 plot.cv.georob <-
   function(
     x, type = c( "sc", "lgn.sc", "ta", "qq", "hist.pit", "ecdf.pit", "mc", "bs" ),
@@ -802,15 +848,33 @@ plot.cv.georob <-
   ## 2015-06-25 AP new method to compute pit, mc, bs and crps (Gaussian and robust)
   ## 2016-02-29 AP minor changes for adding plots to existing graphics
   ## 2016-07-25 AP added liner color and type for scatterplot smooths
+  ## 2020-02-14 AP sanity checks of arguments and for if() and switch()
 
-  x <- x[["pred"]]
+#### -- check arguments
+
+  ## match arguments
 
   type = match.arg( type )
 
-  if( type == "sc.lgn" && !"lgn.pred" %in% names( x ) ) stop(
+  ## check values of arguments
+
+  stopifnot(identical(length(smooth), 1L) && is.logical(smooth))
+  stopifnot(identical(length(add), 1L)    && is.logical(add))
+
+  stopifnot(identical(length(span), 1L) && is.numeric(span) && span > 0)
+  stopifnot(is.null(ncutoff) || (identical(length(ncutoff), 1L) && is.numeric(ncutoff) && ncutoff >= 1))
+
+  if(!missing(col)) stopifnot( is.numeric(col) || is.character(col))
+  if(!missing(pch)) stopifnot( is.numeric(pch) || is.character(pch))
+  if(!missing(lty)) stopifnot( is.numeric(lty) || is.character(lty))
+
+  if(!missing(xlab)) stopifnot(is.character(xlab))
+  if(!missing(ylab)) stopifnot(is.character(ylab))
+  if(!missing(main)) stopifnot(is.character(main))
+
+  if( identical(type, "sc.lgn") && !"lgn.pred" %in% names( x ) ) stop(
     "lognormal kriging results missing, use 'lgn = TRUE' for cross-validation"
   )
-
 
   if( add && type %in% c("hist.pit", "mc") ) warning(
     "plot will be replaced (adding elements not possible"
@@ -823,7 +887,10 @@ plot.cv.georob <-
   #   scld.res  <- attr( x, "scaled.residuals" )
   #   se.signal <- attr( x, "se.signal" )
 
-  ## compute validation statistics
+
+#### -- compute validation statistics
+
+  x <- x[["pred"]]
 
   if( type %in% c( "hist.pit", "ecdf.pit", "mc", "bs" ) ){
 
@@ -844,6 +911,7 @@ plot.cv.georob <-
   if( missing( lty ) ) lty <- 1L
 
 
+#### -- generate plot
 
   switch(
     type,
@@ -1014,6 +1082,8 @@ plot.cv.georob <-
 
 ##  ###########################################################################
 
+### print.cv.georob
+
 print.cv.georob <-
   function(
     x, digits = max(3, getOption("digits") - 3), ...
@@ -1046,6 +1116,8 @@ print.cv.georob <-
 
 ##  ###########################################################################
 
+### summary.cv.georob
+
 summary.cv.georob <-
   function( object, se = FALSE, ... )
 {
@@ -1058,6 +1130,13 @@ summary.cv.georob <-
   ## 2012-05-21 ap
   ## 2013-06-12 AP substituting [["x"]] for $x in all lists
   ## 2015-06-25 AP new method to compute pit, mc, bs and crps (Gaussian and robust)
+  ## 2020-02-14 AP sanity checks of arguments and for if() and switch()
+
+  ## check arguments
+
+  stopifnot(identical(length(se), 1L) && is.logical(se))
+
+  ## extract predictions
 
   object <- object[["pred"]]
 
@@ -1183,12 +1262,13 @@ summary.cv.georob <-
 
   if( !is.null( criteria ) ) attr( result, "statistics" ) <- criteria
 
-
   return( result )
 
 }
 
 ##  ###########################################################################
+
+### print.summary.cv.georob
 
 print.summary.cv.georob <-
   function(
@@ -1321,12 +1401,14 @@ print.summary.cv.georob <-
 
 ## ======================================================================
 
+### validate.predictions
+
 validate.predictions <-
   function(
     data,
     pred,
     se.pred,
-    statistic = c( "crps", "pit", "mc", "bs", "st" ),	
+    statistic = c( "crps", "pit", "mc", "bs", "st" ),
     #     robust = FALSE,
     ncutoff = NULL#,
     #     se.signal = NULL,
@@ -1342,14 +1424,25 @@ validate.predictions <-
   ## 2013-06-12 AP substituting [["x"]] for $x in all lists
   ## 2015-06-25 AP new method to compute pit, mc, bs and crps (Gaussian and robust)
   ## 2015-11-27 AP checking whether mandatory arguments were provided
+  ## 2020-02-14 AP sanity checks of arguments and for if() and switch()
+
+  ## match arguments
+
+  statistic = match.arg( statistic )
+
+  ## check values of arguments
 
   ## checking whether mandatory arguments were provided
 
   if( missing( data ) || missing( pred ) || missing( se.pred ) ) stop(
-	"some mandatory arguments are missing"
+    "some mandatory arguments are missing"
   )
 
-  statistic = match.arg( statistic )
+  stopifnot(is.numeric(data))
+  stopifnot(is.numeric(pred))
+  stopifnot(is.numeric(se.pred))
+
+  stopifnot(is.null(ncutoff) || (identical(length(ncutoff), 1L) && is.numeric(ncutoff) && ncutoff >= 1))
 
   ## exclude item with NAs
 
@@ -1404,7 +1497,7 @@ validate.predictions <-
         sapply(
           margin.calib[, "y"],
           function( cutoff, param ){
-            #           function( cutoff, param, scld.res ){
+            #           function( cutoff, param, scld.res ){}
 
             ## compute Fhat_i(y)
 

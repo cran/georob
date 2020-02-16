@@ -57,6 +57,7 @@ export(
 # documented but unexported functions
 #
 #   add1.georob,                    # ok
+#   check.newdata,                  # ok
 #   coef.georob,                    # ok
 #   cv.georob                       # ok
 #   deviance.georob,                # ok
@@ -107,7 +108,7 @@ export(
 ### crpspd.resp.rob                    # currently not used
 ## estimate.zhat
 ## estimating.equations.theta
-## estimating.equations.B
+## estimating.equations.signal
 ## f.aux.Qstar
 ## f.aux.RSS
 ## f.aux.Valphaxi

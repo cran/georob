@@ -47,11 +47,11 @@ default.fit.aniso(f1 = FALSE, f2 = FALSE, omega = FALSE,
   \eqn{\nu} of the Whittle-Mat\'ern model (see
   \code{\link[RandomFields]{RMmodel}} and \code{\link{param.names}}).}
 
-  \item{f1}{ratio \eqn{f_1} of lengths of second and first semi-principal
+  \item{f1}{positive ratio \eqn{f_1} of lengths of second and first semi-principal
   axes of an ellipsoidal surface with constant semi-variance in
   \eqn{\mathrm{I}\!\mathrm{R}^3}{R^3} (default \code{f1 = 1}).}
   
-  \item{f2}{ratio \eqn{f_2} of lengths of third and first semi-principal
+  \item{f2}{positive ratio \eqn{f_2} of lengths of third and first semi-principal
   axes of the semi-variance ellipsoid (default \code{f2 = 1}).}
   
   \item{omega}{azimuth in degrees of the first semi-principal axis of the

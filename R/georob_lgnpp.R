@@ -1,5 +1,7 @@
 ##  ##############################################################################
 
+#### lgnpp
+
 lgnpp <-
   function(
     object,
@@ -12,76 +14,21 @@ lgnpp <-
   ## Function post-processes predictions obtained from predict.georob
   ## for lognormal point and block kriging
 
-  ## Arguments:
-
-  ## object            object of class "predict.georob" (output of predict.georob)
-  ## what              character scalar controlling what kind of
-  ##                   post-processing is done. Possible values are
-  ##                   "point"     backtransforms point kriging predictions
-  ##                               and kriging standard errors to the
-  ##                               original scale of measurements
-  ##                   "perman"    backtransforms block kriging predictions
-  ##                               and the respective standard errors to the
-  ##                               original scale of measurements using
-  ##                               the assumptions of permanence of
-  ##                               lognormality
-  ##                   "optimal"   given the prediction results
-  ##                               (predictions, full covariance matrices of
-  ##                               predictions, prediction errors, etc) for a set
-  ##                               of points in a block , the function computes the optimal
-  ##                               lognormal block prediction and the associated
-  ##                               mean squared error
-  ## newdata    applies for what == "perman" only: a data frame with coordinates and
-  ##                   explanatory variables for a grid of points that discretize all the
-  ##                   blocks for which block kriging predictions are of the log-transformed
-  ##                   response variable are contained in 'object'
-  ## locations         applies for what == "perman" only: a one-sided formula that defines the
-  ##                   coordinates in the data frame 'newdata'
-  ## all.pred   applies for what == "optimal" only: a data.frame with the
-  ##                   point prediction results of the lognormally if 'object' contains
-  ###                  back-transformed response variable for all the points in the block
-  ##                   the prediction results only for a subset of these points
-  ## extended.output   applies for what == "optimal" only: if TRUE the covariance matrix
-  ##                   of the back-transformed point prediction errors are returned as an attribute
-  ##                   of the result
-
-  ## Value:
-
-  ## For what == "point" an amended object of class "predict.georob" with
-  ## the additional variables "lgn.pred", "lgn.se", "lgn.lower",
-  ## "lgn.upper", containing the predictions, the prediction standard
-  ## error, and the bounds of the prediction interval on the original
-  ## scale of the observations.  For what == "perman" and what ==
-  ## "optimal" a named vector with approximated prediction and the
-  ## prediction mean squared error of the block mean on the original scale
-  ## of the measurements.
-
-  ## References:
-
-  ## @article{Cressie-2006,
-  ##     Author = {Cressie, N.},
-  ##     Journal = {Mathematical Geology},
-  ##     Keywords = {Lognormal Block Kriging},
-  ##     Number = {4},
-  ##     Pages = {413--443},
-  ##     Separatanr = {274},
-  ##     Title = {Block Kriging for Lognormal Spatial Processes},
-  ##     Volume = {38},
-  ##     Year = {2006}
-  ## }
-
-
   ## 2011-12-22 A. Papritz
   ## 2012-05-07 AP backtransformation of block predictions under permanence
   ## of lognormality assumption
   ## 2013-06-12 AP substituting [["x"]] for $x in all lists
   ## 2015-06-23 AP modifications for missing compontents 'lower' and 'upper'
   ## 2015-08-22 AP changes for nested variogram models
+  ## 2019-12-13 AP correcting use of class() in if() and switch()
+  ## 2020-02-14 AP sanity checks of arguments and for if() and switch()
 
   ## auxiliary function to backtransform the point predictions and
   ## optionally the mean squared errors and the prediction intervals
 
  f.backtrf <- function( object, btMb = 0., pred.only ){
+
+#### -- auxiliary function
 
     ## object: dataframe with the prediction results of the
     ##         log-transformed predictions computed with extended.output = TRUE
@@ -117,6 +64,30 @@ lgnpp <-
 
   }
 
+#### -- preparation
+
+  ## check arguments
+
+  if(!missing(newdata)) check.newdata(newdata)
+
+  stopifnot(identical(length(is.block), 1L)        && is.logical(is.block))
+  stopifnot(identical(length(extended.output), 1L) && is.logical(extended.output))
+
+  #   if(!missing(newdata)) stopifnot(
+  #     all(class(newdata) %in% c(
+  #         "data.frame", "SpatialPointsDataFrame", "SpatialPixelsDataFrame",
+  #         "SpatialGridDataFrame", "SpatialPolygonsDataFrame"
+  #       )
+  #     )
+  #   )
+  #   if(!missing(all.pred)) stopifnot(
+  #     all(class(newdata) %in% c(
+  #         "data.frame", "SpatialPointsDataFrame", "SpatialPixelsDataFrame",
+  #         "SpatialGridDataFrame", "SpatialPolygonsDataFrame"
+  #       )
+  #     ) || (identical(length(all.pred), 1L) && is.integer(all.pred))
+  #   )
+
   ## check whether back-transformation for object has been already done
 
   if( all( c( "lgn.pred", "lgn.se" ) %in% names( object ) ) ){
@@ -128,14 +99,14 @@ lgnpp <-
   ## find out what object contains
 
   what <- switch(
-    class( object ),
+    class( object )[1],
     "data.frame" =,
     "SpatialPointsDataFrame" =,
     "SpatialPixelsDataFrame" =,
     "SpatialGridDataFrame" = "point",
     "SpatialPolygonsDataFrame" = "block",
     "list" = switch(
-      class( object[["pred"]] ),
+      class( object[["pred"]] )[1],
       "data.frame" =,
       "SpatialPointsDataFrame" =,
       "SpatialPixelsDataFrame" =,
@@ -151,14 +122,14 @@ lgnpp <-
   ## extract data frame with prediction results
 
   t.object <- switch(
-    class( object ),
+    class( object )[1],
     "data.frame" = object,
     "SpatialPointsDataFrame" =,
     "SpatialPixelsDataFrame" =,
     "SpatialGridDataFrame" =,
     "SpatialPolygonsDataFrame" = object@data,
     "list" = switch(
-      class( object[["pred"]] ),
+      class( object[["pred"]] )[1],
       "data.frame" = object[["pred"]],
       "SpatialPointsDataFrame" =,
       "SpatialPixelsDataFrame" =,
@@ -200,6 +171,8 @@ lgnpp <-
 
     what,
 
+#### -- backtransformation of point-predictions
+
     ## back-transform point predictions
 
     point = {
@@ -215,7 +188,7 @@ lgnpp <-
       attr( t.result, "type" )            <- type
 
       result <- switch(
-        class( object ),
+        class( object )[1],
         "data.frame" = t.result,
         "SpatialPointsDataFrame" =,
         "SpatialPixelsDataFrame" =,
@@ -226,7 +199,7 @@ lgnpp <-
           result
         },
         "list" = switch(
-          class( object[["pred"]] ),
+          class( object[["pred"]] )[1],
           "data.frame" = {
             result <- object
             result[["pred"]] <- t.result
@@ -248,6 +221,8 @@ lgnpp <-
     },
 
     block = {
+
+#### -- back-transformation of block-predictions
 
       ## back-transform block predictions under the assumption of permanence
       ## of lognormality
@@ -283,7 +258,7 @@ lgnpp <-
       ## get the model frame for newdata
 
       mf.newdata <- switch(
-        class( newdata ),
+        class( newdata )[1],
         "data.frame" = model.frame(
           Terms, newdata, na.action = na.pass, xlev = object[["xlevels"]]
         ),
@@ -336,7 +311,7 @@ lgnpp <-
       ## get matrix of coordinates of newdata for point kriging
 
       pred.coords <- switch(
-        class( newdata ),
+        class( newdata )[1],
         "data.frame" = model.matrix(
           Terms.loc,
           model.frame(
@@ -412,7 +387,7 @@ lgnpp <-
       attr( t.result, "locations" )       <- locations
 
       result <- object
-      if( class( object ) == "SpatialPolygonsDataFrame" ){
+      if( class( object )[1] == "SpatialPolygonsDataFrame" ){
         result@data <- t.result
       } else {
         result[["pred"]]@data <- t.result
@@ -423,6 +398,8 @@ lgnpp <-
     },
 
     optimal = {
+
+#### -- back-transformation for a single block
 
       ## number of prediction items in object
 
@@ -442,16 +419,16 @@ lgnpp <-
 
       } else if(
         is.data.frame( all.pred ) ||
-        class( all.pred ) == "SpatialPointsDataFrame" ||
-        class( all.pred ) == "SpatialPixelsDataFrame" ||
-        class( all.pred ) == "SpatialGridDataFrame"
+        class( all.pred )[1] %in% c(
+          "SpatialPointsDataFrame", "SpatialPixelsDataFrame", "SpatialGridDataFrame"
+        )
       ){
 
         ## all.pred contains back-transformed point predictions of
         ## all the points in the block, extract the respective data frame
 
         all.pred <- switch(
-          class( all.pred ),
+          class( all.pred )[1],
           data.frame = all.pred,
           SpatialPointsDataFrame =,
           SpatialPixelsDataFrame =,
