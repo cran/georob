@@ -1,4 +1,4 @@
-% 2019-10-22 A. Papritz
+% 2020-03-27 A. Papritz
 % R CMD Rdconv -t html -o bla.html georobS3methods.Rd ; open bla.html; R CMD Rd2pdf --force georobS3methods.Rd; 
 
 % \encoding{utf8}
@@ -145,14 +145,14 @@
   of the estimated variogram and anisotropy parameters from the Hessian
   matrix of the (restricted) log-likelihood (= observed Fisher
   information), based on the asymptotic normal distribution of (RE)ML
-  estimates.  Note that the Hessian matrix is computed with respect to the
-  \emph{transformed} variogram and anisotropy parameters, see
-  \code{\link{param.transf}}.  Hence the inverse Hessian matrix is the
-  covariance matrix of the transformed parameters, confidence intervals are
-  first computed for the transformed parameters and the limits of these
-  intervals are transformed back to the orginal scale of the parameters.
-  Optionally, \code{summary} reports the correlation matrix of the
-  \emph{transformed} parameters, also computed from the Hessian matrix.
+  estimates.  Note that the Hessian matrix with respect to the
+  \emph{transformed} variogram and anisotropy parameters is used for this.
+  Hence the inverse Hessian matrix is the covariance matrix of the
+  transformed parameters, confidence intervals are first computed for the
+  transformed parameters and the limits of these intervals are transformed
+  back to the orginal scale of the parameters.  Optionally, \code{summary}
+  reports the correlation matrix of the \emph{transformed} parameters, also
+  computed from the Hessian matrix.
   
   Note that the methods \code{coef} and \code{summary} generate objects of
   class \code{coef.georob} and \code{summary.georob}, respectively, for

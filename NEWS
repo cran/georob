@@ -21,3 +21,4 @@
 2019-05-24  georob Version 0.3-10 released to CRAN, correction of two minor errors in printing summary output of fitted models and simulating single realizations of random fields
 2019-12-18  georob Version 0.3-11 released to CRAN, correction of errors when processing output from RFsimulate for (conditional) simulations, elimination of problems when using class(matrix-object)
 2020-02-16  georob Version 0.3-12 released to CRAN, sanity checks of function arguments
+2020-03-27  georob Version 0.3-13 released to CRAN, correction of error in sanity check of function argument, Hessian matrix of untransformed parameters in georob- and fit.variogram.model-output

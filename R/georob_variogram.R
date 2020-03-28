@@ -360,9 +360,9 @@ sample.variogram.default <-
     ))
 
   xy.angle.centre[!is.na(xy.angle.centre)] <-
-    levels( xy.angle.class )[xy.angle.centre[!is.na(xy.angle.centre)]]
+  levels( xy.angle.class )[xy.angle.centre[!is.na(xy.angle.centre)]]
   xz.angle.centre[!is.na(xz.angle.centre)] <-
-    levels( xz.angle.class )[xz.angle.centre[!is.na(xz.angle.centre)]]
+  levels( xz.angle.class )[xz.angle.centre[!is.na(xz.angle.centre)]]
 
   t.lag.npairs <- as.vector( table( t.classes ) )
   t.lag.select <- lag.mean <= max.lag
@@ -440,7 +440,7 @@ sample.variogram.default <-
     r.result[["lag.x"]] <- t.aux * sin( xy.angle.mid.class[ as.integer( r.result[["xy.angle"]] ) ] * d2r )
     r.result[["lag.y"]] <- t.aux * cos( xy.angle.mid.class[ as.integer( r.result[["xy.angle"]] ) ] * d2r )
     r.result[["lag.z"]] <- r.result[["lag.dist"]] *
-      cos( xz.angle.mid.class[ as.integer( r.result[["xz.angle"]] ) ] * d2r )
+    cos( xz.angle.mid.class[ as.integer( r.result[["xz.angle"]] ) ] * d2r )
 
   }
 
@@ -459,7 +459,7 @@ sample.variogram.default <-
 ## ##############################################################################
 
 summary.sample.variogram <-
-  function( object, ... )
+function( object, ... )
 {
 
   ## Summary method for class summary.sample.variogram
@@ -478,9 +478,9 @@ summary.sample.variogram <-
 ## ##############################################################################
 
 print.summary.sample.variogram <-
-  function(
-    x, digits = max(3, getOption("digits") - 3), ...
-  )
+function(
+  x, digits = max(3, getOption("digits") - 3), ...
+)
 {
 
   ## Print method for class summary.sample.variogram
@@ -507,22 +507,22 @@ print.summary.sample.variogram <-
 ## ##############################################################################
 
 plot.sample.variogram <-
-  function(
-    x,
-    type = "p", add = FALSE,
-    xlim = c( 0., max( x[["lag.dist"]] ) ),
-    ylim = c( 0., 1.1 * max( x[["gamma"]] ) ),
-    col,
-    pch,
-    lty,
-    cex = 0.8,
-    xlab = "lag distance", ylab = "semivariance",
-    annotate.npairs = FALSE,
-    npairs.pos = 3, npairs.cex = 0.7,
-    legend = nlevels( x[["xy.angle"]] ) > 1 || nlevels( x[["xz.angle"]] ) > 1,
-    legend.pos = "topleft",
-    ...
-  )
+function(
+  x,
+  type = "p", add = FALSE,
+  xlim = c( 0., max( x[["lag.dist"]] ) ),
+  ylim = c( 0., 1.1 * max( x[["gamma"]] ) ),
+  col,
+  pch,
+  lty,
+  cex = 0.8,
+  xlab = "lag distance", ylab = "semivariance",
+  annotate.npairs = FALSE,
+  npairs.pos = 3, npairs.cex = 0.7,
+  legend = nlevels( x[["xy.angle"]] ) > 1 || nlevels( x[["xz.angle"]] ) > 1,
+  legend.pos = "topleft",
+  ...
+)
 {
 
   ## Plot method for class sample.variogram
@@ -625,6 +625,7 @@ control.fit.variogram.model <- function(
   maximizer = c( "nlminb", "optim" ),
   param.tf = param.transf(),
   fwd.tf = fwd.transf(),
+  deriv.fwd.tf = dfwd.transf(),
   bwd.tf = bwd.transf(),
   hessian = TRUE,
   optim = control.optim(),
@@ -635,6 +636,7 @@ control.fit.variogram.model <- function(
 
   ## 2019-04-07 A. Papritz
   ## 2020-02-14 AP sanity checks of arguments and for if() and switch()
+  ## 2020-03-27 AP computing Hessian (observed Fisher information) of untransformed parameters
 
   ## match arguments
 
@@ -646,13 +648,15 @@ control.fit.variogram.model <- function(
 
   stopifnot(is.list(param.tf))
   stopifnot(is.list(fwd.tf))
+  stopifnot(is.list(deriv.fwd.tf))
   stopifnot(is.list(bwd.tf))
   stopifnot(is.list(optim))
   stopifnot(is.list(nlminb))
 
   list(
     maximizer = maximizer,
-    param.tf = param.tf, fwd.tf = fwd.tf, bwd.tf = bwd.tf,
+    param.tf = param.tf, fwd.tf = fwd.tf,
+    deriv.fwd.tf = deriv.fwd.tf, bwd.tf = bwd.tf,
     hessian = hessian,
     optim = optim,
     nlminb = nlminb
@@ -666,23 +670,23 @@ control.fit.variogram.model <- function(
 ### fit.variogram.model
 
 fit.variogram.model <-
-  function(
-    sv,
-    variogram.model = c( "RMexp", "RMaskey", "RMbessel", "RMcauchy",
-      "RMcircular", "RMcubic", "RMdagum", "RMdampedcos", "RMdewijsian", "RMfbm",
-      "RMgauss", "RMgencauchy", "RMgenfbm", "RMgengneiting", "RMgneiting", "RMlgd",
-      "RMmatern", "RMpenta", "RMqexp", "RMspheric", "RMstable",
-      "RMwave", "RMwhittle"
-    ),
-    param, fit.param = default.fit.param()[names(param)],
-    aniso = default.aniso(), fit.aniso = default.fit.aniso(),
-    variogram.object = NULL,
-    max.lag = max( sv[["lag.dist"]] ),
-    min.npairs = 30,
-    weighting.method = c( "cressie", "equal", "npairs" ),
-    control = control.fit.variogram.model(),
-    verbose = 0
-  )
+function(
+  sv,
+  variogram.model = c( "RMexp", "RMaskey", "RMbessel", "RMcauchy",
+    "RMcircular", "RMcubic", "RMdagum", "RMdampedcos", "RMdewijsian", "RMfbm",
+    "RMgauss", "RMgencauchy", "RMgenfbm", "RMgengneiting", "RMgneiting", "RMlgd",
+    "RMmatern", "RMpenta", "RMqexp", "RMspheric", "RMstable",
+    "RMwave", "RMwhittle"
+  ),
+  param, fit.param = default.fit.param()[names(param)],
+  aniso = default.aniso(), fit.aniso = default.fit.aniso(),
+  variogram.object = NULL,
+  max.lag = max( sv[["lag.dist"]] ),
+  min.npairs = 30,
+  weighting.method = c( "cressie", "equal", "npairs" ),
+  control = control.fit.variogram.model(),
+  verbose = 0
+)
 {
 
   ## Function to fit a variogram model to a sample variogram generated by
@@ -699,16 +703,17 @@ fit.variogram.model <-
   ## 2019-04-07 AP new control argument and possibility to choose between
   ##               optim and nlminb for non-linear least squares
   ## 2020-02-14 AP sanity checks of arguments and for if() and switch()
+  ## 2020-03-27 AP computing Hessian (observed Fisher information) of untransformed parameters
 
 #### -- auxiliary function defining objective function
 
   f.aux <- function(
-      adjustable.param.aniso,
-      envir,
-      fixed.param.aniso, name.param.aniso, tf.param.aniso,
-      bwd.tf, lag.vectors, gamma, npairs,
-      weighting.method, d2r, verbose
-    )
+    adjustable.param.aniso,
+    envir,
+    fixed.param.aniso, name.param.aniso, tf.param.aniso,
+    bwd.tf, lag.vectors, gamma, npairs,
+    weighting.method, d2r, verbose
+  )
   {
 
 #### --- preparation
@@ -1160,7 +1165,7 @@ fit.variogram.model <-
 
 #### -- process contents of variogram.object
 
-   variogram.object <- lapply(
+  variogram.object <- lapply(
     variogram.object,
     function( x, TT, d2r, n ){
 
@@ -1370,7 +1375,7 @@ fit.variogram.model <-
 
   ## no nugget and snugget in any model component
 
- is.na.nugget <- sapply( variogram.object, function( x ) is.na( x[["param"]]["nugget"] ) )
+  is.na.nugget <- sapply( variogram.object, function( x ) is.na( x[["param"]]["nugget"] ) )
   if( all( is.na.nugget ) ) stop(
     "one of the variogram components must contain a 'nugget' effect"
   )
@@ -1444,7 +1449,7 @@ fit.variogram.model <-
     variogram.object,
     function(x){
       sel <- names(x[["param"]]) %in% c("variance", "snugget", "nugget", "scale") &
-        x[["fit.param"]] & x[["param"]] <= 0.
+      x[["fit.param"]] & x[["param"]] <= 0.
       x[["param"]][sel] <- sqrt( .Machine$double.eps )
       x
     }
@@ -1454,6 +1459,7 @@ fit.variogram.model <-
 
   param.tf <-  control[["param.tf"]]
   fwd.tf <- control[["fwd.tf"]]
+  deriv.fwd.tf <- control[["deriv.fwd.tf"]]
   bwd.tf <- control[["bwd.tf"]]
 
   tmp <- f.aux.tf.param.fwd( variogram.object, param.tf, fwd.tf )
@@ -1565,6 +1571,7 @@ fit.variogram.model <-
 
   }
 
+
 #### -- prepare output
 
   ## get variogram.item
@@ -1589,6 +1596,61 @@ fit.variogram.model <-
     }, x = variogram.item[["variogram.object"]], vo = variogram.object, d2r = d2r
   )
 
+
+  ## compute Hessian with respect to untransformed parameters
+
+  if(control[["hessian"]]){
+
+    ## check whether Hessian is positive definite
+
+    if( any( eigen(r.fit[["hessian"]])[["values"]] < 0. ) ) warning(
+      "hessian not positive definite"
+    )
+
+    ## transform variogram parameters
+
+    tmp <- f.aux.tf.param.fwd(
+      variogram.item[["variogram.object"]],
+      param.tf,
+      fwd.tf
+    )
+
+    transformed.param.aniso <- tmp[["transformed.param.aniso"]]
+    tf.param.aniso <- tmp[["tf.param.aniso"]]
+    fit.param.aniso <- tmp[["fit.param.aniso"]]
+
+
+    ## Hessian with respect to untransformed parameters
+    ## see email exchange with Victor De Oliveira
+
+    ## get vector of untransformed fitted variogram parameters
+
+    untransformed.param.aniso <- sapply(
+      names(transformed.param.aniso)[fit.param.aniso],
+      function(x){
+        bwd.tf[[tf.param.aniso[[x]]]](transformed.param.aniso[[x]])
+      }
+    )
+
+    ## compute Jacobian matrix of forward-transformation
+
+    jacobian.fwd.tf <- sapply(
+      names(transformed.param.aniso)[fit.param.aniso],
+      function(x){
+        deriv.fwd.tf[[tf.param.aniso[[x]]]](untransformed.param.aniso[[x]])
+      }
+    )
+
+    ## compute Hessian of untransformed parameters
+
+    r.hessian.untransformed.param.aniso <- jacobian.fwd.tf * t(
+      jacobian.fwd.tf * t(r.fit[["hessian"]])
+    )
+
+
+  }
+
+
   ## collect results
 
   r.result <- list(
@@ -1609,7 +1671,12 @@ fit.variogram.model <-
     fitted = variogram.item[["fitted"]],
     weights = variogram.item[["weights"]]
   )
-  if( control[["hessian"]] ) r.result[["hessian"]] <- r.fit[["hessian"]]
+
+  if( control[["hessian"]] ){
+    r.result[["hessian.tfpa"]]  <- r.fit[["hessian"]]
+    r.result[["hessian.ntfpa"]] <- r.hessian.untransformed.param.aniso
+  }
+
 
   class( r.result ) <- "fitted.variogram"
 
@@ -1624,9 +1691,9 @@ fit.variogram.model <-
 ## ##############################################################################
 
 print.fitted.variogram <-
-  function(
-    x, digits = max(3, getOption("digits") - 3), ...
-  )
+function(
+  x, digits = max(3, getOption("digits") - 3), ...
+)
 {
 
   ## print method for fitted.variogram
@@ -1686,11 +1753,11 @@ print.fitted.variogram <-
 ## ##############################################################################
 
 summary.fitted.variogram <-
-  function (
-    object, correlation = FALSE,
-    signif = 0.95,
-    ...
-  )
+function (
+  object, correlation = FALSE,
+  signif = 0.95,
+  ...
+)
 {
 
   ## summary method for fitted.variogram
@@ -1700,6 +1767,7 @@ summary.fitted.variogram <-
   ## 2015-04-07 AP changes for fitting anisotropic variograms
   ## 2016-08-18 AP changes for nested variogram models
   ## 2020-02-14 AP sanity checks of arguments and for if() and switch()
+  ## 2020-03-27 AP computing Hessian (observed Fisher information) of untransformed parameters
 
   ## check arguments
 
@@ -1727,29 +1795,29 @@ summary.fitted.variogram <-
   ## compute confidence intervals of variogram parameters from observed
   ## Fisher information matrix (Gaussian REML only)
 
-  if( !is.null( object[["hessian"]] ) ){
+  if( !is.null( object[["hessian.tfpa"]] ) ){
 
     ## initialization
 
     cor.tf.param <- cov.tf.param <- matrix(
-      NA, nrow = NROW( object[["hessian"]] ), ncol = NROW( object[["hessian"]] ),
-      dimnames = dimnames( object[["hessian"]] )
+      NA, nrow = NROW( object[["hessian.tfpa"]] ), ncol = NROW( object[["hessian.tfpa"]] ),
+      dimnames = dimnames( object[["hessian.tfpa"]] )
     )
 
-#     se <- rep( NA_real_, NROW( object[["hessian"]] ) )
-#     names( se ) <- rownames( object[["hessian"]])
-#
-#     ci <- matrix( NA_real_, nrow = NROW( object[["hessian"]] ), ncol = 2L )
-#     colnames( ci ) <- c( "Lower", "Upper" )
-#     rownames( ci ) <- rownames( object[["hessian"]] )
+    #     se <- rep( NA_real_, NROW( object[["hessian.tfpa"]] ) )
+    #     names( se ) <- rownames( object[["hessian.tfpa"]])
+    #
+    #     ci <- matrix( NA_real_, nrow = NROW( object[["hessian.tfpa"]] ), ncol = 2L )
+    #     colnames( ci ) <- c( "Lower", "Upper" )
+    #     rownames( ci ) <- rownames( object[["hessian.tfpa"]] )
 
     ## select parameters that are not on boundary of parameter space
 
-    sr  <- !apply( object[["hessian"]], 1L, function( x ) all( is.na( x ) ) )
+    sr  <- !apply( object[["hessian.tfpa"]], 1L, function( x ) all( is.na( x ) ) )
 
     if( sum( sr ) > 0L ){
 
-      t.chol <- try( chol( object[["hessian"]][sr, sr, drop = FALSE] ), silent = TRUE )
+      t.chol <- try( chol( object[["hessian.tfpa"]][sr, sr, drop = FALSE] ), silent = TRUE )
 
       if( !identical( class( t.chol ), "try-error" ) ){
 
@@ -1764,7 +1832,7 @@ summary.fitted.variogram <-
         if( correlation ){
           ans[["cor.tf.param"]] <- cov2cor( cov.tf.param )
           colnames( ans[["cor.tf.param"]] ) <- rownames( ans[["cor.tf.param"]] ) <-
-            gsub( ".__...__.", ".", colnames( ans[["cor.tf.param"]] ), fixed = TRUE )
+          gsub( ".__...__.", ".", colnames( ans[["cor.tf.param"]] ), fixed = TRUE )
         }
 
         se <- sqrt( diag( cov.tf.param ) )
@@ -1860,11 +1928,11 @@ summary.fitted.variogram <-
 ## ##############################################################################
 
 print.summary.fitted.variogram <-
-  function (
-    x, digits = max(3, getOption("digits") - 3),
-    signif.stars = getOption("show.signif.stars"),
-    ...
-  )
+function (
+  x, digits = max(3, getOption("digits") - 3),
+  signif.stars = getOption("show.signif.stars"),
+  ...
+)
 {
 
   ## print.summary method for fitted.variogram
@@ -1920,8 +1988,8 @@ print.summary.fitted.variogram <-
         x, digits = max( digits, t.digits) , signif.stars = FALSE, ...
       )
       #       print(format(
-#         signif( x, digits = 7L ), width = 16L, scientific = TRUE, justify = "left"), quote = FALSE, ...
-#       )
+      #         signif( x, digits = 7L ), width = 16L, scientific = TRUE, justify = "left"), quote = FALSE, ...
+      #       )
     }, x = x[["param.aniso"]], vo = x[["variogram.object"]]
   )
 
@@ -1948,23 +2016,23 @@ print.summary.fitted.variogram <-
 ### plot.georob
 
 plot.georob <-
-  function(
-    x, what = c( "variogram", "covariance", "correlation",
-      "ta", "sl", "qq.res", "qq.ranef" ),
-    add = FALSE,
-    lag.dist.def,
-    xy.angle.def = c( 0., 180. ),
-    xz.angle.def = c( 0., 180. ),
-    max.lag = Inf,
-    estimator = c( "mad", "qn", "ch", "matheron" ),
-    mean.angle = TRUE,
-    level = what != "ta",
-    smooth = what == "ta" || what == "sl",
-    id.n = 3, labels.id = names(residuals(x)), cex.id = 0.75,
-    label.pos = c(4,2),
-    col, pch, xlab, ylab, main, lty = "solid",
-    ...
-  )
+function(
+  x, what = c( "variogram", "covariance", "correlation",
+    "ta", "sl", "qq.res", "qq.ranef" ),
+  add = FALSE,
+  lag.dist.def,
+  xy.angle.def = c( 0., 180. ),
+  xz.angle.def = c( 0., 180. ),
+  max.lag = Inf,
+  estimator = c( "mad", "qn", "ch", "matheron" ),
+  mean.angle = TRUE,
+  level = what != "ta",
+  smooth = what == "ta" || what == "sl",
+  id.n = 3, labels.id = names(residuals(x)), cex.id = 0.75,
+  label.pos = c(4,2),
+  col, pch, xlab, ylab, main, lty = "solid",
+  ...
+)
 {
 
   ## Function plots the graph of a variogram fitted by f.georob
@@ -2185,8 +2253,8 @@ plot.georob <-
         }
 
         sill <- sum( unlist( lapply(
-            x[["variogram.object"]],
-            function(x) x[["param"]][names(x[["param"]]) %in% c("variance", "snugget", "nugget")]
+              x[["variogram.object"]],
+              function(x) x[["param"]][names(x[["param"]]) %in% c("variance", "snugget", "nugget")]
             )))
 
         ymax <- 1.1 * switch(
@@ -2263,17 +2331,17 @@ plot.georob <-
 
 }
 
- ##############################################################################
+##############################################################################
 
 lines.georob <-
-  function(
-    x,
-    what = c("variogram", "covariance", "correlation"),
-    from = 1.e-6, to, n = 501,
-    xy.angle = 90.,
-    xz.angle = 90.,
-    col = 1:length( xy.angle ), pch = 1:length( xz.angle ), lty = "solid", ...
-  )
+function(
+  x,
+  what = c("variogram", "covariance", "correlation"),
+  from = 1.e-6, to, n = 501,
+  xy.angle = 90.,
+  xz.angle = 90.,
+  col = 1:length( xy.angle ), pch = 1:length( xz.angle ), lty = "solid", ...
+)
 {
 
   ## Function plots the graph of a variogram fitted by f.georob

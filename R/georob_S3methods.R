@@ -607,6 +607,7 @@ summary.georob <- function (
   ## 2019-05-24 AP correction of error when printing confidence interval of variogram parameters
   ## 2019-10-22 AP terms component taken from georob object
   ## 2020-02-14 AP sanity checks of arguments and for if() and switch()
+  ## 2020-03-27 AP computing Hessian (observed Fisher information) of untransformed parameters
 
   ## check arguments
 
@@ -664,29 +665,29 @@ summary.georob <- function (
   ## compute confidence intervals of variogram parameters from observed
   ## Fisher information matrix (Gaussian REML only)
 
-  if( !is.null( object[["hessian"]] ) ){
+  if( !is.null( object[["hessian.tfpa"]] ) ){
 
     ## initialization
 
     cor.tf.param <- cov.tf.param <- matrix(
-      NA, nrow = NROW( object[["hessian"]] ), ncol = NROW( object[["hessian"]] ),
-      dimnames = dimnames( object[["hessian"]] )
+      NA, nrow = NROW( object[["hessian.tfpa"]] ), ncol = NROW( object[["hessian.tfpa"]] ),
+      dimnames = dimnames( object[["hessian.tfpa"]] )
     )
 
-#     se <- rep( NA_real_, NROW( object[["hessian"]] ) )
-#     names( se ) <- rownames( object[["hessian"]])
+#     se <- rep( NA_real_, NROW( object[["hessian.tfpa"]] ) )
+#     names( se ) <- rownames( object[["hessian.tfpa"]])
 #
-#     ci <- matrix( NA_real_, nrow = NROW( object[["hessian"]] ), ncol = 2L )
+#     ci <- matrix( NA_real_, nrow = NROW( object[["hessian.tfpa"]] ), ncol = 2L )
 #     colnames( ci ) <- c( "Lower", "Upper" )
-#     rownames( ci ) <- rownames( object[["hessian"]] )
+#     rownames( ci ) <- rownames( object[["hessian.tfpa"]] )
 
     ## select parameters that are not on boundary of parameter space
 
-    sr  <- !apply( object[["hessian"]], 1L, function( x ) all( is.na( x ) ) )
+    sr  <- !apply( object[["hessian.tfpa"]], 1L, function( x ) all( is.na( x ) ) )
 
     if( sum( sr ) > 0L ){
 
-      t.chol <- try( chol( object[["hessian"]][sr, sr, drop = FALSE] ), silent = TRUE )
+      t.chol <- try( chol( object[["hessian.tfpa"]][sr, sr, drop = FALSE] ), silent = TRUE )
 
       if( !identical( class( t.chol ), "try-error" ) ){
 

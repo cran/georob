@@ -1,4 +1,4 @@
-% 2020-02-05 A. Papritz
+% 2020-03-27 A. Papritz
 % R CMD Rdconv -t html -o bla.html fit.variogram.model.Rd ; open bla.html; R CMD Rd2pdf --force fit.variogram.model.Rd; 
 
 \encoding{utf8}
@@ -35,7 +35,8 @@ fit.variogram.model(sv,
     verbose = 0)
 
 control.fit.variogram.model(maximizer = c("nlminb", "optim"), 
-    param.tf = param.transf(), fwd.tf = fwd.transf(), bwd.tf = bwd.transf(),
+    param.tf = param.transf(), fwd.tf = fwd.transf(), 
+    deriv.fwd.tf = dfwd.transf(), bwd.tf = bwd.transf(),
     hessian = TRUE, optim = control.optim(), nlminb = control.nlminb())
     
 \method{print}{fitted.variogram}(x, digits = max(3, getOption("digits") - 3), ...)
@@ -202,6 +203,10 @@ control.fit.variogram.model(maximizer = c("nlminb", "optim"),
   a named list of invertible functions to be used to transform variogram
   parameters, see \code{\link{control.georob}}.}
 
+  \item{deriv.fwd.tf}{a function such as \code{dfwd.transf}, which
+  returns a named list of functions corresponding to the first derivatives
+  of \code{fwd.tf}, see \emph{Details}.}
+
   \item{bwd.tf}{a function such as \code{\link{bwd.transf}}, which returns
   the named list of inverse functions corresponding to \code{fwd.tf}, see
   see \code{\link{control.georob}}.}
@@ -259,6 +264,18 @@ described in detail in \code{\link{georobIntro}}, and the section
 \emph{Details} of \code{\link{georob}} describes how the parameter
 estimates are constrained to permissible ranges.  The same
 mechanisms are used in \code{fit.variogram.model}.
+
+The method \code{summary} computes confidence intervals of the estimated
+variogram and anisotropy parameters from the Hessian matrix of the residual
+sums of squares, based on the asymptotic normal distribution of least
+squares estimate estimates.  Note that the Hessian matrix with respect to
+the \emph{transformed} variogram and anisotropy parameters is used for
+this.  Hence the inverse Hessian matrix is the covariance matrix of the
+transformed parameters, confidence intervals are first computed for the
+transformed parameters and the limits of these intervals are transformed
+back to the orginal scale of the parameters.  Optionally, \code{summary}
+reports the correlation matrix of the \emph{transformed} parameters, also
+computed from the Hessian matrix.
 
 }
 
@@ -339,8 +356,20 @@ mechanisms are used in \code{fit.variogram.model}.
 
   \item{weights}{a numeric vector with the weights used for fitting.}
   
-  \item{hessian}{a symmetric matrix giving an estimate of the Hessian at
+  \item{hessian}{a symmetric matrix with the Hessian at
   the solution (missing if \code{hessian} is false).}
+  
+  \item{hessian.tfpa}{a symmetric matrix with the Hessian at the solution
+  with respect to the transformed variogram and anisotropy parameters
+  (missing if \code{hessian} is false).  This Hessian is used by
+  \code{summary.fitted.variogram} to compute confidence intervals
+  for the estimated parameters.}
+
+  \item{hessian.ntfpa}{a symmetric matrix with the Hessian at the solution
+  with respect to the non-transformed variogram and anisotropy parameters
+  (missing if \code{hessian} is false). 
+  }
+
     
 }
 

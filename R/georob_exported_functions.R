@@ -54,6 +54,7 @@ georob <-
   ## 2016-08-08 AP changes for nested variogram models
   ## 2017-05-07 AP correcting error for interface to rq.fit
   ## 2020-02-14 AP sanity checks of arguments and for if() and switch()
+  ## 2020-02-19 AP correction of error in sanity checks of arguments and for if() and switch()
 
 #### -- check arguments
 
@@ -70,18 +71,20 @@ georob <-
   if(!missing(subset))  stopifnot(is.null(subset)  || is.logical(subset) || is.character(subset) || is.numeric(subset))
   if(!missing(weights)) stopifnot(is.null(weights) || is.numeric(weights))
   if(!missing(offset))  stopifnot(is.null(offset)  || is.numeric(offset))
-
+  if(!missing(param)){
+    stopifnot(is.numeric(param))  
+    stopifnot(is.logical(fit.param))
+  }
+  
   stopifnot(identical(length(model), 1L) && is.logical(model))
   stopifnot(identical(length(x), 1L)     && is.logical(x))
   stopifnot(identical(length(y), 1L)     && is.logical(y))
 
-  stopifnot(is.logical(fit.param))
   stopifnot(is.logical(fit.aniso))
 
   stopifnot(identical(length(tuning.psi), 1L) && is.numeric(tuning.psi) && tuning.psi > 0)
   stopifnot(identical(length(verbose), 1L)    && is.numeric(verbose)    && verbose >= 0)
 
-  stopifnot(is.numeric(param))
   stopifnot(is.numeric(aniso))
 
   stopifnot(is.list(control))

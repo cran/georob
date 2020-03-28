@@ -3202,6 +3202,8 @@ georob.fit <-
   ## 2016-11-28 AP checking ml.method and presence of intercept for intrinsic models
   ## 2017-02-24 AP warning for negative definite hessian
   ## 2017-07-26 AP changes to allow non-zero snugget if there are no replicated observations
+  ## 2020-02-19 AP minor change in computation of hessian
+  ## 2020-03-27 AP computing Hessian (observed Fisher information) of untransformed parameters
 
   ##  ToDos:
 
@@ -3806,7 +3808,7 @@ georob.fit <-
   )
 
 
- #### -- compute signal zhat
+#### -- compute signal zhat
 
   sel <- !is.na (betahat )
   zhat <- drop( XX[, sel, drop=FALSE] %*% betahat[sel] + bhat )
@@ -3908,7 +3910,7 @@ georob.fit <-
 
     if( any( fit.param.aniso ) ){
 
-#### -- Gaussian REML estimation
+#### -- Gaussian (RE)ML estimation
 
       error.family.cov.effects <- error.family.cov.residuals <- "gaussian"
 
@@ -4099,7 +4101,7 @@ georob.fit <-
   lik.item <- get( "lik.item", pos = as.environment( envir ) )
 
   ## revert if necessary to original parametrization of variogram.object
-  ## and create fitted.variogram.object wiht all angles mapped to
+  ## and create fitted.variogram.object with all angles mapped to
   ## half-circle
 
   if( reparam ){
@@ -4169,7 +4171,7 @@ georob.fit <-
 
     ## transform variogram parameters
 
-    if( reparam ) param.tf[c("variance", "snugget")] <- param.transf()[c("variance", "snugget")]
+    if( reparam ) param.tf[c("variance", "snugget")] <- original.param.tf[c("variance", "snugget")]
 
     tmp <- f.aux.tf.param.fwd(
       fitted.variogram.object,
@@ -4181,6 +4183,8 @@ georob.fit <-
     tf.param.aniso <- tmp[["tf.param.aniso"]]
     fit.param.aniso <- tmp[["fit.param.aniso"]]
 
+    ## Hessian of with respect to transformed parameters
+    
     r.hessian <- optimHess(
       par = transformed.param.aniso[ fit.param.aniso ],
       fn = negative.loglikelihood,
@@ -4209,11 +4213,39 @@ georob.fit <-
       force.gradient = force.gradient
     )
 
-    ## check whether hessian is positive definite
+    ## check whether Hessian is positive definite
 
     if( any( eigen(r.hessian)[["values"]] < 0. ) ) warning(
       "hessian not positive definite, check whether local minimum of log-likelihood has been found"
     )
+    
+    ## Hessian with respect to untransformed parameters
+    ## see email exchange with Victor De Oliveira
+    
+    ## get vector of untransformed fitted variogram parameters
+    
+    untransformed.param.aniso <- sapply(
+      names(transformed.param.aniso)[fit.param.aniso],
+      function(x){
+        bwd.tf[[tf.param.aniso[[x]]]](transformed.param.aniso[[x]])
+      }
+    )
+    
+    ## compute Jacobian matrix of forward-transformation
+    
+    jacobian.fwd.tf <- sapply(
+      names(transformed.param.aniso)[fit.param.aniso],
+      function(x){
+        deriv.fwd.tf[[tf.param.aniso[[x]]]](untransformed.param.aniso[[x]])
+      }
+    )
+    
+    ## compute Hessian of untransformed parameters
+    
+    r.hessian.untransformed.param.aniso <- jacobian.fwd.tf * t( 
+      jacobian.fwd.tf * t(r.hessian) 
+    )
+
 
     #   } else {
     #
@@ -4406,7 +4438,8 @@ georob.fit <-
     variogram.object = original.variogram.object
   )
   if( !is.null( r.hessian ) ){
-    result.list[["hessian"]] <- r.hessian
+    result.list[["hessian.tfpa"]] <- r.hessian
+    result.list[["hessian.ntfpa"]] <- r.hessian.untransformed.param.aniso
   }
   ##      result.list[["df.model"]] <- r.df
 
