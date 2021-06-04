@@ -827,7 +827,7 @@ function(
           #             silent = TRUE
           #           )
 
-          RFoptions( allow_duplicated_locations = TRUE )
+          RFoptions( allow_duplicated_locations = TRUE, storing = FALSE )
 
           ## note: RFfctn computes covariance for stationary and negative
           ## semivariance for IRF models, required is negative semivariance
@@ -839,7 +839,7 @@ function(
             silent = TRUE
           )
 
-          RFoptions( allow_duplicated_locations = FALSE )
+          RFoptions( allow_duplicated_locations = FALSE, storing = FALSE  )
 
           if( !(identical( class( result ), "try-error" ) || any( is.na( result ) )) ){
             if(!variogram.model %in% irf.models){
@@ -885,7 +885,7 @@ function(
           #             silent = TRUE
           #           )
 
-          RFoptions( allow_duplicated_locations = TRUE )
+          RFoptions( allow_duplicated_locations = TRUE, storing = FALSE )
 
           ## note: RFfctn computes covariance for stationary and negative
           ## semivariance for IRF models, required is negative semivariance
@@ -897,7 +897,7 @@ function(
             silent = TRUE
           )
 
-          RFoptions( allow_duplicated_locations = FALSE )
+          RFoptions( allow_duplicated_locations = FALSE, storing = FALSE )
 
           if( !(identical( class( result ), "try-error" ) || any( is.na( result ) )) ){
             if(!variogram.model %in% irf.models){
@@ -3418,7 +3418,7 @@ georob.fit <-
       if( aniso["f1"] < 0. ||  aniso["f1"] > 1. ) stop(
         "initial value of parameter 'f1' must be in [0, 1]"
       )
-      if( aniso["f2"] < 0. ||  aniso["f1"] > 1. ) stop(
+      if( aniso["f2"] < 0. ||  aniso["f2"] > 1. ) stop(
         "initial value of parameter 'f2' must be in [0, 1]"
       )
       if( aniso["omega"] < 0. ||  aniso["omega"] > 180. ) stop(
@@ -4184,7 +4184,7 @@ georob.fit <-
     fit.param.aniso <- tmp[["fit.param.aniso"]]
 
     ## Hessian of with respect to transformed parameters
-    
+
     r.hessian <- optimHess(
       par = transformed.param.aniso[ fit.param.aniso ],
       fn = negative.loglikelihood,
@@ -4218,32 +4218,32 @@ georob.fit <-
     if( any( eigen(r.hessian)[["values"]] < 0. ) ) warning(
       "hessian not positive definite, check whether local minimum of log-likelihood has been found"
     )
-    
+
     ## Hessian with respect to untransformed parameters
     ## see email exchange with Victor De Oliveira
-    
+
     ## get vector of untransformed fitted variogram parameters
-    
+
     untransformed.param.aniso <- sapply(
       names(transformed.param.aniso)[fit.param.aniso],
       function(x){
         bwd.tf[[tf.param.aniso[[x]]]](transformed.param.aniso[[x]])
       }
     )
-    
+
     ## compute Jacobian matrix of forward-transformation
-    
+
     jacobian.fwd.tf <- sapply(
       names(transformed.param.aniso)[fit.param.aniso],
       function(x){
         deriv.fwd.tf[[tf.param.aniso[[x]]]](untransformed.param.aniso[[x]])
       }
     )
-    
+
     ## compute Hessian of untransformed parameters
-    
-    r.hessian.untransformed.param.aniso <- jacobian.fwd.tf * t( 
-      jacobian.fwd.tf * t(r.hessian) 
+
+    r.hessian.untransformed.param.aniso <- jacobian.fwd.tf * t(
+      jacobian.fwd.tf * t(r.hessian)
     )
 
 

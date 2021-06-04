@@ -1,4 +1,4 @@
-% 2019-09-28 A. Papritz
+% 2021-06-04 A. Papritz
 % R CMD Rdconv -t html -o bla.html georobSimulation.Rd ; open bla.html; R CMD Rd2pdf --force georobSimulation.Rd; open georobSimulation.pdf
 
 \encoding{utf8}
@@ -15,11 +15,11 @@ parameters of a spatial linear model estimated by the function
 \code{\link{georob}}.}
 
 \usage{
-  condsim(object, newdata, nsim, seed, 
-    type =  c("response", "signal"), locations, trend.coef = NULL, 
-    variogram.model = NULL, param = NULL, aniso = NULL, variogram.object = NULL,  
+  condsim(object, newdata, nsim, seed,
+    type =  c("response", "signal"), locations, trend.coef = NULL,
+    variogram.model = NULL, param = NULL, aniso = NULL, variogram.object = NULL,
     control = control.condsim(), verbose = 0)
-    
+
   control.condsim(use.grid = FALSE, grid.refinement = 2.,
     condsim = TRUE, include.data.sites = FALSE, means = FALSE,
     trend.covariates = FALSE, covariances = FALSE,
@@ -30,93 +30,93 @@ parameters of a spatial linear model estimated by the function
 
   \item{object}{an object of class \code{georob} (mandatory argument), see
     \code{\link{georobObject}}.}
-    
-  \item{newdata}{a mandatory data frame, 
-  \code{\link[sp]{SpatialPointsDataFrame}}, 
-  \code{\link[sp]{SpatialPixelsDataFrame}}, 
-  \code{\link[sp]{SpatialGridDataFrame}}, 
-  \code{\link[sp]{SpatialPoints}}, 
+
+  \item{newdata}{a mandatory data frame,
+  \code{\link[sp]{SpatialPointsDataFrame}},
+  \code{\link[sp]{SpatialPixelsDataFrame}},
+  \code{\link[sp]{SpatialGridDataFrame}},
+  \code{\link[sp]{SpatialPoints}},
   \code{\link[sp]{SpatialPixels}} or
-  \code{\link[sp]{SpatialGrid}} object,   
-  with the coordinates of points for which simulations are computed 
-  and in which to look for variables required for computing fitted values 
+  \code{\link[sp]{SpatialGrid}} object,
+  with the coordinates of points for which simulations are computed
+  and in which to look for variables required for computing fitted values
   or Kriging predictions,  see \code{\link{predict.georob}}.}
 
   \item{nsim}{number of (condititional) realizations to compute (mandatory
   argument).}
-  
+
   \item{seed}{integer seed to initialize random number generation,
   see \code{\link[base]{set.seed}} (mandatory argument).}
-  
+
   \item{type}{character keyword defining what target quantity should be
   simulated.  Possible values are
-  
+
     \itemize{
-    
+
       \item \code{"signal"}: the \dQuote{signal}
       \eqn{Z(\mbox{\boldmath$s$\unboldmath}) =
       \mbox{\boldmath$x$\unboldmath}(\mbox{\boldmath$s$\unboldmath})^\mathrm{T}
       \mbox{\boldmath$\beta$\unboldmath} +
       B(\mbox{\boldmath$s$\unboldmath})}{Z(s) = x(s)^T \beta + B(s)} of
       the process,
-      
+
       \item \code{"response"}: the observations
       \eqn{Y(\mbox{\boldmath$s$\unboldmath}) =
       Z(\mbox{\boldmath$s$\unboldmath}) +
       \varepsilon(\mbox{\boldmath$s$\unboldmath}),}{Y(s)=Z(s) + \epsilon(s),}  (default),
-      
+
     }
-    
+
   see \code{\link{georobIntro}} for details on the model specification.}
 
   \item{locations}{an optional one-sided formula specifying what variables
   of \code{newdata} are the coordinates of the points for which simulated
   values are computed (default:
   \code{object[["locations.objects"]][["locations"]]}).}
-  
+
   \item{trend.coef}{an optional numeric vector with the coefficients of the
   trend model to be used for computing the (conditional) mean function of
   the random process see \emph{Details}.}
-  
+
   \item{variogram.model}{an optional character keyword defining the
   variogram model to be used for the simulations, see \code{\link{georob}}
   and \emph{Details}.}
-  
+
   \item{param}{an optional named numeric vector with values of the
   variogram parameters used for the simulations, see \code{\link{georob}}
   and \emph{Details}.}
-  
+
   \item{aniso}{an optional named numeric vector with values of anisotropy
   parameters of a variogram used for the simulations, see
   \code{\link{georob}} and \emph{Details}.}
-  
+
   \item{variogram.object}{an optional list that defines a possibly nested
   variogram model used for the simulations, see \code{\link{georob}} and
   \emph{Details}.}
-  
+
   \item{control}{a list with the components \code{use.grid},
   \code{grid.refinement}, \code{condsim},\cr \code{include.data.sites},
   \code{means}, \code{trend.covariates}, \code{covariances},
   \code{ncores}, and \code{pcmp} or a function such as
   \code{control.condsim} that generates such a list, see
   arguments of \code{control.condsim} for details.}
-  
+
   \item{verbose}{positive integer controlling logging of diagnostic
   messages to the console.\cr \code{verbose = 0} (default) suppresses
   such messages.}
-  
+
   \item{use.grid}{logical scalar (default \code{FALSE}) to control whether
   (conditional) realizations are computed for a rectangular grid instead of
   the coordinates of points contained in \code{newdata}, see \emph{Details}.}
-  
+
   \item{grid.refinement}{numeric scalar that defines a factor by which the
   minimum differences of the coordinates between any pair of points in
   \code{newdata} are divided to setup the simulation grid, should be > 1
   (default 2), see \emph{Details}.}
-    
+
   \item{condsim}{logical scalar (default \code{TRUE}) to control whether
   conditional (\code{TRUE}) or unconditional simulations (\code{FALSE}) are
-  computed.  
+  computed.
 %   In both cases, the parameters of the mean and auto-correlation
 %   functions of the underlying Gaussian processes are assumed to be
 %   indentical to the parameters of the spatial linear model estimated by
@@ -126,17 +126,17 @@ parameters of a spatial linear model estimated by the function
 %   and auto-correlation functions are not taken into account,
 %   i.~e.\``plug-in'' simulationd are computed.
   }
-  
+
   \item{include.data.sites}{logical scalar, to control whether
-  (conditionally) simulated values are returned also for the points 
+  (conditionally) simulated values are returned also for the points
   of the original data set used to estimate the model parameters.}
-  
+
   \item{means}{logical scalar, to control whether
   the (un)conditional means are included in the output.}
-  
+
   \item{trend.covariates}{logical scalar, to control whether
   the covariates required for the trend model are included in the output.}
-  
+
   \item{covariances}{logical scalar, to control whether the covariances
   between the points of the original data set used to estimate the model
   parameters (\code{attr gcvmat.d.d}, \code{\link{compress}}ed matrix) and
@@ -144,14 +144,14 @@ parameters of a spatial linear model estimated by the function
   (\code{attr gcvmat.s.d}, matrix) are returned as attributes of the
   output.  Note that these covariances are only returned if \cr
   \code{use.grid == TRUE & condsim == TRUE}.}
-  
+
   \item{ncores}{positive integer controlling how many cores are used for
   parallelized computations, defaults to all cores.}
-  
+
   \item{pcmp}{a list of arguments, passed  e.g. to \code{\link{pmm}} or a
   function such as \code{control.pcmp} that generates such a list
   (see \code{\link{control.pcmp}} for allowed arguments).}
-  
+
 }
 
 
@@ -180,8 +180,8 @@ can be computed.  In the latter cases, the simulated values are always
 conditioned to the response data used to fit the spatial linear model
 by \code{\link{georob}} and contained in \code{object}.
 
-\subsection{Unconditional simulation}{ 
-  
+\subsection{Unconditional simulation}{
+
   Unconditional realizations are either computed for the exact locations of
   the points in \code{newdata} (\code{use.grid == FALSE}), irrespective of
   the fact whether these are arranged on a regular grid, or for the
@@ -192,7 +192,7 @@ by \code{\link{georob}} and contained in \code{object}.
   \code{\link[RandomFields]{RFsimulate}} for grids is faster than for
   arbitrary geometries of the simulation points.
 
-  
+
 	For \code{use.grid == TRUE}, a rectangular grid is constructed from the
 	coordinates of the points in \code{newdata} and \code{object}.  The
 	spacing of the grid is equal to the minimum distance between any pair of
@@ -205,10 +205,10 @@ by \code{\link{georob}} and contained in \code{object}.
 	points are averaged.  If the same node is assigned to a point in
 	\code{object} and \code{newdata} then the point in \code{object} is kept
 	and the concerned point in \code{newdata} is omitted.
-  
+
 }
 
-\subsection{Conditional simulation}{ 
+\subsection{Conditional simulation}{
 
   Simulations are conditioned to data either by exploiting the respective
   built-in functionality of \code{\link[RandomFields]{RFsimulate}}
@@ -219,9 +219,9 @@ by \code{\link{georob}} and contained in \code{object}.
   grids.
 
 }
-  
 
-\subsection{Parallelized computations}{ 
+
+\subsection{Parallelized computations}{
 
   \code{condsim} uses the packages \pkg{parallel}, \pkg{snow} and
   \pkg{snowfall} for parallelized computation of simulations.  If there
@@ -233,8 +233,8 @@ by \code{\link{georob}} and contained in \code{object}.
 
 }
 
-  
-  
+
+
 }
 
 
@@ -244,31 +244,31 @@ by \code{\link{georob}} and contained in \code{object}.
   \code{\link[sp]{SpatialPointsDataFrame}},
   \code{\link[sp]{SpatialPixelsDataFrame}},
   \code{\link[sp]{SpatialGridDataFrame}}, \cr
-  \code{\link[sp]{SpatialPolygonsDataFrame}}). 
-  
+  \code{\link[sp]{SpatialPolygonsDataFrame}}).
+
   The data frame or the
   \code{data} slot of the \code{Spatial...DataFrame} objects
   have the following components:
-  
+
   \itemize{
-  
+
     \item the coordinates of the prediction points (only present if
     \code{newdata} is a data frame).
-    
+
     \item \code{expct}: optionally the (un)conditional means.
-    
+
     \item optionally the covariates required for the trend model.
-    
+
     \item \code{sim.1}, \code{sim.2}, ...: the (un)conditionally
     simulated realizations.
-    
-  } 
-  
+
+  }
+
 }
 
 
 
-\references{ 
+\references{
 
   \enc{Chilès}{Chiles}, J.-P. and Delfiner, P. (1999) \emph{Geostatistics:
   Modeling Spatial Uncertainty}, John Wiley & Sons, New York.
@@ -276,44 +276,43 @@ by \code{\link{georob}} and contained in \code{object}.
 }
 
 \author{
-   Andreas Papritz \email{andreas.papritz@env.ethz.ch}\cr
-  \url{https://step.ethz.ch/people/scientific-staff/andreas-papritz.html}
+   Andreas Papritz \email{andreas.papritz@env.ethz.ch}.
 }
 
 \seealso{
-  \code{\link{georobIntro}} for a description of the model and a brief summary of the algorithms; 
-  
+  \code{\link{georobIntro}} for a description of the model and a brief summary of the algorithms;
+
   \code{\link{georob}} for (robust) fitting of spatial linear models;
-  
+
   \code{\link{georobObject}} for a description of the class \code{georob};
-  
+
   \code{\link{profilelogLik}} for computing profiles of Gaussian likelihoods;
-  
+
   \code{\link{plot.georob}} for display of RE(ML) variogram estimates;
-  
+
   \code{\link{control.georob}} for controlling the behaviour of \code{georob};
-  
+
   \code{\link{georobModelBuilding}} for stepwise building models of class \code{georob};
-  
-  \code{\link{cv.georob}} for assessing the goodness of a fit by \code{georob}; 
-  
+
+  \code{\link{cv.georob}} for assessing the goodness of a fit by \code{georob};
+
   \code{\link{georobMethods}} for further methods for the class \code{georob};
-  
-  \code{\link{predict.georob}} for computing robust Kriging predictions; 
-  
-%  \code{\link{validate.predictions}} for validating Kriging predictions; 
-  \code{\link{lgnpp}} for unbiased back-transformation of Kriging prediction 
-  of log-transformed data; 
-  
+
+  \code{\link{predict.georob}} for computing robust Kriging predictions;
+
+%  \code{\link{validate.predictions}} for validating Kriging predictions;
+  \code{\link{lgnpp}} for unbiased back-transformation of Kriging prediction
+  of log-transformed data;
+
 %  \code{\link{georobSimulation}} for simulating realizations of a Gaussian process
 %  from model fitted by \code{georob}; and finally
-  \code{\link{sample.variogram}} and \code{\link{fit.variogram.model}} 
+  \code{\link{sample.variogram}} and \code{\link{fit.variogram.model}}
   for robust estimation and modelling of sample variograms.
 }
 
 \examples{
 \dontrun{
-  
+
 data(meuse)
 data(meuse.grid)
 
@@ -328,7 +327,7 @@ r.logzn.reml <- georob(log(zinc) ~ sqrt(dist), data = meuse, locations = ~ x + y
     variogram.model = "RMexp",
     param = c(variance = 0.15, nugget = 0.05, scale = 200),
     tuning.psi = 1000)
-    
+
 ## Conditional simulations
 r.sim <- condsim(r.logzn.reml, newdata = meuse.grid.sgdf, nsim = 100, seed = 1,
     control = control.condsim(ncores = 1))

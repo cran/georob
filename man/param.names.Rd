@@ -1,5 +1,5 @@
-% 2014-05-28 A. Papritz
-% R CMD Rdconv -t html -o bla.html param.names.Rd ; open bla.html; R CMD Rd2pdf --force param.names.Rd; 
+% 2021-06-04 A. Papritz
+% R CMD Rdconv -t html -o bla.html param.names.Rd ; open bla.html; R CMD Rd2pdf --force param.names.Rd;
 
 \encoding{utf8}
 \name{param.names}
@@ -20,8 +20,8 @@ param.bounds(model, d)
 
 \arguments{
   \item{model}{character keyword denoting a valid variogram,
-  see \code{\link{georob}} and \code{\link{georobIntro}}.} 
-  
+  see \code{\link{georob}} and \code{\link{georobIntro}}.}
+
   \item{d}{number of dimensions of the survey domain.}
 }
 
@@ -29,16 +29,16 @@ param.bounds(model, d)
   Either a character vector with the names of the additional variogram
   parameters such as the smoothness parameter of the Whittle-Matérn model
   (\code{param.names}) or a named list with the lower and upper bounds of
-  permissible parameter ranges.  
+  permissible parameter ranges.
 }
 
 \author{
-   Andreas Papritz \email{andreas.papritz@env.ethz.ch}
+   Andreas Papritz \email{andreas.papritz@env.ethz.ch}.
 }
 
 \seealso{
-  \code{\link{georobIntro}} for a description of the model and a brief summary of the algorithms; 
-  
+  \code{\link{georobIntro}} for a description of the model and a brief summary of the algorithms;
+
   \code{\link{georob}} for (robust) fitting of spatial linear models.
 }
 

@@ -1,5 +1,5 @@
-% 208-01-24 A. Papritz
-% R CMD Rdconv -t html -o bla.html internal.functions.Rd ; open bla.html; R CMD Rd2pdf --force internal.functions.Rd 
+% 2021-06-04 A. Papritz
+% R CMD Rdconv -t html -o bla.html internal.functions.Rd ; open bla.html; R CMD Rd2pdf --force internal.functions.Rd
 
 \encoding{utf8}
 \name{internal.functions}
@@ -52,7 +52,7 @@
 \title{Internal Functions of Package \pkg{georob}}
 %
 \description{
-The unexported internal functions 
+The unexported internal functions
   \itemize{
     \item{\code{check.newdata}}
     \item{\code{covariances.fixed.random.effects}}
@@ -100,7 +100,7 @@ The unexported internal functions
     \item{\code{update.zhat}}
 }
 are not intended for direct use.  However, as any unexported function, they
-can be accessed by typing \code{georob:::\var{function-name}}.  
+can be accessed by typing \code{georob:::\var{function-name}}.
 
 In addition, the function \code{K}, which is re-exported by the package
 \pkg{georob}, is required for computing block Kriging predictions by the
@@ -112,34 +112,34 @@ the function \code{\link[robustbase]{lmrob}} of the package \pkg{robustbase}.}
 
 \author{
   Andreas Papritz \email{andreas.papritz@env.ethz.ch}\cr
-  \url{http://www.step.ethz.ch/people/scientific-staff/andreas-papritz.html}\cr
-  with contributions by Cornelia Schwierz.  }
+  with contributions by Cornelia Schwierz.
+}
 
 \seealso{
   \code{\link{georob}} for (robust) fitting of spatial linear models;
-  
+
   \code{\link{georobObject}} for a description of the class \code{georob};
-  
+
   \code{\link{profilelogLik}} for computing profiles of Gaussian likelihoods;
-  
+
   \code{\link{plot.georob}} for display of (RE)ML variogram estimates;
-  
+
   \code{\link{control.georob}} for controlling the behaviour of \code{georob};
-  
+
   \code{\link{georobModelBuilding}} for stepwise building models of class \code{georob};
-  
-  \code{\link{cv.georob}} for assessing the goodness of a fit by \code{georob}; 
-  
-  \code{\link{predict.georob}} for computing robust Kriging predictions; 
-  
-%  \code{\link{validate.predictions}} for validating Kriging predictions; 
-  
-  \code{\link{lgnpp}} for unbiased back-transformation of Kriging prediction 
+
+  \code{\link{cv.georob}} for assessing the goodness of a fit by \code{georob};
+
+  \code{\link{predict.georob}} for computing robust Kriging predictions;
+
+%  \code{\link{validate.predictions}} for validating Kriging predictions;
+
+  \code{\link{lgnpp}} for unbiased back-transformation of Kriging prediction
   of log-transformed data; and finally
-  
+
   \code{\link{georobMethods}} for further methods for the class \code{georob},
-  
-  \code{\link{sample.variogram}} and \code{\link{fit.variogram.model}} 
+
+  \code{\link{sample.variogram}} and \code{\link{fit.variogram.model}}
   for robust estimation and modelling of sample variograms.
 }
 

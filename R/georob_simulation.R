@@ -668,7 +668,7 @@ condsim <- function(
 
       ## s, e, sim.seed, variogram, coords, data are used from .GlobalEnv
 
-      RFoptions( spConform = FALSE )
+      RFoptions( spConform = FALSE, storing = FALSE  )
 
       set.seed( sim.seed[i] )
 
@@ -705,7 +705,7 @@ condsim <- function(
         }
       }
 
-      RFoptions( spConform = TRUE )
+      RFoptions( spConform = TRUE, storing = FALSE  )
 
       if(identical(as.integer(nsim), 1L)){
         dim(res) <- c(dim(res), 1L)
@@ -883,7 +883,7 @@ condsim <- function(
 
       ## s, e, sim.seed, variogram, grid.nodes are used from .GlobalEnv
 
-      RFoptions( spConform = FALSE )
+      RFoptions( spConform = FALSE, storing = FALSE  )
 
       set.seed( sim.seed[i] )
 
@@ -918,7 +918,7 @@ condsim <- function(
         }
       }
 
-      RFoptions( spConform = TRUE )
+      RFoptions( spConform = TRUE, storing = FALSE  )
 
       if(identical(as.integer(nsim), 1L)){
         dim(res) <- c(dim(res), 1L)

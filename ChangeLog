@@ -595,3 +595,8 @@ processing col and pch arguments
 * georob_exported_functions.R (georob) correction of error in sanity checks of arguments
 * georob_variogram.R (control.fit.variogram.model, fit.variogram.model, summary.fitted.variogram) computing Hessian of untransformed parameters
 * georob_private_functions.R (georob.fit) computing Hessian of untransformed parameters
+
+
+2021-06-02 Andreas Papritz  <papritz@env.ethz.ch>
+
+* georob_private_functions.R (georob.fit) correction of error in check of initial values of anisotropy parameters

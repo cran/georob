@@ -1,5 +1,5 @@
-% 2020-03-27 A. Papritz
-% R CMD Rdconv -t html -o bla.html georobS3methods.Rd ; open bla.html; R CMD Rd2pdf --force georobS3methods.Rd; 
+% 2021-06-04 A. Papritz
+% R CMD Rdconv -t html -o bla.html georobS3methods.Rd ; open bla.html; R CMD Rd2pdf --force georobS3methods.Rd;
 
 % \encoding{utf8}
 \name{georobS3methods}
@@ -55,16 +55,16 @@
 
 \method{random.effects}{georob}(object, standard = FALSE, ...)
 
-\method{resid}{georob}(object, 
-    type = c("working", "response", "deviance", "pearson", "partial"), 
+\method{resid}{georob}(object,
+    type = c("working", "response", "deviance", "pearson", "partial"),
     terms = NULL,
     level = 1, ...)
 
-\method{residuals}{georob}(object, 
-    type = c("working", "response", "deviance", "pearson", "partial"), 
+\method{residuals}{georob}(object,
+    type = c("working", "response", "deviance", "pearson", "partial"),
     terms  = NULL,
     level = 1, ...)
-    
+
 \method{rstandard}{georob}(model, level = 1, ...)
 
 \method{summary}{georob}(object, correlation = FALSE, signif = 0.95, ...)
@@ -77,47 +77,47 @@
 
   \item{object, model, x}{an object of class \code{georob}, see
   \code{\link{georobObject}}.}
-  
+
   \item{formula}{a model \code{\link[stats]{formula}} or
   \code{\link[stats]{terms}} object or an object of class \code{georob}, see
   \code{\link{georobObject}}.}
-  
+
   \item{correlation}{logical controlling whether the correlation matrix of
   the estimated regression coefficients and of the fitted variogram
   parameters (only for non-robust fits) is computed (default \code{FALSE}).}
-  
+
   \item{digits}{positive integer indicating the number of decimal digits to print.}
-  
+
   \item{level}{an optional integer giving the level for extracting the
   residuals from \code{object}.  \code{level = 0} extracts the regression
   residuals \eqn{\widehat{B}(\mbox{\boldmath$s$\unboldmath}) +
   \widehat{\varepsilon}(\mbox{\boldmath$s$\unboldmath})}{hatB(s) +
   hat\epsilon(s)} and \code{level = 1} (default) only the estimated errors
   \eqn{\widehat{\varepsilon}(\mbox{\boldmath$s$\unboldmath})}{hat\epsilon(s)}.}
-  
+
   \item{signif}{confidence level for computing confidence intervals for
   variogram parameters (default \code{0.95}).}
-  
+
   \item{standard}{logical controlling whether the spatial random effects
   \eqn{\mbox{\boldmath$B$\unboldmath}}{B} should be standardized (default
   \code{FALSE}).}
-  
+
   \item{type}{character keyword indicating the type of residuals to
-  compute, see \code{\link[stats]{residuals.lm}}.  
+  compute, see \code{\link[stats]{residuals.lm}}.
   \code{type = "huber"}
   computes `huberized' residuals \eqn{\widehat{\sigma} /
   \gamma_1\psi(\widehat{\varepsilon}(\mbox{\boldmath$s$\unboldmath}) /
   \widehat{\sigma})}{hat\sigma/\gamma_1\psi(hat\epsilon(s)/hat\sigma)}.
   }
-  
+
   \item{terms}{If \code{type = "terms"}, which terms (default is all terms).}
-  
+
   \item{what}{If \code{what = "trend"} (default) the function \code{coef}
   extracts the coefficients of the trend model and for \code{what =
   "variogram"} the variogram parameters.}
-  
+
   \item{...}{additional arguments passed to methods.}
-  
+
 }
 \details{
 
@@ -128,7 +128,7 @@
   The methods \code{model.frame}, \code{model.matrix} and \code{nobs}
   extract the model frame, model matrix and the number of observations, see
   help pages of respective generic functions.
-  
+
   The methods \code{residuals} (and \code{resid}) extract either the
   estimated independent errors
   \eqn{\widehat{\varepsilon}(\mbox{\boldmath$s$\unboldmath})}{hat\epsilon(s)}
@@ -140,7 +140,7 @@
   \code{fixef} (\code{fixed.effects}) extracts the fitted fixed-effects
   regression coefficients, which may of course also be obtained by
   \code{coef}.
-  
+
   For Gaussian REML the method \code{summary} computes confidence intervals
   of the estimated variogram and anisotropy parameters from the Hessian
   matrix of the (restricted) log-likelihood (= observed Fisher
@@ -153,18 +153,18 @@
   back to the orginal scale of the parameters.  Optionally, \code{summary}
   reports the correlation matrix of the \emph{transformed} parameters, also
   computed from the Hessian matrix.
-  
+
   Note that the methods \code{coef} and \code{summary} generate objects of
   class \code{coef.georob} and \code{summary.georob}, respectively, for
   which only \code{print} methods are available.
-  
+
   Besides, the default methods of the generic functions
   \code{\link[stats]{confint}},
   \code{\link[stats]{df.residual}}, \code{\link[stats]{fitted}},
   \code{\link[stats]{formula}}, \code{\link[stats]{termplot}} and
   \code{\link[stats]{update}} can be used for objects of class
   \code{georob}.
-  
+
 }
 
 \value{
@@ -173,16 +173,16 @@
   numeric vector of estimated fixed-effects regression coefficients or
   variogram and anisotropy parameters (\code{coef} only), and \code{vcov}
   returns the covariance matrix of the estimated regression coefficients.
-  
+
   The methods \code{resid}, \code{residuals} and \code{rstandard} return
   numeric vectors of (standardized) residuals, and \code{ranef} and
   \code{random.effects} the numeric vector of (standardized) spatial random
   effects, see \emph{Details}.
-  
+
   The methods \code{model.frame} and \code{model.matrix} return a model
   frame and the fixed-effects model matrix, respectively, and \code{nobs}
   returns the number of observations used to fit a spatial linear model.
-  
+
   The method \code{summary} generates a list with components extracted
   directly from \code{object} (\code{call}, \code{residuals}, \code{bhat},
   \code{rweights}, \code{converged}, \code{convergence.code}, \code{iter},
@@ -190,74 +190,74 @@
   \code{tuning.psi}, \code{df.residual}, \code{control}, \code{terms}) and
   complements the list by the following components:
   %
-  \describe{ 
-    
+  \describe{
+
     \item{\code{scale}}{the square root of the estimated nugget effect
     \eqn{\tau^2}.}
-    
+
     \item{\code{coefficients}}{a 4-column matrix with estimated regression
     coefficients, their standard errors \var{t}-statistics and
     corresponding (two-sided) \var{p}-values.}
-    
+
     \item{\code{correlation}}{an optional lower-triagonal matrix with the
     Pearson correlation coefficients of the estimated regression
     coefficients.}
-    
+
     \item{\code{param.aniso}}{either a vector (robust REML) or a 3-column
     matrix (Gaussian REML) with estimated variogram and anisotropy
     parameters, complemented for Gaussian REML with confidence limits, see
     \emph{Details}.}
-    
+
     \item{\code{cor.tf.param}}{an optional lower-triagonal matrix with the
     Pearson correlation coefficients of estimated transformed variogram and
     anisotropy parameters, see \emph{Details}.}
-    
+
     \item{\code{se.residuals}}{a vector with the standard errors of the
     estimated \eqn{\varepsilon}{\epsilon}.}
-     
+
   }
-   
+
 }
 
 
 \author{
-   Andreas Papritz \email{andreas.papritz@env.ethz.ch}
+   Andreas Papritz \email{andreas.papritz@env.ethz.ch}.
 }
 
 \seealso{
   \code{\link{georobIntro}} for a description of the model and a brief summary of the algorithms;
-  
+
   \code{\link{georob}} for (robust) fitting of spatial linear models;
-  
+
   \code{\link{georobObject}} for a description of the class \code{georob};
-  
+
   \code{\link{profilelogLik}} for computing profiles of Gaussian likelihoods;
-  
+
   \code{\link{plot.georob}} for display of RE(ML) variogram estimates;
-  
+
   \code{\link{control.georob}} for controlling the behaviour of \code{georob};
-  
+
   \code{\link{georobModelBuilding}} for stepwise building models of class \code{georob};
-  
-  \code{\link{cv.georob}} for assessing the goodness of a fit by \code{georob}; 
+
+  \code{\link{cv.georob}} for assessing the goodness of a fit by \code{georob};
 %  \code{\link{georobMethods}} for further methods for the class \code{georob};
-  
-  \code{\link{predict.georob}} for computing robust Kriging predictions; 
-%  \code{\link{validate.predictions}} for validating Kriging predictions; 
-  
-  \code{\link{lgnpp}} for unbiased back-transformation of Kriging prediction 
-  of log-transformed data; 
-  
+
+  \code{\link{predict.georob}} for computing robust Kriging predictions;
+%  \code{\link{validate.predictions}} for validating Kriging predictions;
+
+  \code{\link{lgnpp}} for unbiased back-transformation of Kriging prediction
+  of log-transformed data;
+
   \code{\link{georobSimulation}} for simulating realizations of a Gaussian process
   from model fitted by \code{georob}; and finally
-  
-  \code{\link{sample.variogram}} and \code{\link{fit.variogram.model}} 
+
+  \code{\link{sample.variogram}} and \code{\link{fit.variogram.model}}
   for robust estimation and modelling of sample variograms.
 }
 
 \examples{
 \dontrun{
-  
+
 data(meuse)
 
 ## Gaussian REML fit
@@ -267,9 +267,9 @@ r.logzn.reml <- georob(log(zinc) ~ sqrt(dist), data = meuse, locations = ~ x + y
     tuning.psi = 1000)
 summary(r.logzn.reml, correlation = TRUE)
 
-## robust REML fit 
+## robust REML fit
 r.logzn.rob <- update(r.logzn.reml, tuning.psi = 1)
-    
+
 summary(r.logzn.rob, correlation = TRUE)
 
 ## residual diagnostics

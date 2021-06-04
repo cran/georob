@@ -72,10 +72,10 @@ georob <-
   if(!missing(weights)) stopifnot(is.null(weights) || is.numeric(weights))
   if(!missing(offset))  stopifnot(is.null(offset)  || is.numeric(offset))
   if(!missing(param)){
-    stopifnot(is.numeric(param))  
+    stopifnot(is.numeric(param))
     stopifnot(is.logical(fit.param))
   }
-  
+
   stopifnot(identical(length(model), 1L) && is.logical(model))
   stopifnot(identical(length(x), 1L)     && is.logical(x))
   stopifnot(identical(length(y), 1L)     && is.logical(y))

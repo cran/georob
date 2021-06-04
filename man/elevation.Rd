@@ -1,5 +1,5 @@
-% 2020-02-14 A. Papritz
-% R CMD Rdconv -t html -o bla.html elevation.Rd ; open bla.html; R CMD Rd2pdf --force elevation.Rd; 
+% 2021-06-04 A. Papritz
+% R CMD Rdconv -t html -o bla.html elevation.Rd ; open bla.html; R CMD Rd2pdf --force elevation.Rd;
 
 %  hunspell -d en_GB -t -i mac  *.Rd
 
@@ -21,7 +21,7 @@
 
 \format{
   A data frame with 52 observations on the following 3 variables:
-  
+
 
   \describe{
 
@@ -43,7 +43,7 @@
 
 \source{
   Davis, J.C. (1973) \emph{Statistics and Data Analysis in Geology}.  New
-  York: Wiley.  
+  York: Wiley.
 }
 
 
