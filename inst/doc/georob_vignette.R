@@ -50,21 +50,30 @@ str(meuse)
 ### code chunk number 4: meuse-zinc-eda-plot-1
 ###################################################
 getOption("SweaveHooks")[["fig"]]()
-library(lattice)
-palette(trellis.par.get("superpose.symbol")$col)
+if(requireNamespace("lattice", quietly = TRUE)){
+  palette(lattice::trellis.par.get("superpose.symbol")$col)
+} else {
+  palette(rainbow(7))
+}
 plot(zinc~dist, meuse, pch=as.integer(ffreq), col=soil)
 legend("topright", col=c(rep(1, nlevels(meuse$ffreq)), 1:nlevels(meuse$soil)),
   pch=c(1:nlevels(meuse$ffreq), rep(1, nlevels(meuse$soil))), bty="n",
   legend=c(levels(meuse$ffreq), levels(meuse$soil)))
+# library(lattice)
+# palette(trellis.par.get("superpose.symbol")$col)
+# plot(zinc~dist, meuse, pch=as.integer(ffreq), col=soil)
+# legend("topright", col=c(rep(1, nlevels(meuse$ffreq)), 1:nlevels(meuse$soil)),
+#   pch=c(1:nlevels(meuse$ffreq), rep(1, nlevels(meuse$soil))), bty="n",
+#   legend=c(levels(meuse$ffreq), levels(meuse$soil)))
 
 
 ###################################################
 ### code chunk number 5: meuse-zinc-eda-plot-2
 ###################################################
 getOption("SweaveHooks")[["fig"]]()
-xyplot(log(zinc)~dist | ffreq, meuse, groups=soil, panel=function(x, y, ...){
-    panel.xyplot(x, y, ...)
-    panel.loess(x, y, ...)
+lattice::xyplot(log(zinc)~dist | ffreq, meuse, groups=soil, panel=function(x, y, ...){
+    lattice::panel.xyplot(x, y, ...)
+    lattice::panel.loess(x, y, ...)
   }, auto.key=TRUE)
 
 
@@ -72,10 +81,10 @@ xyplot(log(zinc)~dist | ffreq, meuse, groups=soil, panel=function(x, y, ...){
 ### code chunk number 6: meuse-zinc-eda-plot-3
 ###################################################
 getOption("SweaveHooks")[["fig"]]()
-xyplot(log(zinc)~sqrt(dist) | ffreq, meuse, groups=soil, panel=function(x, y, ...){
-    panel.xyplot(x, y, ...)
-    panel.loess(x, y, ...)
-    panel.lmline(x, y, lty="dashed", ...)
+lattice::xyplot(log(zinc)~sqrt(dist) | ffreq, meuse, groups=soil, panel=function(x, y, ...){
+    lattice::panel.xyplot(x, y, ...)
+    lattice::panel.loess(x, y, ...)
+    lattice::panel.lmline(x, y, lty="dashed", ...)
   }, auto.key=TRUE)
 
 
@@ -193,11 +202,7 @@ if(requireNamespace("multcomp", quietly = TRUE)){
     linfct = multcomp::mcp(ffreq = c("ffreq1 - ffreq2 = 0", "ffreq1 - ffreq3 = 0",
     "ffreq2 - ffreq3 = 0"))))
 } else {
-  install.packages("multcomp")
-  requireNamespace("multcomp", quietly = TRUE)
-  summary(multcomp::glht(r.georob.m0.spher.reml, 
-    linfct = multcomp::mcp(ffreq = c("ffreq1 - ffreq2 = 0", "ffreq1 - ffreq3 = 0",
-    "ffreq2 - ffreq3 = 0"))))
+  warning("package 'multcomp' is missing, install it and re-build vignette")
 }
 # library(multcomp)
 # summary(glht(r.georob.m0.spher.reml, 
@@ -470,10 +475,7 @@ if(requireNamespace("gstat", quietly = TRUE)){
   data(coalash, package="gstat")
   summary(coalash)
 } else {
-  install.packages("gstat")
-  requireNamespace("gstat", quietly = TRUE)
-  data(coalash, package="gstat")
-  summary(coalash)
+  warning("package 'gstat' is missing, install it and re-build vignette")
 }
 # data(coalash, package="gstat")
 # summary(coalash)
@@ -781,7 +783,6 @@ plot(se.gauss, pos=c(0.5, 0, 1, 0.5), more=FALSE)
 ### code chunk number 80: ash-pKriging-plot-robust-gaussian-2
 ###################################################
 getOption("SweaveHooks")[["fig"]]()
-library(lattice)
 # rel. difference of predictions
 r.pk.m1.exp.c2$reldiff.pred <- (r.pk.m1.exp.c1000$pred -
   r.pk.m1.exp.c2$pred) / r.pk.m1.exp.c2$pred * 100
@@ -790,19 +791,19 @@ reldiff.pred <- spplot(r.pk.m1.exp.c2, "reldiff.pred", at=-1:7,
 # ratio Kriging variances
 r.pk.m1.exp.c2$ratio.msep <- r.pk.m1.exp.c1000$se^2 / 
   r.pk.m1.exp.c2$se^2 * 100
-ratio.msep <- spplot(r.pk.m1.exp.c2, "ratio.msep",  at=105:115, 
+ratio.msep <- spplot(r.pk.m1.exp.c2, "ratio.msep", at=105:115, 
   main="ratio of Gaussian to robust Kriging variances",scales=list(draw=TRUE))
 plot(reldiff.pred, pos=c(0, 0, 0.5, 1), more=TRUE)
 #  add bubble plot of centred data colored by "robustness" weights
 rw <- cut(r.georob.m1.exp.c2$rweights, seq(0.2, 1, by = 0.2))
-trellis.focus("panel", 1, 1)
-panel.points(coalash$x, coalash$y, lwd=2, 
+lattice::trellis.focus("panel", 1, 1)
+lattice::panel.points(coalash$x, coalash$y, lwd=2, 
   cex=sqrt(abs(coalash$coalash - median((coalash$coalash)))), 
   col=colorRampPalette(c("yellow", "orange", grey(0.4)))(4)[as.numeric(rw)])
-panel.text(rep(17, nlevels(rw)+1), 0:nlevels(rw), pos=2, cex=0.8, 
+lattice::panel.text(rep(17, nlevels(rw)+1), 0:nlevels(rw), pos=2, cex=0.8, 
   labels=c(rev(levels(rw)), "rob. weights"), 
   col=c(rev(colorRampPalette(c("yellow", "orange", grey(0.4)))(4)), "white"))
-trellis.unfocus()
+lattice::trellis.unfocus()
 
 plot(ratio.msep, pos=c(0.5, 0, 1, 1), more=FALSE)
 

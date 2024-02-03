@@ -1,5 +1,6 @@
-% 2021-06-04 A. Papritz
+% 2024-02-01 A. Papritz
 % R CMD Rdconv -t html -o bla.html control.georob.Rd ; open bla.html; R CMD Rd2pdf --force control.georob.Rd;
+% hunspell -d en_GB-ise,en_GB-ize,en_GB-large -t -i mac  control.georob.Rd
 \encoding{utf8}
 \name{control.georob}
 \alias{control.georob}
@@ -82,52 +83,52 @@ control.nlminb(control = list(rel.tol = 1.e-5), lower = -Inf,
 }
 
 \arguments{
-  \item{ml.method}{character keyword defining whether non-robust maximum
+  \item{ml.method}{a character keyword defining whether Gaussian maximum
   likelihood (\code{ML}) or restricted maximum likelihood (\code{REML}
-  default) estimates will be computed (ignored if
-  \code{tuning.psi <= tuning.psi.nr}).}
+  default) estimates will be computed (ignored if \code{tuning.psi <=
+  tuning.psi.nr}).}
 
-  \item{reparam}{logical.  If \code{TRUE} (default) the re-parametrized
-  variance parameters \eqn{\sigma_B^2}, \eqn{\eta} and \eqn{\xi} are
-  estimated by Gaussian (RE)ML, otherwise the original parameters
-  \eqn{\tau^2}, \eqn{\sigma_{\mathrm{n}}^2}{\sigma_n^2} and \eqn{\sigma^2}
-  (cf.  subsection \emph{Estimating variance parameters by Gaussian
-  (RE)ML}, section \emph{Details} of \code{\link{georob}}).}
+  \item{reparam}{a logical scalar.  If \code{TRUE} (default) the
+  re-parametrized variance parameters \eqn{\sigma_B^2}, \eqn{\eta} and
+  \eqn{\xi} are estimated by Gaussian (RE)ML, otherwise the original
+  parameters \eqn{\tau^2}, \eqn{\sigma_{\mathrm{n}}^2}{\sigma_n^2} and
+  \eqn{\sigma^2} (cf.  subsection \emph{Estimating variance parameters by
+  Gaussian (RE)ML}, section \emph{Details} of \code{\link{georob}}).}
 
-  \item{maximizer}{character keyword defining whether the Gaussian (restricted)
-  log-likelihood is maximized by \code{\link[stats]{nlminb}} (default) or
-  \code{\link[stats]{optim}}.}
+  \item{maximizer}{a character keyword defining whether the Gaussian
+  (restricted) log-likelihood is maximized by \code{\link[stats]{nlminb}}
+  (default) or \code{\link[stats]{optim}}.}
 
-  \item{initial.param}{logical, controlling whether initial values of
-  variogram parameters are computed for solving the estimating equations of
-  the variogram and anisotropy parameters.  If \code{initial.param = TRUE}
-  (default) robust initial values of parameters are computed by discarding
-  outlying observations based on the \dQuote{robustness weights} of the
-  initial fit of the regression model by \code{\link[robustbase]{lmrob}}
-  and fitting the spatial linear model by Gaussian REML to the pruned data
-  set.  For \code{initial.param = FALSE} no initial parameter values are
-  computed and the estimating equations are solved with the initial values
-  passed by \code{param} and \code{aniso} to \code{georob} (see
-  \emph{Details} of \code{\link{georob}}).}
+  \item{initial.param}{a logical scalar, controlling whether initial values
+  of variogram parameters are computed for solving the robustified
+  estimating equations of the variogram and anisotropy parameters.  If
+  \code{initial.param = TRUE} (default) robust initial values of parameters
+  are computed by discarding outlying observations based on the
+  \dQuote{robustness weights} of the initial fit of the regression model by
+  \code{\link[robustbase]{lmrob}} and fitting the spatial linear model by
+  Gaussian REML to the pruned data set.  For \code{initial.param = FALSE}
+  no initial parameter values are computed and the estimating equations are
+  solved with the initial values passed by \code{param} and \code{aniso} to
+  \code{georob} (see \emph{Details} of \code{\link{georob}}).}
 
-  \item{initial.fixef}{character keyword defining whether the function
+  \item{initial.fixef}{a character keyword defining whether the function
   \code{\link[robustbase]{lmrob}} or \code{\link[quantreg]{rq}} is used to
   compute robust initial estimates of the regression parameters
-  \eqn{\mbox{\boldmath$\beta$\unboldmath}}{\beta} (default \code{"lmrob"}).
+  \eqn{\boldsymbol{\beta}}{\beta} (default \code{"lmrob"}).
   If the fixed effects model matrix has not full columns rank, then
   \code{\link[stats]{lm}} is used to compute initial values of the
   regression coefficients.}
 
-  \item{bhat}{initial values for the spatial random effects
-  \eqn{\widehat{\mbox{\boldmath$B$\unboldmath}}}{hatB}, with
-  \eqn{\widehat{\mbox{\boldmath$B$\unboldmath}}=\mbox{\boldmath$0$\unboldmath}}{hatB=0}
-  if \code{bhat} is equal to \code{NULL} (default).}
+  \item{bhat}{a numeric vector with initial values for the spatial random
+  effects \eqn{\widehat{\boldsymbol{B}}}{hatB}, with
+  \eqn{\widehat{\boldsymbol{B}}=\boldsymbol{0}}{hatB=0} if \code{bhat} is
+  equal to \code{NULL} (default).}
 
-  \item{min.rweight}{positive numeric.  \dQuote{Robustness weight} of
-  the initial \code{\link[robustbase]{lmrob}} fit that observations must
-  exceed to be used for computing robust initial estimates of variogram
-  parameters by setting \code{initial.param = TRUE} (see
-  \code{\link{georob}}; default \code{0.25}).}
+  \item{min.rweight}{a positive numeric with the \dQuote{robustness
+  weight} of the initial \code{\link[robustbase]{lmrob}} fit that
+  observations must exceed to be used for computing robust initial
+  estimates of variogram parameters by setting \code{initial.param = TRUE}
+  (see \code{\link{georob}}; default \code{0.25}).}
 
   \item{param.tf}{a function such as \code{param.transf}, which returns a
   named list of character strings that define the transformations to be
@@ -146,121 +147,121 @@ control.nlminb(control = list(rel.tol = 1.e-5), lower = -Inf,
   named list of inverse functions corresponding to \code{fwd.tf}, see
   \emph{Details}.}
 
-  \item{psi.func}{character keyword defining what \eqn{\psi_c}-function should be
-  used for robust model fitting.  Possible values are \code{"logistic"} (a
-  scaled and shifted logistic CDF, default), \code{"t.dist"} (re-descending
-  \eqn{\psi_c}-function associated with Student \eqn{t}-distribution with
-  \eqn{c} degrees of freedom) and \code{"huber"} (Huber's
-  \eqn{\psi_c}-function).}
+  \item{psi.func}{a character keyword defining what \eqn{\psi_c}-function
+  should be used for robust model fitting.  Possible values are
+  \code{"logistic"} (a scaled and shifted logistic CDF, default),
+  \code{"t.dist"} (re-descending \eqn{\psi_c}-function associated with
+  Student \eqn{t}-distribution with \eqn{c} degrees of freedom) and
+  \code{"huber"} (Huber's \eqn{\psi_c}-function).}
 
-  \item{irwls.maxiter}{positive integer equal to the maximum number of
+  \item{irwls.maxiter}{a positive integer equal to the maximum number of
   IRWLS iterations to solve the estimating equations of
-  \eqn{\mbox{\boldmath$B$\unboldmath}}{B} and
-  \eqn{\mbox{\boldmath$\beta$\unboldmath}}{\beta} (default \code{50}).}
+  \eqn{\boldsymbol{B}}{B} and \eqn{\boldsymbol{\beta}}{\beta} (default
+  \code{50}).}
 
-  \item{irwls.ftol}{positive numeric convergence criterion for IRWLS.
-  Convergence is assumed if the objective function changes in one IRWLS
+  \item{irwls.ftol}{a positive numeric with the convergence criterion for
+  IRWLS. Convergence is assumed if the objective function change of a IRWLS
   iteration does not exceed \code{ftol}.}
 
-  \item{force.gradient}{logical controlling whether the estimating
+  \item{force.gradient}{a logical scalar controlling whether the estimating
   equations or the gradient of the Gaussian restricted log-likelihood are
   evaluated even if all variogram parameters are fixed (default
   \code{FALSE}).}
 
-  \item{min.condnum}{positive numeric.  Minimum acceptable ratio of smallest to
-  largest singular value of the model matrix
-  \eqn{\mbox{\boldmath$X$\unboldmath}}{X} (default \code{1.e-12}).}
+  \item{min.condnum}{a positive numeric with the minimum acceptable
+  ratio of smallest to largest singular value of the model matrix
+  \eqn{\boldsymbol{X}}{X} (default \code{1.e-12}).}
 
-  \item{zero.dist}{positive numeric equal to the maximum distance, separating two
-  sampling locations that are still considered as being coincident.}
+  \item{zero.dist}{a positive numeric equal to the maximum distance,
+  separating two sampling locations that are still considered as being
+  coincident.}
 
-  \item{error.family.estimation}{character keyword, defining the
+  \item{error.family.estimation}{a character keyword, defining the
   probability distribution for \eqn{\varepsilon}{\epsilon} (default:
   \code{"gaussian"}) that is used to approximate the covariance of
-  \eqn{\widehat{\mbox{\boldmath$B$\unboldmath}}}{hatB} when solving the
+  \eqn{\widehat{\boldsymbol{B}}}{hatB} when solving the
   estimating equations, see \emph{Details}.}
 
-  \item{error.family.cov.effects}{character keyword, defining the
+  \item{error.family.cov.effects}{a character keyword, defining the
   probability distribution for \eqn{\varepsilon}{\epsilon} (default:
   \code{"gaussian"}) that is used to approximate the covariances of
-  \eqn{\widehat{\mbox{\boldmath$\beta$\unboldmath}}}{hat\beta},
-  \eqn{\widehat{\mbox{\boldmath$B$\unboldmath}}}{hatB} and
-  \eqn{\mbox{\boldmath$B$\unboldmath}-\widehat{\mbox{\boldmath$B$\unboldmath}}}{B-hatB},
+  \eqn{\widehat{\boldsymbol{\beta}}}{hat\beta},
+  \eqn{\widehat{\boldsymbol{B}}}{hatB} and
+  \eqn{\boldsymbol{B}-\widehat{\boldsymbol{B}}}{B-hatB},
   see \emph{Details}.}
 
-  \item{error.family.cov.residuals}{character keyword, defining the
+  \item{error.family.cov.residuals}{a character keyword, defining the
   probability distribution for \eqn{\varepsilon}{\epsilon} (default:\cr
   \code{"long.tailed"}) that is used to approximate the covariances of
-  \eqn{\widehat{\mbox{\boldmath$\varepsilon$\unboldmath}}=\mbox{\boldmath$Y$\unboldmath}
-  - \mbox{\boldmath$X$\unboldmath}
-  \widehat{\mbox{\boldmath$\beta$\unboldmath}} -
-  \widehat{\mbox{\boldmath$B$\unboldmath}}}{hat\epsilon=Y-X hat\beta -
-  hatB} and \eqn{\widehat{\mbox{\boldmath$\varepsilon$\unboldmath}} +
-  \widehat{\mbox{\boldmath$B$\unboldmath}} =\mbox{\boldmath$Y$\unboldmath}
-  - \mbox{\boldmath$X$\unboldmath}
-  \widehat{\mbox{\boldmath$\beta$\unboldmath}}}{hat\epsilon+ hatB=Y-X
+  \eqn{\widehat{\boldsymbol{\varepsilon}}=\boldsymbol{Y}
+  - \boldsymbol{X}
+  \widehat{\boldsymbol{\beta}} -
+  \widehat{\boldsymbol{B}}}{hat\epsilon=Y-X hat\beta -
+  hatB} and \eqn{\widehat{\boldsymbol{\varepsilon}} +
+  \widehat{\boldsymbol{B}} =\boldsymbol{Y}
+  - \boldsymbol{X}
+  \widehat{\boldsymbol{\beta}}}{hat\epsilon+ hatB=Y-X
   hat\beta}, see \emph{Details}.}
 
-  \item{cov.bhat}{logical controlling whether the covariances of
-  \eqn{\widehat{\mbox{\boldmath$B$\unboldmath}}}{hatB} are returned by
-  \code{georob} (default \code{FALSE}).}
+  \item{cov.bhat}{a logical scalar controlling whether the covariances of
+  \eqn{\widehat{\boldsymbol{B}}}{hatB} are returned by \code{georob}
+  (default \code{FALSE}).}
 
-  \item{full.cov.bhat}{logical controlling whether the full covariance
-  matrix (\code{TRUE}) or only the variance vector of
-  \eqn{\widehat{\mbox{\boldmath$B$\unboldmath}}}{hatB} is returned (default
-  \code{FALSE}).}
+  \item{full.cov.bhat}{a logical scalar controlling whether the full
+  covariance matrix (\code{TRUE}) or only the variance vector of
+  \eqn{\widehat{\boldsymbol{B}}}{hatB} is returned (default \code{FALSE}).}
 
-  \item{cov.betahat}{logical controlling whether the covariance matrix of
-  \eqn{\widehat{\mbox{\boldmath$\beta$\unboldmath}}}{hat\beta} is returned
+  \item{cov.betahat}{a logical scalar controlling whether the covariance
+  matrix of \eqn{\widehat{\boldsymbol{\beta}}}{hat\beta} is returned
   (default \code{TRUE}).}
 
-  \item{cov.delta.bhat}{logical controlling whether the covariances of
-  \eqn{\mbox{\boldmath$B$\unboldmath}-
-  \widehat{\mbox{\boldmath$B$\unboldmath}}}{B-hatB} are returned (default \code{TRUE}).}
+  \item{cov.delta.bhat}{a logical scalar controlling whether the covariances of
+  \eqn{\boldsymbol{B}-
+  \widehat{\boldsymbol{B}}}{B-hatB} are returned (default \code{TRUE}).}
 
-  \item{full.cov.delta.bhat}{logical controlling whether the full covariance
+  \item{full.cov.delta.bhat}{a logical scalar controlling whether the full covariance
   matrix (\code{TRUE}) or only the variance vector of
-  \eqn{\mbox{\boldmath$B$\unboldmath}-
-  \widehat{\mbox{\boldmath$B$\unboldmath}}}{B-hatB} is returned (default \code{TRUE}).}
+  \eqn{\boldsymbol{B}-
+  \widehat{\boldsymbol{B}}}{B-hatB} is returned (default \code{TRUE}).}
 
-  \item{cov.delta.bhat.betahat}{logical controlling whether the covariance
-  matrix of \eqn{\mbox{\boldmath$B$\unboldmath}-
-  \widehat{\mbox{\boldmath$B$\unboldmath}}}{B-hatB} and
-  \eqn{\widehat{\mbox{\boldmath$\beta$\unboldmath}}}{hat\beta} is returned
+  \item{cov.delta.bhat.betahat}{a logical scalar controlling whether the covariance
+  matrix of \eqn{\boldsymbol{B}-
+  \widehat{\boldsymbol{B}}}{B-hatB} and
+  \eqn{\widehat{\boldsymbol{\beta}}}{hat\beta} is returned
   (default \code{TRUE}).}
 
-  \item{cov.ehat}{logical controlling whether the covariances of
-  \eqn{\widehat{\mbox{\boldmath$\varepsilon$\unboldmath}}=\mbox{\boldmath$Y$\unboldmath}
-  - \mbox{\boldmath$X$\unboldmath}
-  \widehat{\mbox{\boldmath$\beta$\unboldmath}} -
-  \widehat{\mbox{\boldmath$B$\unboldmath}}}{hat\epsilon=Y-X hat\beta -
+  \item{cov.ehat}{a logical scalar controlling whether the covariances of
+  \eqn{\widehat{\boldsymbol{\varepsilon}}=\boldsymbol{Y}
+  - \boldsymbol{X}
+  \widehat{\boldsymbol{\beta}} -
+  \widehat{\boldsymbol{B}}}{hat\epsilon=Y-X hat\beta -
   hatB} are returned (default \code{TRUE}).}
 
-  \item{full.cov.ehat}{logical controlling whether the full covariance
+  \item{full.cov.ehat}{a logical scalar controlling whether the full covariance
   matrix (\code{TRUE}) or only the variance vector of
-  \eqn{\widehat{\mbox{\boldmath$\varepsilon$\unboldmath}}=\mbox{\boldmath$Y$\unboldmath}
-  - \mbox{\boldmath$X$\unboldmath}
-  \widehat{\mbox{\boldmath$\beta$\unboldmath}} -
-  \widehat{\mbox{\boldmath$B$\unboldmath}}}{hat\epsilon=Y-X hat\beta -
+  \eqn{\widehat{\boldsymbol{\varepsilon}}=\boldsymbol{Y}
+  - \boldsymbol{X}
+  \widehat{\boldsymbol{\beta}} -
+  \widehat{\boldsymbol{B}}}{hat\epsilon=Y-X hat\beta -
   hatB} is returned (default \code{FALSE}).}
 
-  \item{cov.ehat.p.bhat}{logical controlling whether the covariances of
-  \eqn{\widehat{\mbox{\boldmath$\varepsilon$\unboldmath}} +
-  \widehat{\mbox{\boldmath$B$\unboldmath}} =\mbox{\boldmath$Y$\unboldmath}
-  - \mbox{\boldmath$X$\unboldmath}
-  \widehat{\mbox{\boldmath$\beta$\unboldmath}}}{hat\epsilon+ hatB=Y-X
+  \item{cov.ehat.p.bhat}{a logical scalar controlling whether the covariances of
+  \eqn{\widehat{\boldsymbol{\varepsilon}} +
+  \widehat{\boldsymbol{B}} =\boldsymbol{Y}
+  - \boldsymbol{X}
+  \widehat{\boldsymbol{\beta}}}{hat\epsilon+ hatB=Y-X
   hat\beta} are returned (default \code{FALSE}).}
 
-  \item{full.cov.ehat.p.bhat}{logical controlling whether the full
+  \item{full.cov.ehat.p.bhat}{a logical scalar controlling whether the full
   covariance matrix (\code{TRUE}) or only the variance vector
-  of \eqn{\widehat{\mbox{\boldmath$\varepsilon$\unboldmath}}
-  + \widehat{\mbox{\boldmath$B$\unboldmath}}
-  =\mbox{\boldmath$Y$\unboldmath} - \mbox{\boldmath$X$\unboldmath}
-  \widehat{\mbox{\boldmath$\beta$\unboldmath}}}{hat\epsilon+ hatB=Y-X
+  of \eqn{\widehat{\boldsymbol{\varepsilon}}
+  + \widehat{\boldsymbol{B}}
+  =\boldsymbol{Y} - \boldsymbol{X}
+  \widehat{\boldsymbol{\beta}}}{hat\epsilon+ hatB=Y-X
   hat\beta} is returned (default \code{FALSE}).}
 
-  \item{hessian}{logical scalar controlling whether for Gaussian (RE)ML the
-  Hessian should be computed at the MLEs.}
+  \item{hessian}{a logical scalar controlling whether for Gaussian
+  (RE)ML the Hessian should be computed at the MLEs.}
 
   \item{rq}{a list of arguments passed to \code{rq} or a function such as
   \code{control.rq} that generates such a list (see
@@ -289,16 +290,15 @@ control.nlminb(control = list(rel.tol = 1.e-5), lower = -Inf,
   (see \code{\link{control.pcmp}} for allowed arguments).}
 
   \item{...}{for \code{fwd.transf}, \code{dfwd.transf} and
-  \code{bwd.transf} a named vectors of functions, extending the definition
+  \code{bwd.transf} a named vector of functions, extending the definition
   of transformations for variogram parameters (see \emph{Details}).}
 
   \item{variance, snugget, nugget, scale, alpha, beta, delta, gamma,
   kappa, lambda, mu, nu}{character strings with names of transformation
   functions of the variogram parameters.}
 
-  \item{f1, f2, omega, phi, zeta}{character
-  strings with names of transformation functions of the variogram
-  parameters.}
+  \item{f1, f2, omega, phi, zeta}{character strings with names of
+  transformation functions of the anisotropy variogram parameters.}
 
   \item{tau, rq.method, rq.alpha, ci, iid, interp, tcrit}{arguments passed
   as \code{...} to \code{\link[quantreg]{rq}}.  Note that only \code{"br"},
@@ -342,8 +342,8 @@ control.nlminb(control = list(rel.tol = 1.e-5), lower = -Inf,
       \item Assigning to a given argument of \code{param.transf} the name of
       the new function, e.g.\cr \code{variance = "my.fun"}.  }
 
-    Note the values given for the arguments of \code{param.transf} must match
-    the names of the functions returned by \code{fwd.transf},
+    Note that the values given for the arguments of \code{param.transf}
+    must match the names of the functions returned by \code{fwd.transf},
     \code{dfwd.transf} and \code{bwd.transf}.
 
   }
@@ -352,13 +352,13 @@ control.nlminb(control = list(rel.tol = 1.e-5), lower = -Inf,
   residuals}{
 
     The robustified estimating equations of robust REML depend on the
-    covariances of \eqn{\widehat{\mbox{\boldmath$B$\unboldmath}}}{hatB}.
+    covariances of \eqn{\widehat{\boldsymbol{B}}}{hatB}.
     These covariances (and the covariances of
-    \eqn{\mbox{\boldmath$B$\unboldmath}-\widehat{\mbox{\boldmath$B$\unboldmath}}}{B-hatB},
-    \eqn{\widehat{\mbox{\boldmath$\beta$\unboldmath}}}{hat\beta},
-    \eqn{\widehat{\mbox{\boldmath$\varepsilon$\unboldmath}}}{hat\epsilon},
-    \eqn{\widehat{\mbox{\boldmath$\varepsilon$\unboldmath}} +
-    \widehat{\mbox{\boldmath$B$\unboldmath}}}{hat\epsilon+ hatB}) are
+    \eqn{\boldsymbol{B}-\widehat{\boldsymbol{B}}}{B-hatB},
+    \eqn{\widehat{\boldsymbol{\beta}}}{hat\beta},
+    \eqn{\widehat{\boldsymbol{\varepsilon}}}{hat\epsilon},
+    \eqn{\widehat{\boldsymbol{\varepsilon}} +
+    \widehat{\boldsymbol{B}}}{hat\epsilon+ hatB}) are
     approximated by expressions that in turn depend on the variances of
     \eqn{\varepsilon}{\epsilon},
     \eqn{\psi(\varepsilon/\tau)}{\psi(\epsilon/\tau)} and the expectation
@@ -377,20 +377,20 @@ control.nlminb(control = list(rel.tol = 1.e-5), lower = -Inf,
       \item solving the estimating equations (\code{error.family.estimation}),
 
       \item computing the covariances of
-      \eqn{\widehat{\mbox{\boldmath$\beta$\unboldmath}}}{hat\beta},
-      \eqn{\widehat{\mbox{\boldmath$B$\unboldmath}}}{hatB} and
-      \eqn{\mbox{\boldmath$B$\unboldmath}-\widehat{\mbox{\boldmath$B$\unboldmath}}}{B-hatB}
+      \eqn{\widehat{\boldsymbol{\beta}}}{hat\beta},
+      \eqn{\widehat{\boldsymbol{B}}}{hatB} and
+      \eqn{\boldsymbol{B}-\widehat{\boldsymbol{B}}}{B-hatB}
       (\code{error.family.cov.effects}) and
 
       \item computing the covariances of
-      \eqn{\widehat{\mbox{\boldmath$\varepsilon$\unboldmath}}=\mbox{\boldmath$Y$\unboldmath}
-      - \mbox{\boldmath$X$\unboldmath}
-      \widehat{\mbox{\boldmath$\beta$\unboldmath}} -
-      \widehat{\mbox{\boldmath$B$\unboldmath}}}{hat\epsilon=Y-X hat\beta -
-      hatB} and \eqn{\widehat{\mbox{\boldmath$\varepsilon$\unboldmath}} +
-      \widehat{\mbox{\boldmath$B$\unboldmath}}
-      =\mbox{\boldmath$Y$\unboldmath} - \mbox{\boldmath$X$\unboldmath}
-      \widehat{\mbox{\boldmath$\beta$\unboldmath}}}{hat\epsilon+ hatB=Y-X
+      \eqn{\widehat{\boldsymbol{\varepsilon}}=\boldsymbol{Y}
+      - \boldsymbol{X}
+      \widehat{\boldsymbol{\beta}} -
+      \widehat{\boldsymbol{B}}}{hat\epsilon=Y-X hat\beta -
+      hatB} and \eqn{\widehat{\boldsymbol{\varepsilon}} +
+      \widehat{\boldsymbol{B}}
+      =\boldsymbol{Y} - \boldsymbol{X}
+      \widehat{\boldsymbol{\beta}}}{hat\epsilon+ hatB=Y-X
       hat\beta}\cr (\code{error.family.cov.residuals}).
 
     }
@@ -410,9 +410,11 @@ control.nlminb(control = list(rel.tol = 1.e-5), lower = -Inf,
 \code{control.optim} and \code{control.nlminb} all create lists with
 control parameters passed to \code{\link{georob}},
 \code{\link[quantreg]{rq}}, \code{\link[nleqslv]{nleqslv}},
-\code{\link[stats]{optim}}, \code{\link[stats]{nlminb}}, respectively.
-Note that the list returned by \code{code.georob} contains some
-components (\code{irwls.initial}, \code{tuning.psi.nr},
+\code{\link[stats]{optim}}, \code{\link[stats]{nlminb}}, see arguments
+above and the help pages of the respective functions for information about
+the components of these lists.  Note that the list returned by
+\code{code.georob} contains some components (\code{irwls.initial},
+\code{tuning.psi.nr},
 \code{cov.bhat.betahat}, \code{aux.cov.pred.target}) that cannot be
 changed by the user.
 
@@ -421,18 +423,19 @@ define what transformations are used for estimating the variogram
 parameters, and \code{fwd.transf}, \code{bwd.transf} and
 \code{dfwd.transf} return lists of functions with forward and backward
 transformations and the first derivatives of the forward
-transformations.
+transformations, see \emph{Parameter transformations} above.
 
 }
 
 
 
 \author{
-   Andreas Papritz \email{andreas.papritz@env.ethz.ch}.
+   Andreas Papritz \email{papritz@retired.ethz.ch}.
 }
 
 \seealso{
-  \code{\link{georobIntro}} for a description of the model and a brief summary of the algorithms;
+  \code{\link{georobPackage}} for a description of the model and a brief summary of the algorithms;
+
   \code{\link{georob}} for (robust) fitting of spatial linear models;
 
   \code{\link{georobObject}} for a description of the class \code{georob};
@@ -462,7 +465,7 @@ transformations.
 }
 
 \examples{
-\dontrun{
+\donttest{
 data(meuse)
 
 r.logzn.rob <- georob(log(zinc) ~ sqrt(dist), data = meuse, locations = ~ x + y,
@@ -517,11 +520,11 @@ qqnorm(ranef(r.logzn.rob, standard = TRUE)); abline(0, 1)
 %   maximized (default \code{1000}).}
 %
 %   \item{irwls.initial}{logical.  If \code{TRUE} (default) the estimating
-%   equations of \eqn{\mbox{\boldmath$B$\unboldmath}}{B} and
-%   \eqn{\mbox{\boldmath$\beta$\unboldmath}}{\beta} are always solved by
+%   equations of \eqn{\boldsymbol{B}}{B} and
+%   \eqn{\boldsymbol{\beta}}{\beta} are always solved by
 %   IRWLS from the initial estimates of
-%   \eqn{\widehat{\mbox{\boldmath$B$\unboldmath}}}{hatB} and
-%   \eqn{\widehat{\mbox{\boldmath$\beta$\unboldmath}}}{hat\beta}.  If
+%   \eqn{\widehat{\boldsymbol{B}}}{hatB} and
+%   \eqn{\widehat{\boldsymbol{\beta}}}{hat\beta}.  If
 %   \code{FALSE} then IRWLS starts from respective estimates computed for the
 %   variogram parameter estimates of the previous iteration of \code{nleqslv}
 %   or \code{optim}.}
@@ -531,8 +534,8 @@ qqnorm(ranef(r.logzn.rob, standard = TRUE)); abline(0, 1)
 %   log-transformed data is returned (default \code{FALSE}).}
 %
 %   \item{cov.bhat.betahat}{logical controlling whether the covariance matrix
-%   of \eqn{\widehat{\mbox{\boldmath$B$\unboldmath}}}{hatB} and
-%   \eqn{\widehat{\mbox{\boldmath$\beta$\unboldmath}}}{hat\beta} is returned
+%   of \eqn{\widehat{\boldsymbol{B}}}{hatB} and
+%   \eqn{\widehat{\boldsymbol{\beta}}}{hat\beta} is returned
 %   (default \code{FALSE}).}
 %
 %   \item{safe.param}{maximum acceptable value for any variogram parameter.

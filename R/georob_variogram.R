@@ -143,6 +143,7 @@ sample.variogram.default <-
   ## 2015-04-07 AP correcting error when computing directional variograms
   ## 2015-11-27 default method for generic sample.variogram, checking mandatory arguments
   ## 2020-02-14 AP sanity checks of arguments and for if() and switch()
+  ## 2024-01-21 AP more efficient calculation of lag.vectors for anisotropic variograms
 
   ## match arguments
 
@@ -160,7 +161,7 @@ sample.variogram.default <-
 
   stopifnot((is.matrix(locations) && is.numeric(locations)) || is.data.frame(locations))
 
-  stopifnot(length(object) >= 1       && is.numeric(object))
+  stopifnot(length(object) >= 1      && is.numeric(object))
   stopifnot(length(xy.angle.def) > 1 && is.numeric(xy.angle.def))
   stopifnot(length(xz.angle.def) > 1 && is.numeric(xz.angle.def))
 
@@ -182,8 +183,15 @@ sample.variogram.default <-
 
   # compute lag vectors for all pairs of coordinates
 
-  indices.pairs <- combn( NROW( locations ), 2L )
-  lag.vectors <- locations[ indices.pairs[2L,], ] - locations[ indices.pairs[1L,], ]
+  lag.vectors <- apply(
+    locations, 2,
+    function( x ){
+      nx <- length( x )
+      tmp <- matrix( rep( x, nx ), ncol = nx)
+      sel <- lower.tri( tmp )
+      tmp[sel] - (t( tmp ))[sel]
+    }
+  )
 
   # reflect lag vectors onto half circle
 
@@ -195,7 +203,10 @@ sample.variogram.default <-
 
   # compute pairwise differences of responses
 
-  t.diff <- object[indices.pairs[2L,]] - object[indices.pairs[1L,]]
+  nx <- length( object )
+  tmp <- matrix( rep( object, nx ), ncol = nx)
+  sel <- lower.tri( tmp )
+  t.diff <- tmp[sel] - (t( tmp ))[sel]
 
 #### -- compute lag distances and angular classes
 
@@ -704,6 +715,7 @@ function(
   ##               optim and nlminb for non-linear least squares
   ## 2020-02-14 AP sanity checks of arguments and for if() and switch()
   ## 2020-03-27 AP computing Hessian (observed Fisher information) of untransformed parameters
+  ## 2023-12-14 AP checking class by inherits()
 
 #### -- auxiliary function defining objective function
 
@@ -983,7 +995,7 @@ function(
 
   ## check values of arguments
 
-  stopifnot(identical(class(sv)[1], "sample.variogram"))
+  stopifnot( inherits( sv, "sample.variogram" ) )
 
   stopifnot(is.logical(fit.param))
   stopifnot(is.logical(fit.aniso))
@@ -1768,6 +1780,7 @@ function (
   ## 2016-08-18 AP changes for nested variogram models
   ## 2020-02-14 AP sanity checks of arguments and for if() and switch()
   ## 2020-03-27 AP computing Hessian (observed Fisher information) of untransformed parameters
+  ## 2023-12-21 AP replacement of identical(class(...), ...) by inherits(..., ...)
 
   ## check arguments
 
@@ -1819,7 +1832,7 @@ function (
 
       t.chol <- try( chol( object[["hessian.tfpa"]][sr, sr, drop = FALSE] ), silent = TRUE )
 
-      if( !identical( class( t.chol ), "try-error" ) ){
+      if( !inherits( t.chol, "try-error" ) ){
 
         ## compute covariance matrix of fitted transformed parameters
 
@@ -2351,6 +2364,8 @@ function(
   ## 2014-05-08 AP changes for plotting covariances and correlations
   ## 2016-08-19 AP changes for nested variogram models
   ## 2020-02-14 AP sanity checks of arguments and for if() and switch()
+  ## 2023-12-20 AP added on.exit(par(old.par))
+  ## 2023-12-21 AP replacement of identical(class(...), ...) by inherits(..., ...)
 
   ## match arguments
 
@@ -2390,7 +2405,7 @@ function(
   ## set up lag distances
 
   if( missing( to ) ){
-    u <- par( "usr" )[1L:2L]
+    u <- par( "usr" )
     to <- (u[2L] + 0.04/1.04*u[1L]) / (1.04 - 0.04^2/1.04)
   }
 
@@ -2398,7 +2413,7 @@ function(
 
   ## determine number of dimensions
 
-  if( identical( class( x ), "fitted.variogram" ) ){
+  if( inherits( x, "fitted.variogram" ) ){
     ndim <- attr( x, "ndim" )
   } else {
     ndim <- NCOL( x[["locations.objects"]][["coordinates"]] )

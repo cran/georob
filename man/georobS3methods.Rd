@@ -1,7 +1,8 @@
-% 2021-06-04 A. Papritz
+% 2024-01-26 A. Papritz
 % R CMD Rdconv -t html -o bla.html georobS3methods.Rd ; open bla.html; R CMD Rd2pdf --force georobS3methods.Rd;
+% hunspell -d en_GB-ise,en_GB-ize,en_GB-large -t -i mac  georobS3methods.Rd
 
-% \encoding{utf8}
+\encoding{utf8}
 \name{georobS3methods}
 \alias{georobS3methods}
 \alias{georobMethods}
@@ -82,31 +83,32 @@
   \code{\link[stats]{terms}} object or an object of class \code{georob}, see
   \code{\link{georobObject}}.}
 
-  \item{correlation}{logical controlling whether the correlation matrix of
-  the estimated regression coefficients and of the fitted variogram
-  parameters (only for non-robust fits) is computed (default \code{FALSE}).}
+  \item{correlation}{a logical scalar controlling whether the correlation
+  matrix of the estimated regression coefficients and of the fitted
+  variogram parameters (only for non-robust fits) is computed (default
+  \code{FALSE}).}
 
-  \item{digits}{positive integer indicating the number of decimal digits to print.}
+  \item{digits}{a positive integer indicating the number of decimal digits to print.}
 
   \item{level}{an optional integer giving the level for extracting the
   residuals from \code{object}.  \code{level = 0} extracts the regression
-  residuals \eqn{\widehat{B}(\mbox{\boldmath$s$\unboldmath}) +
-  \widehat{\varepsilon}(\mbox{\boldmath$s$\unboldmath})}{hatB(s) +
+  residuals \eqn{\widehat{B}(\boldsymbol{s}) +
+  \widehat{\varepsilon}(\boldsymbol{s})}{hatB(s) +
   hat\epsilon(s)} and \code{level = 1} (default) only the estimated errors
-  \eqn{\widehat{\varepsilon}(\mbox{\boldmath$s$\unboldmath})}{hat\epsilon(s)}.}
+  \eqn{\widehat{\varepsilon}(\boldsymbol{s})}{hat\epsilon(s)}.}
 
-  \item{signif}{confidence level for computing confidence intervals for
-  variogram parameters (default \code{0.95}).}
+  \item{signif}{a numeric with the confidence level for computing
+  confidence intervals for variogram parameters (default \code{0.95}).}
 
-  \item{standard}{logical controlling whether the spatial random effects
-  \eqn{\mbox{\boldmath$B$\unboldmath}}{B} should be standardized (default
+  \item{standard}{a logical scalar controlling whether the spatial random effects
+  \eqn{\boldsymbol{B}}{B} should be standardized (default
   \code{FALSE}).}
 
-  \item{type}{character keyword indicating the type of residuals to
+  \item{type}{a character keyword indicating the type of residuals to
   compute, see \code{\link[stats]{residuals.lm}}.
   \code{type = "huber"}
   computes `huberized' residuals \eqn{\widehat{\sigma} /
-  \gamma_1\psi(\widehat{\varepsilon}(\mbox{\boldmath$s$\unboldmath}) /
+  \gamma_1\psi(\widehat{\varepsilon}(\boldsymbol{s}) /
   \widehat{\sigma})}{hat\sigma/\gamma_1\psi(hat\epsilon(s)/hat\sigma)}.
   }
 
@@ -131,9 +133,9 @@
 
   The methods \code{residuals} (and \code{resid}) extract either the
   estimated independent errors
-  \eqn{\widehat{\varepsilon}(\mbox{\boldmath$s$\unboldmath})}{hat\epsilon(s)}
+  \eqn{\widehat{\varepsilon}(\boldsymbol{s})}{hat\epsilon(s)}
   or the sum of the latter quantities and the spatial random effects
-  \eqn{\widehat{B}(\mbox{\boldmath$s$\unboldmath})}{hatB(s)}.
+  \eqn{\widehat{B}(\boldsymbol{s})}{hatB(s)}.
   \code{rstandard} does the same but standardizes the residuals to unit
   variance.  \code{ranef} (\code{random.effects}) extracts the spatial
   random effects with the option to standardize them as well, and
@@ -196,21 +198,22 @@
     \eqn{\tau^2}.}
 
     \item{\code{coefficients}}{a 4-column matrix with estimated regression
-    coefficients, their standard errors \var{t}-statistics and
+    coefficients, their standard errors, \var{t}-statistics and
     corresponding (two-sided) \var{p}-values.}
 
-    \item{\code{correlation}}{an optional lower-triagonal matrix with the
-    Pearson correlation coefficients of the estimated regression
-    coefficients.}
+    \item{\code{correlation}}{an optional \code{\link{compress}}ed
+    lower-triagonal matrix with the Pearson correlation coefficients of the
+    estimated regression coefficients.}
 
     \item{\code{param.aniso}}{either a vector (robust REML) or a 3-column
     matrix (Gaussian REML) with estimated variogram and anisotropy
     parameters, complemented for Gaussian REML with confidence limits, see
     \emph{Details}.}
 
-    \item{\code{cor.tf.param}}{an optional lower-triagonal matrix with the
-    Pearson correlation coefficients of estimated transformed variogram and
-    anisotropy parameters, see \emph{Details}.}
+    \item{\code{cor.tf.param}}{an optional \code{\link{compress}}ed
+    lower-triagonal matrix with the Pearson correlation coefficients of
+    estimated transformed variogram and anisotropy parameters, see
+    \emph{Details}.}
 
     \item{\code{se.residuals}}{a vector with the standard errors of the
     estimated \eqn{\varepsilon}{\epsilon}.}
@@ -221,11 +224,11 @@
 
 
 \author{
-   Andreas Papritz \email{andreas.papritz@env.ethz.ch}.
+   Andreas Papritz \email{papritz@retired.ethz.ch}.
 }
 
 \seealso{
-  \code{\link{georobIntro}} for a description of the model and a brief summary of the algorithms;
+  \code{\link{georobPackage}} for a description of the model and a brief summary of the algorithms;
 
   \code{\link{georob}} for (robust) fitting of spatial linear models;
 
@@ -256,7 +259,7 @@
 }
 
 \examples{
-\dontrun{
+\donttest{
 
 data(meuse)
 

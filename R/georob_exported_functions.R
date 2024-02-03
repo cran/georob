@@ -754,6 +754,7 @@ pmm <-
   ## 2015-03-13 AP small changes in f.aux
   ## 2016-07-20 AP arguments renamed, new control of recursive parallelization
   ## 2018-01-05 AP improved memory management in parallel computations
+  ## 2023-12-20 AP added on.exit(options(old.opt)), deleted options(error = NULL)
 
   ## auxiliary function
 
@@ -792,7 +793,8 @@ pmm <-
       ## create a SNOW cluster on windows OS
 
       if( !sfIsRunning() ){
-        options( error = f.stop.cluster )
+        old.opt <- options( error = f.stop.cluster )
+        on.exit( options( old.opt ) )
         junk <- sfInit( parallel = TRUE, cpus = ncores )
       }
 
@@ -802,7 +804,6 @@ pmm <-
 
       if( control[["sfstop"]] ){
         junk <- sfStop()
-        options( error = NULL )
       }
 
     } else {
@@ -1254,8 +1255,8 @@ control.nlminb <-
 ## ======================================================================
 control.pcmp <-
   function(
-    pmm.ncores = 1, gcr.ncores = 1, max.ncores = detectCores(),
-    f = 1, sfstop = FALSE, allow.recursive = TRUE,
+    pmm.ncores = 1, gcr.ncores = 1, max.ncores = parallel::detectCores(),
+    f = 1, sfstop = FALSE, allow.recursive = FALSE,
     fork = !identical( .Platform[["OS.type"]], "windows" ),
     ...
   )
@@ -1268,6 +1269,7 @@ control.pcmp <-
   ## 2015-07-29 AP changes for elimination of parallelized computation of gradient or estimating equations
   ## 2016-07-20 AP renamed function, separate ncores arguments various parallelized computations
   ## 2020-02-14 AP sanity checks of arguments and for if() and switch()
+  ## 2024-01-25 AP changed default for allow.recursive
 
   ## check arguments
 
@@ -1469,43 +1471,48 @@ function( model, d )
   ## 2012-03-30 A. Papritz
   ## 2014-05-15 AP changes for version 3 of RandomFields
   ## 2020-02-14 AP sanity checks of arguments and for if() and switch()
+  ## 2023-11-17 AP correction of error for RMlgd (valid only for d in (1, 2)
+  ## 2023-11-17 AP correction of lower bound for RMdampedcos
+  ## 2023-12-20 AP correction of upper bounds of alpha for RMfbm and RMgenfbm
 
   ## check arguments
 
   stopifnot(identical(length(model), 1L) && is.character(model))
   stopifnot(identical(length(d), 1L)     && is.numeric(d) && d >= 1)
 
+  deps <- .Machine$double.eps * 2.
+
   switch(
     model,
     "RMaskey"         = list( alpha = c( 0.5 * (d + 1L), Inf ) ),
     "RMbessel"        = list( nu = c( 0.5 * (d - 2L), Inf ) ),
-    "RMcauchy"        = list( gamma = c( 1.e-18, Inf ) ),
+    "RMcauchy"        = list( gamma = c( deps, Inf ) ),
     "RMcircular"      = NULL,
     "RMcubic"         = NULL,
-    "RMdagum"         = list( beta = c( 1.e-18, 1.), gamma = c( 1.e-18, 1.-1.e-18) ),
-    "RMdampedcos"     = list( lambda = c( if( d > 2L ) sqrt(3.) else 1., Inf ) ),
-    "RMdewijsian"     = list( alpha = c( 1.e-18, 2. ) ),
+    "RMdagum"         = list( beta = c( deps, 1.), gamma = c( deps, 1.-deps) ),
+    "RMdampedcos"     = list( lambda = c( 1./tan(pi/(2 * d)), Inf ) ),
+    "RMdewijsian"     = list( alpha = c( deps, 2. ) ),
     "RMexp"           = NULL,
-    "RMfbm"           = list( alpha = c( 1.e-18, 2.) ),
+    "RMfbm"           = list( alpha = c( deps, 2. - deps) ),
     "RMgauss"         = NULL,
-    "RMgencauchy"     = list( alpha = c(1.e-18, 2.), beta = c(1.e-18, Inf) ),
-    "RMgenfbm"        = list( alpha = c(1.e-18, 2.), delta = c(1.e-18, 1.-1.e-18) ),
+    "RMgencauchy"     = list( alpha = c(deps, 2.), beta = c(deps, Inf) ),
+    "RMgenfbm"        = list( alpha = c(deps, 2. - deps), delta = c(deps, 1. - deps) ),
     "RMgengneiting"   = list( kappa = c(1, 3), mu = c( d/2, Inf ) ),
     "RMgneiting"      = NULL,
     "RMlgd"           = list(
                         alpha = c(
-                          1.e-18,
-                          if( d <= 3L ) 0.5 * (3L-d) else stop("dimension > 3 not allowed for RMlgd model" )
+                          deps,
+                          if( d <= 2L ) 0.5 * (3L-d) else stop("dimension > 2 not allowed for RMlgd model" )
                         ),
-                        beta = c(1.e-18, Inf)
+                        beta = c(deps, Inf)
                       ),
-    "RMmatern"        = list( nu = c(1.e-18, Inf) ),
+    "RMmatern"        = list( nu = c(deps, Inf) ),
     "RMpenta"         = NULL,
     "RMqexp"          = list( alpha = c(0., 1.) ),
     "RMspheric"       = NULL,
-    "RMstable"        = list( alpha = c(1.e-18, 2.) ),
+    "RMstable"        = list( alpha = c(deps, 2.) ),
     "RMwave"          = NULL,
-    "RMwhittle"       = list( nu = c(1.e-18, Inf) ),
+    "RMwhittle"       = list( nu = c(deps, Inf) ),
     stop( model, " variogram not implemented" )
   )
 }
@@ -1602,7 +1609,7 @@ function(
 ### profilelogLik
 
 profilelogLik <- function( object, values, use.fitted = TRUE, verbose = 0,
-  ncores = min( detectCores(), NROW(values) ) ){
+  ncores = min( parallel::detectCores(), NROW(values) ) ){
 
   ## function to compute (restricted) likelihood profile for a georob fit
 
@@ -1615,6 +1622,10 @@ profilelogLik <- function( object, values, use.fitted = TRUE, verbose = 0,
   ## 2016-08-12 AP changes for nested variogram models
   ## 2017-12-22 AP improved memory management in parallel computations
   ## 2020-02-14 AP sanity checks of arguments and for if() and switch()
+  ## 2023-12-20 AP checking class by inherits()
+  ## 2023-12-20 AP added on.exit(options(old.opt)), replaced makeCluster by makePSOCKcluster
+  ## 2023-12-20 AP replacement of identical(class(...), ...) by inherits(..., ...)
+  ## 2024-02-01 AP saving SOCKcluster.RData to tempdir()
 
 #### -- auxiliary function
 
@@ -1677,7 +1688,7 @@ profilelogLik <- function( object, values, use.fitted = TRUE, verbose = 0,
     "some mandatory arguments are missing"
   )
 
-  stopifnot(identical(class(object)[1], "georob"))
+  stopifnot(inherits(object, "georob"))
 
   stopifnot(identical(length(use.fitted), 1L) && is.logical(use.fitted))
 
@@ -1712,7 +1723,7 @@ profilelogLik <- function( object, values, use.fitted = TRUE, verbose = 0,
     )
   )
 
-  if( identical( class( object[["na.action"]] ), "omit" ) ) data <- na.omit(data)
+  if( inherits( object[["na.action"]], "omit" ) ) data <- na.omit(data)
 
   ## select subset if appropriate
 
@@ -1838,11 +1849,14 @@ profilelogLik <- function( object, values, use.fitted = TRUE, verbose = 0,
 
   if( ncores > 1L && !object[["control"]][["pcmp"]][["fork"]] ){
 
-    ## create a SNOW cluster on windows OS
+    ## create a PSOCK cluster on windows OS
 
-    clstr <- makeCluster( ncores, type = "SOCK" )
-    save( clstr, file = "SOCKcluster.RData" )
-    options( error = f.stop.cluster )
+    fname <- file.path( tempdir(), "SOCKcluster.RData" )
+
+    clstr <- makePSOCKcluster( ncores )
+    save( clstr, file = fname )
+    old.opt <- options( error = f.stop.cluster )
+    on.exit( options( old.opt ) )
 
     ## export required items to workers
 
@@ -1855,7 +1869,7 @@ profilelogLik <- function( object, values, use.fitted = TRUE, verbose = 0,
       f.aux
     )
 
-    f.stop.cluster( clstr )
+    f.stop.cluster( clstr, fname )
 
   } else {
 
@@ -1889,3 +1903,309 @@ profilelogLik <- function( object, values, use.fitted = TRUE, verbose = 0,
 
 }
 
+
+##   ##############################################################################
+### gencorr
+
+gencorr <- function( x, variogram.model, param ){
+
+  ## function computes generalized correlation (= negative semivariance) of
+  ## some stationary and IRF autocorrelation models available in the
+  ## RandomFields package.  the function is used as a substitute for
+  ## RFfctn{RandomFields}
+
+  ## arguments:
+  ## x          	    vector with (possibly rotated) scaled lag distances
+  ## variogram.model  name of autocorrelation model
+  ## param            extra parameter of autocorrelation model
+
+  ## function returns vector with negative semivariances
+
+  ## 2023-11-17 Andreas Papritz
+  ## 2024-02-01 AP moved to code file for exported functions
+
+  result <- switch(
+    variogram.model[1],
+
+#### --- RMaskey (compact support)
+    RMaskey = {
+
+      A <- unname( param["alpha"] )
+
+      res <- rep( -1., length( x ) )
+      sel <- x < 1.
+      xx <- x[sel]
+
+      res[sel] <- (1 - xx)^A - 1.
+      res
+
+    },
+
+
+#### --- RMbessel
+    RMbessel = {
+
+      A <- unname( param["nu"] )
+
+      res <- rep( 0., length( x ) )
+      sel <- x > 0.
+      xx <- x[sel]
+
+      res[sel] <- ( 2.^A * gamma(1.+A) * xx^(-A) * besselJ( xx, A ) ) - 1.
+      res
+
+    },
+
+#### --- RMcauchy
+    RMcauchy = {
+
+      A <- unname( param["gamma"] )
+      ( 1. + x^2 )^(-A) - 1.
+
+    },
+
+#### --- RMcircular (compact support)
+    RMcircular = {
+
+      res <- rep( -1., length( x ) )
+      sel <- x < 1.
+      xx <- x[sel]
+
+      res[sel] <- -2./pi * ( xx * sqrt( 1. - xx^2 ) + asin( xx ) )
+      res
+
+    },
+
+#### --- RMcubic (compact support)
+    RMcubic = {
+
+      res <- rep( -1., length( x ) )
+      sel <- x < 1.
+      xx <- x[sel]
+
+      res[sel] <- -7*xx^2 + 8.75*xx^3 - 3.5*xx^5 + 0.75*xx^7
+      res
+
+    },
+
+#### --- RMdagum
+    RMdagum = {
+
+      A <- unname( param["beta"] )
+      B <- unname( param["gamma"] )
+
+      -( 1. + x^(-A) )^(-B/A)
+
+    },
+
+#### --- RMdampedcos
+    RMdampedcos = {
+
+      A <- unname( param["lambda"] )
+      exp( -A * x ) * cos( x ) - 1.
+
+    },
+
+#### --- RMdewijsian (IRF0 model)
+    RMdewijsian = {
+
+      A <- unname( param["alpha"] )
+      -log( x^A + 1. )
+
+    },
+
+#### --- RMexp
+    RMexp = {
+
+      exp( -x ) - 1.
+
+    },
+
+#### --- RMfbm (IRF0 model)
+    RMfbm = {
+
+      A <- unname( param["alpha"] )
+      -x^A
+
+    },
+
+#### --- RMgauss
+    RMgauss = {
+
+       exp( -x^2 ) - 1.
+
+    },
+
+#### --- RMgencauchy
+    RMgencauchy = {
+
+      A <- unname( param["alpha"] )
+      B <- unname( param["beta"] )
+      ( 1. + x^A )^(-B/A) - 1.
+
+    },
+
+#### --- RMgenfbm (IRF0 model)
+    RMgenfbm = {
+
+      A <- unname( param["alpha"] )
+      B <- unname( param["delta"] )
+      -( ( x^A + 1)^B - 1.)
+
+    },
+
+#### --- RMgengneiting (compact support)
+    RMgengneiting = {
+
+      A <- unname( param["kappa"] )
+      B <- unname( param["mu"] )
+
+      res <- rep( -1., length( x ) )
+      sel <- x < 1.
+      xx <- x[sel]
+
+      res[sel] <- if( identical( as.integer(A), 1L ) ){
+
+        BB <- B + 2.5
+        ( 1. + BB * xx ) * ( 1. - xx)^BB - 1.
+
+      } else if( identical( as.integer(A), 2L ) ){
+
+        BB <- B + 4.5
+        ( 1. + BB * xx + (BB^2 - 1.) * xx^2 / 3. ) * (1. - xx)^BB - 1.
+
+      } else if( identical( as.integer(A), 3L ) ){
+
+        BB <- B + 6.5
+        (
+          1 + BB * xx + (2. * BB^2 - 3.) * xx^2 / 5. +
+          (BB^2 - 4.) * BB * xx^3 / 15.
+        ) * (1. - xx)^BB - 1.
+
+      } else {
+        stop( "RMgengneiting model undefined for 'kappa' !%in% 1:3" )
+      }
+      res
+
+    },
+
+#### --- RMgneiting (compact support)
+    RMgneiting = {
+
+      res <- rep( -1., length( x ) )
+      sel <- x < 1. / 0.301187465825
+      xx <- 0.301187465825 * x[sel]
+
+      res[sel] <- (1. + 8.* xx + 25. * xx^2 + 32. * xx^3 ) *
+        (1. - xx )^8 - 1.
+      res
+
+    },
+
+#### --- RMlgd (cf Gneiting, T. / Schlather, M.
+  ## Stochastic models that separate fractal dimension and the Hurst effect,
+  ## 2004, SIAM Review , Vol. 46, No. 2, p. 269-282
+    RMlgd = {
+
+      A <- unname( param["alpha"] )
+      B <- unname( param["beta"] )
+
+      res <- rep( NA_real_, length( x ) )
+      sel <- x <= 1.
+
+      res[sel]  <- -B / (A + B) * x[sel]^A
+      res[!sel] <- A / (A + B) * x[!sel]^(-B) - 1.
+      res
+
+    },
+
+#### --- RMmatern
+    RMmatern = {
+
+      A <- unname( param["nu"] )
+
+      res <- rep( 0., length( x ) )
+      sel <- x > 0.
+      xx <- sqrt(2. * A) * x[sel]
+
+      res[sel] <- 2.^(1. - A) / gamma(A) * xx^A * besselK( xx, A ) - 1.
+      res
+
+    },
+
+#### --- RMpenta (compact support)
+    RMpenta = {
+
+      res <- rep( -1., length( x ) )
+      sel <- x < 1.
+      xx <- x[sel]
+
+      res[sel] <- -22./3. * xx^2 + 33. * xx^4 - 38.5 * xx^5 +
+        16.5 * xx^7 - 5.5 * xx^9 + 5./6. * xx^11
+      res
+
+    },
+
+#### --- RMqexp
+    RMqexp = {
+
+      A <- unname( param["alpha"] )
+
+      ( 2. * exp(-x) - A * exp(-2.*x) ) / (2. - A) - 1.
+
+    },
+
+#### --- RMspheric (compact support)
+    RMspheric = {
+
+      res <- rep( -1., length( x ) )
+      sel <- x < 1.
+      xx <- x[sel]
+
+      res[sel] <- -1.5 * xx + 0.5 * xx^3
+      res
+
+    },
+
+#### --- RMstable
+    RMstable = {
+
+      A <- unname( param["alpha"] )
+
+      exp( -x^A ) - 1.
+
+    },
+
+#### --- RMwave
+    RMwave = {
+
+      res <- rep( 0., length( x ) )
+      sel <- x > 0.
+      xx <- x[sel]
+
+      res[sel] <- sin( xx ) / xx - 1.
+      res
+
+    },
+
+#### --- RMwhittle
+    RMwhittle = {
+
+      A <- unname( param["nu"] )
+
+      res <- rep( 0., length( x ) )
+      sel <- x > 0.
+      xx <- x[sel]
+
+      res[sel] <- 2.^(1 - A) / gamma(A) * xx^A * besselK( xx, A ) - 1.
+      res
+
+    },
+
+    stop( variogram.model, " model undefined" )
+
+  )
+
+  return(result)
+
+}

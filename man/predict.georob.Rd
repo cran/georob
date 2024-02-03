@@ -1,4 +1,4 @@
-% 2021-06-04 A. Papritz
+% 2024-02-01 A. Papritz
 % R CMD Rdconv -t html -o bla.html predict.georob.Rd ; open bla.html; R CMD Rd2pdf --force predict.georob.Rd;
 
 \encoding{utf8}
@@ -41,31 +41,31 @@ control.predict.georob(full.covmat = FALSE, extended.output = FALSE,
   \code{\link[sp]{SpatialPixels}} or
   \code{\link[sp]{SpatialGrid}},
   in which to look for variables
-  with which to compute fitted values or Kriging predictions, see Details.\cr If
+  with which to compute fitted values or Kriging predictions, see \emph{Details}.\cr If
   \code{newdata} is a \code{\link[sp]{SpatialPolygonsDataFrame}} then
   block Kriging predictions are computed, otherwise point Kriging
   predictions.}
 
-  \item{type}{character keyword defining what target quantity should be
+  \item{type}{a character keyword defining what target quantity should be
   predicted (computed).  Possible values are
 
     \itemize{
 
       \item \code{"signal"}: the \dQuote{signal}
-      \eqn{Z(\mbox{\boldmath$s$\unboldmath}) =
-      \mbox{\boldmath$x$\unboldmath}(\mbox{\boldmath$s$\unboldmath})^\mathrm{T}
-      \mbox{\boldmath$\beta$\unboldmath} +
-      B(\mbox{\boldmath$s$\unboldmath})}{Y(s) = x(s)^T \beta + B(s)} of
+      \eqn{Z(\boldsymbol{s}) =
+      \boldsymbol{x}(\boldsymbol{s})^\mathrm{T}
+      \boldsymbol{\beta} +
+      B(\boldsymbol{s})}{Y(s) = x(s)^T \beta + B(s)} of
       the process (default),
 
       \item \code{"response"}: the observations
-      \eqn{Y(\mbox{\boldmath$s$\unboldmath}) =
-      Z(\mbox{\boldmath$s$\unboldmath}) +
-      \varepsilon(\mbox{\boldmath$s$\unboldmath}),}{Y(s)=Z(s) + \epsilon(s),}
+      \eqn{Y(\boldsymbol{s}) =
+      Z(\boldsymbol{s}) +
+      \varepsilon(\boldsymbol{s}),}{Y(s)=Z(s) + \epsilon(s),}
 
       \item \code{"trend"}: the external drift
-      \eqn{\mbox{\boldmath$x$\unboldmath}(\mbox{\boldmath$s$\unboldmath})^\mathrm{T}
-      \mbox{\boldmath$\beta$\unboldmath},}{x(s)^T \beta,}
+      \eqn{\boldsymbol{x}(\boldsymbol{s})^\mathrm{T}
+      \boldsymbol{\beta},}{x(s)^T \beta,}
 
       \item \code{"terms"}: the model terms.
     }
@@ -73,11 +73,11 @@ control.predict.georob(full.covmat = FALSE, extended.output = FALSE,
 
   \item{terms}{If \code{type = "terms"}, which terms (default is all terms).}
 
-  \item{se.fit}{logical, only used if \code{type} is equal to
+  \item{se.fit}{a logical scalar, only used if \code{type} is equal to
   \code{"terms"}, see \code{\link[stats]{predict.lm}}.}
 
 
-  \item{signif}{positive numeric equal to the tolerance or confidence level
+  \item{signif}{a positive numeric equal to the tolerance or confidence level
   for computing respective intervals.  If \code{NULL} no intervals are
   computed.}
 
@@ -106,30 +106,32 @@ control.predict.georob(full.covmat = FALSE, extended.output = FALSE,
   \code{pheight}, \code{napp} and \code{pcmp} or a function such as
   \code{control.predict.georob} that generates such a list.}
 
-  \item{full.covmat}{logical controlling whether the full covariance matrix
-  of the prediction errors is returned (\code{TRUE}) or only the vector
-  with its diagonal elements (\code{FALSE}, default), see \emph{Value} for
-  an explanation of the effect of \code{full.covmat}.}
+  \item{full.covmat}{a logical scalar controlling whether the full
+  covariance matrix of the prediction errors is returned (\code{TRUE}) or
+  only the vector with its diagonal elements (\code{FALSE}, default), see
+  \emph{Value} for an explanation of the effect of \code{full.covmat}.}
 
-  \item{extended.output}{logical controlling whether the covariance
+  \item{extended.output}{a logical scalar controlling whether the covariance
   matrices of the Kriging predictions and of the data should be computed, see
   \emph{Details} (default \code{FALSE}).}
 
-  \item{mmax}{integer equal to the maximum number (default \code{10000}) of
-  prediction items, computed in a sub-task, see \emph{Details}.}
+  \item{mmax}{a positive integer equal to the maximum number (default
+  \code{10000}) of prediction items, computed in a sub-task in parallelized
+  computations, see \emph{Details}.}
 
-  \item{ncores}{positive integer controlling how many cores are used for
+  \item{ncores}{a positive integer controlling how many cores are used for
   parallelized computations, see \emph{Details}.}
 
   \item{pwidth, pheight, napp}{numeric scalars, used to tune numeric
   integration of semi-variances for block Kriging, see
   \code{\link[constrainedKriging]{preCKrige}}.}
 
-  \item{pcmp}{a list of arguments passed to \code{\link{pmm}} or a
-  function such as \code{\link{control.pcmp}} that generates such a list
-  (see \code{\link{control.pcmp}} for allowed arguments).}
+  \item{pcmp}{a list of arguments passed to \code{\link{pmm}} and other
+  functions that carry out parallelized computations or a function such as
+  \code{\link{control.pcmp}} that generates such a list (see
+  \code{\link{control.pcmp}} for allowed arguments).}
 
-  \item{verbose}{positive integer controlling logging of diagnostic
+  \item{verbose}{a positive integer controlling logging of diagnostic
   messages to the console.\cr  \code{verbose = 0} (default) largely suppresses
   such messages.}
 
@@ -149,7 +151,7 @@ control.predict.georob(full.covmat = FALSE, extended.output = FALSE,
   \code{SpatialGridDataFrame}.
 
   The \code{predict} method for class \code{georob} uses the packages
-  \pkg{parallel}, \pkg{snow} and \pkg{snowfall} for parallelized
+  \pkg{parallel} and \pkg{snowfall} for parallelized
   computation of Kriging predictions.  If there are \eqn{m} items to
   predict, the task is split into \code{ceiling(m/mmax)} sub-tasks that are
   then distributed to \code{ncores} CPUs.  Evidently, \code{ncores = 1}
@@ -167,21 +169,21 @@ control.predict.georob(full.covmat = FALSE, extended.output = FALSE,
   \itemize{
 
     \item \code{trend}: the fitted values,
-    \eqn{\mbox{\boldmath$x$\unboldmath}(\mbox{\boldmath$s$\unboldmath})\mathrm{^T}\widehat{\mbox{\boldmath$\beta$\unboldmath}}}{x(s)^T hat\beta},
+    \eqn{\boldsymbol{x}(\boldsymbol{s})\mathrm{^T}\widehat{\boldsymbol{\beta}}}{x(s)^T hat\beta},
 
     \item \code{var.pred}: the variances of the Kriging predictions,
-    \eqn{\mathrm{Var}_{\hat{\theta}}[\widehat{Y}(\mbox{\boldmath$s$\unboldmath})]}{Var[hatY(s)]} or
-    \eqn{\mathrm{Var}_{\hat{\theta}}[\widehat{Z}(\mbox{\boldmath$s$\unboldmath})]}{Var[hatS(s)]},
+    \eqn{\mathrm{Var}_{\hat{\theta}}[\widehat{Y}(\boldsymbol{s})]}{Var[hatY(s)]} or
+    \eqn{\mathrm{Var}_{\hat{\theta}}[\widehat{Z}(\boldsymbol{s})]}{Var[hatS(s)]},
 
     \item \code{cov.pred.target}: the covariances between the predictions and the
     prediction targets,\cr
-    \eqn{\mathrm{Cov}_{\hat{\theta}}[\widehat{Y}(\mbox{\boldmath$s$\unboldmath}),Y(\mbox{\boldmath$s$\unboldmath})]}{Cov[hatY(s),Y(s)]} or
-    \eqn{\mathrm{Cov}_{\hat{\theta}}[\widehat{Z}(\mbox{\boldmath$s$\unboldmath}),Z(\mbox{\boldmath$s$\unboldmath})]}{Cov[hatS(s),Z(s)]},
+    \eqn{\mathrm{Cov}_{\hat{\theta}}[\widehat{Y}(\boldsymbol{s}),Y(\boldsymbol{s})]}{Cov[hatY(s),Y(s)]} or
+    \eqn{\mathrm{Cov}_{\hat{\theta}}[\widehat{Z}(\boldsymbol{s}),Z(\boldsymbol{s})]}{Cov[hatS(s),Z(s)]},
 
 
     \item \code{var.target}: the variances of the prediction targets
-    \eqn{\mathrm{Var}_{\hat{\theta}}[Y(\mbox{\boldmath$s$\unboldmath})]}{Var[Y(s)]} or
-    \eqn{\mathrm{Var}_{\hat{\theta}}[Z(\mbox{\boldmath$s$\unboldmath})]}{Var[Z(s)]}.
+    \eqn{\mathrm{Var}_{\hat{\theta}}[Y(\boldsymbol{s})]}{Var[Y(s)]} or
+    \eqn{\mathrm{Var}_{\hat{\theta}}[Z(\boldsymbol{s})]}{Var[Z(s)]}.
 
   }
 
@@ -192,6 +194,10 @@ control.predict.georob(full.covmat = FALSE, extended.output = FALSE,
 }
 
 \value{
+
+  The method \code{predict.georob} returns, depending on its arguments, the
+  following objects:
+
   If \code{type} is equal to \code{"terms"} then a vector, a matrix, or a
   list with prediction results along with bounds and standard errors, see
   \code{\link[stats]{predict.lm}}.  Otherwise, the structure and contents
@@ -239,8 +245,8 @@ control.predict.georob(full.covmat = FALSE, extended.output = FALSE,
     as described above for\cr \code{full.covmat = FALSE}.
 
     \item \code{mse.pred}: the full covariance matrix of the prediction errors,
-    \eqn{Y(\mbox{\boldmath$s$\unboldmath})-\widehat{Y}(\mbox{\boldmath$s$\unboldmath})}{Y(s)-hatY(s)} or
-    \eqn{Z(\mbox{\boldmath$s$\unboldmath})-\widehat{Z}(\mbox{\boldmath$s$\unboldmath})}{s(s)-hatS(s)}
+    \eqn{Y(\boldsymbol{s})-\widehat{Y}(\boldsymbol{s})}{Y(s)-hatY(s)} or
+    \eqn{Z(\boldsymbol{s})-\widehat{Z}(\boldsymbol{s})}{s(s)-hatS(s)}
     see \emph{Details}.
 
     \item \code{var.pred}: the full covariance matrix of the
@@ -254,14 +260,17 @@ control.predict.georob(full.covmat = FALSE, extended.output = FALSE,
 
   }
 
+  The function \code{control.predict.georob} returns a list with control
+  parameters to steer \code{predict.georob}, see arguments of the
+  function above for its components.
+
 }
 
 \references{
   Nussbaum, M., Papritz, A., Baltensweiler, A. and Walthert, L. (2014)
   Estimating soil organic carbon stocks of {Swiss} forest soils by robust
   external-drift kriging.  \emph{Geoscientific Model Development},
-  \bold{7}, 1197--1210.  \doi{10.5194/gmd-7-1197-2014},
-  \url{https://gmd.copernicus.org/articles/7/1197/2014/}.
+  \bold{7}, 1197--1210.  \doi{10.5194/gmd-7-1197-2014}.
 
   \enc{Künsch}{Kuensch}, H. R., Papritz, A., Schwierz, C. and Stahel, W. A. (2011) Robust
   estimation of the external drift and the variogram of spatial data.
@@ -271,12 +280,12 @@ control.predict.georob(full.covmat = FALSE, extended.output = FALSE,
 }
 
 \author{
-   Andreas Papritz \email{andreas.papritz@env.ethz.ch}.
+   Andreas Papritz \email{papritz@retired.ethz.ch}.
 }
 
 
 \seealso{
-  \code{\link{georobIntro}} for a description of the model and a brief summary of the algorithms;
+  \code{\link{georobPackage}} for a description of the model and a brief summary of the algorithms;
 
   \code{\link{georob}} for (robust) fitting of spatial linear models;
 
@@ -307,7 +316,7 @@ control.predict.georob(full.covmat = FALSE, extended.output = FALSE,
 }
 
 \examples{
-\dontrun{
+\donttest{
 data(meuse)
 
 data(meuse.grid)
@@ -315,8 +324,7 @@ coordinates(meuse.grid) <- ~x+y
 meuse.grid.pixdf <- meuse.grid
 gridded(meuse.grid.pixdf) <- TRUE
 
-library(constrainedKriging)
-data(meuse.blocks)
+data(meuse.blocks, package = "constrainedKriging")
 
 r.logzn.rob <- georob(log(zinc) ~ sqrt(dist), data = meuse, locations = ~ x + y,
     variogram.model = "RMexp", param = c(variance = 0.15, nugget = 0.05, scale = 200),

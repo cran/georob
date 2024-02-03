@@ -1,5 +1,6 @@
-% 2021-06-04 A. Papritz
+% 2024-01-26 A. Papritz
 % R CMD Rdconv -t html -o bla.html georob.Rd ; open bla.html; R CMD Rd2pdf --force georob.Rd;
+% hunspell -d en_GB-ise,en_GB-ize,en_GB-large -t -i mac  georob.Rd
 
 \encoding{utf8}
 \name{georob}
@@ -55,9 +56,9 @@ georob(formula, data, subset, weights, na.action, model = TRUE,
     Another possible value is \code{NULL}, no action.  Value
     \code{\link{na.exclude}} can be useful.}
 
-  \item{model, x, y}{logicals.  If \code{TRUE} the corresponding components
-    of the fit (the model frame, the model matrix, the response) are
-    returned. The model frame is augmented by the coordinates.}
+  \item{model, x, y}{logical scalars.  If \code{TRUE} the corresponding
+  components of the fit (the model frame, the model matrix, the response)
+  are returned.  The model frame is augmented by the coordinates.}
 
   \item{contrasts}{an optional list.  See the \code{contrasts.arg} of
     \code{\link{model.matrix.default}}.}
@@ -72,37 +73,36 @@ georob(formula, data, subset, weights, na.action, model = TRUE,
   recorded (mandatory argument).}
 
   \item{variogram.model}{a character keyword defining the variogram model
-  to be fitted.  Currently, most basic variogram models
-  provided by the package \pkg{RandomFields} can be fitted (see \emph{Details}
-  and \code{\link[RandomFields]{RMmodel}}).}
+  to be fitted.  Currently, most basic variogram models provided formerly
+  by the now archived package \pkg{RandomFields} can be fitted (see
+  \emph{Details} and \code{\link{gencorr}}).}
 
   \item{param}{a named numeric vector with initial values of the
   variogram parameters (mandatory argument).  The names of \code{param}
   are matched against the following names (see \emph{Details} and
-  \code{\link{georobIntro}} for information about the parametrization of
+  \code{\link{georobPackage}} for information about the parametrization of
   variogram models):
 
     \itemize{
       \item{\code{variance}: variance (sill \eqn{\sigma^2}) of the
       auto-correlated component of the Gaussian random field
-      \eqn{B(\mbox{\boldmath$s$\unboldmath})}{B(s)}.}
+      \eqn{B(\boldsymbol{s})}{B(s)}.}
 
       \item{\code{snugget}: variance
       (spatial nugget \eqn{\sigma^2_{\mathrm{n}}}{\sigma^2_n})
       of the seemingly spatially uncorrelated component of
-      \eqn{B(\mbox{\boldmath$s$\unboldmath})}{B(s)}
+      \eqn{B(\boldsymbol{s})}{B(s)}
       (micro-scale spatial variation; default value\cr  \code{snugget = 0}).}
 
       \item{\code{nugget}: variance (nugget \eqn{\tau^2}) of the
       independent errors
-      \eqn{\varepsilon(\mbox{\boldmath$s$\unboldmath})}{\epsilon(s)}.}
+      \eqn{\varepsilon(\boldsymbol{s})}{\epsilon(s)}.}
 
       \item{\code{scale}: range parameter (\eqn{\alpha}) of the variogram.}
 
       \item{names of additional variogram parameters such as the smoothness
-      parameter \eqn{\nu} of the Whittle-Mat\'ern model (see
-      \code{\link[RandomFields]{RMmodel}} and
-      \code{\link{param.names}}).}
+      parameter \eqn{\nu} of the Whittle-\enc{Matérn}{Matern} model (see
+      \code{\link{gencorr}} and \code{\link{param.names}}).}
 
     }
   }
@@ -117,7 +117,7 @@ georob(formula, data, subset, weights, na.action, model = TRUE,
   \code{\link{default.aniso}} that creates this vector) for fitting
   geometrically anisotropic variogram models.  The names of \code{aniso}
   are matched against the following names (see \emph{Details} and
-  \code{\link{georobIntro}} for information about the parametrization of
+  \code{\link{georobPackage}} for information about the parametrization of
   variogram models):
 
   \itemize{
@@ -155,21 +155,22 @@ georob(formula, data, subset, weights, na.action, model = TRUE,
 
   \itemize{
 
-      \item{variogram.model}: a mandatory character keyword defining the
-      variogram model, see respective argument above.
+      \item{\code{variogram.model}}: a mandatory character keyword defining
+      the variogram model, see respective argument above.
 
-      \item{param}: a mandatory named numeric vector with initial values of
-      the variogram parameters, see respective argument above.
+      \item{\code{param}}: a mandatory named numeric vector with initial
+      values of the variogram parameters, see respective argument above.
 
-      \item{fit.param}: an optional named logical vector defining which
-      parameters are adjusted, see respective argument above.
+      \item{\code{fit.param}}: an optional named logical vector defining
+      which parameters are adjusted, see respective argument above.
 
-      \item{aniso}: an optional named numeric vector with initial values
-      for fitting geometrically anisotropic variogram models, see
+      \item{\code{aniso}}: an optional named numeric vector with initial
+      values for fitting geometrically anisotropic variogram models, see
       respective argument above.
 
-      \item{fit.param}: an optional named logical vector defining which
-      anisotropy parameters are adjusted, see respective argument above.
+      \item{\code{fit.param}}: an optional named logical vector defining
+      which anisotropy parameters are adjusted, see respective argument
+      above.
 
   }
 
@@ -199,26 +200,24 @@ georob(formula, data, subset, weights, na.action, model = TRUE,
 
 }
 
-\details{\code{georob} fits a spatial linear model by robust or Gaussian RE(ML)
-  (\cite{\enc{Künsch}{Kuensch} et al., 2011}, \cite{\enc{Künsch}{Kuensch}
-  et al., in preparation}).  \code{\link{georobIntro}} describes the
-  employed model and briefly sketches the robust REML estimation and the
-  robust external drift Kriging method.  Here, we describe further details
-  of \code{georob}.
+\details{\code{georob} fits a spatial linear model by robust (\cite{\enc{Künsch}{Kuensch} et al., 2011}, \cite{\enc{Künsch}{Kuensch}
+  et al., in preparation}) or Gaussian RE(ML) (\cite{Harville, 1977}).
+  \code{\link{georobPackage}} describes the employed model and briefly
+  sketches the robust REML estimation and the robust external drift Kriging
+  method.  Here, we describe further details of \code{georob}.
 
   \subsection{Implemented variograms}{
 
-    Currently, most basic variogram models provided by the
-    package \pkg{RandomFields} can be fitted by
-    \code{georob} (see argument \code{variogram.model} for a list of
+    Currently, most basic variogram models provided formerly by the now
+    archived package \pkg{RandomFields} can be fitted by \code{georob} (see
+    argument \code{variogram.model} and \code{\link{gencorr}} for a list of
     implemented models).  Some of these models have in addition to
     \code{variance}, \code{snugget}, \code{nugget} and \code{scale} further
     parameters.  Initial values of these parameters (\code{param}) and
     fitting flags (\code{fit.param}) must be passed to \code{georob} by the
-    same names as used by the functions \code{RM...} of the package
-    \pkg{RandomFields} (see \code{\link[RandomFields]{RMmodel}}).  Use the
-    function \code{\link{param.names}} to list additional parameters of a
-    given variogram.model.
+    same names as used for the models \code{RM...} in
+    \code{\link{gencorr}}.  Use the function \code{\link{param.names}} to
+    list additional parameters of a given variogram.model.
 
     The arguments \code{fit.param} and \code{fit.aniso} are used to control
     what variogram and anisotropy parameters are estimated and which are
@@ -241,7 +240,7 @@ georob(formula, data, subset, weights, na.action, model = TRUE,
 
   \subsection{Estimating parameters of geometrically anisotropic variograms}{
 
-    The subsection \strong{Model} of \code{\link{georobIntro}} describes
+    The subsection \strong{Model} of \code{\link{georobPackage}} describes
     how such models are parametrized and gives definitions the various
     elements of \code{aniso}.  Some additional remarks might be helpful:
 
@@ -270,7 +269,7 @@ georob(formula, data, subset, weights, na.action, model = TRUE,
     as spatially uncorrelated with a given sampling design, and of the
     variance (\code{nugget}, \eqn{\tau^2}) of the independent errors
     requires that for some locations
-    \eqn{\mbox{\boldmath$s$\unboldmath}_i}{s_i} replicated observations are
+    \eqn{\boldsymbol{s}_i}{s_i} replicated observations are
     available.  Locations less or equal than \code{zero.dist} apart are
     thereby considered as being coincident (see
     \code{\link{control.georob}}).
@@ -281,7 +280,7 @@ georob(formula, data, subset, weights, na.action, model = TRUE,
   \subsection{Constraining estimates of variogram parameters}{
 
     Parameters of variogram models can vary only within certain bounds (see
-    \code{\link{param.bounds}} and \code{\link[RandomFields]{RMmodel}}
+    \code{\link{param.bounds}} and \code{\link{gencorr}}
     for allowed ranges).  \code{georob} uses three mechanisms to constrain
     parameter estimates to permissible ranges:
 
@@ -298,7 +297,7 @@ georob(formula, data, subset, weights, na.action, model = TRUE,
 
         \item \emph{Checking permissible ranges}: The additional parameters
         of the variogram models such as the smoothness parameter \eqn{\nu}
-        of the Whittle-Mat\'ern model are forced to stay in the permissible
+        of the Whittle-\enc{Matérn}{Matern} model are forced to stay in the permissible
         ranges by signalling an error to \code{nleqslv}, \code{nlminb} or
         \code{optim} if the current trial values are invalid.  These
         functions then graciously update the trial values of the parameters
@@ -321,7 +320,7 @@ georob(formula, data, subset, weights, na.action, model = TRUE,
         additional parameters of isotropic variogram models (use \cr
         \code{param.names(variogram.model)} to display the names and the
         order of the additional parameters for \code{variogram.model}).
-        For \code{nlminb} one has to use the arguments code{lower =
+        For \code{nlminb} one has to use the arguments \code{lower =
         \var{l}}, \code{upper = \var{u}}, where \var{l} and \var{u} are
         numeric vectors as described above.
 
@@ -333,18 +332,18 @@ georob(formula, data, subset, weights, na.action, model = TRUE,
   REML}{
 
     To solve the robustified estimating equations for
-    \eqn{\mbox{\boldmath$B$\unboldmath}}{B} and
-    \eqn{\mbox{\boldmath$\beta$\unboldmath}}{\beta} the following initial
+    \eqn{\boldsymbol{B}}{B} and
+    \eqn{\boldsymbol{\beta}}{\beta} the following initial
     estimates are used:
 
     \itemize{
 
-      \item \eqn{ \widehat{\mbox{\boldmath$B$\unboldmath}}=
-      \mbox{\boldmath$0$\unboldmath},}{hatB=0,} if this turns out to be
+      \item \eqn{ \widehat{\boldsymbol{B}}=
+      \boldsymbol{0},}{hatB=0,} if this turns out to be
       infeasible, initial values can be passed to \code{georob} by the
       argument \code{bhat} of \code{\link{control.georob}}.
 
-      \item \eqn{\widehat{\mbox{\boldmath$\beta$\unboldmath}}}{hat\beta} is
+      \item \eqn{\widehat{\boldsymbol{\beta}}}{hat\beta} is
       either estimated robustly by the function
       \code{\link[robustbase]{lmrob}}, \code{\link[quantreg]{rq}} or
       non-robustly by \code{\link[stats]{lm}} (see argument
@@ -413,13 +412,14 @@ georob(formula, data, subset, weights, na.action, model = TRUE,
     \code{georob} maximizes then a (restricted) \emph{profile
     log-likelihood} that depends only on \eqn{\eta}, \eqn{\xi},
     \eqn{\alpha}, \ldots, and \eqn{\sigma_B^2} is estimated by an explicit
-    expression that depends on these parameters (e.g. Diggle and Ribeiro,
-    2006, p.  113).  This is usually more efficient than maximizing the
-    (restricted) log-likelihood with respect to the original variance
-    parameters \eqn{\tau^2}, \eqn{\sigma_{\mathrm{n}}^2}{\sigma_n^2} and
-    \eqn{\sigma^2}.  \code{georob} chooses the parametrization
-    automatically, but the user can control it by the argument
-    \code{reparam} of the function \code{\link{control.georob}}.
+    expression that depends on these parameters (e.g. \cite{Diggle and
+    Ribeiro, 2006, p.  113}).  This is usually more efficient than
+    maximizing the (restricted) log-likelihood with respect to the original
+    variance parameters \eqn{\tau^2},
+    \eqn{\sigma_{\mathrm{n}}^2}{\sigma_n^2} and \eqn{\sigma^2}.
+    \code{georob} chooses the parametrization automatically, but the user
+    can control it by the argument \code{reparam} of the function
+    \code{\link{control.georob}}.
 
   }
 }
@@ -433,25 +433,30 @@ fit of a spatial linear model.  See
 }
 
 \references{
-  Diggle, P. J. and Ribeiro, P. J. R. (2006) Model-based Geostatistics. Springer.
+  Diggle, P. J. and Ribeiro, P. J. R. (2006) Model-based Geostatistics.
+  Springer, New York, \doi{10.1007/978-0-387-48536-2}.
+
+  Harville, D. A. (1977) Maximum likelihood approaches to variance
+  component estimation and to related problems, \emph{Journal of the
+  American Statistical Association}, \bold{72}, 320--340,
+  \doi{10.1080/01621459.1977.10480998}.
 
   \enc{Künsch}{Kuensch}, H. R., Papritz, A., Schwierz, C. and Stahel, W. A. (in
   preparation) Robust Geostatistics.
 
-  \enc{Künsch}{Kuensch}, H. R., Papritz, A., Schwierz, C. and Stahel, W. A. (2011) Robust
-  estimation of the external drift and the variogram of spatial data.
-  Proceedings of the ISI 58th World Statistics Congress of the International
-  Statistical Institute.
-  \doi{10.3929/ethz-a-009900710}
-}
+  \enc{Künsch}{Kuensch}, H. R., Papritz, A., Schwierz, C. and Stahel, W. A.
+  (2011) Robust estimation of the external drift and the variogram of
+  spatial data.  Proceedings of the ISI 58th World Statistics Congress of
+  the International Statistical Institute.  \doi{10.3929/ethz-a-009900710}
+  }
 
 \author{
-  Andreas Papritz \email{andreas.papritz@env.ethz.ch}\cr
+  Andreas Papritz \email{papritz@retired.ethz.ch}\cr
   with contributions by Cornelia Schwierz.
 }
 
 \seealso{
-  \code{\link{georobIntro}} for a description of the model and a brief summary of the algorithms;
+  \code{\link{georobPackage}} for a description of the model and a brief summary of the algorithms;
 
 %  \code{\link{georob}} for (robust) fitting of spatial linear models;
   \code{\link{georobObject}} for a description of the class \code{georob};
@@ -482,8 +487,8 @@ fit of a spatial linear model.  See
 }
 
 \examples{
-\dontrun{
-% ################
+\donttest{
+################
 ## meuse data ##
 ################
 data(meuse)

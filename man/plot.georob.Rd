@@ -1,4 +1,4 @@
-% 2021-06-04 A. Papritz
+% 2024-02-01 A. Papritz
 % R CMD Rdconv -t html -o bla.html plot.georob.Rd ; open bla.html; R CMD Rd2pdf --force plot.georob.Rd;
 
 \encoding{utf8}
@@ -36,7 +36,7 @@ of residuals and random effects).
 \arguments{
   \item{x}{an object of class \code{georob}, see \code{\link{georobObject}}.}
 
-  \item{what}{character keyword for the quantity that should be displayed.
+  \item{what}{a character keyword for the quantity that should be displayed.
   Possible values are:
 
     \itemize{
@@ -63,11 +63,11 @@ of residuals and random effects).
 
   }
 
-  \item{add}{logical controlling whether a new plot should be
+  \item{add}{a logical scalar controlling whether a new plot should be
   generated (\code{FALSE}, default) or whether the information should be
   added to the current plot (\code{TRUE}).}
 
-  \item{lag.dist.def}{an optional numeric scalar defining a constant bin
+  \item{lag.dist.def}{an optional numeric defining a constant bin
   width for grouping the lag distances or an optional numeric vector with
   the upper bounds of a set of contiguous bins for computing the sample
   variogram of the regression residuals, see
@@ -88,85 +88,90 @@ of residuals and random effects).
   \code{\link{sample.variogram}}.  Omnidirectional variograms are computed
   with the default \code{c(0,180)}.}
 
-  \item{max.lag}{positive numeric defining the largest lag distance for
+  \item{max.lag}{a positive numeric defining the largest lag distance for
   which semi-variances should be computed (default no restriction).}
 
-  \item{estimator}{character keyword defining the estimator for computing
-  the sample variogram.  Possible values are:
+  \item{estimator}{a character keyword defining the estimator for the
+  sample variogram.  Possible values are:
 
     \itemize{
 
       \item \code{"qn"}: Genton's robust
-      \code{\link[robustbase]{Qn}}-estimator (default, Genton, 1998),
+      \code{\link[robustbase]{Qn}}-estimator (default, \cite{Genton, 1998}),
 
-      \item \code{"mad"}: Dowd's robust MAD-estimator (Dowd, 1984),
+      \item \code{"mad"}: Dowd's robust MAD-estimator (\cite{Dowd, 1984}),
 
       \item \code{"matheron"}: non-robust method-of-moments estimator,
 
-      \item \code{"ch"}: robust Cressie-Hawkins estimator (Cressie and
-      Hawkins, 1980).
+      \item \code{"ch"}: robust Cressie-Hawkins estimator (\cite{Cressie and
+      Hawkins, 1980}).
 
     }
   }
 
-  \item{mean.angle}{logical controlling whether the mean lag vector (per
-  combination of lag distance and angular class) is computed from the mean
-  angles of all the lag vectors falling into a given class (\code{TRUE},
-  default) or from the mid-angles of the respective angular classes
-  (\code{FALSE}).}
+  \item{mean.angle}{a logical scalar controlling whether the mean lag
+  vector (per combination of lag distance and angular class) is computed
+  from the mean angles of all the lag vectors falling into a given class
+  (\code{TRUE}, default) or from the mid-angles of the respective angular
+  classes (\code{FALSE}).}
 
   \item{level}{an integer giving the level for extracting the residuals
   from \code{object} for \code{what = "ta"} or \code{what = "qq.res"}.
   \code{level = 0} (default for \code{what == "ta"}) extracts the
-  regression residuals \eqn{\widehat{B}(\mbox{\boldmath$s$\unboldmath}) +
-  \widehat{\varepsilon}(\mbox{\boldmath$s$\unboldmath})}{hatB(s) +
+  regression residuals \eqn{\widehat{B}(\boldsymbol{s}) +
+  \widehat{\varepsilon}(\boldsymbol{s})}{hatB(s) +
   hat\epsilon(s)} and \code{level = 1} (default for \code{what ==
   "qq.res"}) only the estimated errors
-  \eqn{\widehat{\varepsilon}(\mbox{\boldmath$s$\unboldmath})}{hat\epsilon(s)}.}
+  \eqn{\widehat{\varepsilon}(\boldsymbol{s})}{hat\epsilon(s)}.}
 
-  \item{smooth}{logical controlling whether a
+  \item{smooth}{a logical scalar controlling whether a
   \code{\link[stats]{loess.smooth}} is added to the Tukey-Anscombe plot
   (default \code{TRUE}.}
 
-  \item{id.n}{number of points to be labelled in each plot, starting
-  with the most extreme (see \code{\link[robustbase]{plot.lmrob}}).}
+  \item{id.n}{a numeric with the number of points to be labelled in each
+  plot, starting with the most extreme (see
+  \code{\link[robustbase]{plot.lmrob}}).}
 
-  \item{labels.id}{vector of labels, from which the labels for extreme
+  \item{labels.id}{a vector of labels, from which the labels for extreme
   points will be chosen (see \code{\link[robustbase]{plot.lmrob}}).
   \code{NULL} uses observation numbers.}
 
-  \item{cex.id}{magnification of point labels (see
+  \item{cex.id}{a numeric with the magnification of point labels (see
   \code{\link[robustbase]{plot.lmrob}}).}
 
-  \item{label.pos}{positioning of labels, for the left half and right half
-  of the graph respectively (see \code{\link[robustbase]{plot.lmrob}}).}
+  \item{label.pos}{a numeric for positioning of labels, for the left half
+  and right half of the graph respectively (see
+  \code{\link[robustbase]{plot.lmrob}}).}
 
-  \item{from}{numeric, minimal lag distance for plotting variogram models.}
+  \item{from}{a numeric with the minimal lag distance for plotting
+  variogram models.}
 
-  \item{to}{numeric, maximum lag distance for plotting variogram
+  \item{to}{a numeric with the maximum lag distance for plotting variogram
   models (default: largest lag distance of current plot).}
 
-  \item{n}{positive integer specifying the number of equally spaced lag
+  \item{n}{a positive integer specifying the number of equally spaced lag
   distances for which semi-variances are evaluated in plotting variogram
   models (default \code{501}).}
 
-  \item{xy.angle}{numeric (vector) with azimuth angles (in degrees,
+  \item{xy.angle}{a numeric (vector) with azimuth angles (in degrees,
   clockwise positive from north) in \eqn{x}-\eqn{y}-plane for which
   semi-variances should be plotted.}
 
-  \item{xz.angle}{numeric (vector) with angles in \eqn{x}-\eqn{z}-plane (in
+  \item{xz.angle}{a numeric (vector) with angles in \eqn{x}-\eqn{z}-plane (in
   degrees, clockwise positive from zenith to south) for which semi-variances
   should be plotted.}
 
-  \item{col}{optional color of points and curves to distinguish items
-  relating to different azimuth angles in \eqn{x}-\eqn{y}-plane.}
+  \item{col}{an optional vector with colours of points and curves to
+  distinguish items relating to different azimuth angles in
+  \eqn{x}-\eqn{y}-plane.}
 
-  \item{pch}{optional symbol for points and curves to distinguish items
-  relating to different azimuth angles in \eqn{x}-\eqn{z}-plane.}
+  \item{pch}{an optional vector with symbols for points and curves to
+  distinguish items relating to different azimuth angles in
+  \eqn{x}-\eqn{z}-plane.}
 
   \item{lty}{line type for plotting variogram models.}
 
-  \item{xlab, ylab, main}{test annotation, see
+  \item{xlab, ylab, main}{plot annotation, see
   \code{\link[graphics]{plot}}.}
 
   \item{...}{additional arguments passed to
@@ -175,12 +180,24 @@ of residuals and random effects).
 
 }
 
+\value{
+
+  The method \code{plot.georob} returns no value, it is called for its side
+  effects.
+
+  The method \code{lines.georob} is called for its side effects and returns
+  the value \code{NULL} invisibly.
+
+
+}
+
+
 \author{
-   Andreas Papritz \email{andreas.papritz@env.ethz.ch}.
+   Andreas Papritz \email{papritz@retired.ethz.ch}.
 }
 
 \seealso{
-  \code{\link{georobIntro}} for a description of the model and a brief summary of the algorithms;
+  \code{\link{georobPackage}} for a description of the model and a brief summary of the algorithms;
 
   \code{\link{georob}} for (robust) fitting of spatial linear models;
 
@@ -211,7 +228,7 @@ of residuals and random effects).
 }
 
 \examples{
-\dontrun{
+\donttest{
 ################
 ## meuse data ##
 ################

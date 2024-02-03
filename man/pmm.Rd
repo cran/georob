@@ -1,4 +1,4 @@
-% 2021-06-04 A. Papritz
+% 2024-02-01 A. Papritz
 % R CMD Rdconv -t html -o bla.html pmm.Rd ; open bla.html; R CMD Rd2pdf --force pmm.Rd;
 
 \encoding{utf8}
@@ -17,42 +17,42 @@
 \usage{
 pmm(A, B, control = control.pcmp())
 
-control.pcmp(pmm.ncores = 1, gcr.ncores = 1, max.ncores = detectCores(),
-    f = 1, sfstop = FALSE, allow.recursive = TRUE,
+control.pcmp(pmm.ncores = 1, gcr.ncores = 1, max.ncores = parallel::detectCores(),
+    f = 1, sfstop = FALSE, allow.recursive = FALSE,
     fork = !identical(.Platform[["OS.type"]], "windows"), ...)
-
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
-  \item{A, B}{matrices to be multiplied.}
+  \item{A, B}{two numeric matrices to be multiplied.}
 
-  \item{control}{a list of with the arguments \code{pmm.ncores},
+  \item{control}{a list with the arguments \code{pmm.ncores},
   \code{gcr.ncores}, \code{max.ncores}, \code{f}, \code{sfstop} and
   \code{allow.recursive} or a function such as \code{control.pcmp} that
   generates such a list.}
 
-  \item{pmm.ncores}{number (integer, default 1) of cores used for parallelized
-  matrix multiplication.}
+  \item{pmm.ncores}{an integer (default 1) with the number of cores used
+  for parallelized matrix multiplication.}
 
-  \item{gcr.ncores}{number (integer, default 1) of cores used for parallelized
-  computation of semi-variance matrix.}
+  \item{gcr.ncores}{an integer (default 1) with the number of cores used
+  for parallelized computation of (generalized) covariances or
+  semi-variances.}
 
   \item{max.ncores}{maximum number of cores (integer, default all cores of
   a machine) used for parallelized computations.}
 
-  \item{f}{number (integer, default 2) of tasks assigned to each core in
-  parallelized operations.}
+  \item{f}{an integer (default 1) with the numger of tasks assigned to each
+  core in parallelized operations.}
 
-  \item{sfstop}{logical controlling whether the SNOW socket cluster is
-  stopped after each parallelized matrix multiplication on windows OS
-  (default \code{FALSE}).}
+  \item{sfstop}{a logical scalar controlling whether the SNOW socket
+  cluster is stopped after each parallelized matrix multiplication on
+  windows OS (default \code{FALSE}).}
 
-  \item{allow.recursive}{logical controlling whether nested parallelized
-  computation should be allowed (default \code{TRUE}).}
+  \item{allow.recursive}{a logical scalar controlling whether nested
+  parallelized computation should be allowed (default \code{TRUE}).}
 
-  \item{fork}{logical controlling whether forking should be used for
+  \item{fork}{a logical scalar controlling whether forking should be used for
   parallel computations (default \code{TRUE} on unix and \code{FALSE} on
-  windows operating systems).  Note that settting \code{fork == TRUE} on
+  windows operating systems).  Note that settting \code{fork = TRUE} on
   windows suppresses parallel computations.}
 
   \item{...}{further arguments, currently not used.}
@@ -65,7 +65,7 @@ sets (\eqn{n>1000}).  However, spawning child processes requires itself
 resources and increasing the number of cores for parallel matrix
 multiplication does not always result in reduced computing time.  A
 sensible default for the number of cores is likely
-\code{pmm.ncores=2}.
+\code{pmm.ncores = 2}.
 
 Note, however, that very substantial reductions in computing time
 results when one uses the \strong{OpenBLAS} library instead of the
@@ -91,24 +91,24 @@ processes.
     \code{sfstop},\cr \code{allow.recursive}.} } }
 
 \author{
-   Andreas Papritz \email{andreas.papritz@env.ethz.ch}.
+   Andreas Papritz \email{papritz@retired.ethz.ch}.
 }
 
 \seealso{
-  \code{\link{georobIntro}} for a description of the model and a brief summary of the algorithms;
+  \code{\link{georobPackage}} for a description of the model and a brief summary of the algorithms;
 
   \code{\link{georob}} for (robust) fitting of spatial linear models.
 }
 
 
 \examples{
-\dontrun{
+\donttest{
+
 A <- as.matrix(dist(rnorm(2000)))
 B <- as.matrix(dist(rnorm(2000)))
-system.time(C <- pmm(A, B, control = control.pcmp(pmm.ncores = 1)))
-## using 4 cores
-## system.time(C <- pmm(A, B, control = control.pcmp(pmm.ncores = 4)))
-}}
+system.time(C <- pmm(A, B, control = control.pcmp(pmm.ncores = 2L)))
+}
+}
 
 \keyword{models}
 \keyword{spatial}

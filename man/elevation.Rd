@@ -13,7 +13,7 @@
 \title{Elevation Data}
 
 \description{
-  Surface elevation data taken from Davis (1972).
+  Surface elevation data taken from \cite{Davis (1972)}.
 }
 
 \usage{data(elevation)}
@@ -42,8 +42,8 @@
 }
 
 \source{
-  Davis, J.C. (1973) \emph{Statistics and Data Analysis in Geology}.  New
-  York: Wiley.
+  Davis, J.C. (1973) \emph{Statistics and Data Analysis in Geology}, Wiley,
+  New York.
 }
 
 

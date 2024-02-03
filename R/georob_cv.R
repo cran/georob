@@ -34,7 +34,7 @@ cv.georob <-
     return.fit = FALSE, reduced.output = TRUE,
     lgn = FALSE,
     mfl.action = c( "offset", "stop" ),
-    ncores = min( nset, detectCores() ),
+    ncores = min( nset, parallel::detectCores() ),
     verbose = 0,
     ...
   )
@@ -81,6 +81,9 @@ cv.georob <-
   ## 2018-01-05 AP improved memory management in parallel computations
   ##               improved error handling during parallel computations
   ## 2020-02-14 AP sanity checks of arguments and for if() and switch()
+  ## 2023-12-20 AP added on.exit(options(old.opt)), replaced makeCluster by makePSOCKcluster,
+  ##               class queries by inherits()
+  ## 2024-02-01 AP saving SOCKcluster.RData to tempdir()
 
 #### -- auxiliary function
 
@@ -251,7 +254,7 @@ cv.georob <-
     )
   )
 
-  if( identical( class( object[["na.action"]] ), "omit" ) ) data <- na.omit(data)
+  if( inherits( object[["na.action"]], "omit" ) ) data <- na.omit(data)
 
   ## select subset if appropriate
 
@@ -373,7 +376,7 @@ cv.georob <-
 
   ## redefine na.action component of object
 
-  if( identical( class( object[["na.action"]] ), "exclude" ) ){
+  if( inherits( object[["na.action"]], "exclude" ) ){
     class( object[["na.action"]] ) <- "omit"
   }
 
@@ -678,11 +681,14 @@ cv.georob <-
 
   if( ncores > 1L && !object[["control"]][["pcmp"]][["fork"]] ){
 
-    ## create a SNOW cluster on windows OS
+    ## create a PSOCK cluster on windows OS
 
-    clstr <- makeCluster( ncores, type = "SOCK" )
-    save( clstr, file = "SOCKcluster.RData" )
-    options( error = f.stop.cluster )
+    fname <- file.path( tempdir(), "SOCKcluster.RData" )
+
+    clstr <- makePSOCKcluster( ncores )
+    save( clstr, file = fname )
+    old.opt <- options( error = f.stop.cluster )
+    on.exit( options( old.opt ) )
 
     ## export required items to workers
 
@@ -705,7 +711,7 @@ cv.georob <-
       ), silent = TRUE
     )
 
-    f.stop.cluster( clstr )
+    f.stop.cluster( clstr, fname )
 
   } else {
 
@@ -725,7 +731,7 @@ cv.georob <-
   }
 
   has.error <- sapply(
-    t.result, function( x ) identical( class(x), "try-error" )
+    t.result, function( x ) inherits( x, "try-error" )
   )
 
   if( any( has.error ) ){
@@ -849,7 +855,7 @@ plot.cv.georob <-
   ## 2016-02-29 AP minor changes for adding plots to existing graphics
   ## 2016-07-25 AP added liner color and type for scatterplot smooths
   ## 2020-02-14 AP sanity checks of arguments and for if() and switch()
-
+  ## 2023-12-20 AP added on.exit(par(old.par))
 #### -- check arguments
 
   ## match arguments
@@ -1045,7 +1051,8 @@ plot.cv.georob <-
 
       t.usr <- par( "usr" )
       t.usr[3L:4L] <- with( result, range( fbar - ghat ) ) *1.04
-      par( usr = t.usr )
+      old.par <- par( usr = t.usr )
+      on.exit( par( old.par ) )
       with( result, lines( y, fbar-ghat, col= "blue", lty = "dotted" ) )
       axis(2L, pos = t.usr[2L], col.axis = "blue", col.ticks = "blue" )
       legend(
@@ -1328,8 +1335,9 @@ print.summary.cv.georob <-
 #
 #   ## 2011-10-13 A. Papritz
 #   ## 2013-06-12 AP substituting [["x"]] for $x in all lists
+#   ## 2023-12-14 AP checking class by inherits()
 #
-#   if( !identical( class( model )[1], "cv.georob" ) ) stop(
+#   if( !inherits( model, "cv.georob" ) ) stop(
 #     "model is not of class 'cv.georob'"
 #   )
 #

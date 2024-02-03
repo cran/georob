@@ -105,10 +105,14 @@ function(
   ## 2018-01-22 AP optional specification of new variogram model
   ## 2019-12-13 AP correcting use of class() in if() and switch()
   ## 2020-02-14 AP sanity checks of arguments and for if() and switch()
+  ## 2023-11-17 AP elimination of calls to function RFoptions{RandomFields}
+  ## 2023-12-20 AP checking class by inherits()
+  ## 2023-12-20 AP added on.exit(options(old.opt)), replaced makeCluster by makePSOCKcluster
+  ## 2023-12-20 AP replacement of identical(class(...), ...) by inherits(..., ...)
+  ## 2024-02-01 AP saving SOCKcluster.RData to tempdir()
 
   ##  ##############################################################################
 
-  RFoptions(newAniso=FALSE)
 
 #### -- check arguments
 
@@ -320,7 +324,7 @@ function(
 
   ## check the consistency of the provided arguments
 
-  if( !missing( newdata ) && class( newdata )[1] == "SpatialPolygonsDataFrame" ){
+  if( !missing( newdata ) && inherits( newdata, "SpatialPolygonsDataFrame" ) ){
 
     ## check whether pwidth and pheight were provided
 
@@ -390,7 +394,7 @@ function(
         "\ncomputing full covariance matrix of prediction errors\n"
       )
       if(
-        !missing( newdata ) && class( newdata )[1] == "SpatialPolygonsDataFrame"
+        !missing( newdata ) && inherits( newdata, "SpatialPolygonsDataFrame" )
       ) cat(
         "requires some computing time for block kriging, be patient ...\n"
       )
@@ -402,13 +406,15 @@ function(
     "predicting terms for newdata not yet implemented"
   )
 
-  if( !missing( newdata ) && class( newdata )[1] %in% c( "SpatialPoints", "SpatialPixels", "SpatialGrid" ) ){
+  if( !missing( newdata ) &&
+    class( newdata )[1] %in% c( "SpatialPoints", "SpatialPixels", "SpatialGrid" )
+  ){
     t.formula <- as.formula( paste( as.character( formula( object ) )[-2L], collapse = "" ) )
     tmp <- try(
       get_all_vars( t.formula, as.data.frame( coordinates( newdata ) ) ),
       silent = TRUE
     )
-    if( identical( class( tmp ), "try-error" ) ) stop(
+    if( inherits( tmp, "try-error" ) ) stop(
       "'newdata' is a SpatialPoints, SpatialPixels or SpatialGrid object\n but drift covariates are not functions of coordinates"
     )
   }
@@ -539,14 +545,14 @@ function(
       )
     ), silent = TRUE
   )
-  if( identical( class( cov.delta.bhat.betahat.l ), "try-error" ) ) stop(
+  if( inherits( cov.delta.bhat.betahat.l, "try-error" ) ) stop(
     "covariance matrix of kriging errors 'b-bhat' and 'betahat' not positive definite"
   )
 
   ## compute covariance matrix of betahat and bhat for extended output
 
   cov.betahat.l <- try( t( chol( object[["cov"]][["cov.betahat"]] ) ) )
-  if( identical( class( cov.betahat.l ), "try-error" ) ) stop(
+  if( inherits( cov.betahat.l, "try-error" ) ) stop(
     "covariance matrix of 'betahat' not positive definite"
   )
 
@@ -644,6 +650,7 @@ function(
             t.cov.betahat.l <- t(
               chol( object[["cov"]][["cov.betahat"]][ ii, ii, drop = FALSE] )
             )
+
             ip[ , i] <- rowSums(
               ( X[object[["Tmat"]], ii, drop = FALSE] %*% t.cov.betahat.l )^2
             )
@@ -1076,20 +1083,24 @@ function(
     extended.output   <- control[["extended.output"]]
     full.covmat       <- control[["full.covmat"]]
 
-  ## set default value for control of forking if missing (required for backward compatibility)
+    ## set default value for control of forking if missing (required for backward compatibility)
 
-  if( is.null( control[["pcmp"]][["fork"]] ) ){
-    control[["pcmp"]][["fork"]] <- !identical( .Platform[["OS.type"]], "windows" )
-  }
+    if( is.null( control[["pcmp"]][["fork"]] ) ){
+      control[["pcmp"]][["fork"]] <- !identical( .Platform[["OS.type"]], "windows" )
+    }
+
     ## compute the predictions for all the parts
 
     if( ncores > 1L && !control[["pcmp"]][["fork"]] ){
 
-      ## create a SNOW cluster on windows OS
+      ## create a PSOCK cluster on windows OS
 
-      clstr <- makeCluster( ncores, type = "SOCK")
-      save( clstr, file = "SOCKcluster.RData" )
-      options( error = f.stop.cluster )
+      fname <- file.path( tempdir(), "SOCKcluster.RData" )
+
+      clstr <- makePSOCKcluster( ncores )
+      save( clstr, file = fname )
+      old.opt <- options( error = f.stop.cluster )
+      on.exit( options( old.opt ) )
 
       ## export required items to workers
 
@@ -1122,7 +1133,7 @@ function(
         )
       )
 
-      f.stop.cluster( clstr )
+      f.stop.cluster( clstr, fname )
 
       #         junk <- parLapply( clstr, 1L:length(clstr), function( i ) sfStop() )
       #         junk <- stopCluster( clstr )
@@ -1147,7 +1158,7 @@ function(
     }
 
     has.error <- sapply(
-      t.result, function( x ) identical( class(x), "try-error" )
+      t.result, function( x ) inherits( x, "try-error" )
     )
 
     if( any( has.error ) ){
@@ -1202,7 +1213,7 @@ function(
       result
     }
 
-    if( class(newdata)[1] == "SpatialPolygonsDataFrame" ){
+    if( inherits( newdata, "SpatialPolygonsDataFrame" ) ){
 
       t.pred <- SpatialPolygonsDataFrame(
         Sr = SpatialPolygons( newdata@polygons ),
@@ -1218,11 +1229,11 @@ function(
 
       t.pred <- data.frame( pred.coords, t.pred )
 
-      if( class( newdata )[1] != "data.frame" ){
+      if( !inherits( newdata, "data.frame" ) ){
         coordinates( t.pred ) <- locations
-        if( !( class( newdata )[1] %in% c( "SpatialPoints", "SpatialPointsDataFrame" ) ) ){
+        if( !inherits( newdata, c( "SpatialPoints", "SpatialPointsDataFrame" ) ) ){
           gridded( t.pred ) <- TRUE
-          if( !( class( newdata )[1] %in% c( "SpatialPixels", "SpatialPixelsDataFrame" ) ) ){
+          if( !inherits( newdata, c( "SpatialPixels", "SpatialPixelsDataFrame" ) ) ){
             fullgrid( t.pred ) <- TRUE
           }
         }
@@ -1256,7 +1267,7 @@ function(
         attr( result[["pred"]]@data, "type" )             <- type
         #         attr( result[["pred"]]@data, "scaled.residuals" ) <- scld.res
         #         attr( result[["pred"]]@data, "se.signal" )        <- se.signal
-        if( class( result[["pred"]] )[1] == "SpatialPolygonsDataFrame" ){
+        if( inherits( result[["pred"]], "SpatialPolygonsDataFrame" ) ){
           attr( result[["pred"]]@data, "coefficients" )   <- object[["coefficients"]]
           attr( result[["pred"]]@data, "terms" )          <- object[["terms"]]
           attr( result[["pred"]]@data, "locations" )      <- object[["locations.objects"]][["locations"]]
@@ -1277,7 +1288,7 @@ function(
         attr( result@data, "type" )             <- type
         #         attr( result@data, "scaled.residuals" ) <- scld.res
         #         attr( result@data, "se.signal" )        <- se.signal
-        if( class( result )[1] == "SpatialPolygonsDataFrame" ){
+        if( inherits( result, "SpatialPolygonsDataFrame" ) ){
           attr( result@data, "coefficients" )   <- object[["coefficients"]]
           attr( result@data, "terms" )          <- object[["terms"]]
           attr( result@data, "locations" )      <- object[["locations.objects"]][["locations"]]
@@ -1319,6 +1330,8 @@ f.robust.uk <- function(
   ## 2016-07-20 AP changes for parallel computations
   ## 2016-08-11 AP changes for nested variogram models
   ## 2016-11-28 AP correcting error when computing predictions for intrinsic variograms
+  ## 2023-12-20 AP replacement of identical(class(...), ...) by inherits(..., ...)
+  ## 2024-01-21 AP more efficient calculation of lag.vectors for anisotropic variograms
 
 #### -- preparation
 
@@ -1365,9 +1378,15 @@ f.robust.uk <- function(
           ## lag vectors for all distinct pairs
 
           if( !all( sapply( variogram.object, function(x) x[["isotropic"]] ) ) ){
-            indices.pairs <- combn( NROW( pred.coords[!ex, , drop = FALSE ] ), 2L )
-            lag.vectors <- pred.coords[!ex, , drop = FALSE ][ indices.pairs[2L,], ]
-                         - pred.coords[!ex, , drop = FALSE ][ indices.pairs[1L,], ]
+            lag.vectors <- apply(
+              pred.coords[!ex, , drop = FALSE ], 2,
+              function( x ){
+                nx <- length( x )
+                tmp <- matrix( rep( x, nx ), ncol = nx)
+                sel <- lower.tri( tmp )
+                tmp[sel] - (t( tmp ))[sel]
+              }
+            )
           } else {
             lag.vectors <- as.vector( dist( pred.coords[!ex, , drop = FALSE ] ) )
           }
@@ -1518,12 +1537,13 @@ f.robust.uk <- function(
         }
         class(t.covmodel) <- class(tmp[[1]])
 
-         ## variances of the prediction blocks
+        ## variances of the prediction blocks
 
         t.preCKrige <- preCKrige(
           newdata = newdata[!ex, , drop = FALSE ],
           model = t.covmodel,
-          pwidth = pwidth, pheight = pheight, napp = napp
+          pwidth = pwidth, pheight = pheight, napp = napp,
+          ncores = 1L
         )
         t.var.target <- sapply(
           t.preCKrige@covmat,
@@ -1542,7 +1562,8 @@ f.robust.uk <- function(
             newdata = newdata[!ex, , drop = FALSE ],
             neighbours = t.neighbours,
             model = t.covmodel,
-            pwidth = pwidth, pheight = pheight, napp = napp
+            pwidth = pwidth, pheight = pheight, napp = napp,
+            ncores = 1L
           )
 
           t.se <- sqrt( t.var.target )
@@ -1884,7 +1905,12 @@ simple.kriging.weights <- function(
 
   ## 2018-01-22 A. Papritz
   ## 2019-12-13 AP correcting use of class() in if() and switch()
-
+  ## 2023-12-14 AP checking class by inherits()
+  ## 2023-12-20 AP elimination of unnecessary variance computation for block kriging
+  ## 2023-12-20 AP added on.exit(options(old.opt)), replaced makeCluster by makePSOCKcluster
+  ## 2023-12-20 AP replacement of identical(class(...), ...) by inherits(..., ...)
+  ## 2024-01-21 AP more efficient calculation of lag.vectors for anisotropic variograms
+  ## 2024-02-01 AP saving SOCKcluster.RData to tempdir()
 
   ##  ###########################################################################
 
@@ -2051,11 +2077,8 @@ simple.kriging.weights <- function(
         t.preCKrige <- preCKrige(
           newdata = newdata[!ex, , drop = FALSE ],
           model = t.covmodel,
-          pwidth = pwidth, pheight = pheight, napp = napp
-        )
-        t.var.target <- sapply(
-          t.preCKrige@covmat,
-          function( x ) c( x )
+          pwidth = pwidth, pheight = pheight, napp = napp,
+          ncores = 1L
         )
 
         ## get rid of mev component in covariance model list
@@ -2114,8 +2137,6 @@ simple.kriging.weights <- function(
 
   ## begin of main body of function
 
-  RFoptions(newAniso=FALSE)
-
   ## match arguments
 
   type <- match.arg( type )
@@ -2152,8 +2173,15 @@ simple.kriging.weights <- function(
     isotropic <- all( sapply(variogram.object, function(x) x[["isotropic"]] ) )
 
     if( !isotropic ){
-      i.pairs <- combn( NROW( support.coords ), 2L )
-      lag.vectors <- support.coords[ i.pairs[2L,], ] - support.coords[ i.pairs[1L,], ]
+      lag.vectors <- apply(
+        support.coords, 2,
+        function( x ){
+          nx <- length( x )
+          tmp <- matrix( rep( x, nx ), ncol = nx)
+          sel <- lower.tri( tmp )
+          tmp[sel] - (t( tmp ))[sel]
+        }
+      )
     } else {
       lag.vectors <- as.vector( dist( support.coords ) )
     }
@@ -2244,7 +2272,7 @@ simple.kriging.weights <- function(
 #### -- inverse generalized covariance matrix of support data
 
   gcvmat.inverse <- try( chol2inv( chol( gcvmat ) ) )
-  if( identical( class(gcvmat.inverse), "try-error" ) ) stop(
+  if( inherits( gcvmat.inverse, "try-error" ) ) stop(
     "an error occurred when computing the inverse generalized covariance matrix of the data"
   )
   attr( gcvmat.inverse, "struc" ) <- "sym"
@@ -2252,7 +2280,7 @@ simple.kriging.weights <- function(
 
 #### -- prepare items for block kriging
 
-  if( !missing( newdata ) && class( newdata )[1] == "SpatialPolygonsDataFrame" ){
+  if( !missing( newdata ) && inherits( newdata, "SpatialPolygonsDataFrame" ) ){
 
     ## check whether pwidth and pheight were provided
 
@@ -2450,11 +2478,14 @@ simple.kriging.weights <- function(
 
   if( ncores > 1L && !control[["pcmp"]][["fork"]] ){
 
-    ## create a SNOW cluster on windows OS
+    ## create a PSOCK cluster on windows OS
 
-    clstr <- makeCluster( ncores, type = "SOCK")
-    save( clstr, file = "SOCKcluster.RData" )
-    options( error = f.stop.cluster )
+    fname <- file.path( tempdir(), "SOCKcluster.RData" )
+
+    clstr <- makePSOCKcluster( ncores )
+    save( clstr, file = fname )
+    old.opt <- options( error = f.stop.cluster )
+    on.exit( options( old.opt ) )
 
     ## export required items to workers
 
@@ -2484,7 +2515,7 @@ simple.kriging.weights <- function(
       )
     )
 
-    f.stop.cluster( clstr )
+    f.stop.cluster( clstr, fname )
 
   } else {
 
@@ -2502,7 +2533,7 @@ simple.kriging.weights <- function(
   }
 
   has.error <- sapply(
-    t.result, function( x ) identical( class(x), "try-error" )
+    t.result, function( x ) inherits( x, "try-error" )
   )
 
   if( any( has.error ) ){
@@ -2852,8 +2883,9 @@ check.newdata <- function(newdata){
   ## 2020-02-14 AP sanity checks of arguments and for if() and switch()
 
   stopifnot(
-    all(
-      class(newdata)[1] %in% c(
+    inherits(
+      newdata,
+      c(
         "data.frame", "SpatialPointsDataFrame", "SpatialPixelsDataFrame",
         "SpatialGridDataFrame", "SpatialPolygonsDataFrame",
         "SpatialPoints", "SpatialPixels", "SpatialGrid"

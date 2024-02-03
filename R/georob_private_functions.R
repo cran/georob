@@ -58,6 +58,7 @@ covariances.fixed.random.effects <-
   ## 2015-08-19 AP changes for computing covariances under long-tailed distribution of epsilon
   ## 2016-07-20 AP changes for parallel computations
   ## 2020-02-07 AP sanity checks for switch() and if()
+  ## 2023-12-20 AP replacement of identical(class(...), ...) by inherits(..., ...)
 
 #### -- preparation
 
@@ -157,7 +158,7 @@ covariances.fixed.random.effects <-
   aux <- Valphaxi.inverse.Palphaxi / ( exp.dpsi * eta )
   diag( aux ) <- diag( aux ) + TtT
   aux <- try( chol( aux ), silent = TRUE )
-  if( identical( class( aux ), "try-error" ) ){
+  if( inherits( aux, "try-error" ) ){
     result.new[["error"]] <- TRUE
     return( result.new )
   }
@@ -400,7 +401,7 @@ covariances.fixed.random.effects <-
 
 ##   ##############################################################################
 
-update.zhat <-
+update_zhat <-
   function(
     XX, yy, res, TT,
     nugget, eta, reparam,
@@ -414,6 +415,8 @@ update.zhat <-
   ## 2013-06-12 AP substituting [["x"]] for $x in all lists
   ## 2015-06-29 AP solving linear system of equation by cholesky decomposition
   ## 2015-12-02 AP correcting error in try(chol(m))
+  ## 2023-12-20 AP replacement of identical(class(...), ...) by inherits(..., ...)
+  ## 2024-01-25 AP function update.zhat renamed to update_zhat
 
   ## function computes (1) updated IRWLS estimates zhat of linearized
   ## normal equations, (2) the associated rweights,
@@ -475,7 +478,7 @@ update.zhat <-
 #   if( !identical( class( r.solve ), "try-error" ) ) {
 
   t.chol <- try( chol( M ), silent = TRUE )
-  if( !identical( class( t.chol ), "try-error" ) ){
+  if( !inherits( t.chol, "try-error" ) ){
 
     r.solve <- forwardsolve( t( t.chol ), b )
     r.solve <- backsolve( t.chol, r.solve )
@@ -553,6 +556,8 @@ estimate.zhat <-
   ## 2015-07-17 AP computing residual sums of squares (UStar)
   ## 2015-07-17 AP Gaussian (RE)ML estimation for reparametrized variogram
   ## 2016-07-20 AP changes for parallel computations
+  ## 2023-12-20 AP replacement of identical(class(...), ...) by inherits(..., ...)
+  ## 2024-01-25 AP function update.zhat renamed to update_zhat
 
   ## function computes (1) estimates zhat, bhat, betahat by
   ## solving robustified estimating equations by IRWLS,
@@ -571,7 +576,7 @@ estimate.zhat <-
     aux2 <- s[["v"]] %*% ( s[["d"]] * t( s[["u"]] ) )                # Moore-Penrose inverse
   } else {
     t.chol <- try( chol( aux1 %*% XX ), silent = TRUE )
-    if( !identical( class( t.chol ), "try-error" ) ){
+    if( !inherits( t.chol, "try-error" ) ){
       aux2 <- chol2inv( t.chol )
     } else {
       result[["error"]] <- TRUE
@@ -626,7 +631,7 @@ estimate.zhat <-
 
 #### --- compute new estimates
 
-      new <- update.zhat(
+      new <- update_zhat(
         XX, yy, res, TT,
         nugget, eta, reparam,
         result[["Valphaxi.inverse.Palphaxi"]],
@@ -767,6 +772,11 @@ function(
   ## 2019-03-29 AP call to RFvariogram{RandomFields, version 3.1} replaced by
   ##               call to RFfctn{RandomFields, version 3.3}
   ## 2019-04-07 AP correction of error when computing semivariances for anisotropic variogram models
+  ## 2023-11-17 AP substitution of function RFfctn{RandomFields} by new function gencorr
+  ## 2023-11-17 AP elimination of calls to function RFoptions{RandomFields}
+  ## 2023-12-20 AP added on.exit(options(old.opt)), deleted options(error = NULL)
+  ## 2023-12-20 AP replacement of identical(class(...), ...) by inherits(..., ...)
+  ## 2023-12-28 AP modified gcr.constant for RMfbm model
 
 #### -- check consistency of arguments
 
@@ -778,7 +788,7 @@ function(
     gcr.constant <- as.list( rep( NA_real_, length(variogram.object) ) )
   }
 
-#### -- compute generalized covariances
+#### -- compute generalized correlations
 
   res <- lapply(
     1L:length(variogram.object),
@@ -792,127 +802,55 @@ function(
 
       result <- list( error = TRUE )
 
-      #       RFoptions(newAniso=FALSE) ## moved to georob.fit
 
-#### --- preparation: anisotropic model
+# #### --- preparation
 
       if( NCOL( lag.vectors ) > 1L ){
 
-        ## matrix for coordinate transformation
+        ### anisotropic model
+
+        ### matrix for coordinate transformation
 
         A <- aniso[["sclmat"]] * aniso[["rotmat"]] / param["scale"]
 
-        ## prepare model
+        ### rotated and scaled lag distance
 
-        model.list <- list( variogram.model )
-        model.list <- c( model.list, as.list( param[-1L] ) )
-        model.list <- list( "$", var = 1., A = A, model.list )
-
-        ##  negative semivariance matrix
-
-        ## functions of version 3 of RandomFields
-
-        ## auxiliary function to compute generalized correlations in parallel
-
-        f.aux <- function( i ){
-
-          ## objects s, e, lag.vectors, model.list taken from parent environment
-
-          #           RandomFields Version 3.1
-          #           result <- try(
-          #             -RFvariogram(
-          #               x = lag.vectors[s[i]:e[i], ], model = model.list,
-          #               dim = attr( lag.vectors, "ndim.coords" ), grid = FALSE
-          #             ),
-          #             silent = TRUE
-          #           )
-
-          RFoptions( allow_duplicated_locations = TRUE, storing = FALSE )
-
-          ## note: RFfctn computes covariance for stationary and negative
-          ## semivariance for IRF models, required is negative semivariance
-          result <- try(
-            RFfctn(
-              x = lag.vectors[s[i]:e[i], ], model = model.list,
-              dim = attr( lag.vectors, "ndim.coords" ), grid = FALSE
-            ),
-            silent = TRUE
-          )
-
-          RFoptions( allow_duplicated_locations = FALSE, storing = FALSE  )
-
-          if( !(identical( class( result ), "try-error" ) || any( is.na( result ) )) ){
-            if(!variogram.model %in% irf.models){
-              ## subtract variance for stationary models
-              result <- result - model.list[["var"]]
-            }
-            result
-          } else {
-            "RFvariogram.error"
-          }
-        }
+        scaled.lag.distance <- sqrt( rowSums( (lag.vectors %*% t(A))^2 ) )
 
       } else {
 
-#### --- preparation: isotropic model
+        ### isotropic model
 
-        ## matrix for coordinate transformation
+        ### scaled lag distance
 
-        A <- 1. / param["scale"]
+        scaled.lag.distance <- lag.vectors / param["scale"]
 
-        ## prepare model
+      }
 
-        model.list <- list( variogram.model )
-        model.list <- c( model.list, as.list( param[-1L] ) )
-        model.list <- list( "$", var = 1., A = A, model.list )
+      ### auxiliary function to compute generalized correlations in parallel
 
-        ##  negative semivariance matrix
+      f.aux <- function( i ){
 
-        ## functions of version 3 of RandomFields
+        ### note: gencorr computes the negative semivariance
+        ### for stationary and IRF models, required is negative semivariance
+        result <- try(
+          gencorr(
+            x = scaled.lag.distance[s[i]:e[i]],
+            variogram.model = variogram.model, param = param[-1L]
+          ),
+          silent = TRUE
+        )
 
-        ## auxiliary function to compute generalized correlations in parallel
-
-        f.aux <- function( i ){
-
-          ## objects s, e, lag.vectors, model.list taken from parent environment
-
-          #           RandomFields Version 3.1
-          #           result <- try(
-          #             -RFvariogram(
-          #               x = lag.vectors[s[i]:e[i]], model = model.list,
-          #               grid = FALSE
-          #             ),
-          #             silent = TRUE
-          #           )
-
-          RFoptions( allow_duplicated_locations = TRUE, storing = FALSE )
-
-          ## note: RFfctn computes covariance for stationary and negative
-          ## semivariance for IRF models, required is negative semivariance
-          result <- try(
-            RFfctn(
-              x = lag.vectors[s[i]:e[i]], model = model.list,
-              grid = FALSE
-            ),
-            silent = TRUE
-          )
-
-          RFoptions( allow_duplicated_locations = FALSE, storing = FALSE )
-
-          if( !(identical( class( result ), "try-error" ) || any( is.na( result ) )) ){
-            if(!variogram.model %in% irf.models){
-              ## subtract variance for stationary models
-              result <- result - model.list[["var"]]
-            }
-            result
-          } else {
-            "RFvariogram.error"
-          }
+        if( inherits( result, "try-error" ) || any( is.na( result ) ) ){
+          "gen.corr.error"
+        } else {
+          result
         }
 
       }
 
-#### --- compute covariances
+
+#### --- compute generalized correlations
 
       ## determine number of cores
 
@@ -939,23 +877,23 @@ function(
       if( ncores > 1L && !control.pcmp[["fork"]] ){
 
         if( !sfIsRunning() ){
-          options( error = f.stop.cluster )
+          old.opt <- options( error = f.stop.cluster )
+          on.exit( options( old.opt ) )
 
           junk <- sfInit( parallel = TRUE, cpus = ncores )
 
           junk <- sfLibrary( georob, verbose = FALSE )
-          #         junk <- sfLibrary( RandomFields, verbose = FALSE )
 
-          junk <- sfExport( "s", "e", "lag.vectors", "model.list" )
+          junk <- sfExport(
+            "s", "e", "scaled.lag.distance", "variogram.model", "param"
+          )
 
          }
-
 
         Valpha <- sfLapply( 1L:k, f.aux )
 
         if( control.pcmp[["sfstop"]] ){
           junk <- sfStop()
-          options( error = NULL )
         }
 
       } else {
@@ -966,7 +904,7 @@ function(
 
       not.ok <- any( sapply(
           Valpha,
-          function( x ) identical( x, "RFvariogram.error" ) || any(is.na(x))
+          function( x ) identical( x, "gen.corr.error" ) || any( is.na( x ) )
         ))
 
       if( !not.ok ){
@@ -977,9 +915,25 @@ function(
         ##  implements a sufficient condition for positive definiteness of
         ##  Valpha (strong row sum criterion)
 
+#         browser()
+
         if( is.na( gcr.constant ) ){
           if( variogram.model %in% irf.models ){
-            gcr.constant <- -min( Valpha ) * 2.
+            if( identical( variogram.model, "RMfbm" ) ){
+              ## cf Chiles & Delfiner, 1999, eqs 7.34 & 7.35, p. 511
+              t.a <- param["alpha"]
+              t.ah <- 0.5 * t.a
+              t.n <- 0.5 + 0.5 * NCOL(lag.vectors)
+              gcr.constant <- max(
+                2.,
+                gamma(0.5 + t.ah) * gamma(1. - t.ah) / sqrt(pi) *
+                gamma(t.a + t.n) / gamma(1. + t.a) / gamma(t.n)
+              )
+            } else {
+              gcr.constant <- 2.
+            }
+            gcr.constant <- -min( Valpha ) * gcr.constant
+
           } else {
             gcr.constant <- 1.
           }
@@ -1007,7 +961,7 @@ function(
 
       } else {
 
-        warning( "there were errors: call 'georob' with argument 'verbose' > 1" )
+        warning( "there were errors: call function with argument 'verbose' > 1" )
         if( verbose > 3. ) cat(
           "\n an error occurred when computing the negative semivariance matrix\n"
         )
@@ -1435,6 +1389,7 @@ likelihood.calculations <-
   return( lik.item )
 
 }
+
 
 
 ##   ##############################################################################
@@ -1992,61 +1947,6 @@ partial.derivatives.variogram <-
       )
     }, ##  end case RMgencauchy
 
-    #     gengneiting = { Version 2 of package RandomFields
-    #
-    #
-    #       A <- unname( param["n"] )
-    #       B <- unname( param["alpha"] )
-    #
-    #       ## derivative with of generalized covariance with respect to
-    #       ## scaled lag distance
-    #
-    #       dgc.dhs <- rep( 0., length( hs ) )
-    #       sel <- hs < 1.
-    #       dgc.dhs[sel] <- if( identical( A, 1 ) ){
-    #         -( (1.+B) * (2.+B) * (1.-hs[sel])^B * hs[sel] )
-    #       } else if( identical( A, 2 ) ){
-    #         -( (3.+B) * (4.+B) * (1.-hs[sel])^(1.+B) * hs[sel] * ( 1. + hs[sel] + B*hs[sel]) ) / 3.
-    #       } else if( identical( A, 3 ) ){
-    #         -(
-    #           (5.+B) * (6.+B) * (1.-hs[sel])^(2.+B) * hs[sel] * ( 3. + 3. * (2.+B) * hs[sel] + (1.+B) * (3.+B) * hs[sel]^2 )
-    #         ) / 15.
-    #       } else {
-    #         stop( "gengneiting model undefined for 'n' != 1:3" )
-    #       }
-    #
-    #       result <- rep( 0., length( hs ) )
-    #
-    #       switch(
-    #         d.param[1],
-    #         scale = dgc.dhs * dhs.dscale,
-    #         alpha = {
-    #           result[sel] <- if( identical( A, 1 ) ){
-    #             (1.-hs[sel])^(1.+B) * ( hs[sel] + (1. + hs[sel] + B*hs[sel]) * log( 1.-hs[sel]) )
-    #
-    #           } else if( identical( A, 2 ) ){
-    #             (
-    #               (1.-hs[sel])^(2.+B) * (
-    #                 hs[sel] * ( 3. + 2. * (2.+B) *hs[sel] ) +
-    #                 ( 3. + 3. * ( 2.+B) * hs[sel] + ( 1.+B) * (3.+B) * hs[sel]^2 ) * log( 1.-hs[sel] )
-    #               )
-    #             ) / 3.
-    #           } else if( identical( A, 3 ) ){
-    #             (
-    #               (1.-hs[sel])^(3.+B) * (
-    #                 hs[sel] * ( 15. + hs[sel] * ( 36. + 23.*hs[sel] + 3. * B * ( 4. + (6.+B)*hs[sel] ) ) ) +
-    #                 ( 15. + 15. * (3.+B) * hs[sel] + ( 45. + 6. * B * (6.+B) ) * hs[sel]^2 + (1.+B) * (3.+B) * (5.+B) * hs[sel]^3 ) *
-    #                 log( 1.-hs[sel])
-    #               )
-    #             ) / 15.
-    #           }
-    #           result
-    #         },
-    #         dgc.dhs * dhs.daniso
-    #       )
-    #
-    #
-    #     }, ##  end case Gengneiting
 
 #### --- RMgengneiting
     RMgengneiting = {
@@ -2074,7 +1974,7 @@ partial.derivatives.variogram <-
           (7.724744871391589+B) * hs[sel]^2 + 0.2/3 * (4.5+B) * (6.5+B) * (8.5+B) * hs[sel]^3
         )
       } else {
-        stop( "RMgengneiting model undefined for 'n' != 1:3" )
+        stop( "RMgengneiting model undefined for 'kappa' != 1:3" )
       }
 
       result <- rep( 0., length( hs ) )
@@ -2130,6 +2030,7 @@ partial.derivatives.variogram <-
       )
     }, ##  end case RMgneiting
 
+#### --- RMlgd
     RMlgd = {
 
       A <- unname( param["alpha"] )
@@ -3204,6 +3105,8 @@ georob.fit <-
   ## 2017-07-26 AP changes to allow non-zero snugget if there are no replicated observations
   ## 2020-02-19 AP minor change in computation of hessian
   ## 2020-03-27 AP computing Hessian (observed Fisher information) of untransformed parameters
+  ## 2023-12-20 AP added on.exit(options(...))
+  ## 2024-01-21 AP more efficient calculation of lag.vectors for anisotropic variograms
 
   ##  ToDos:
 
@@ -3211,15 +3114,13 @@ georob.fit <-
 
   ##  main body of georob.fit
 
-  RFoptions(newAniso=FALSE)
-
   d2r <- pi / 180.
 
   ##  define rho-function and derivatives (suppress temporarily warnings issued by gamma())
 
   old.op <- options( warn = -1 )
+  on.exit( options( old.op ) )
   rho.psi.etc <- f.psi.function( x = psi.func, tp = tuning.psi )
-  options( old.op )
 
   ##  set number of IRWLS iterations for estimating bhat and betahat to
   ##  1 for non-robust REML case
@@ -3650,8 +3551,15 @@ georob.fit <-
     lag.vectors <- georob.object[["locations.objects"]][["lag.vectors"]]
   } else {
     if( !all( sapply( variogram.object, function(x) x[["isotropic"]] ) ) ){
-      indices.pairs <- combn( NROW( coordinates ), 2L )
-      lag.vectors <- coordinates[ indices.pairs[2L,], ] - coordinates[ indices.pairs[1L,], ]
+      lag.vectors <- apply(
+        coordinates, 2,
+        function( x ){
+          nx <- length( x )
+          tmp <- matrix( rep( x, nx ), ncol = nx)
+          sel <- lower.tri( tmp )
+          tmp[sel] - (t( tmp ))[sel]
+        }
+      )
     } else {
       lag.vectors <- as.vector( dist( coordinates ) )
     }
@@ -4351,27 +4259,25 @@ georob.fit <-
 
 #   print(str(r.cov))
 
-  ## stop SNOW and snowfall clusters
+  ## stop PSOCK and snowfall clusters
 
   #   f.stop.cluster()
 
-  if( length( lik.item[["defaultCluster"]] ) > 0L ){
-    cl <- lik.item[["defaultCluster"]]
+  #   if( length( lik.item[["defaultCluster"]] ) > 0L ){
+  #     cl <- lik.item[["defaultCluster"]]
+  #
+  #     junk <- parLapply( cl, 1L:length(cl), function( i ) sfStop() )
+  #     junk <- stopCluster( cl )
+  #     sfStop()
+  #   }
 
-    junk <- parLapply( cl, 1L:length(cl), function( i ) sfStop() )
-    junk <- stopCluster( cl )
-    sfStop()
-    options( error = NULL )
-  }
-
-  if( sfIsRunning() ){
-    sfStop()
-    options( error = NULL )
-  }
-
-  if( file.exists( "SOCKcluster.RData" ) ){
-    file.remove( "SOCKcluster.RData" )
-  }
+  #   if( sfIsRunning() ){
+  #     sfStop()
+  #   }
+  #
+  #   if( file.exists( "SOCKcluster.RData" ) ){
+  #     file.remove( "SOCKcluster.RData" )
+  #   }
 
   attr( r.gradient, "eeq.emp" )    <- lik.item[["eeq"]][["eeq.emp"]]
   attr( r.gradient, "eeq.exp" )    <- lik.item[["eeq"]][["eeq.exp"]]
@@ -4449,26 +4355,27 @@ georob.fit <-
 
 }
 
-#  ##############################################################################
-
-getCall.georob <-
-  function( object )
-{
-
-  ## Function replaces the name of a formula object in the call component
-  ## of a georob object by the formula itself (needed for update.default to
-  ## work correctly)
-
-  ## 2013-06-12 AP substituting [["x"]] for $x in all lists
-
-  if( is.null( call <- getElement( object, "call" ) ) )  stop(
-    "need an object with call component"
-  )
-  call[["formula"]] <- update.formula( formula(object), formula( object ) )
-
-  return( call )
-
-}
+# #  ##############################################################################
+#
+# getCall.georob <-
+#   function( x, ... )
+# {
+#
+#   ## Function replaces the name of a formula object in the call component
+#   ## of a georob object by the formula itself (needed for update.default to
+#   ## work correctly)
+#
+#   ## 2013-06-12 AP substituting [["x"]] for $x in all lists
+#   ## 2024-01-26 AP renamed object to x
+#
+#   if( is.null( call <- getElement( x, "call" ) ) )  stop(
+#     "need an object with call component"
+#   )
+#   call[["formula"]] <- update.formula( formula(x), formula( x ) )
+#
+#   return( call )
+#
+# }
 
 
 ################################################################################
@@ -5040,6 +4947,7 @@ f.aux.Qstar <- function(
   ## 2014-07-29 A. Papritz
   ## 2015-07-17 AP new function interface and new name
   ## 2016-07-20 AP changes for parallel computations
+  ## 2023-12-20 AP replacement of identical(class(...), ...) by inherits(..., ...)
 
   result <- list( error = TRUE, log.det.Qstar = NULL, Qstar.inverse = NULL )
 
@@ -5079,7 +4987,7 @@ f.aux.Qstar <- function(
 
     t.chol <- try( chol( Qstar ), silent = TRUE )
 
-    if( !identical( class( t.chol ), "try-error" ) ) {
+    if( !inherits( t.chol, "try-error" ) ) {
 
       result[["error"]] <- FALSE
       result[["log.det.Qstar"]] <- 2. * sum( log( diag( t.chol) ) )
@@ -5107,6 +5015,7 @@ f.aux.Valphaxi <- function(
   ## 2015-07-23 AP Valpha (correlation matrix without spatial nugget) no longer stored
   ## 2016-07-20 AP changes for parallel computations
   ## 2016-08-04 AP changes for nested variogram models
+  ## 2023-12-21 AP replacement of identical(class(...), ...) by inherits(..., ...)
 
   result <- list(
     error = TRUE, Valpha = NULL, Valphaxi = NULL,
@@ -5147,7 +5056,7 @@ f.aux.Valphaxi <- function(
 
   t.vchol <- try( chol( Valphaxi ), silent = TRUE )
 
-  if( !identical( class( t.vchol ), "try-error" ) ) {
+  if( !inherits( t.vchol, "try-error" ) ){
 
     result[["error"]]            <- FALSE
     result[["Valpha"]]           <- Valpha
@@ -5166,28 +5075,29 @@ f.aux.Valphaxi <- function(
 
 ################################################################################
 
-f.stop.cluster <- function( cl = NULL ){
+f.stop.cluster <- function( clstr = NULL, fname ){
 
   ## function to stop snow and snowfall clusters
   ## 2014-07-31 A. Papritz
+  ## 2023-12-20 AP options(error = NULL) deleted
+  ## 2024-02-01 AP new argument fname
 
   if( sfIsRunning() ){
     sfStop()
   }
 
-  if( file.exists( "SOCKcluster.RData" ) ){
-    if( is.null( cl ) ) load( "SOCKcluster.RData" )
-    file.remove( "SOCKcluster.RData" )
+  if( file.exists( fname ) ){
+    if( is.null( clstr ) ) load( fname )
+    file.remove( fname )
   }
 
   ## stop cluster started by child processes in recursive paralellized
   ## computations
 
-  if( !is.null( cl ) ){
-    junk <- parLapply( cl, 1L:length(cl), function( i ) sfStop() )
-    junk <- stopCluster( cl )
+  if( !is.null( clstr ) ){
+    junk <- parLapply( clstr, 1L:length(clstr), function( i ) snowfall::sfStop() )
+    junk <- stopCluster( clstr )
   }
-  options( error = NULL )
 
 }
 
@@ -5718,11 +5628,12 @@ f.call.set_x_to_value_in_fun <- function( cl, arg, fun, x, value ){
 
 f.call.set_allfitxxx_to_false <- function( cl ){
 
+  ## 2023-12-20 AP checking class by inherits()
   ## arguments
 
   ## cl:   a call to function georob
 
-  if( !identical( class(cl)[1], "call" ) ) stop(
+  if( !inherits( cl, "call" ) ) stop(
     "'cl' must be of class 'call'"
   )
 
@@ -5794,6 +5705,8 @@ f.call.set_allfitxxx_to_false <- function( cl ){
 ## set one fit.param or one fit.aniso equal to FALSE
 
 f.call.set_onefitxxx_to_value <- function( cl, nme, value, i = NULL ){
+
+  ## 2023-12-14 AP checking class by inherits()
 
   ## arguments
 
@@ -5919,7 +5832,7 @@ f.call.set_onefitxxx_to_value <- function( cl, nme, value, i = NULL ){
 
   ## start of main body
 
-  if( !identical( class(cl)[1], "call" ) ) stop(
+  if( !inherits( cl, "call" ) ) stop(
     "'cl' must be of class 'call'"
   )
 
@@ -5978,8 +5891,9 @@ f.call.set_allxxx_to_fitted_values <- function( object ){
   ## object:   a georob object
 
   ## 2018-01-17 ap  also update of variogram.model
+  ## 2023-12-14 AP checking class by inherits()
 
-  if( !identical( class(object)[1], "georob" ) ) stop(
+  if( !inherits( object, "georob" ) ) stop(
     "'object' must be of class 'georob'"
   )
 
@@ -6058,6 +5972,8 @@ f.call.set_allxxx_to_fitted_values <- function( object ){
 ## set one param or one aniso equal to FALSE
 
 f.call.set_onexxx_to_value <- function( cl, nme, value, i = NULL ){
+
+  ## 2023-12-14 AP checking class by inherits()
 
   ## arguments
 
@@ -6184,7 +6100,7 @@ f.call.set_onexxx_to_value <- function( cl, nme, value, i = NULL ){
 
   ## start of main body
 
-  if( !identical( class(cl)[1], "call" ) ) stop(
+  if( !inherits( cl, "call" ) ) stop(
     "'cl' must be of class 'call'"
   )
 

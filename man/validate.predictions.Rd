@@ -1,4 +1,4 @@
-% 2021-06-04 A. Papritz
+% 2024-02-01 A. Papritz
 % R CMD Rdconv -t html -o bla.html validate.predictions.Rd ; open bla.html; R CMD Rd2pdf --force validate.predictions.Rd;
 
 \encoding{utf8}
@@ -15,7 +15,7 @@
 \description{
   Functions to compute and plot summary statistics of prediction errors to
   (cross-)validate fitted spatial linear models by the criteria proposed by
-  Gneiting et al.  (2007) for assessing probabilistic forecasts.}
+  \cite{Gneiting et al.  (2007)} for assessing probabilistic forecasts.}
 
 \usage{
 validate.predictions(data, pred, se.pred,
@@ -27,8 +27,6 @@ validate.predictions(data, pred, se.pred,
     col, pch, lty, main, xlab, ylab, ...)
 
 \method{print}{cv.georob}(x, digits = max(3, getOption("digits") - 3), ...)
-
-% \method{rstudent}{cv.georob}(model, ...)
 
 \method{summary}{cv.georob}(object, se = FALSE, ...)
 }
@@ -43,7 +41,7 @@ validate.predictions(data, pred, se.pred,
   \item{se.pred}{a numeric vector with prediction standard errors
   (mandatory argument).}
 
-  \item{statistic}{character keyword defining what statistic of the
+  \item{statistic}{a character keyword defining what statistic of the
   prediction errors should be computed.
   Possible values are (see \emph{Details}):
 
@@ -64,21 +62,21 @@ validate.predictions(data, pred, se.pred,
     }
   }
 
-  \item{ncutoff}{positive integer (\eqn{N}) giving the number of quantiles,
+  \item{ncutoff}{a positive integer (\eqn{N}) giving the number of quantiles,
   for which CDFs are evaluated (\code{type = "mc"}), or the number of
   thresholds for which the Brier score is computed (\code{type = "bs"}),
   see \emph{Details} (default: \code{min(500, length(data))}).}
 
   %   \item{robust}{logical scalar controlling whether robust predictive
-  %   distribution of response \eqn{Y(\mbox{\boldmath$s$\unboldmath})}{Y(s)}
+  %   distribution of response \eqn{Y(\boldsymbol{s})}{Y(s)}
   %   should be used for computing \code{pit}, \code{mc}, \code{bs} and
   %   \code{crps}, see \emph{Details}.}
   %
   %   \item{se.signal}{numeric vector with standard error of predicted signal
-  %   \eqn{Z(\mbox{\boldmath$s$\unboldmath}) =
-  %   \mbox{\boldmath$x$\unboldmath}(\mbox{\boldmath$s$\unboldmath})^\mathrm{T}
-  %   \mbox{\boldmath$\beta$\unboldmath} +
-  %   B(\mbox{\boldmath$s$\unboldmath})}{Y(s) = x(s)^T \beta + B(s)}, see
+  %   \eqn{Z(\boldsymbol{s}) =
+  %   \boldsymbol{x}(\boldsymbol{s})^\mathrm{T}
+  %   \boldsymbol{\beta} +
+  %   B(\boldsymbol{s})}{Y(s) = x(s)^T \beta + B(s)}, see
   %   \emph{Details}.}
   %
   %   \item{scld.res}{numeric vector with scaled residuals of fitted
@@ -89,9 +87,9 @@ validate.predictions(data, pred, se.pred,
 
     \item{x, object}{objects of class \code{cv.georob}.}
 
-  \item{digits}{positive integer indicating the number of decimal digits to print.}
+  \item{digits}{a positive integer indicating the number of decimal digits to print.}
 
-  \item{type}{character keyword defining what type of plot is created by the
+  \item{type}{a character keyword defining what type of plot is created by the
   \code{plot.cv.georob}.  Possible values are:
 
     \itemize{
@@ -122,12 +120,14 @@ validate.predictions(data, pred, se.pred,
 
   }
 
-  \item{smooth}{control whether scatter plots of data vs. predictions
-  should be smoothed by \code{\link[stats]{loess.smooth}}.}
+  \item{smooth}{a logical scalar controlling whether scatter plots of data
+  vs.  predictions should be smoothed by
+  \code{\link[stats]{loess.smooth}}.}
 
-  \item{span}{smoothness parameter for loess (see \code{\link[stats]{loess.smooth}}).}
+  \item{span}{a numeric with the smoothness parameter for loess (see
+  \code{\link[stats]{loess.smooth}}).}
 
-  \item{add}{logical controlling whether the current high-level plot is
+  \item{add}{a logical scalar controlling whether the current high-level plot is
   added to an existing graphics without cleaning the frame before (default:
   \code{FALSE}).}
 
@@ -135,11 +135,11 @@ validate.predictions(data, pred, se.pred,
 
   \item{col, pch, lty}{color, symbol and line type.}
 
-  \item{se}{logical controlling if the standard errors of the averaged
-  continuous ranked probability score and of the mean and dispersion
-  statistics of the prediction errors (see \emph{Details}) are computed
-  from the respective values computed for the \eqn{K} cross-validation
-  subsets (default: \code{FALSE}).}
+  \item{se}{a logical scalar controlling if the standard errors of the
+  averaged continuous ranked probability score and of the mean and
+  dispersion statistics of the prediction errors (see \emph{Details}) are
+  computed from the respective values of the \eqn{K}
+  cross-validation subsets (default: \code{FALSE}).}
 
   \item{...}{additional arguments passed to the methods.}
 
@@ -148,12 +148,12 @@ validate.predictions(data, pred, se.pred,
 \details{
 
   \code{validate.predictions} computes the items required to evaluate (and
-  plot) the diagnostic criteria proposed by Gneiting et al.  (2007) for
+  plot) the diagnostic criteria proposed by \cite{Gneiting et al. (2007)} for
   assessing the \emph{calibration} and the \emph{sharpness} of
   probabilistic predictions of (cross-)validation data.  To this aim,
   \code{validate.predictions} uses the assumption that the prediction
   errors
-  \eqn{Y(\mbox{\boldmath$s$\unboldmath})-\widehat{Y}(\mbox{\boldmath$s$\unboldmath})}{Y(s)-hatY(s)}
+  \eqn{Y(\boldsymbol{s})-\widehat{Y}(\boldsymbol{s})}{Y(s)-hatY(s)}
   follow normal distributions with zero mean and standard deviations equal
   to the Kriging standard errors.  This assumption is an approximation if
   the errors \eqn{\varepsilon}{\epsilon} come from a long-tailed
@@ -200,7 +200,7 @@ validate.predictions(data, pred, se.pred,
 
   }
 
-  Gneiting et al.  (2007) proposed the following plots to validate
+  \cite{Gneiting et al. (2007)} proposed the following plots to validate
   probabilistic predictions:
 
   \itemize{
@@ -283,6 +283,28 @@ validate.predictions(data, pred, se.pred,
     \code{fbar} \tab  the average predictive distribution \eqn{\bar{F}_n(y)}{barF_n(y)}\cr
     \code{bs} \tab the Brier score \eqn{\mathrm{BS}(y)}{BS(y)}\cr }
   }
+
+  The method \code{print.cv.georob} invisibly returns the object unchanged.
+
+  The method \code{summary.cv.georob} returns an object of class
+  \code{summary.cv.georob} which is a list with 3 components:
+  \itemize{
+    \item \code{st} a numeric vector with summary statistics of the
+    (standardized) prediction errors of the possibly log-transformed
+    response, see output of function \code{validate.predictions} for
+    argument \code{statistic = "st"} above.
+    \item \code{crps} the value of the continuous ranked probability score.
+    \item \code{st.lgn} a numeric vector with summary statistics of the
+    (standardized) prediction errors of the back-transformed response if
+    argument \code{lgn = TRUE} and \code{NULL} otherwise.
+  }
+  There is a \code{print} method for objects of class \code{summary.cv.georob}
+  which invisibly returns the object unchanged.
+
+  The method \code{plot.georob} is called for its side effects and
+  invisibly returns \code{NULL}.
+
+
 %
 %   The function \code{rstudent.cv.georob} returns a numeric vector with
 %   the standardized cross-validation prediction errors.
@@ -292,13 +314,14 @@ validate.predictions(data, pred, se.pred,
 
 \references{
  Gneiting, T., Balabdaoui, F. and Raftery, A. E.(2007) Probabilistic
- forecasts, calibration and sharpness. \emph{Journal of the Royal Statistical
- Society Series B} \bold{69}, 243--268.
+ forecasts, calibration and sharpness.  \emph{Journal of the Royal
+ Statistical Society Series B} \bold{69}, 243--268,\cr
+ \doi{10.1111/j.1467-9868.2007.00587.x}.
 
 }
 
 \author{
-   Andreas Papritz \email{andreas.papritz@env.ethz.ch}.
+   Andreas Papritz \email{papritz@retired.ethz.ch}.
 }
 
 \seealso{
@@ -308,7 +331,7 @@ validate.predictions(data, pred, se.pred,
 }
 
 \examples{
-\dontrun{
+\donttest{
 data(meuse)
 
 r.logzn <- georob(log(zinc) ~ sqrt(dist), data = meuse, locations = ~ x + y,

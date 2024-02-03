@@ -15,6 +15,10 @@
 % 2018-11-16 AP Kleine Erg\"{a}nzung Abschnitt \"{u}ber Berechnung von robusten Startwerten
 % 2019-04-07 AP Anpassung fuer neue Argumente von fit.variogram.model
 % 2020-02-05 AP Anpassung konditionale Verwendung von Objekten aus suggested packages
+% 2022-12-17 AP Anpassung konditionale Verwendung von Objekten aus suggested package lattice
+% 2023-11-14 AP Aenderung des Symbols fuer Varianz des Signals
+% 2024-02-01 AP Korrektur Fehler Begrenzung Code chunk options
+% 2024-02-01 AP install.packages() entfernt
 
 % cd ~/R.user.home/georob/vignettes/
 % R CMD Sweave georob_vignette.Rnw;  R CMD Stangle georob_vignette.Rnw; pdflatex georob_vignette.tex; open georob_vignette.pdf;
@@ -278,8 +282,8 @@ is denoted by
   \mbox{\boldmath$\Gamma$\unboldmath}_\theta =
   \sigma_{\mathrm{n}}^2\mbox{\boldmath$I$\unboldmath} +
   \sigma^2\mbox{\boldmath$V$\unboldmath}_\alpha = 
-  \sigma^2_Z \, \mbox{\boldmath$V$\unboldmath}_{\alpha,\xi} = 
-  \sigma^2_Z \, ((1-\xi) \, \mbox{\boldmath$I$\unboldmath} + 
+  \sigma_B^2 \, \mbox{\boldmath$V$\unboldmath}_{\alpha,\xi} = 
+  \sigma_B^2 \, ((1-\xi) \, \mbox{\boldmath$I$\unboldmath} + 
   \xi\, \mbox{\boldmath$V$\unboldmath}_\alpha ),
 \end{equation}
 %
@@ -290,9 +294,9 @@ is the variance of seemingly uncorrelated micro-scale variation in
 that cannot be resolved with the chosen sampling design,  
 \eqn{\sigma^2}{} is the variance of the captured auto-correlated variation in 
 \eqn{B(\mbox{\boldmath$s$\unboldmath})}{},  
-\eqn{\sigma_Z^2=\sigma_{\mathrm{n}}^2+\sigma^2}{} 
+\eqn{\sigma_B^2=\sigma_{\mathrm{n}}^2+\sigma^2}{} 
 is the signal variance, and 
-\eqn{\xi=\sigma^2/\sigma_Z^2}{}. 
+\eqn{\xi=\sigma^2/\sigma_B^2}{}. 
 To estimate both 
 \eqn{\sigma_{\mathrm{n}}^2}{} and \eqn{\tau^2}{} (and not only their sum), one needs
 replicated measurements for some of the 
@@ -621,13 +625,22 @@ two factors \code{ffreq} (frequency of flooding) and \code{soil}
 % 
 \bcf
 %
-<<meuse-zinc-eda-plot-1,fig=TRUE,height=4,width=6,eval=TRUE=>>=
-library(lattice)
-palette(trellis.par.get("superpose.symbol")$col)
+<<meuse-zinc-eda-plot-1,fig=TRUE,height=4,width=6,eval=TRUE>>=
+if(requireNamespace("lattice", quietly = TRUE)){
+  palette(lattice::trellis.par.get("superpose.symbol")$col)
+} else {
+  palette(rainbow(7))
+}
 plot(zinc~dist, meuse, pch=as.integer(ffreq), col=soil)
 legend("topright", col=c(rep(1, nlevels(meuse$ffreq)), 1:nlevels(meuse$soil)),
   pch=c(1:nlevels(meuse$ffreq), rep(1, nlevels(meuse$soil))), bty="n",
   legend=c(levels(meuse$ffreq), levels(meuse$soil)))
+# library(lattice)
+# palette(trellis.par.get("superpose.symbol")$col)
+# plot(zinc~dist, meuse, pch=as.integer(ffreq), col=soil)
+# legend("topright", col=c(rep(1, nlevels(meuse$ffreq)), 1:nlevels(meuse$soil)),
+#   pch=c(1:nlevels(meuse$ffreq), rep(1, nlevels(meuse$soil))), bty="n",
+#   legend=c(levels(meuse$ffreq), levels(meuse$soil)))
 @
 % 
 \ecf{Dependence of \code{zinc} concentration on \code{dist}ance to
@@ -642,10 +655,10 @@ stabilize the variance:
 % 
 \bcf
 %
-<<meuse-zinc-eda-plot-2,fig=TRUE,height=4,width=6,eval=TRUE=>>=
-xyplot(log(zinc)~dist | ffreq, meuse, groups=soil, panel=function(x, y, ...){
-    panel.xyplot(x, y, ...)
-    panel.loess(x, y, ...)
+<<meuse-zinc-eda-plot-2,fig=TRUE,height=4,width=6,eval=TRUE>>=
+lattice::xyplot(log(zinc)~dist | ffreq, meuse, groups=soil, panel=function(x, y, ...){
+    lattice::panel.xyplot(x, y, ...)
+    lattice::panel.loess(x, y, ...)
   }, auto.key=TRUE)
 @
 %
@@ -657,11 +670,11 @@ transform \code{dist} by $\sqrt{\;\;}$:
 % 
 \bcf
 %
-<<meuse-zinc-eda-plot-3,fig=TRUE,height=4,width=6,eval=TRUE=>>=
-xyplot(log(zinc)~sqrt(dist) | ffreq, meuse, groups=soil, panel=function(x, y, ...){
-    panel.xyplot(x, y, ...)
-    panel.loess(x, y, ...)
-    panel.lmline(x, y, lty="dashed", ...)
+<<meuse-zinc-eda-plot-3,fig=TRUE,height=4,width=6,eval=TRUE>>=
+lattice::xyplot(log(zinc)~sqrt(dist) | ffreq, meuse, groups=soil, panel=function(x, y, ...){
+    lattice::panel.xyplot(x, y, ...)
+    lattice::panel.loess(x, y, ...)
+    lattice::panel.lmline(x, y, lty="dashed", ...)
   }, auto.key=TRUE)
 @
 %
@@ -687,7 +700,7 @@ The residual diagnostic plots
 %
 \bcf
 %
-<<meuse-zinc-lm-resdiag,fig=TRUE,height=5,width=6,eval=TRUE=>>=
+<<meuse-zinc-lm-resdiag,fig=TRUE,height=5,width=6,eval=TRUE>>=
 op <- par(mfrow=c(2, 2)); plot(r.lm); par(op)
 @
 %
@@ -855,11 +868,7 @@ if(requireNamespace("multcomp", quietly = TRUE)){
     linfct = multcomp::mcp(ffreq = c("ffreq1 - ffreq2 = 0", "ffreq1 - ffreq3 = 0",
     "ffreq2 - ffreq3 = 0"))))
 } else {
-  install.packages("multcomp")
-  requireNamespace("multcomp", quietly = TRUE)
-  summary(multcomp::glht(r.georob.m0.spher.reml, 
-    linfct = multcomp::mcp(ffreq = c("ffreq1 - ffreq2 = 0", "ffreq1 - ffreq3 = 0",
-    "ffreq2 - ffreq3 = 0"))))
+  warning("package 'multcomp' is missing, install it and re-build vignette")
 }
 # library(multcomp)
 # summary(glht(r.georob.m0.spher.reml, 
@@ -1346,10 +1355,7 @@ if(requireNamespace("gstat", quietly = TRUE)){
   data(coalash, package="gstat")
   summary(coalash)
 } else {
-  install.packages("gstat")
-  requireNamespace("gstat", quietly = TRUE)
-  data(coalash, package="gstat")
-  summary(coalash)
+  warning("package 'gstat' is missing, install it and re-build vignette")
 }
 # data(coalash, package="gstat")
 # summary(coalash)
@@ -1685,10 +1691,10 @@ variogram.}{coalash-gaussian-robust-reml-variogram}
 %
 % Note that by default for Gaussian REML, \code{georob()} maximizes a
 % restricted profile loglikelihood that only depends on
-% \eqn{\xi=\sigma^2/\sigma_Z^2}{}, \eqn{\eta = \sigma_Z^2 /
+% \eqn{\xi=\sigma^2/\sigma_B^2}{}, \eqn{\eta = \sigma_B^2 /
 % \tau^2} and $\alpha$ with respect to these parameters, and the
 % variance of the signal
-% \eqn{\sigma_Z^2=\sigma_{\mathrm{n}}^2+\sigma^2}{} is estimated by an
+% \eqn{\sigma_B^2=\sigma_{\mathrm{n}}^2+\sigma^2}{} is estimated by an
 % explicit expression that depends on these parameters
 % \citep[e.g.][p.~113]{Diggle-Ribeiro-2007}, see help page of
 % \code{georob()}.
@@ -1955,7 +1961,6 @@ of the respective Kriging variances:
 \bcf[1]
 %
 <<ash-pKriging-plot-robust-gaussian-2,results=hide,fig=TRUE,width=9.96,height=4.98,eval=TRUE>>=
-library(lattice)
 # rel. difference of predictions
 r.pk.m1.exp.c2$reldiff.pred <- (r.pk.m1.exp.c1000$pred -
   r.pk.m1.exp.c2$pred) / r.pk.m1.exp.c2$pred * 100
@@ -1964,19 +1969,19 @@ reldiff.pred <- spplot(r.pk.m1.exp.c2, "reldiff.pred", at=-1:7,
 # ratio Kriging variances
 r.pk.m1.exp.c2$ratio.msep <- r.pk.m1.exp.c1000$se^2 / 
   r.pk.m1.exp.c2$se^2 * 100
-ratio.msep <- spplot(r.pk.m1.exp.c2, "ratio.msep",  at=105:115, 
+ratio.msep <- spplot(r.pk.m1.exp.c2, "ratio.msep", at=105:115, 
   main="ratio of Gaussian to robust Kriging variances",scales=list(draw=TRUE))
 plot(reldiff.pred, pos=c(0, 0, 0.5, 1), more=TRUE)
 #  add bubble plot of centred data colored by "robustness" weights
 rw <- cut(r.georob.m1.exp.c2$rweights, seq(0.2, 1, by = 0.2))
-trellis.focus("panel", 1, 1)
-panel.points(coalash$x, coalash$y, lwd=2, 
+lattice::trellis.focus("panel", 1, 1)
+lattice::panel.points(coalash$x, coalash$y, lwd=2, 
   cex=sqrt(abs(coalash$coalash - median((coalash$coalash)))), 
   col=colorRampPalette(c("yellow", "orange", grey(0.4)))(4)[as.numeric(rw)])
-panel.text(rep(17, nlevels(rw)+1), 0:nlevels(rw), pos=2, cex=0.8, 
+lattice::panel.text(rep(17, nlevels(rw)+1), 0:nlevels(rw), pos=2, cex=0.8, 
   labels=c(rev(levels(rw)), "rob. weights"), 
   col=c(rev(colorRampPalette(c("yellow", "orange", grey(0.4)))(4)), "white"))
-trellis.unfocus()
+lattice::trellis.unfocus()
 
 plot(ratio.msep, pos=c(0.5, 0, 1, 1), more=FALSE)
 @
@@ -2295,20 +2300,20 @@ variances can be re-parametrized to
 \begin{itemize}
 
 \item the signal variance 
-\eqn{\sigma_Z^2 = \sigma^2 + \sigma_{\mathrm{n}}^2}{},
+\eqn{\sigma_B^2 = \sigma^2 + \sigma_{\mathrm{n}}^2}{},
 
 \item the inverse relative nugget 
-\eqn{\eta = \sigma_Z^2 / \tau^2}{} and
+\eqn{\eta = \sigma_B^2 / \tau^2}{} and
 
 \item the relative auto-correlated signal variance
-\eqn{\xi = \sigma^2/\sigma_Z^2}{}.
+\eqn{\xi = \sigma^2/\sigma_B^2}{}.
 
 \end{itemize}
 
 
 \code{georob()} maximizes then a (restricted) \emph{profile
 log-likelihood} that depends only on \eqn{\eta}{}, \eqn{\xi}{},
-\eqn{\alpha}{}, \ldots, and \eqn{\sigma_Z^2}{} is estimated by an
+\eqn{\alpha}{}, \ldots, and \eqn{\sigma_B^2}{} is estimated by an
 explicit expression that depends on these parameters
 \citep[e.g.][p.~113]{Diggle-Ribeiro-2007}.  This is usually more
 efficient than maximizing the (restricted) log-likelihood with respect

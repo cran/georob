@@ -271,6 +271,7 @@ ranef.georob <-
   ## 2016-07-20 AP changes for parallel computations
   ## 2016-08-05 AP changes for nested variogram models
   ## 2020-02-14 AP sanity checks of arguments and for if() and switch()
+  ## 2023-12-21 AP replacement of identical(class(...), ...) by inherits(..., ...)
 
   ## check arguments
 
@@ -279,7 +280,7 @@ ranef.georob <-
   ## temporarily redefine na.action component of object
 
   object.na <- object[["na.action"]]
-  if( identical( class( object[["na.action"]] ), "exclude" ) ){
+  if( inherits( object[["na.action"]], "exclude" ) ){
     class( object[["na.action"]] ) <- "omit"
   }
 
@@ -405,6 +406,7 @@ resid.georob <-
   ## 2011-12-14 AP modified for replicated observations
   ## 2013-05-31 AP modified for computing partial residuals for single terms
   ## 2013-06-12 AP substituting [["x"]] for $x in all lists
+  ## 2023-12-21 AP replacement of identical(class(...), ...) by inherits(..., ...)
 
   type <- match.arg( type )
 
@@ -413,7 +415,7 @@ resid.georob <-
   ## temporarily redefine na.action component of object
 
   object.na <- object[["na.action"]]
-  if( identical( class( object[["na.action"]] ), "exclude" ) ){
+  if( inherits( object[["na.action"]], "exclude" ) ){
     class( object[["na.action"]] ) <- "omit"
   }
 
@@ -467,11 +469,13 @@ rstandard.georob <-
   ## 2013-06-12 AP substituting [["x"]] for $x in all lists
   ## 2104-08-19 AP correcting error when computing covariances of residuals
   ## 2016-08-05 AP changes for nested variogram models
+  ## 2023-12-21 AP replacement of identical(class(...), ...) by inherits(..., ...)
+
 #
   ## temporarily redefine na.action component of model
 
   model.na <- model[["na.action"]]
-  if( identical( class( model[["na.action"]] ), "exclude" ) ){
+  if( inherits( model[["na.action"]], "exclude" ) ){
     class( model[["na.action"]] ) <- "omit"
   }
 
@@ -563,8 +567,9 @@ rstandard.georob <-
 #
 #   ## 2011-12-22 A. Papritz
 #   ## 2013-06-12 AP substituting [["x"]] for $x in all lists
+#   ## 2023-12-14 AP checking class by inherits()
 #
-#   if( !identical( class( model )[1], "georob" ) ) stop(
+#   if( !inherits( model, "georob" ) ) stop(
 #     "model is not of class 'georob'"
 #   )
 #
@@ -608,6 +613,8 @@ summary.georob <- function (
   ## 2019-10-22 AP terms component taken from georob object
   ## 2020-02-14 AP sanity checks of arguments and for if() and switch()
   ## 2020-03-27 AP computing Hessian (observed Fisher information) of untransformed parameters
+  ## 2023-12-21 AP replacement of identical(class(...), ...) by inherits(..., ...)
+  ## 2024-01-26 AP compress correlation matrices
 
   ## check arguments
 
@@ -641,7 +648,7 @@ summary.georob <- function (
   )
 
   if( correlation ){
-    ans[["correlation"]] <- cov2cor( covmat[["cov.betahat"]] )
+    ans[["correlation"]] <- compress( cov2cor( covmat[["cov.betahat"]] ) )
   }
 
   ans[["param.aniso"]] <- lapply(
@@ -689,7 +696,7 @@ summary.georob <- function (
 
       t.chol <- try( chol( object[["hessian.tfpa"]][sr, sr, drop = FALSE] ), silent = TRUE )
 
-      if( !identical( class( t.chol ), "try-error" ) ){
+      if( !inherits( t.chol, "try-error" ) ){
 
         ## compute covariance matrix of fitted transformed parameters
 
@@ -703,6 +710,8 @@ summary.georob <- function (
           ans[["cor.tf.param"]] <- cov2cor( cov.tf.param )
           colnames( ans[["cor.tf.param"]] ) <- rownames( ans[["cor.tf.param"]] ) <-
             gsub( ".__...__.", ".", colnames( ans[["cor.tf.param"]] ), fixed = TRUE )
+          attr( ans[["cor.tf.param"]], "struc" ) <- "sym"
+          ans[["cor.tf.param"]] <- compress( ans[["cor.tf.param"]] )
         }
 
         se <- sqrt( diag( cov.tf.param ) )
@@ -828,6 +837,7 @@ print.summary.georob <- function (
   ## 2014-01-23 AP prints maximized loglik even if all parameters fixed
   ## 2014-08-26 AP changes to print ml.method
   ## 2016-08-05 AP changes for nested variogram models
+  ## 2024-01-26 AP expand correlation matrices
 
   cat("\nCall:")
   cat( paste( deparse(x[["call"]]), sep = "\n", collapse = "\n"),  "\n", sep = "" )
@@ -935,7 +945,7 @@ print.summary.georob <- function (
 
   if( !is.null( x[["cor.tf.param"]] ) ){
 
-    correl <- x[["cor.tf.param"]]
+    correl <- expand( x[["cor.tf.param"]] )
     p <- NCOL(correl)
     if( p > 1L ){
       cat("\nCorrelation of (transformed) variogram parameters:\n")
@@ -957,7 +967,7 @@ print.summary.georob <- function (
     format(signif(x[["scale"]],  digits)), "\n"
   )
 
-  correl <- x[["correlation"]]
+  correl <- expand( x[["correlation"]] )
   if( !is.null(correl) ){
     p <- NCOL(correl)
     if( p > 1L ){
@@ -1117,6 +1127,7 @@ deviance.georob <-
   ## 2015-03-16 AP attribute for computing maximized restricted loglikelihood
   ## 2016-08-08 AP changes for nested variogram models
   ## 2020-02-14 AP sanity checks of arguments and for if() and switch()
+  ## 2023-12-21 AP replacement of identical(class(...), ...) by inherits(..., ...)
 
   ## check arguments
 
@@ -1125,7 +1136,7 @@ deviance.georob <-
 
   ## redefine na.action component of object
 
-  if( identical( class( object[["na.action"]] ), "exclude" ) ){
+  if( inherits( object[["na.action"]], "exclude" ) ){
     class( object[["na.action"]] ) <- "omit"
   }
 
@@ -1161,7 +1172,7 @@ deviance.georob <-
 
   ## compute deviance
 
-  if( identical( class( iucf ), "try-error" ) ) {
+  if( inherits( iucf, "try-error" ) ){
     stop( "(generalized) covariance matrix of observations not positive definite" )
   } else {
     result <- sum( colSums( residuals( object, level = 0L ) * iucf )^2 )
@@ -1207,7 +1218,7 @@ extractAIC.georob <- function( fit, scale = 0, k = 2, ... )
 
   edf <- sum( !is.na( fit[["coefficients"]] ) ) + sum(tmp)
   loglik <- logLik( fit, ... )
-  c(edf, -2. * loglik + k * edf)
+  c(edf = edf, AIC = -2. * loglik + k * edf)
 }
 
 
@@ -1246,7 +1257,12 @@ add1.georob <- function( object, scope, scale = 0, test=c("none", "Chisq"),
   ##               improved error handling during parallel computations
   ## 2018-08-27 AP elimination of data argument
   ## 2020-02-14 AP sanity checks of arguments and for if() and switch()
+  ## 2023-01-27 AP extracting data from object and using data in update
+  ## 2023-12-20 AP added on.exit(options(old.opt)), replaced makeCluster by makePSOCKcluster
+  ## 2023-12-21 AP replacement of identical(class(...), ...) by inherits(..., ...)
+  ## 2024-02-01 AP saving SOCKcluster.RData to tempdir()
 
+#
   ## match arguments
 
   test <- match.arg(test)
@@ -1274,7 +1290,7 @@ add1.georob <- function( object, scope, scale = 0, test=c("none", "Chisq"),
     }
 
     nfit <- update(
-      object, as.formula(paste("~ .", change, tt)),
+      object, as.formula(paste("~ .", change, tt)), data = data,
       verbose = verbose, object. = object
     )
 
@@ -1368,6 +1384,29 @@ add1.georob <- function( object, scope, scale = 0, test=c("none", "Chisq"),
 
   }
 
+  ##  check whether argument "data" has been provided in call and get data
+  ##  from parent.frame
+
+  extras <- match.call( expand.dots = FALSE )$...
+  data <- extras[names(extras) %in% "data"]
+  if(
+    length( data ) &&
+    exists( as.character( data ), envir = parent.frame() ) #&&
+    #     !control[["initial.param"]]
+  ){
+    data <- eval( data[[1L]], parent.frame() )
+
+  } else {
+
+    ## get data.frame with required variables (note that the data.frame passed
+    ## as data argument to georob must exist in GlobalEnv)
+
+    data <- get( as.list( cl )[["data"]], parent.frame() )
+
+  }
+
+  if( inherits( object[["na.action"]], "omit" ) ) data <- na.omit(data)
+
   ## initialize result
 
   ns <- length( scope )
@@ -1388,7 +1427,7 @@ add1.georob <- function( object, scope, scale = 0, test=c("none", "Chisq"),
   ## prepare for parallel execution
 
   if( ncores > 1L ){
-    ncores <- min( ncores, ns, detectCores() )
+    ncores <- min( ncores, ns, parallel::detectCores() )
     trace <- 0
     verbose <- 0.
   }
@@ -1401,17 +1440,21 @@ add1.georob <- function( object, scope, scale = 0, test=c("none", "Chisq"),
 
   if( ncores > 1L && !object[["control"]][["pcmp"]][["fork"]] ){
 
-    ## create a SNOW cluster on windows OS
+    ## create a PSOCK cluster on windows OS
 
-    clstr <- makeCluster( ncores, type = "SOCK" )
-    save( clstr, file = "SOCKcluster.RData" )
-    options( error = f.stop.cluster )
+    fname <- file.path( tempdir(), "SOCKcluster.RData" )
+
+    clstr <- makePSOCKcluster( ncores )
+    save( clstr, file = fname )
+    old.opt <- options( error = f.stop.cluster )
+    on.exit( options( old.opt ) )
 
     ## export required items to workers
 
     junk <- clusterEvalQ( clstr, require( georob, quietly = TRUE ) )
     junk <- clusterExport(
-      clstr, c( "object", "k", "n0", "verbose" ), envir =  environment()
+      clstr,
+      c( "object", "data", "k", "n0", "verbose" ), envir =  environment()
     )
 
     result <- parLapply(
@@ -1422,7 +1465,7 @@ add1.georob <- function( object, scope, scale = 0, test=c("none", "Chisq"),
       ...
     )
 
-    f.stop.cluster( clstr )
+    f.stop.cluster( clstr, fname )
 
   } else {
 
@@ -1507,6 +1550,10 @@ drop1.georob <- function( object, scope, scale = 0, test=c( "none", "Chisq" ),
   ##               improved error handling during parallel computations
   ## 2018-08-27 AP elimination of data argument
   ## 2020-02-14 AP sanity checks of arguments and for if() and switch()
+  ## 2023-01-27 AP extracting data from object and using data in update
+  ## 2023-12-20 AP added on.exit(options(old.opt)), replaced makeCluster by makePSOCKcluster
+  ## 2023-12-21 AP replacement of identical(class(...), ...) by inherits(..., ...)
+  ## 2024-02-01 AP saving SOCKcluster.RData to tempdir()
 
   ## match arguments
 
@@ -1534,7 +1581,7 @@ drop1.georob <- function( object, scope, scale = 0, test=c( "none", "Chisq" ),
     }
 
     nfit <- update(
-      object, as.formula(paste("~ .", change, tt)),
+      object, as.formula(paste("~ .", change, tt)), data = data,
       verbose = verbose, object. = object
     )
 
@@ -1634,6 +1681,29 @@ drop1.georob <- function( object, scope, scale = 0, test=c( "none", "Chisq" ),
     if( !all( match(scope, tl, 0L) > 0L) ) stop("scope is not a subset of term labels")
   }
 
+  ##  check whether argument "data" has been provided in call and get data
+  ##  from parent.frame
+
+  extras <- match.call( expand.dots = FALSE )$...
+  data <- extras[names(extras) %in% "data"]
+  if(
+    length( data ) &&
+    exists( as.character( data ), envir = parent.frame() ) #&&
+    #     !control[["initial.param"]]
+  ){
+    data <- eval( data[[1L]], parent.frame() )
+
+  } else {
+
+    ## get data.frame with required variables (note that the data.frame passed
+    ## as data argument to georob must exist in GlobalEnv)
+
+    data <- get( as.list( cl )[["data"]], parent.frame() )
+
+  }
+
+  if( inherits( object[["na.action"]], "omit" ) ) data <- na.omit(data)
+
   ## initialize result
 
   ns <- length( scope )
@@ -1654,7 +1724,7 @@ drop1.georob <- function( object, scope, scale = 0, test=c( "none", "Chisq" ),
   ## prepare for parallel execution
 
   if( ncores > 1L ){
-    ncores <- min( ncores, ns, detectCores() )
+    ncores <- min( ncores, ns, parallel::detectCores() )
     trace <- 0
     verbose <- 0.
   }
@@ -1667,17 +1737,20 @@ drop1.georob <- function( object, scope, scale = 0, test=c( "none", "Chisq" ),
 
   if( ncores > 1L && !object[["control"]][["pcmp"]][["fork"]] ){
 
-    ## create a SNOW cluster on windows OS
+    ## create a PSOCK cluster on windows OS
 
-    clstr <- makeCluster( ncores, type = "SOCK" )
-    save( clstr, file = "SOCKcluster.RData" )
-    options( error = f.stop.cluster )
+    fname <- file.path( tempdir(), "SOCKcluster.RData" )
+
+    clstr <- makePSOCKcluster( ncores )
+    save( clstr, file = fname )
+    old.opt <- options( error = f.stop.cluster )
+    on.exit( options( old.opt ) )
 
     ## export required items to workers
 
     junk <- clusterEvalQ( clstr, require( georob, quietly = TRUE ) )
     junk <- clusterExport(
-      clstr, c( "object", "k", "n0", "verbose" ), envir =  environment()
+      clstr, c( "object", "data", "k", "n0", "verbose" ), envir =  environment()
     )
 
     result <- parLapply(
@@ -1688,7 +1761,7 @@ drop1.georob <- function( object, scope, scale = 0, test=c( "none", "Chisq" ),
       ...
     )
 
-    f.stop.cluster( clstr )
+    f.stop.cluster( clstr, fname )
 
   } else {
 
@@ -1778,6 +1851,8 @@ step.georob <- function( object, scope, scale = 0,
   ## 2018-01-05 AP improved memory management in parallel computations
   ## 2018-08-27 AP elimination of data argument
   ## 2020-02-14 AP sanity checks of arguments and for if() and switch()
+  ## 2023-01-27 AP extracting data from object and using data in update
+  ## 2023-12-21 AP replacement of identical(class(...), ...) by inherits(..., ...)
 
   ## match arguments
 
@@ -1948,6 +2023,29 @@ step.georob <- function( object, scope, scale = 0,
 
   }
 
+  ##  check whether argument "data" has been provided in call and get data
+  ##  from parent.frame
+
+  extras <- match.call( expand.dots = FALSE )$...
+  data <- extras[names(extras) %in% "data"]
+  if(
+    length( data ) &&
+    exists( as.character( data ), envir = parent.frame() ) #&&
+    #     !control[["initial.param"]]
+  ){
+    data <- eval( data[[1L]], parent.frame() )
+
+  } else {
+
+    ## get data.frame with required variables (note that the data.frame passed
+    ## as data argument to georob must exist in GlobalEnv)
+
+    data <- get( as.list( cl )[["data"]], parent.frame() )
+
+  }
+
+  if( inherits( object[["na.action"]], "omit" ) ) data <- na.omit(data)
+
   ## now start the model search
 
   fit <- object
@@ -1984,7 +2082,7 @@ step.georob <- function( object, scope, scale = 0,
         fit, scope$drop, scale = scale,
         k = k, trace = trace >= 1, fixed = fixed.add1.drop1,
         use.fitted.param = use.fitted.param, verbose = verbose,
-        ncores = ncores, ...
+        ncores = ncores, data = data, ...
       )
       rn <- row.names(aod)
       row.names(aod) <- c(rn[1L], paste("-", rn[-1L], sep=" "))
@@ -2001,7 +2099,7 @@ step.georob <- function( object, scope, scale = 0,
           fit, scope$add, scale = scale,
           k = k, trace = trace >= 1, fixed = fixed.add1.drop1,
           use.fitted.param = use.fitted.param, verbose = verbose,
-          ncores = ncores, ...
+          ncores = ncores, data = data, ...
         )
         rn <- row.names(aodf)
         row.names(aodf) <- c(rn[1L], paste("+", rn[-1L], sep=" "))

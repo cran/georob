@@ -1,4 +1,4 @@
-% 2021-06-04 A. Papritz
+% 2022-12-17 A. Papritz
 % R CMD Rdconv -t html -o bla.html compress.Rd ; open bla.html; R CMD Rd2pdf --force compress.Rd;
 
 %  hunspell -d en_GB -t -i mac  *.Rd
@@ -56,7 +56,7 @@
 }
 
 \author{
-  Andreas Papritz \email{andreas.papritz@env.ethz.ch}.
+  Andreas Papritz \email{papritz@retired.ethz.ch}.
 }
 
 \seealso{
@@ -64,7 +64,7 @@
 }
 
 \examples{
-\dontrun{
+\donttest{
 
 data(meuse)
 

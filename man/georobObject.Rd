@@ -1,6 +1,6 @@
-% 2021-06-04 A. Papritz
+% 2024-01-26 A. Papritz
 % R CMD Rdconv -t html -o bla.html georobObject.Rd ; open bla.html; R CMD Rd2pdf --force georobObject.Rd;
-
+% hunspell -d en_GB-ise,en_GB-ize,en_GB-large -t -i mac  georobObject.Rd
 \encoding{utf8}
 \name{georobObject}
 \alias{georobObject}
@@ -53,13 +53,13 @@
       orientation of the anisotropy ellipsoid.}
 
       \item{\code{rotmat}: the matrix
-      \eqn{(\mbox{\boldmath$C$\unboldmath}_1,
-      \mbox{\boldmath$C$\unboldmath}_2,
-      \mbox{\boldmath$C$\unboldmath}_3)}{(C_1, C_2, C_3)} (see
-      \code{\link{georobIntro}}).}
+      \eqn{(\boldsymbol{C}_1,
+      \boldsymbol{C}_2,
+      \boldsymbol{C}_3)}{(C_1, C_2, C_3)} (see
+      \code{\link{georobPackage}}).}
 
       \item{\code{sclmat}: a vector with the elements 1, \eqn{1/f_1},
-      \eqn{1/f_2} (see \code{\link{georobIntro}}). }
+      \eqn{1/f_2} (see \code{\link{georobPackage}}). }
 
     }
 
@@ -76,23 +76,23 @@
 
   \item{fitted.values}{a named vector with the fitted values of the
   external drift
-  \eqn{\mbox{\boldmath$X$\unboldmath}\widehat{\mbox{\boldmath$\beta$\unboldmath}}}{X
+  \eqn{\boldsymbol{X}\widehat{\boldsymbol{\beta}}}{X
   hat\beta}.}
 
   \item{bhat}{a named vector with the predicted spatial random effects
-  \eqn{\widehat{\mbox{\boldmath$B$\unboldmath}}}{hatB} at the data locations.}
+  \eqn{\widehat{\boldsymbol{B}}}{hatB} at the data locations.}
 
   \item{residuals}{a named vector with the residuals
-  \eqn{\widehat{\mbox{\boldmath$\varepsilon$\unboldmath}}=\mbox{\boldmath$Y$\unboldmath} -
-  \mbox{\boldmath$X$\unboldmath} \widehat{\mbox{\boldmath$\beta$\unboldmath}} -
-  \widehat{\mbox{\boldmath$B$\unboldmath}}}{hat\epsilon=Y-X hat\beta - hatB}.}
+  \eqn{\widehat{\boldsymbol{\varepsilon}}=\boldsymbol{Y} -
+  \boldsymbol{X} \widehat{\boldsymbol{\beta}} -
+  \widehat{\boldsymbol{B}}}{hat\epsilon=Y-X hat\beta - hatB}.}
 
   \item{rweights}{a named numeric vector with the \dQuote{robustness weights}
   \eqn{\psi(\widehat{\varepsilon}_i/\widehat{\tau}) /
     (\widehat{\varepsilon}_i/\widehat{\tau})}{
     \psi(hat\epsilon_i/hat\tau) / (hat\epsilon_i/hat\tau)}.}
 
-  \item{converged}{logical indicating whether numerical maximization of
+  \item{converged}{a logical scalar indicating whether numerical maximization of
   the (restricted)\cr log-likelihood by \code{nlminb} or \code{optim} or root
   finding by \code{nleqslv} converged.}
 
@@ -130,29 +130,29 @@
   \itemize{
 
       \item \code{cov.bhat}: the covariances of
-      \eqn{\widehat{\mbox{\boldmath$B$\unboldmath}}}{hatB}.
+      \eqn{\widehat{\boldsymbol{B}}}{hatB}.
 
       \item \code{cov.betahat}: the covariances of
-      \eqn{\widehat{\mbox{\boldmath$\beta$\unboldmath}}}{hat\beta}.
+      \eqn{\widehat{\boldsymbol{\beta}}}{hat\beta}.
 
       \item \code{cov.delta.bhat}: the covariances of
-      \eqn{\mbox{\boldmath$B$\unboldmath}- \widehat{\mbox{\boldmath$B$\unboldmath}}}{B-hatB}.
+      \eqn{\boldsymbol{B}- \widehat{\boldsymbol{B}}}{B-hatB}.
 
       \item \code{cov.delta.bhat.betahat}: the covariances of
-      \eqn{\mbox{\boldmath$B$\unboldmath}- \widehat{\mbox{\boldmath$B$\unboldmath}}}{B-hatB}
+      \eqn{\boldsymbol{B}- \widehat{\boldsymbol{B}}}{B-hatB}
       and
-      \eqn{\widehat{\mbox{\boldmath$\beta$\unboldmath}}}{hat\beta}.
+      \eqn{\widehat{\boldsymbol{\beta}}}{hat\beta}.
 
       \item \code{cov.ehat}: the covariances of
-      \eqn{\widehat{\mbox{\boldmath$\varepsilon$\unboldmath}}=\mbox{\boldmath$Y$\unboldmath} -
-      \mbox{\boldmath$X$\unboldmath} \widehat{\mbox{\boldmath$\beta$\unboldmath}} -
-      \widehat{\mbox{\boldmath$B$\unboldmath}}}{hat\epsilon=Y-X hat\beta - hatB}.
+      \eqn{\widehat{\boldsymbol{\varepsilon}}=\boldsymbol{Y} -
+      \boldsymbol{X} \widehat{\boldsymbol{\beta}} -
+      \widehat{\boldsymbol{B}}}{hat\epsilon=Y-X hat\beta - hatB}.
 
       \item \code{cov.ehat.p.bhat}: the covariances of
-      \eqn{\widehat{\mbox{\boldmath$\varepsilon$\unboldmath}} +
-      \widehat{\mbox{\boldmath$B$\unboldmath}}
-      =\mbox{\boldmath$Y$\unboldmath} -
-      \mbox{\boldmath$X$\unboldmath} \widehat{\mbox{\boldmath$\beta$\unboldmath}}}{hat\epsilon+ hatB=Y-X hat\beta}.
+      \eqn{\widehat{\boldsymbol{\varepsilon}} +
+      \widehat{\boldsymbol{B}}
+      =\boldsymbol{Y} -
+      \boldsymbol{X} \widehat{\boldsymbol{\beta}}}{hat\epsilon+ hatB=Y-X hat\beta}.
 
       \item \code{cov.pred.target}: a covariance term required for the
       back-trans-\cr formation of Kriging predictions of log-transformed data.
@@ -162,11 +162,12 @@
   }
 
   \item{expectations}{a named numeric vector with the expectations of
-  \eqn{\partial \psi_c(x)/\partial x}{d\psi_c'(x)/dx} (\code{dpsi}) and
-  \eqn{\psi_c^2(x)} (\code{psi2}) with respect to a standard normal
-  distribution (\code{exp.gauss}) and the long-tailed distribution of
-  \eqn{\varepsilon}{\epsilon} (\code{exp.f0}) implied by the choice of the
-  \eqn{\psi_c}-function.}
+  \eqn{\partial \psi_c(x)/\partial x}{d\psi_c'(x)/dx} and \eqn{\psi_c^2(x)}
+  with respect to a standard normal distribution (\code{exp.gauss.dpsi},
+  \code{var.gauss.psi}) and the expectations of
+  \eqn{\varepsilon^2}{\epsilon^2} and \eqn{\psi_c^2(x)} with respect to the
+  long-tailed distribution of \eqn{\varepsilon}{\epsilon}
+  (\code{var.f0.eps}, \code{var.f0.psi}).}
 
   \item{Valphaxi.objects}{a list of matrices in \emph{compressed form} with
   (among others) the following components:
@@ -176,19 +177,19 @@
       \item \code{Valpha}: a list with the (generalized) correlation
       matrices (\code{Valpha}) of the nested variogram models structures
       along with the constants (\code{gcr.constant}) added to the respective
-      semivariances matrices.
+      semi-variances matrices.
 
       \item \code{Valphaxi}: the (generalized) correlation matrix
-      \eqn{\mbox{\boldmath$V$\unboldmath}_{\alpha,\xi} =
-      \mbox{\boldmath$\Gamma$\unboldmath}_{\alpha,\xi} /
+      \eqn{\boldsymbol{V}_{\alpha,\xi} =
+      \boldsymbol{\Gamma}_{\alpha,\xi} /
       (\sigma_{\mathrm{n}}^2+\sigma^2 )}{V_{\alpha, \xi} = \Gamma_\theta /
       (\sigma_n^2+\sigma^2)} that includes the spatial nugget effect.
 
       \item \code{Valphaxi.inverse}: the inverse of
-      \eqn{\mbox{\boldmath$V$\unboldmath}_{\alpha,\xi}}{V_{\alpha, \xi}}.
+      \eqn{\boldsymbol{V}_{\alpha,\xi}}{V_{\alpha, \xi}}.
 
       \item \code{log.det.Valphaxi}:
-      \eqn{\log(\det(\mbox{\boldmath$V$\unboldmath}_{\alpha,\xi}))}{log(det(V_{\alpha, \xi}))}.
+      \eqn{\log(\det(\boldsymbol{V}_{\alpha,\xi}))}{log(det(V_{\alpha, \xi}))}.
 
     }
   }
@@ -199,19 +200,19 @@
     \itemize{
 
       \item \code{Aalphaxi}: the matrix
-      \eqn{(\mbox{\boldmath$X$\unboldmath}^T
-      \mbox{\boldmath$V$\unboldmath}_{\alpha,\xi}^{-1}\mbox{\boldmath$X$\unboldmath})^{-1}
-      \mbox{\boldmath$X$\unboldmath}^T\mbox{\boldmath$V$\unboldmath}_{\alpha,\xi}^{-1}
+      \eqn{(\boldsymbol{X}^T
+      \boldsymbol{V}_{\alpha,\xi}^{-1}\boldsymbol{X})^{-1}
+      \boldsymbol{X}^T\boldsymbol{V}_{\alpha,\xi}^{-1}
       }{(X^T V_{\alpha, \xi}^-1 X)^-1 X^T V_{\alpha, \xi}^-1 }.
 
       \item \code{Palphaxi}: the matrix
-      \eqn{\mbox{\boldmath$I$\unboldmath}-
-      \mbox{\boldmath$X$\unboldmath} \mbox{\boldmath$A$\unboldmath}_{\alpha,\xi}
+      \eqn{\boldsymbol{I}-
+      \boldsymbol{X} \boldsymbol{A}_{\alpha,\xi}
       }{I - X A_{\alpha, \xi}}.
 
       \item \code{Valphaxi.inverse.Palphaxi}: the matrix
-      \eqn{\mbox{\boldmath$V$\unboldmath}^{-1}_{\alpha,\xi}
-      \mbox{\boldmath$P$\unboldmath}_{\alpha,\xi} }{V^-1_{\alpha, \xi}
+      \eqn{\boldsymbol{V}^{-1}_{\alpha,\xi}
+      \boldsymbol{P}_{\alpha,\xi} }{V^-1_{\alpha, \xi}
       P_{\alpha, \xi}}.
 
     }
@@ -238,11 +239,11 @@
     \itemize{
 
       \item \code{coefficients}: initial estimates of
-      \eqn{\mbox{\boldmath$\beta$\unboldmath}}{\beta} computed either by
+      \eqn{\boldsymbol{\beta}}{\beta} computed either by
       \code{\link[robustbase]{lmrob}} or \code{\link[quantreg]{rq}}.
 
       \item \code{bhat}: initial predictions of
-      \eqn{\mbox{\boldmath$B$\unboldmath}}{B}.
+      \eqn{\boldsymbol{B}}{B}.
 
       \item \code{variogram.object}: the initial values of the parameters
       of a possibly nested variograms model.  This is a list with the same
@@ -271,7 +272,7 @@
   \code{\link{control.georob}}.}
 
   \item{MD}{optionally a matrix of robust distances in the space spanned by
-  \eqn{\mbox{\boldmath$X$\unboldmath}}{X} (see argument \code{compute.rd}
+  \eqn{\boldsymbol{X}}{X} (see argument \code{compute.rd}
   of \code{\link[robustbase]{lmrob.control}} and
   \code{\link{control.georob}}).}
 
@@ -286,11 +287,11 @@
 }
 
 \author{
-   Andreas Papritz \email{andreas.papritz@env.ethz.ch}.
+   Andreas Papritz \email{papritz@retired.ethz.ch}.
 }
 
 \seealso{
-  \code{\link{georobIntro}} for a description of the model and a brief summary of the algorithms;
+  \code{\link{georobPackage}} for a description of the model and a brief summary of the algorithms;
 
   \code{\link{georob}} for (robust) fitting of spatial linear models;
 
@@ -326,6 +327,6 @@
 
 
 %       \item \code{cov.bhat.betahat}: the covariances of
-%       \eqn{\widehat{\mbox{\boldmath$B$\unboldmath}}}{hatB} and
-%       \eqn{\widehat{\mbox{\boldmath$\beta$\unboldmath}}}{hat\beta}.
+%       \eqn{\widehat{\boldsymbol{B}}}{hatB} and
+%       \eqn{\widehat{\boldsymbol{\beta}}}{hat\beta}.
 

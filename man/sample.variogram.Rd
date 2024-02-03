@@ -83,7 +83,7 @@ sample.variogram(object, ...)
   Another possible value is \code{NULL}, no action.  Value
   \code{\link{na.exclude}} can be useful.}
 
-  \item{lag.dist.def}{a numeric scalar defining a constant bin
+  \item{lag.dist.def}{a numeric defining a constant bin
   width for grouping the lag distances or a numeric vector with the bounds
   of a set of contiguous bins (upper bounds of bins except for the first
   element of \code{lag.dist.def} which is the lower bound of the first
@@ -103,28 +103,28 @@ sample.variogram(object, ...)
   \emph{Details}.  Omnidirectional variograms are computed with the default
   \code{c(0,180)}.}
 
-  \item{max.lag}{positive numeric defining the largest lag distance for
+  \item{max.lag}{a positive numeric defining the largest lag distance for
   which semi variances should be computed (default no restriction).}
 
-  \item{estimator}{character keyword defining the estimator for computing
+  \item{estimator}{a character keyword defining the estimator for computing
   the sample variogram.  Possible values are:
 
     \itemize{
 
       \item \code{"qn"}: Genton's robust
-      \code{\link[robustbase]{Qn}}-estimator (default, Genton, 1998),
+      \code{\link[robustbase]{Qn}}-estimator (default, \cite{Genton, 1998}),
 
-      \item \code{"mad"}: Dowd's robust MAD-estimator (Dowd, 1984),
+      \item \code{"mad"}: Dowd's robust MAD-estimator (\cite{Dowd, 1984}),
 
       \item \code{"matheron"}: non-robust method-of-moments estimator,
 
-      \item \code{"ch"}: robust Cressie-Hawkins estimator (Cressie and
-      Hawkins, 1980).
+      \item \code{"ch"}: robust Cressie-Hawkins estimator (\cite{Cressie and
+      Hawkins, 1980}).
 
     }
   }
 
-  \item{mean.angle}{logical controlling whether the mean lag vector (per
+  \item{mean.angle}{a logical scalar controlling whether the mean lag vector (per
   combination of lag distance and angular class) is computed from the mean
   angles of all the lag vectors falling into a given class (\code{TRUE},
   default) or from the mid-angles of the respective angular classes
@@ -135,31 +135,32 @@ sample.variogram(object, ...)
   \item{type, xlim, ylim, xlab, ylab}{see respective arguments of
   \code{\link[graphics]{plot.default}}.}
 
-  \item{add}{logical controlling whether a new plot should be
+  \item{add}{a logical scalar controlling whether a new plot should be
   generated (\code{FALSE}, default) or whether the information should be
   added to the current plot (\code{TRUE}).}
 
-  \item{col}{the color of plotting symbols for distinguishing semi variances
+  \item{col}{a vector with the colours of plotting symbols for distinguishing semi variances
   for angular classes in the \eqn{x}-\eqn{y}-plane.}
 
-  \item{pch}{the type of plotting symbols for distinguishing semi variances
-  for angular classes in the \eqn{x}-\eqn{z}-plane.}
+  \item{pch}{a vector with the types of plotting symbols for distinguishing
+  semi variances for angular classes in the \eqn{x}-\eqn{z}-plane.}
 
   \item{lty}{the line type.}
 
-  \item{cex}{character expansion factor for plotting symbols.}
+  \item{cex}{a numeric with the character expansion factor for plotting
+  symbols.}
 
-  \item{annotate.npairs}{logical controlling whether the plotting symbols
+  \item{annotate.npairs}{a logical scalar controlling whether the plotting symbols
   should be annotated by the number of data pairs per lag class.}
 
-  \item{npairs.pos}{integer defining the position where text annotation
+  \item{npairs.pos}{an integer defining the position where text annotation
   about number of pairs should be plotted, see
   \code{\link[graphics]{text}}.}
 
-  \item{npairs.cex}{numeric defining the character expansion for text
+  \item{npairs.cex}{a numeric defining the character expansion for text
   annotation about number of pairs.}
 
-  \item{legend}{logical controlling whether a
+  \item{legend}{a logical scalar controlling whether a
   \code{\link[graphics]{legend}} should be plotted.}
 
   \item{legend.pos}{a character keyword defining where to place the
@@ -204,25 +205,27 @@ with the following components:
 
 
 \references{
-  Cressie, N. and Hawkins, D. M. (1980) Robust Estimation of the Variogram: I.
-  \emph{Mathematical Geology}, \bold{12}, 115--125.
+  Cressie, N. and Hawkins, D. M. (1980) Robust Estimation of the Variogram:
+  I. \emph{Mathematical Geology}, \bold{12}, 115--125,
+  \doi{10.1007/BF01035243}.
 
   Dowd, P. A. (1984) The variogram and Kriging: Robust and resistant
   estimators.  In \emph{Geostatistics for Natural Resources
-  Characterization},  Verly, G., David, M., Journel, A. and Marechal, A. (Eds.)
-  Dordrecht: D. Reidel Publishing Company, Part I, 1, 91--106.
+  Characterization}, Verly, G., David, M., Journel, A. and Marechal, A.
+  (Eds.)  Dordrecht: D. Reidel Publishing Company, Part I, 1, 91--106,
+  \doi{10.1007/978-94-009-3699-7}.
 
   Genton, M. (1998) Highly Robust Variogram Estimation.  \emph{Mathematical
-  Geology}, \bold{30}, 213--220.
+  Geology}, \bold{30}, 213--220, \doi{10.1023/A:1021728614555}.
 
 }
 
 \author{
-   Andreas Papritz \email{andreas.papritz@env.ethz.ch}.
+   Andreas Papritz \email{papritz@retired.ethz.ch}.
 }
 
 \seealso{
-  \code{\link{georobIntro}} for a description of the model and a brief summary of the algorithms;
+  \code{\link{georobPackage}} for a description of the model and a brief summary of the algorithms;
 
   \code{\link{georob}} for (robust) fitting of spatial linear models;
 
@@ -262,14 +265,14 @@ data(wolfcamp)
 r.sv.iso <- sample.variogram(pressure~1, data = wolfcamp,
     locations = ~x + y, lag.dist.def = seq(0, 200, by = 15))
 
-\dontrun{
+\donttest{
 plot(r.sv.iso, type = "l")}
 
 ## fitting an anisotropic IRF(0) model
 r.sv.aniso <- sample.variogram(pressure~1, data = wolfcamp,
     locations = ~x + y, lag.dist.def = seq(0, 200, by = 15),
     xy.angle.def = c(0., 22.5, 67.5, 112.5, 157.5, 180.))
-\dontrun{
+\donttest{
 plot(r.sv.aniso, type = "l", add = TRUE, col = 2:5)}
 }
 

@@ -8,7 +8,6 @@ importFrom( methods, slot)
 importFrom( nlme, fixef, fixed.effects, ranef, random.effects )
 importFrom( nleqslv, nleqslv )
 importFrom( quantreg, rq.fit )
-importFrom( RandomFields, RFsimulate, RFfctn, RFoldstyle, RFoptions)
 importFrom( robustbase, lmrob.control, lmrob.fit, Qn, robMD, summarizeRobWeights )
 # importFrom( nor1mix, norMix, pnorMix, qnorMix, var.norMix )
 
@@ -37,6 +36,7 @@ export(
   fixef,                            # ok export of generic fixef{nlme}
   fwd.transf,                       # ok
   fit.variogram.model,              # ok
+  gencorr,                          # ok
   georob,                           # ok 
   K,                                # ok export of K{constrainedKriging}, which is (indirectly) needed by f.point.block.cov{constrainedKriging}
   lgnpp,                            # ok
@@ -63,7 +63,7 @@ export(
 #   deviance.georob,                # ok
 #   drop1.georob,                   # ok
 #   drop1.georob,                   # ok
-#   exportAIC.georob,               # ok
+#   extractAIC.georob,              # ok
 #   fixed.effects.georob,           # ok
 #   fixef.georob,                   # ok
 #   lines.fitted.variogram,         # ok
@@ -108,7 +108,7 @@ export(
 ### crpspd.resp.rob                    # currently not used
 ## estimate.zhat
 ## estimating.equations.theta
-## estimating.equations.signal
+## estimating.equations.z
 ## f.aux.Qstar
 ## f.aux.RSS
 ## f.aux.Valphaxi
@@ -128,12 +128,11 @@ export(
 ## f.call.set_x_to_value_in_fun
 ## f.diag
 ## f.psi.function
-## f.reparam.bkw
+## f.reparam.bwd
 ## f.reparam.fwd
 ## f.robust.uk
 ## f.stop.cluster
 ## georob.fit
-## getCall.georob
 ## gradient.negative.loglikelihood
 ## likelihood.calculations
 ## negative.loglikelihood
@@ -141,6 +140,8 @@ export(
 ### ppd.resp.rob                       # currently not used
 ### qpd.resp.rob                       # currently not used
 ## safe_pchisq
+## sim.chol.decomp
+## sim.circulant.embedding
 ## simple.kriging.weights
 ### var.pd.resp.rob                    # currently not used
 ## update.zhat
@@ -156,6 +157,7 @@ S3method( drop1, georob  )
 S3method( extractAIC, georob  )
 S3method( fixed.effects, georob  )
 S3method( fixef, georob  )
+## S3method( getCall, georob  )
 S3method( lines, fitted.variogram )
 S3method( lines, georob )
 S3method( logLik, georob )

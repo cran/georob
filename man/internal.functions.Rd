@@ -36,14 +36,14 @@
 \alias{georob.fit}
 \alias{getCall.georob}
 \alias{gradient.negative.loglikelihood}
-\alias{K}
-\alias{lmrob.control}
 \alias{likelihood.calculations}
 \alias{negative.log-likelihood}
 \alias{partial.derivatives.variogram}
 % \alias{ppd.resp.rob}
 % \alias{qpd.resp.rob}
 \alias{safe_pchisq}
+\alias{sim.chol.decomp}
+\alias{sim.circulant.embedding}
 \alias{simple.kriging.weights}
 % \alias{var.pd.resp.rob}
 \alias{update.zhat}
@@ -87,31 +87,28 @@ The unexported internal functions
     \item{\code{georob.fit}}
     \item{\code{getCall.georob}}
     \item{\code{gradient.negative.loglikelihood}}
-    \item{\code{K}}
-    \item{\code{lmrob.control}}
     \item{\code{likelihood.calculations}}
     \item{\code{negative.log-likelihood}}
     \item{\code{partial.derivatives.variogram}}
     % \item{\code{ppd.resp.rob}}
     % \item{\code{qpd.resp.rob}}
     \item{\code{safe_pchisq}}
+    \item{\code{sim.chol.decomp}}
+    \item{\code{sim.circulant.embedding}}
     \item{\code{simple.kriging.weights}}
     % \item{\code{var.pd.resp.rob}}
     \item{\code{update.zhat}}
 }
 are not intended for direct use.  However, as any unexported function, they
 can be accessed by typing \code{georob:::\var{function-name}}.
+}
+\value{
+No information because functions are not meant to called by users.
+}
 
-In addition, the function \code{K}, which is re-exported by the package
-\pkg{georob}, is required for computing block Kriging predictions by the
-function \code{f.point.block.cov} of the package \pkg{constrainedKriging}.
-
-Furthermore, the (re-exported) function
-\code{\link[robustbase]{lmrob.control}} allows to pass tuning parameters to
-the function \code{\link[robustbase]{lmrob}} of the package \pkg{robustbase}.}
 
 \author{
-  Andreas Papritz \email{andreas.papritz@env.ethz.ch}\cr
+  Andreas Papritz \email{papritz@retired.ethz.ch}\cr
   with contributions by Cornelia Schwierz.
 }
 
@@ -144,4 +141,3 @@ the function \code{\link[robustbase]{lmrob}} of the package \pkg{robustbase}.}
 }
 
 \keyword{internal}
-

@@ -600,3 +600,90 @@ processing col and pch arguments
 2021-06-02 Andreas Papritz  <papritz@env.ethz.ch>
 
 * georob_private_functions.R (georob.fit) correction of error in check of initial values of anisotropy parameters
+
+
+2022-12-09 Andreas Papritz  <papritz@retired.ethz.ch>
+
+* validate.predictions.Rd: changes for KaTeX
+* predict.georob.Rd: changes for KaTeX
+* plot.georob.Rd: changes for KaTeX
+* param.defaults.Rd: changes for KaTeX
+* lgnpp.Rd: changes for KaTeX
+* georobSimulation.Rd: changes for KaTeX
+* georobS3methods.Rd: changes for KaTeX
+* georobPackage.Rd: changes for KaTeX
+* georobObject.Rd: changes for KaTeX
+* georobModelBuilding.Rd: changes for KaTeX
+* georob.Rd: changes for KaTeX
+* fit.variogram.model.Rd: changes for KaTeX
+* cv.georob.Rd: changes for KaTeX
+* control.georob.Rd: changes for KaTeX
+
+
+2022-12-10 Andreas Papritz  <papritz@retired.ethz.ch>
+
+* new file inst/NEWS.Rd
+
+
+2023-01-28 Andreas Papritz  <papritz@retired.ethz.ch>
+
+* georob_predict.R (georob.predict, simple.kriging.weights) RFoptions changed for RandomFieldsMLV3010
+* georob_private_functions.R (georob.fit, f.aux.gcr) RFoptions changed for RandomFieldsMLV3010
+* georob_S3methods.R (add1.georob, drop1.georob, step.georob) extracting data from object and using data in update
+* georob_simulation.R (condsim) RFoptions changed for RandomFieldsMLV3010, forcing socket clusters for parallelized computations
+
+
+2023-11-17 Andreas Papritz  <papritz@retired.ethz.ch>
+
+* georob_exported_functions.R (param.bounds) corrections of errors in parameter bounds for models RMlgd and RMdampedcos
+* georob_exported_functions.R (georob.predict) elimination of calls to function RFoptions{RandomFields}
+* georob_private.functions.R (f.aux.gcr) elimination of calls to function RFoptions{RandomFields}
+* georob_private.functions.R (f.aux.gcr) substitution of function RFfctn{RandomFields} by new function generalized.correlation
+
+
+2023-12-20/21 Andreas Papritz  <papritz@retired.ethz.ch>
+
+* georob_cv.R (cv.georob, plot.cv.georob) added on.exit(options(old.opt)), replaced makeCluster by makePSOCKcluster, class queries by inherits()
+* georob_exported_functions.R (pmm) added on.exit(options(old.opt)), deleted options(error = NULL)
+* georob_exported_functions.R (param.bounds) correction of upper bounds of alpha for RMfbm and RMgenfbm
+* georob_exported_functions.R (profilelogLik) checking class by inherits(), added on.exit(options(old.opt)), replaced makeCluster by makePSOCKcluster, replacement of identical(class(...), ...) by inherits(..., ...)
+* georob_lgnpp.R (lgnpp) checking class by inherits()
+* georob_predict.R (predict.georob, f.robust.uk, simple.kriging.weights) checking class by inherits(), added on.exit(options(old.opt)), replaced makeCluster by makePSOCKcluster, replacement of identical(class(...), ...) by inherits(..., ...)
+* georob_private_functions.R (covariances.fixed.random.effects, update.zhat, estimate.zhat, f.aux.gcr, georob.fit, f.aux.Qstar, f.aux.Valphaxi, f.stop.cluster, f.call.set_allfitxxx_to_false, f.call.set_onefitxxx_to_value, f.call.set_allxxx_to_fitted_values, f.call.set_onexxx_to_value) added on.exit(options(old.opt)), deleted options(error = NULL), replacement of identical(class(...), ...) by inherits(..., ...)
+* georob_S3methods.R (ranef.georob, resid.georob, rstandard.georob, summary.georob, deviance.georob, step.georob) replacement of identical(class(...), ...) by inherits(..., ...)
+* georob_S3methods.R (add1.georob, drop1.georob) added on.exit(options(old.opt)), replaced makeCluster by makePSOCKcluster, replacement of identical(class(...), ...) by inherits(..., ...), 
+* georob_simulation.R (condsim) checking class by inherits(), added on.exit(options(old.opt)), deleted options(error = NULL), replacement of identical(class(...), ...) by inherits(..., ...)
+* georob_variogram.R (fit.variogram.model, summary.fitted.variogram) checking class by inherits()
+* georob_variogram.R (lines.georob) added on.exit(par(old.par)), replacement of identical(class(...), ...) by inherits(..., ...)
+
+
+2024-01-21 Andreas Papritz  <papritz@retired.ethz.ch>
+
+* georob_exported_functions.R  (control.pcmp) changed default for allow.recursive
+* georob_predict.R (f.robust.uk, simple.kriging.weights) more efficient calculation of lag.vectors for anisotropic variograms
+* georob_private_functions.R  (georob.fit) more efficient calculation of lag.vectors for anisotropic variograms
+* georob_simulation.R (control.condsim) new arguments ce.method, cr.grid.expansion, mmax
+* georob_simulation.R (condsim) replacement of identical(class(...), ...) by inherits(..., ...), new function sim.chol.decomp for simulation with exact coordinates, new function sim.circulant.embedding for simulation on rectangular grid
+* georob_variogram.R (sample.variogram.default) more efficient calculation of lag.vectors for anisotropic variograms
+* DESCRIPTION eliminated import of package RandomFields 
+* NAMESPACE eliminated import of package RandomFields, revised list of unexported, undocumented functions
+* reexportedfun.Rd new help page for re-exported functions that are imported from other packages
+* gencorr.Rd new help page for unexported function gencorr with concise description of implemented variogram models
+
+
+2024-01-24 Andreas Papritz  <papritz@retired.ethz.ch>
+
+* georob_S3methods.R (summary.georob, print.summary.georob) compress and expand correlation matrices
+georob_private_functions.R  (getCall.georob) elimination of this function 
+
+
+2024-02-01 Andreas Papritz  <papritz@retired.ethz.ch>
+
+* georob_cv.R (cv.georob) saving SOCKcluster.RData to tempdir()
+* georob_exported_functions.R (profilelogLik) saving SOCKcluster.RData to tempdir()
+* georob_exported_functions.R (gencorr) moved to code file for exported functions
+* georob_predict.R (predict.georob, simple.kriging.weights) saving SOCKcluster.RData to tempdir()
+* georob_private_functions.R (f.stop.cluster) new argument fname
+* georob_S3methods.R (add1.georob, drop1.georob) saving SOCKcluster.RData to tempdir()
+* georob_simulation.R (sim.circulant.embedding) minor changes in handling negative eigenvalues of base matrix, setting random seeds for parallel processing, saving SOCKcluster.RData to tempdir()
+* various Rd files: complented \value section and fixes to comply with CRAN policies

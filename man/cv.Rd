@@ -24,7 +24,7 @@ cv(object, ...)
   will depend on the method function used; see the respective documentation.}
 
 \author{
-   Andreas Papritz \email{andreas.papritz@env.ethz.ch}.
+   Andreas Papritz \email{papritz@retired.ethz.ch}.
 }
 
 \seealso{

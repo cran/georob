@@ -22,6 +22,7 @@ lgnpp <-
   ## 2015-08-22 AP changes for nested variogram models
   ## 2019-12-13 AP correcting use of class() in if() and switch()
   ## 2020-02-14 AP sanity checks of arguments and for if() and switch()
+  ## 2023-12-20 AP checking class by inherits()
 
   ## auxiliary function to backtransform the point predictions and
   ## optionally the mean squared errors and the prediction intervals
@@ -387,7 +388,7 @@ lgnpp <-
       attr( t.result, "locations" )       <- locations
 
       result <- object
-      if( class( object )[1] == "SpatialPolygonsDataFrame" ){
+      if( inherits( object, "SpatialPolygonsDataFrame" ) ){
         result@data <- t.result
       } else {
         result[["pred"]]@data <- t.result
@@ -419,8 +420,11 @@ lgnpp <-
 
       } else if(
         is.data.frame( all.pred ) ||
-        class( all.pred )[1] %in% c(
-          "SpatialPointsDataFrame", "SpatialPixelsDataFrame", "SpatialGridDataFrame"
+        inherits(
+          all.pred,
+          c(
+            "SpatialPointsDataFrame", "SpatialPixelsDataFrame", "SpatialGridDataFrame"
+          )
         )
       ){
 

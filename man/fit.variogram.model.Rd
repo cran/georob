@@ -1,5 +1,6 @@
-% 2021-06-04 A. Papritz
+% 2024-02-01 A. Papritz
 % R CMD Rdconv -t html -o bla.html fit.variogram.model.Rd ; open bla.html; R CMD Rd2pdf --force fit.variogram.model.Rd;
+% hunspell -d en_GB-ise,en_GB-ize,en_GB-large -t -i mac  fit.variogram.model.Rd
 
 \encoding{utf8}
 \name{fit.variogram.model}
@@ -14,9 +15,10 @@
 
 \description{
 The function \code{fit.variogram.model} fits a variogram model to a sample
-variogram by (weighted) non-linear least squares.  There are \code{print},
-\code{summary} and
-\code{lines} methods for summarizing and displaying fitted variogram
+variogram by (weighted) non-linear least squares.  The function
+\code{control.fit.variogram.model} generates a list with steering parameters which
+control \code{fit.variogram.model}.  There are \code{print}, \code{summary}
+and \code{lines} methods for summarizing and displaying fitted variogram
 models.}
 
 \usage{
@@ -53,36 +55,39 @@ control.fit.variogram.model(maximizer = c("nlminb", "optim"),
   \item{sv}{an object of class \code{sample.variogram}, see
   \code{\link{sample.variogram}}.}
 
-  \item{variogram.model}{a character keyword defining the variogram model to
-  be fitted.  Currently, most basic variogram models provided by the
-  package \pkg{RandomFields} can be fitted (see \emph{Details} of
-  \code{\link{georob}} and \code{\link[RandomFields]{RMmodel}}).}
+  \item{variogram.model}{a character keyword defining the variogram model
+  to be fitted.  Currently, most basic variogram models provided formerly
+  by the now archived package \pkg{RandomFields} can be fitted (see
+  \emph{Details} of \code{\link{georob}} and \code{\link{gencorr}}).}
 
   \item{param}{a named numeric vector with initial values of the variogram
   parameters.  The following parameter names are allowed (see
-  \emph{Details} of \code{\link{georob}} and \code{\link{georobIntro}} for
+  \emph{Details} of \code{\link{georob}} and \code{\link{georobPackage}} for
   information about the parametrization of variogram models):
 
   \itemize{
-  \item{\code{variance}: variance (sill \eqn{\sigma^2}) of the
-  auto-correlated component of the Gaussian random field
-  \eqn{B(\mbox{\boldmath$s$\unboldmath})}{B(s)}.}
 
-  \item{\code{snugget}: variance
-  (spatial nugget \eqn{\sigma^2_{\mathrm{n}}}{\sigma^2_n})
-  of the seemingly spatially uncorrelated component of
-  \eqn{B(\mbox{\boldmath$s$\unboldmath})}{B(s)}
-  (micro-scale spatial variation; default value\cr  \code{snugget = 0}).}
+    \item{\code{variance}: variance (sill \eqn{\sigma^2}) of the
+    auto-correlated component of the Gaussian random field
+    \eqn{B(\boldsymbol{s})}{B(s)}.}
 
-  \item{\code{nugget}: variance (nugget \eqn{\tau^2}) of the
-  independent errors
-  \eqn{\varepsilon(\mbox{\boldmath$s$\unboldmath})}{\epsilon(s)}.}
+    \item{\code{snugget}: variance
+    (spatial nugget \eqn{\sigma^2_{\mathrm{n}}}{\sigma^2_n})
+    of the seemingly spatially uncorrelated component of
+    \eqn{B(\boldsymbol{s})}{B(s)}
+    (micro-scale spatial variation; default value\cr  \code{snugget = 0}).}
 
-  \item{\code{scale}: range parameter (\eqn{\alpha}) of the variogram.}
+    \item{\code{nugget}: variance (nugget \eqn{\tau^2}) of the
+    independent errors
+    \eqn{\varepsilon(\boldsymbol{s})}{\epsilon(s)}.}
 
-  \item{names of additional variogram parameters such as the
-  smoothness parameter \eqn{\nu} of the Whittle-Mat\'ern model (see
-  \code{\link[RandomFields]{RMmodel}} and \code{\link{param.names}}).} } }
+    \item{\code{scale}: range parameter (\eqn{\alpha}) of the variogram.}
+
+    \item{names of additional variogram parameters such as the smoothness
+    parameter \eqn{\nu} of the Whittle-\enc{Matérn}{Matern} model (see
+    \code{\link{gencorr}} and \code{\link{param.names}}).} }
+
+  }
 
   \item{fit.param}{a named logical vector (or a function such as
   \code{\link{default.fit.param}} that creates this vector) with the same
@@ -94,7 +99,7 @@ control.fit.variogram.model(maximizer = c("nlminb", "optim"),
   \code{\link{default.aniso}} that creates this vector) for fitting
   geometrically anisotropic variogram models.  The names of \code{aniso}
   are matched against the following names (see \emph{Details} and
-  \code{\link{georobIntro}} for information about the parametrization of
+  \code{\link{georobPackage}} for information about the parametrization of
   variogram models):
 
   \itemize{
@@ -132,20 +137,20 @@ control.fit.variogram.model(maximizer = c("nlminb", "optim"),
 
   \itemize{
 
-      \item{variogram.model}: a character keyword defining the variogram
+      \item{\code{variogram.model}}: a character keyword defining the variogram
       model, see respective argument above.
 
-      \item{param}: a named numeric vector with initial values of the
+      \item{\code{param}}: a named numeric vector with initial values of the
       variogram parameters, see respective argument above.
 
-      \item{fit.param}: a named logical vector defining which parameters are
+      \item{\code{fit.param}}: a named logical vector defining which parameters are
       adjusted, see respective argument above.
 
-      \item{aniso}: a named numeric vector with initial values for fitting
+      \item{\code{aniso}}: a named numeric vector with initial values for fitting
       geometrically anisotropic variogram models, see respective argument
       above.
 
-      \item{fit.param}: a named logical vector defining which anisotropy
+      \item{\code{fit.param}}: a named logical vector defining which anisotropy
       parameters are adjusted, see respective argument above.
 
   }
@@ -170,28 +175,28 @@ control.fit.variogram.model(maximizer = c("nlminb", "optim"),
 
       \item \code{"npairs"}: weighting by number of data pairs in a lag class,
 
-      \item \code{"cressie"}: \dQuote{Cressie's weights} (default, see Cressie, 1993,
-      sec.  2.6.2).
+      \item \code{"cressie"}: \dQuote{Cressie's weights} (default, see
+      \cite{Cressie, 1993, sec.  2.6.2}).
 
     }
   }
 
-  \item{verbose}{positive integer controlling logging of diagnostic
+  \item{verbose}{a positive integer controlling logging of diagnostic
   messages to the console during model fitting.}
 
   \item{control}{a list with the components \code{maximizer},
   \code{param.tf}, \code{fwd.tf}, \code{bwd.tf}, \code{hessian},
   \code{optim} and \code{nlminb}  or a function such as
   \code{control.fit.variogram.model} that generates such a list.
-  See code{\link{control.georob}} for information on
-  code{maximizer}, \code{param.tf}, \code{fwd.tf},
+  See \code{\link{control.georob}} for information on
+  \code{maximizer}, \code{param.tf}, \code{fwd.tf},
   \code{bwd.tf}, \code{hessian}, \code{optim} and \code{nlminb}.}
 
-  \item{maximizer}{character keyword defining the optimizer for nonlinear
-  least squares.  Possible values are \code{\link[stats]{nlminb}}
-  (default) or \code{\link[stats]{optim}}.}
+  \item{maximizer}{a character keyword defining the optimizer for nonlinear
+  least squares.  Possible values are \code{\link[stats]{nlminb}} (default)
+  or \code{\link[stats]{optim}}.}
 
-  \item{hessian}{logical scalar controlling whether the Hessian should be
+  \item{hessian}{a logical scalar controlling whether the Hessian should be
   computed at the nonlinear least squares estimates.}
 
   \item{param.tf}{a function such as \code{\link{param.transf}}, which
@@ -205,7 +210,7 @@ control.fit.variogram.model(maximizer = c("nlminb", "optim"),
 
   \item{deriv.fwd.tf}{a function such as \code{dfwd.transf}, which
   returns a named list of functions corresponding to the first derivatives
-  of \code{fwd.tf}, see \emph{Details}.}
+  of \code{fwd.tf}, see \code{\link{control.georob}}.}
 
   \item{bwd.tf}{a function such as \code{\link{bwd.transf}}, which returns
   the named list of inverse functions corresponding to \code{fwd.tf}, see
@@ -221,46 +226,50 @@ control.fit.variogram.model(maximizer = c("nlminb", "optim"),
 
   \item{object, x}{an object of class \code{fitted.variogram}.}
 
-  \item{digits}{positive integer indicating the number of decimal digits to print.}
+  \item{digits}{a positive integer indicating the number of decimal digits
+  to print.}
 
-  \item{correlation}{logical controlling whether the correlation matrix of
+  \item{correlation}{a logical scalar controlling whether the correlation matrix of
   the fitted variogram parameters is computed (default \code{FALSE}).}
 
-  \item{signif}{confidence level for computing confidence intervals for
-  variogram parameters (default \code{0.95}).}
+  \item{signif}{a numeric with the confidence level for computing
+  confidence intervals for variogram parameters (default \code{0.95}).}
 
-  \item{what}{the quantity that should be displayed (default \code{"variogram"}).}
+  \item{what}{a character keyword with the quantity that should be
+  displayed (default \code{"variogram"}).}
 
-  \item{from}{numeric, minimal lag distance used in plotting variogram models.}
+  \item{from}{a numeric with the minimal lag distance used in plotting
+  variogram models.}
 
-  \item{to}{numeric, maximum lag distance used in plotting variogram
-  models (default: largest lag distance of current plot).}
+  \item{to}{a numeric with the maximum lag distance used in plotting
+  variogram models (default: largest lag distance of current plot).}
 
-  \item{n}{positive integer specifying the number of equally spaced lag
+  \item{n}{a positive integer specifying the number of equally spaced lag
   distances for which semi-variances are evaluated in plotting variogram
   models (default \code{501}).}
 
-  \item{xy.angle}{numeric (vector) with azimuth angles (in degrees,
+  \item{xy.angle}{a numeric vector with azimuth angles (in degrees,
   clockwise positive from north) in \eqn{x}-\eqn{y}-plane for which
   semi-variances should be plotted.}
 
-  \item{xz.angle}{numeric (vector) with angles in \eqn{x}-\eqn{z}-plane (in
+  \item{xz.angle}{a numeric vector with angles in \eqn{x}-\eqn{z}-plane (in
   degrees, clockwise positive from zenith to south) for which semi-variances
   should be plotted.}
 
-  \item{col}{color of curves to distinguish curves relating to
-  different azimuth angles in \eqn{x}-\eqn{y}-plane.}
+  \item{col}{a vector with colours of curves to distinguish curves relating
+  to different azimuth angles in \eqn{x}-\eqn{y}-plane.}
 
-  \item{pch}{type of plotting symbols added to lines to distinguish
-  curves relating to different angles in \eqn{x}-\eqn{z}-plane.}
+  \item{pch}{a vector with the plotting symbols added to lines to
+  distinguish curves relating to different angles in
+  \eqn{x}-\eqn{z}-plane.}
 
-  \item{lty}{line type for plotting variogram models.}
+  \item{lty}{a vector with the line types for plotting variogram models.}
 
   \item{\dots}{additional arguments passed to methods.}
 
 }
 \details{The parametrization of geometrically anisotropic variograms is
-described in detail in \code{\link{georobIntro}}, and the section
+described in detail in \code{\link{georobPackage}}, and the section
 \emph{Details} of \code{\link{georob}} describes how the parameter
 estimates are constrained to permissible ranges.  The same
 mechanisms are used in \code{fit.variogram.model}.
@@ -268,12 +277,12 @@ mechanisms are used in \code{fit.variogram.model}.
 The method \code{summary} computes confidence intervals of the estimated
 variogram and anisotropy parameters from the Hessian matrix of the residual
 sums of squares, based on the asymptotic normal distribution of least
-squares estimate estimates.  Note that the Hessian matrix with respect to
-the \emph{transformed} variogram and anisotropy parameters is used for
-this.  Hence the inverse Hessian matrix is the covariance matrix of the
+squares estimates.  Note that the Hessian matrix with respect to the
+\emph{transformed} variogram and anisotropy parameters is used for this.
+Hence the inverse Hessian matrix is the covariance matrix of the
 transformed parameters, confidence intervals are first computed for the
 transformed parameters and the limits of these intervals are transformed
-back to the orginal scale of the parameters.  Optionally, \code{summary}
+back to the original scale of the parameters.  Optionally, \code{summary}
 reports the correlation matrix of the \emph{transformed} parameters, also
 computed from the Hessian matrix.
 
@@ -294,14 +303,14 @@ computed from the Hessian matrix.
 
   \itemize{
 
-      \item{\code{variogram.model}}: the name of the fitted parametric variogram
-      model.
+      \item{\code{variogram.model}}: the name of the fitted parametric
+      variogram model.
 
-      \item{\code{param}}: a named numeric vector with the (estimated) variogram
-      parameters.
+      \item{\code{param}}: a named numeric vector with the (estimated)
+      variogram parameters.
 
-      \item{\code{fit.param}}: a named logical vector with the flags defining what
-      variogram parameters were estimated.
+      \item{\code{fit.param}}: a named logical vector with the flags
+      defining what variogram parameters were estimated.
 
       \item{\code{isotropic}: logical indicating whether an isotropic
       variogram was fitted.}
@@ -309,21 +318,19 @@ computed from the Hessian matrix.
       \item{\code{aniso}: a named numeric vector with the (estimated)
       anisotropy parameters.}
 
-      \item{\code{fit.aniso}}: a named logical vector with the flags defining what
-      anisotropy parameters were estimated.
+      \item{\code{fit.aniso}}: a named logical vector with the flags
+      defining what anisotropy parameters were estimated.
 
       \item{\code{sincos}: a list with \code{sin} and \code{cos} of the
       angles \eqn{\omega}, \eqn{\phi} and \eqn{\zeta} that define the
       orientation of the anisotropy ellipsoid.}
 
-      \item{\code{rotmat}: the matrix
-      \eqn{(\mbox{\boldmath$C$\unboldmath}_1,
-      \mbox{\boldmath$C$\unboldmath}_2,
-      \mbox{\boldmath$C$\unboldmath}_3)}{(C_1, C_2, C_3)} (see
-      \code{\link{georobIntro}}).}
+      \item{\code{rotmat}: the matrix \eqn{(\boldsymbol{C}_1,
+      \boldsymbol{C}_2, \boldsymbol{C}_3)}{(C_1, C_2, C_3)} (see
+      \code{\link{georobPackage}}).}
 
       \item{\code{sclmat}: a vector with the elements 1, \eqn{1/f_1},
-      \eqn{1/f_2} (see \code{\link{georobIntro}}). }
+      \eqn{1/f_2} (see \code{\link{georobPackage}}).  }
 
     }
 
@@ -338,14 +345,17 @@ computed from the Hessian matrix.
   \item{bwd.tf}{a list of functions for \emph{inverse} variogram parameter
   transformations.}
 
-  \item{converged}{logical indicating whether numerical maximization by
-  \code{optim} converged.}
+  \item{converged}{a logical scalar indicating whether numerical
+  maximization by \code{\link[stats]{nlminb}} or \code{\link[stats]{optim}}
+  converged.}
 
   \item{convergence.code}{a diagnostic integer issued by
-  \code{\link[stats]{optim}} (component \code{convergence}) about convergence.}
+  \code{\link[stats]{nlminb}} or \code{\link[stats]{optim}} (component
+  \code{convergence}) about convergence.}
 
   \item{iter}{a named integer vector of length two with the number of
-  function and gradient evaluations by \code{\link[stats]{optim}}.}
+  function and gradient evaluations by \code{\link[stats]{nlminb}} or
+  \code{\link[stats]{optim}}.}
 
   \item{call}{the matched call.}
 
@@ -355,9 +365,6 @@ computed from the Hessian matrix.
   \item{fitted}{a numeric vector with the modelled semi-variances.}
 
   \item{weights}{a numeric vector with the weights used for fitting.}
-
-  \item{hessian}{a symmetric matrix with the Hessian at
-  the solution (missing if \code{hessian} is false).}
 
   \item{hessian.tfpa}{a symmetric matrix with the Hessian at the solution
   with respect to the transformed variogram and anisotropy parameters
@@ -370,22 +377,45 @@ computed from the Hessian matrix.
   (missing if \code{hessian} is false).
   }
 
+  The function \code{control.fit.variogram.model} returns a list with
+  control parameters to steer \cr \code{fit.variogram.model}, see arguments of
+  the function above for its components.
+
+  The method \code{print.fitted.variogram} invisibly returns the fitted
+  variogram model unchanged.
+
+  The method \code{summary.fitted.variogram} returns an object of class
+  \code{summary.fitted.variogram} which is a list containing a subset of
+  the components of the fitted variogram object (\code{call},
+  \code{residuals}, \code{weights}, \code{converged},
+  \code{convergence.code}, \code{iter}, \code{sse},
+  \code{variogram.object}), the matrix \code{param.aniso} with the
+  estimated values of the variogram parameters along with the bounds of the
+  confidence intervals and optionally the correlation matrix
+  \code{cor.tf.param} of the estimated transformed parameters.  There is a
+  \code{print} method for objects of class \code{summary.fitted.variogram}
+  which returns invisibly the object \code{summary.fitted.variogram}
+  unchanged.
+
+  The method \code{lines.fitted.variogram} is called for its side effects
+  and returns the value \code{NULL} invisibly.
+
 
 }
 
 \references{
 
-  Cressie, N. A. C. (1993) \emph{Statistics for Spatial Data}.  New York:
-  John Wiley & Sons.
+  Cressie, N. A. C. (1993) \emph{Statistics for Spatial Data}, Wiley, New
+  York, \doi{10.1002/9781119115151}.
 
 }
 
 \author{
-   Andreas Papritz \email{andreas.papritz@env.ethz.ch}.
+   Andreas Papritz \email{papritz@retired.ethz.ch}.
 }
 
 \seealso{
-  \code{\link{georobIntro}} for a description of the model and a brief summary of the algorithms;
+  \code{\link{georobPackage}} for a description of the model and a brief summary of the algorithms;
   \code{\link{georob}} for (robust) fitting of spatial linear models;
 
   \code{\link{georobObject}} for a description of the class \code{georob};
@@ -422,7 +452,7 @@ data(wolfcamp)
 r.sv.iso <- sample.variogram(pressure~1, data = wolfcamp,
     locations = ~x + y, lag.dist.def = seq(0, 200, by = 15))
 
-\dontrun{
+\donttest{
 r.irf0.iso <- fit.variogram.model(r.sv.iso, variogram.model = "RMfbm",
     param = c(variance = 100, nugget = 1000, scale = 1., alpha = 1.),
     fit.param = default.fit.param(scale = FALSE, alpha = TRUE))
@@ -436,7 +466,7 @@ r.sv.aniso <- sample.variogram(pressure~1, data = wolfcamp,
     locations = ~x + y, lag.dist.def = seq(0, 200, by = 15),
     xy.angle.def = c(0., 22.5, 67.5, 112.5, 157.5, 180.))
 
-\dontrun{
+\donttest{
 r.irf0.aniso <- fit.variogram.model(r.sv.aniso, variogram.model = "RMfbm",
     param = c(variance = 100, nugget = 1000, scale = 1., alpha = 1.5),
     fit.param = default.fit.param(scale = FALSE, alpha = TRUE),

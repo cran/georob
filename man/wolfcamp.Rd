@@ -52,13 +52,14 @@
 }
 
 \references{
-  Cressie, N.A.C (1993) \emph{Statistics for Spatial Data}. New York: Wiley.
+  Cressie, N. A. C. (1993) \emph{Statistics for Spatial Data}, Wiley, New
+  York, \doi{10.1002/9781119115151}.
 
   Papritz, A. and Moyeed, R. (2001) Parameter uncertainty in spatial
   prediction: checking its importance by cross-validating the Wolfcamp
-  and Rongelap data sets. \emph{GeoENV 2000: Geostatistical for
-    Environmental Applications. Ed. P. Monestiez, D. Allard,
-    R. Froidevaux}. Kluwer.
+  and Rongelap data sets, \emph{GeoENV 2000: Geostatistical for
+  Environmental Applications}. Eds P. Monestiez, D. Allard,
+  R. Froidevaux. Kluwer, \doi{10.1007/978-94-010-0810-5}.
 }
 
 \examples{

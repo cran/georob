@@ -1,6 +1,7 @@
-% 2021-06-04 A. Papritz
-% R CMD Rdconv -t html -o bla.html georobModelBuilding.Rd ; open bla.html; R CMD Rd2pdf --force georobModelBuilding.Rd;
-
+% 2024-02-01 A. Papritz
+% R CMD Rdconv -t html -o bla.html georobModelBuilding.Rd ; open bla.html;
+% R CMD Rd2pdf --force georobModelBuilding.Rd;
+% hunspell -d en_GB-ise,en_GB-ize,en_GB-large -t -i mac  georobModelBuilding.Rd
 \encoding{utf8}
 \name{georobModelBuilding}
 \alias{georobModelBuilding}
@@ -21,7 +22,8 @@
 \code{logLik}, \code{extractAIC}, \code{add1}, \code{drop1},
   \code{step} and \code{waldtest} for the class \code{georob}.  The package
   \code{georob} provides a generic \code{step} function and a default
-  method which is identical with the (non-generic) function \code{\link[stats]{step}}.}
+  method which is identical with the (non-generic) function
+  \code{\link[stats]{step}}.}
 
 \usage{
 
@@ -61,19 +63,19 @@ step(object, ...)
   \item{object, fit}{an object of class \code{georob}, see
     \code{\link{georobObject}}.}
 
-  \item{direction}{the mode of stepwise search, see
-    \code{\link[stats]{step}}.  }
+  \item{direction}{a character keyword with the mode of stepwise search,
+  see \code{\link[stats]{step}}.  }
 
-  \item{fixed,fixed.add1.drop1}{logical controlling whether the variogram parameters are
-   \emph{not} adjusted when
-   \code{add}ing or \code{drop}ping model terms by \code{add1}
-   and \code{drop1} (default \code{TRUE}), see \emph{Details}.}
+  \item{fixed,fixed.add1.drop1}{a logical scalar controlling whether the
+  variogram parameters are \emph{not} adjusted when \code{add}ing or
+  \code{drop}ping model terms by \code{add1} and \code{drop1} (default
+  \code{TRUE}), see \emph{Details}.}
 
-  \item{fixed.step}{logical controlling whether the variogram parameters are
-   \emph{not} adjusted after having called \code{add1} and \code{drop1} in
-   \code{step} (default \code{TRUE}), see \emph{Details}.}
+  \item{fixed.step}{a logical scalar controlling whether the variogram
+  parameters are \emph{not} adjusted after having called \code{add1} and
+  \code{drop1} in \code{step} (default \code{TRUE}), see \emph{Details}.}
 
-  \item{k}{numeric specifying the 'weight' of the equivalent degrees of
+  \item{k}{a numeric specifying the 'weight' of the equivalent degrees of
     freedom (=: edf) part in the AIC formula, see
     \code{\link[stats]{extractAIC}}.}
 
@@ -86,16 +88,16 @@ step(object, ...)
     \code{\link[stats]{formula}}, see
     \code{\link[lmtest]{waldtest}}.}
 
-  \item{ncores}{integer specifying the number of cores used for
+    \item{ncores}{an integer specifying the number of cores used for
     parallelized execution of \code{add1} and \code{drop1}.  If larger than
-    one then the minimum of \code{ncores}, detectCores() and the number of
-    terms to be added or dropped determines the number of cores that is
-    actually used.}
+    one then the minimum of \code{ncores}, \code{parallel::detectCores()}
+    and the number of terms to be added or dropped determines the number of
+    cores that is actually used.}
 
-  \item{REML}{logical controlling whether the restricted log-likelihood
+  \item{REML}{a logical scalar controlling whether the restricted log-likelihood
     should be extracted (default \code{TRUE}).}
 
-  \item{scale}{numeric, currently not used, see
+  \item{scale}{a numeric, currently not used, see
     \code{\link[stats]{extractAIC}}.}
 
   \item{scope}{defines the range of models examined in the stepwise search.
@@ -103,18 +105,18 @@ step(object, ...)
     components \code{upper} and \code{lower}, both formulae,
     see \code{\link[stats]{step}} for details.}
 
-  \item{steps}{the maximum number of steps to be considered
-    (default is 1000), see \code{\link[stats]{step}}.}
+  \item{steps}{a numeric with the maximum number of steps to be considered
+  (default is 1000), see \code{\link[stats]{step}}.}
 
-  \item{test}{character keyword specifying whether to compute the large
+  \item{test}{a character keyword specifying whether to compute the large
     sample Chi-squared statistic (with asymptotic Chi-squared distribution)
     or the finite sample F statistic (with approximate F distribution), see
     \code{\link[lmtest]{waldtest}}.}
 
-  \item{trace}{if positive, information is printed during the running of
-    \code{step}, see \code{\link[stats]{step}}.}
+  \item{trace}{a numeric.  If positive, information is printed during the
+  running of \code{step}, see \code{\link[stats]{step}}.}
 
-  \item{use.fitted.param}{logical scalar controlling whether fitted
+  \item{use.fitted.param}{a logical scalar controlling whether fitted
     values of \code{param} (and \code{aniso} are used as initial values
     when variogram parameters are fitted afresh for \code{add}ing and
     \code{drop}ping terms from the model (default \code{TRUE}).}
@@ -122,11 +124,11 @@ step(object, ...)
   \item{vcov}{a function for estimating the covariance matrix of the
     regression coefficients, see \code{\link[lmtest]{waldtest}}.}
 
-  \item{verbose}{positive integer controlling logging of diagnostic
+  \item{verbose}{a positive integer controlling logging of diagnostic
     messages to the console during model fitting, see \code{\link{georob}}
     (default \code{0}).}
 
-  \item{warn}{logical scalar controlling whether warnings should be
+  \item{warn}{a logical scalar controlling whether warnings should be
   suppressed.}
 
 
@@ -137,36 +139,36 @@ step(object, ...)
 \details{
 
   For a non-robust fit the  function \code{deviance} returns the residual deviance
-  \deqn{(\mbox{\boldmath $Y -X \widehat{\beta}$})^{\mathrm{T}}
-    (\widehat{\tau}^2 \mbox{\boldmath$I$\unboldmath} +
-    \mbox{\boldmath$\Gamma$\unboldmath}_{\widehat{\theta}})^{-1}
-    (\mbox{\boldmath $Y -X \widehat{\beta}$})
+  \deqn{(\boldsymbol{Y} - \boldsymbol{X} \widehat{\boldsymbol{\beta}})^{\mathrm{T}}
+    (\widehat{\tau}^2 \boldsymbol{I} +
+    \boldsymbol{\Gamma}_{\widehat{\theta}})^{-1}
+    (\boldsymbol{Y} - \boldsymbol{X} \widehat{\boldsymbol{\beta}})
     }{(Y - X hat\beta)^T(\tau^2 I + \Gamma_hat\theta)^{-1}(Y - X hat\beta)
   }
   (see \code{\link{georobPackage}} for an explanation of the notation).
   For a robust fit the deviance is not defined. The function then computes with a warning
   the deviance of an equivalent Gaussian model with heteroscedastic nugget
-  \eqn{\tau^2/\mbox{\boldmath $w$\unboldmath}}{\tau/w} where \eqn{\mbox{\boldmath $w$\unboldmath}}{w} are
+  \eqn{\tau^2/\boldsymbol{w}}{\tau/w} where \eqn{\boldsymbol{w}}{w} are
   the \dQuote{robustness weights} \code{rweights}, see \code{\link{georobObject}}.
 
-  \code{logLik} returns the the maximized (restricted) log-likelihood.  For
+  \code{logLik} returns the maximized (restricted) log-likelihood.  For
   a robust fit, the log-likelihood is not defined.  The function then
   computes the (restricted) log-likelihood of an equivalent Gaussian model with
   heteroscedastic nugget (see above).
 
   The methods \code{extractAIC}, \code{add1}, \code{drop1} and \code{step}
-  are used for stepwise model building. \cr If \code{fixed==TRUE} or
-  \code{fixed.add1.drop1==TRUE} (default) then the variogram parameters are
+  are used for stepwise model building. \cr If \code{fixed=TRUE} or
+  \code{fixed.add1.drop1=TRUE} (default) then the variogram parameters are
   kept fixed at the values of \code{object}.  For
-  \code{fixed==FALSE} or \code{fixed.add1.drop1==FALSE} the variogram
+  \code{fixed=FALSE} or \code{fixed.add1.drop1=FALSE} the variogram
   parameters are fitted afresh for each model tested by \code{add1} and
   \code{drop1}.  Then either the variogram parameters in
-  \code{object$initial.objects} (\code{use.fitted.param==FALSE}) or the
-  fitted parameters of \code{object} (\code{use.fitted.param==TRUE}) are
-  used as initial values.  For \code{fixed.step==TRUE} the variogram
+  \code{object$initial.objects} (\code{use.fitted.param=FALSE}) or the
+  fitted parameters of \code{object} (\code{use.fitted.param=TRUE}) are
+  used as initial values.  For \code{fixed.step=TRUE} the variogram
   parameters are \emph{not} fitted afresh by \code{step} after the calls to
   \code{drop1} and \code{add1} have been completed, unlike for
-  \code{fixed.step==FALSE} where the parameters are estimated afresh for
+  \code{fixed.step=FALSE} where the parameters are estimated afresh for
   the new model that minimized AIC (BIC) in the previous step.
 
 
@@ -175,13 +177,59 @@ step(object, ...)
 
 }
 
+\value{
+
+  The method \code{deviance.georob} returns the deviance of the fitted
+  spatial linear model with the attributes \code{log.det.covmat}
+  containing the logarithm of the determinant of the covariance matrix
+  \eqn{
+    \tau^2 \boldsymbol{I} + \boldsymbol{\Gamma}_\theta
+  }{ \tau^2 I + \Gamma_\theta}
+  of the observations and optionally the attribute
+  \code{log.det.xticovmatx} with the logarithm of the determinant of
+  \eqn{
+    \boldsymbol{X}^\mathrm{T} (\tau^2
+    \boldsymbol{I} + \boldsymbol{\Gamma}_\theta)^{-1} \boldsymbol{X}
+  }{ X^T(\tau^2 I + \Gamma_\theta)^{-1} X}, when \code{REML = true},
+  see \emph{Details} above.
+
+  The method \code{logLik.georob} returns an object of class \code{logLik}
+  with the maximized (restricted) log-likelihood, see \emph{Details} above
+  and \code{\link[stats]{logLik}}.
+
+  The method \code{extractAIC.georob} returns a numeric vector of length 2
+  with the first and second elements giving the equivalent degrees of
+  freedom and the (generalized) Akaike Information Criterion for the fitted
+  model \code{fit}.
+
+  The methods \code{add1.georob} and \code{drop1.georob} return objects of
+  class \code{anova} which are \code{\link{data.frame}}s summarizing the
+  differences in fit between models.  In addition to the customary
+  variables \code{Df} and \code{AIC} the output contains a logical variable
+  \code{Converged} which signals (non-)convergence when fitting the
+  respective sub-model.
+
+  The generic \code{step} returns the stepwise selected model plus
+  optionally some additional attributes depending on the method.
+
+  The methods \code{step.default} and \code{step.georob} return the
+  stepwise-selected models with up to two additional components
+  (\code{anova}, \code{keep}), see \code{\link[stats]{step}} for details.
+
+  The method \code{waldtest.georob} returns an object of class \code{anova}
+  which contains the residual degrees of freedom, the difference in degrees
+  of freedom, Wald statistic (either "Chisq" or "F") and corresponding
+  \var{p}-value.
+
+}
+
 
 \author{
-   Andreas Papritz \email{andreas.papritz@env.ethz.ch}.
+   Andreas Papritz \email{papritz@retired.ethz.ch}.
 }
 
 \seealso{
-  \code{\link{georobIntro}} for a description of the model and a brief summary of the algorithms;
+  \code{\link{georobPackage}} for a description of the model and a brief summary of the algorithms;
 
   \code{\link{georob}} for (robust) fitting of spatial linear models;
 
@@ -212,7 +260,7 @@ step(object, ...)
 }
 
 \examples{
-\dontrun{
+\donttest{
 
 data(meuse)
 
