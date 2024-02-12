@@ -1,4 +1,4 @@
-% 2024-02-01 A. Papritz
+% 2024-02-09 A. Papritz
 % R CMD Rdconv -t html -o bla.html cv.georob.Rd ; open bla.html; R CMD Rd2pdf --force cv.georob.Rd;
 % hunspell -d en_GB-ise,en_GB-ize,en_GB-large -t -i mac  cv.georob.Rd
 \encoding{utf8}
@@ -223,7 +223,8 @@
 }
 
 \value{
-  An object of class \code{cv.georob}, which is a list with the two
+  The method \code{cv.georob} returns an object of class \code{cv.georob},
+  which is a list with the two
   components \code{pred} and \code{fit}.
 
   \code{pred} is a data frame with the coordinates and the
@@ -303,29 +304,31 @@
 
 
 \examples{
-\donttest{
-
 ## define number of cores for parallel computations
-if(interactive()) ncpu <- 2L else ncpu <- 1L
+if(interactive()) ncpu <- 10L else ncpu <- 1L
 
 data(meuse)
 
 r.logzn <- georob(log(zinc) ~ sqrt(dist), data = meuse, locations = ~ x + y,
-    variogram.model = "RMexp",
-    param = c(variance = 0.15, nugget = 0.05, scale = 200),
-    tuning.psi = 1)
+  variogram.model = "RMexp",
+  param = c(variance = 0.15, nugget = 0.05, scale = 200),
+  tuning.psi = 1000)
 
-r.logzn.cv.1 <- cv(r.logzn, seed = 1, lgn = TRUE, ncores = 1, verbose = 1)
+if(interactive()){
+  ## example is run only in interactive session because cpu times exceeds 5 s
+  r.logzn.cv.1 <- cv(r.logzn, seed = 1, lgn = TRUE, ncores = 1, verbose = 1)
 
-r.logzn.cv.2 <- cv(r.logzn, formula = .~. + ffreq, seed = 1, lgn = TRUE,
-    ncores = ncpu)
+  r.logzn.cv.2 <- cv(r.logzn, formula = .~. + ffreq, seed = 1, lgn = TRUE,
+      ncores = ncpu)
 
-plot(r.logzn.cv.1, type = "bs")
-plot(r.logzn.cv.2, type = "bs", add = TRUE, col = "red")
+  plot(r.logzn.cv.1, type = "bs")
+  plot(r.logzn.cv.2, type = "bs", add = TRUE, col = "red")
 
-legend("topright", lty = 1, col = c("black", "red"), bty = "n",
-    legend = c("log(Zn) ~ sqrt(dist)", "log(Zn) ~ sqrt(dist) + ffreq"))}
+  legend("topright", lty = 1, col = c("black", "red"), bty = "n",
+      legend = c("log(Zn) ~ sqrt(dist)", "log(Zn) ~ sqrt(dist) + ffreq"))
 }
+}
+
 
 \keyword{models}
 \keyword{spatial}

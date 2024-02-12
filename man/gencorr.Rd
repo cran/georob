@@ -1,4 +1,4 @@
-% 2024-02-01 A. Papritz
+% 2024-02-09 A. Papritz
 % R CMD Rdconv -t html -o bla.html gencorr.Rd ; open bla.html; R CMD Rd2pdf --force gencorr.Rd;
 % hunspell -d en_GB-ise,en_GB-ize,en_GB-large -t -i mac  gencorr.Rd
 

@@ -324,9 +324,3 @@
 \keyword{models}
 \keyword{spatial}
 \keyword{robust}
-
-
-%       \item \code{cov.bhat.betahat}: the covariances of
-%       \eqn{\widehat{\boldsymbol{B}}}{hatB} and
-%       \eqn{\widehat{\boldsymbol{\beta}}}{hat\beta}.
-

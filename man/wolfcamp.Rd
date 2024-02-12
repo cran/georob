@@ -1,4 +1,4 @@
-% 2021-06-04 A. Papritz
+% 2024-02-06 A. Papritz
 % R CMD Rdconv -t html -o bla.html wolfcamp.Rd ; open bla.html; R CMD Rd2pdf --force wolfcamp.Rd;
 
 %  hunspell -d en_GB -t -i mac  *.Rd

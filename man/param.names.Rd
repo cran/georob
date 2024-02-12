@@ -1,4 +1,4 @@
-% 2024-02-01 A. Papritz
+% 2024-02-09 A. Papritz
 % R CMD Rdconv -t html -o bla.html param.names.Rd ; open bla.html; R CMD Rd2pdf --force param.names.Rd;
 
 \encoding{utf8}

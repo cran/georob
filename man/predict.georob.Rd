@@ -1,4 +1,4 @@
-% 2024-02-01 A. Papritz
+% 2024-02-09 A. Papritz
 % R CMD Rdconv -t html -o bla.html predict.georob.Rd ; open bla.html; R CMD Rd2pdf --force predict.georob.Rd;
 
 \encoding{utf8}
@@ -316,7 +316,6 @@ control.predict.georob(full.covmat = FALSE, extended.output = FALSE,
 }
 
 \examples{
-\donttest{
 data(meuse)
 
 data(meuse.grid)
@@ -331,28 +330,37 @@ r.logzn.rob <- georob(log(zinc) ~ sqrt(dist), data = meuse, locations = ~ x + y,
     tuning.psi = 1., control = control.georob(cov.bhat = TRUE, full.cov.bhat = TRUE))
 
 ## point predictions of log(Zn)
-r.pred.points <- predict(r.logzn.rob, newdata = meuse.grid.pixdf,
-    control = control.predict.georob(extended.output = TRUE, full.covmat = TRUE))
-str(r.pred.points$pred@data)
+r.pred.points.1 <- predict(r.logzn.rob, newdata = meuse.grid.pixdf,
+    control = control.predict.georob(extended.output = TRUE))
+str(r.pred.points.1, max = 3)
 
 ## back-transformation of point predictions
-r.backtf.pred.points <- lgnpp(r.pred.points)
-str(r.pred.points$pred@data)
+r.backtf.pred.points <- lgnpp(r.pred.points.1)
+str(r.backtf.pred.points, max = 3)
 
-spplot(r.backtf.pred.points[["pred"]], zcol = "lgn.pred", main = "Zn content")
+spplot(r.backtf.pred.points, zcol = "lgn.pred", main = "Zn content")
 
 ## predicting mean Zn content for whole area
-r.block <- lgnpp(r.pred.points, is.block = TRUE, all.pred = r.backtf.pred.points[["pred"]])
-r.block
+if(interactive()){
+  ## example is run only in interactive session because cpu times exceeds 5 s
+  ## recompute point predictions with argument full.covmat = TRUE
+  r.pred.points.2 <- predict(r.logzn.rob, newdata = meuse.grid.pixdf,
+      control = control.predict.georob(extended.output = TRUE, full.covmat = TRUE))
+  str(r.pred.points.2, max = 3)
+  r.block <- lgnpp(r.pred.points.2, is.block = TRUE, all.pred = r.backtf.pred.points@data)
+  r.block
+}
 
 ## block predictions of log(Zn)
-r.pred.block <- predict(r.logzn.rob, newdata = meuse.blocks,
-    control = control.predict.georob(extended.output = TRUE,
-        pwidth = 75, pheight = 75))
-r.backtf.pred.block <- lgnpp(r.pred.block, newdata = meuse.grid)
+if(interactive()){
+  ## example is run only in interactive session because cpu times exceeds 5 s
+  r.pred.block <- predict(r.logzn.rob, newdata = meuse.blocks,
+      control = control.predict.georob(extended.output = TRUE,
+          pwidth = 75, pheight = 75, mmax = 50))
+  r.backtf.pred.block <- lgnpp(r.pred.block, newdata = meuse.grid)
 
-spplot(r.backtf.pred.block, zcol = "lgn.pred", main = "block means Zn content")}
-
+  spplot(r.backtf.pred.block, zcol = "lgn.pred", main = "block means Zn content")
+}
 }
 
 \keyword{models}

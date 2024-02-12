@@ -687,3 +687,14 @@ georob_private_functions.R  (getCall.georob) elimination of this function
 * georob_S3methods.R (add1.georob, drop1.georob) saving SOCKcluster.RData to tempdir()
 * georob_simulation.R (sim.circulant.embedding) minor changes in handling negative eigenvalues of base matrix, setting random seeds for parallel processing, saving SOCKcluster.RData to tempdir()
 * various Rd files: complented \value section and fixes to comply with CRAN policies
+
+
+2024-02-09 Andreas Papritz  <papritz@retired.ethz.ch>
+
+* news.RD eliminated lonely item
+* georob_predict.R (predict.georob) correction of error in processing output
+* georob_variogram.R (plot.sample.variogram) returns now NULL instead of object x
+* georob_vignette.Rnw former section 5.3 moved to section 2.1, small changes in text, added doi to references
+* various Rd files substituted all \donttest{} statements in lengthy computations by interactive() which executes lenghty examples only in interactive sessions
+
+

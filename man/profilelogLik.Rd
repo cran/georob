@@ -1,4 +1,4 @@
-% 2024-02-01 A. Papritz
+% 2024-02-09 A. Papritz
 % R CMD Rdconv -t html -o bla.html profilelogLik.Rd ; open bla.html; R CMD Rd2pdf --force profilelogLik.Rd;
 
 \encoding{utf8}
@@ -110,8 +110,6 @@
 }
 
 \examples{
-\donttest{
-
 ## define number of cores for parallel computations
 if(interactive()) ncpu <- 2L else ncpu <- 1L
 
@@ -121,13 +119,14 @@ r.logzn.ml <- georob(log(zinc)~sqrt(dist), data=meuse, locations=~x+y,
     variogram.model="RMexp", param=c(variance=0.15, nugget=0.05, scale=200),
     tuning.psi=1000, control=control.georob(ml.method="ML"))
 
-r.prflik <- profilelogLik(r.logzn.ml, values=expand.grid(scale=seq(75, 600, by=25)),
-    ncores = ncpu)
+if(interactive()){
+  ## example is run only in interactive session because cpu times exceeds 5 s
+  r.prflik <- profilelogLik(r.logzn.ml, values=expand.grid(scale=seq(75, 600, by=25)),
+      ncores = ncpu)
 
-plot(loglik~scale, r.prflik, type="l")
-abline(v=r.logzn.ml$variogram.object[[1]]$param["scale"], lty="dotted")
-abline(h=r.logzn.ml$loglik-0.5*qchisq(0.95, 1), lty="dotted")
-
+  plot(loglik~scale, r.prflik, type="l")
+  abline(v=r.logzn.ml$variogram.object[[1]]$param["scale"], lty="dotted")
+  abline(h=r.logzn.ml$loglik-0.5*qchisq(0.95, 1), lty="dotted")
 }
 }
 

@@ -1,4 +1,4 @@
-% 2024-01-26 A. Papritz
+% 2024-02-06 A. Papritz
 % R CMD Rdconv -t html -o bla.html georob.Rd ; open bla.html; R CMD Rd2pdf --force georob.Rd;
 % hunspell -d en_GB-ise,en_GB-ize,en_GB-large -t -i mac  georob.Rd
 
@@ -487,7 +487,6 @@ fit of a spatial linear model.  See
 }
 
 \examples{
-\donttest{
 ################
 ## meuse data ##
 ################
@@ -499,14 +498,16 @@ r.logzn.reml <- georob(log(zinc) ~ sqrt(dist), data = meuse, locations = ~ x + y
     param = c(variance = 0.15, nugget = 0.05, scale = 200),
     tuning.psi = 1000)
 summary(r.logzn.reml, correlation = TRUE)
+plot(r.logzn.reml, lag.dist.def = seq(0, 2000, by = 100))
 
 ## robust REML fit
-r.logzn.rob <- update(r.logzn.reml, tuning.psi = 1)
+if(interactive()){
+  ## example is run only in interactive session because cpu times exceeds 5 s
+  r.logzn.rob <- update(r.logzn.reml, tuning.psi = 1)
 
-summary(r.logzn.rob, correlation = TRUE)
-
-plot(r.logzn.reml, lag.dist.def = seq(0, 2000, by = 100))
-lines(r.logzn.rob, col = "red")
+  summary(r.logzn.rob, correlation = TRUE)
+  lines(r.logzn.rob, col = "red")
+}
 
 
 ###################
@@ -523,24 +524,25 @@ r.irf0.iso <- georob(pressure ~ 1, data = wolfcamp, locations = ~ x + y,
     tuning.psi = 1000)
 
 summary(r.irf0.iso)
+plot(r.irf0.iso, lag.dist.def = seq(0, 200, by = 7.5))
 
 ## fitting anisotropic IRF(0) model
+if(interactive()){
+  ## example is run only in interactive session because cpu times exceeds 5 s
+  r.irf0.aniso <- georob(pressure ~ 1, data = wolfcamp, locations = ~ x + y,
+      variogram.model = "RMfbm",
+      param = c(variance = 5.9, nugget = 1450, scale = 1, alpha = 1),
+      fit.param = default.fit.param(scale = FALSE, alpha = TRUE),
+      aniso = default.aniso(f1 = 0.51, omega = 148.),
+      fit.aniso = default.fit.aniso(f1 = TRUE, omega = TRUE),
+      tuning.psi = 1000)
+  summary(r.irf0.aniso)
+  plot(r.irf0.aniso, lag.dist.def = seq(0, 200, by = 7.5),
+      xy.angle.def = c(0, 22.5, 67.5, 112.5, 157.5, 180.),
+      add = TRUE, col = 2:5)
 
-r.irf0.aniso <- georob(pressure ~ 1, data = wolfcamp, locations = ~ x + y,
-    variogram.model = "RMfbm",
-    param = c(variance = 5.9, nugget = 1450, scale = 1, alpha = 1),
-    fit.param = default.fit.param(scale = FALSE, alpha = TRUE),
-    aniso = default.aniso(f1 = 0.51, omega = 148.),
-    fit.aniso = default.fit.aniso(f1 = TRUE, omega = TRUE),
-    tuning.psi = 1000)
-summary(r.irf0.aniso)
-
-plot(r.irf0.iso, lag.dist.def = seq(0, 200, by = 7.5))
-plot(r.irf0.aniso, lag.dist.def = seq(0, 200, by = 7.5),
-    xy.angle.def = c(0, 22.5, 67.5, 112.5, 157.5, 180.),
-    add = TRUE, col = 2:5)
-
-pchisq(2*(r.irf0.aniso[["loglik"]] - r.irf0.iso[["loglik"]]), 2, lower = FALSE)}
+  pchisq(2*(r.irf0.aniso[["loglik"]] - r.irf0.iso[["loglik"]]), 2, lower = FALSE)
+}
 }
 
 \keyword{models}

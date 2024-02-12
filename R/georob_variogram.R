@@ -544,6 +544,7 @@ function(
   ## 2013-06-12 AP substituting [["x"]] for $x in all lists
   ## 2016-08-24 AP new argument lty
   ## 2020-02-14 AP sanity checks of arguments and for if() and switch()
+  ## 2024-02-06 AP returns now NULL instead of object x
 
   ## check arguments
 
@@ -626,7 +627,7 @@ function(
 
   }
 
-  invisible( x )
+  invisible()
 
 }
 

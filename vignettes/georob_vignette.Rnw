@@ -19,14 +19,17 @@
 % 2023-11-14 AP Aenderung des Symbols fuer Varianz des Signals
 % 2024-02-01 AP Korrektur Fehler Begrenzung Code chunk options
 % 2024-02-01 AP install.packages() entfernt
+% 2024-02-04 AP duplizierter chunk label korrigiert
+% 2024-02-09 AP alte section 5.3 in section 2.1 integriert, 
+%               kleine Textaenderungen, Version f\"{u}r georob_0.3-18.tar.gz
 
 % cd ~/R.user.home/georob/vignettes/
-% R CMD Sweave georob_vignette.Rnw;  R CMD Stangle georob_vignette.Rnw; pdflatex georob_vignette.tex; open georob_vignette.pdf;
+% R CMD Stangle georob_vignette.Rnw; R CMD Sweave georob_vignette.Rnw;  pdflatex georob_vignette.tex; open georob_vignette.pdf;
 % bibtex georob_vignette; pdflatex georob_vignette.tex;  open georob_vignette.pdf;
 
-% sketches how model parameters are estimated robustly 
+% sketches how model parameters are estimated robustly
 
-% hunspell -d en_GB -t -i mac  georob_vignette.Rnw
+% hunspell -d en_GB-ise,en_GB-ize,en_GB-large -t -i mac  georob_vignette.Rnw
 
 \documentclass[12pt]{article}
 
@@ -35,6 +38,7 @@
 
 \usepackage{graphicx}
 \usepackage{natbib}
+\usepackage{doi}
 \usepackage{color}
 \usepackage[a4paper,margin=2.5cm]{geometry}
 
@@ -97,8 +101,8 @@
 \renewenvironment{SubSection}[1]{\subsection{#1} \label{sec:#1}}{}
 \renewenvironment{Details}{\bigskip}{}
 
-\newcommand{\mb}[1]{\mbox{\boldmath\ensuremath{#1}\unboldmath}}
-\newcommand{\mbsubscript}[1]{\mbox{\boldmath\({\scriptstyle#1}\)\unboldmath}}
+\newcommand{\mb}[1]{\ensuremath{\boldsymbol{#1}}}
+\newcommand{\mbsubscript}[1]{\ensuremath{\boldsymbol{\scriptstyle#1}}}
 
 % centred figure environment
 
@@ -106,15 +110,15 @@
 % }{\end{center}\end{figure}}
 % \newenvironment{cf}[1][0.8]{\refstepcounter{figure}\begin{center}\setkeys{Gin}{width=#1\textwidth}
 % }{\end{center}}
-% 
+%
 % \newcommand{\ecf}[2]{\caption{#1\label{fig:#2}}}
 \newcounter{cf}
 \newcommand{\bcf}[1][0.8]{
 %   \begin{figure}[!tbp]
   \refstepcounter{cf}\begin{center}\setkeys{Gin}{width=#1\textwidth}}
-  
+
 \newcommand{\ecf}[2]{
-  \end{center}\par\small 
+  \end{center}\par\small
     {\itshape Figure~\thecf}\,: #1\label{fig:#2}\normalsize\par\bigskip
 %   \end{figure}
   }
@@ -166,7 +170,7 @@ my.ncores <- 1     # <<- Anpassen!!
 
 \clearpage
 
-%% 
+%%
  % Summary
  %%
 
@@ -182,7 +186,7 @@ tasks:
   coefficients of the linear model (so-called external-drift) and the
   parameters of the variogram model are estimated by robust or
   Gaussian (restricted) maximum likelihood ([RE]ML).
-  
+
   \item It computes from a fitted model object customary and robust
   external drift point and block Kriging predictions.
 \end{itemize}
@@ -203,7 +207,7 @@ of (i) (robust) parameter estimation (ii) computing predictions by
 
 
 
-%% 
+%%
  % Introduction
  %%
 
@@ -216,45 +220,43 @@ This section presents briefly
 
 \begin{itemize}
   \item the modelling assumptions and model parametrization,
-    
+
   \item  sketches how model parameters are estimated robustly and how
-  robust Kriging predictions are computed, and 
-  
+  robust Kriging predictions are computed, and
+
   \item summarizes the main functionality of the package.
 \end{itemize}
 
 Further information on selected aspects can be found in
-sections~\ref{sec:est-details} and \ref{sec:krig-details}.
+\autorefs{sec:est-details} and \ref{sec:krig-details}.
 
 
 \renewcommand{\\}{}
 
- 
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%
 % Model
-  
+
 \subsection{Model}\label{sec:intro-model}
 
-We use the following model for the data \eqn{y_{i}=y(\mbox{\boldmath$s$\unboldmath}_{i})}{}:
+We use the following model for the data \eqn{y_{i}=y(\boldsymbol{s}_{i})}{}:
 %
 \begin{equation}\label{eq:model}
-  Y(\mbox{\boldmath$s$\unboldmath}_{i}) = 
-  Z(\mbox{\boldmath$s$\unboldmath}_{i}) + \varepsilon_i =
-  \mbox{\boldmath $x$\unboldmath}(\mbox{\boldmath$s$\unboldmath}_{i})^\mathrm{T}
-  \mbox{\boldmath$\beta$\unboldmath} +
-  B(\mbox{\boldmath$s$\unboldmath}_{i}) +
+  Y(\boldsymbol{s}_{i}) =
+  Z(\boldsymbol{s}_{i}) + \varepsilon_i =
+  \boldsymbol{x}(\boldsymbol{s}_{i})^\mathrm{T}
+  \boldsymbol{\beta} +
+  B(\boldsymbol{s}_{i}) +
   \varepsilon_i,
 \end{equation}
 %
-where \eqn{\mbox{\boldmath$s$\unboldmath}_{i}}{} denotes a data
-location, \eqn{Z(\mbox{\boldmath$s$\unboldmath}_{i})=\mbox{\boldmath
-$x$\unboldmath}(\mbox{\boldmath$s$\unboldmath}_{i})^\mathrm{T}
-\mbox{\boldmath$\beta$\unboldmath} +
-B(\mbox{\boldmath$s$\unboldmath}_{i})}{} is the so-called signal,
-\eqn{\mbox{\boldmath
-$x$\unboldmath}(\mbox{\boldmath$s$\unboldmath}_{i})^\mathrm{T}
-\mbox{\boldmath$\beta$\unboldmath}}{} is the external drift,
-\eqn{\{B(\mbox{\boldmath$s$\unboldmath})\}}{} is an unobserved
+where \eqn{\boldsymbol{s}_{i}}{} denotes a data
+location, \eqn{Z(\boldsymbol{s}_{i})=\boldsymbol{x}(\boldsymbol{s}_{i})^\mathrm{T}
+\boldsymbol{\beta} +
+B(\boldsymbol{s}_{i})}{} is the so-called signal,
+\eqn{\boldsymbol{x}(\boldsymbol{s}_{i})^\mathrm{T}
+\boldsymbol{\beta}}{} is the external drift,
+\eqn{\{B(\boldsymbol{s})\}}{} is an unobserved
 stationary or intrinsic Gaussian random field with zero mean, and
 \eqn{\varepsilon_i}{} is an \emph{i.i.d} error from a possibly
 long-tailed distribution with scale parameter \eqn{\tau}{}
@@ -262,64 +264,156 @@ long-tailed distribution with scale parameter \eqn{\tau}{}
 model is written as
 %
 \begin{equation}\label{eq:model-vector}
-  \mbox{\boldmath $Y = X \beta + B + \varepsilon$\unboldmath},
+  \boldsymbol{Y = X \beta + B + \varepsilon},
 \end{equation}
 %
-where \eqn{\mbox{\boldmath $X$\unboldmath}}{} is the model matrix with
-the rows \eqn{\mbox{\boldmath
-$x$\unboldmath}(\mbox{\boldmath$s$\unboldmath}_i)^\mathrm{T}}{}.
+where \eqn{\boldsymbol{X}}{} is the model matrix with
+the rows \eqn{\boldsymbol{x}(\boldsymbol{s}_i)^\mathrm{T}}{}.
 
-The (generalized) covariance matrix of the vector of  
-spatial Gaussian random effects 
-\eqn{\mbox{\boldmath$B$\unboldmath}}{} 
+The (generalized) covariance matrix of the vector of
+spatial Gaussian random effects
+\eqn{\boldsymbol{B}}{}
 %
-is denoted by 
+is denoted by
 %
 \begin{equation}\label{eq:covariance-matrix-signal}
   \mathrm{E}[
-  \mbox{\boldmath$B$\unboldmath}\,
-  \mbox{\boldmath$B$\unboldmath}^\mathrm{T}] =
-  \mbox{\boldmath$\Gamma$\unboldmath}_\theta =
-  \sigma_{\mathrm{n}}^2\mbox{\boldmath$I$\unboldmath} +
-  \sigma^2\mbox{\boldmath$V$\unboldmath}_\alpha = 
-  \sigma_B^2 \, \mbox{\boldmath$V$\unboldmath}_{\alpha,\xi} = 
-  \sigma_B^2 \, ((1-\xi) \, \mbox{\boldmath$I$\unboldmath} + 
-  \xi\, \mbox{\boldmath$V$\unboldmath}_\alpha ),
+  \boldsymbol{B},
+  \boldsymbol{B}^\mathrm{T}] =
+  \boldsymbol{\Gamma}_\theta =
+  \sigma_{\mathrm{n}}^2\boldsymbol{I} +
+  \sigma^2\boldsymbol{V}_\alpha =
+  \sigma_B^2 \, \boldsymbol{V}_{\alpha,\xi} =
+  \sigma_B^2 \, ((1-\xi) \, \boldsymbol{I} +
+  \xi\, \boldsymbol{V}_\alpha ),
 \end{equation}
 %
-where 
-\eqn{\sigma_{\mathrm{n}}^2}{} 
-is the variance of seemingly uncorrelated micro-scale variation in 
-\eqn{B(\mbox{\boldmath$s$\unboldmath})}{} 
-that cannot be resolved with the chosen sampling design,  
-\eqn{\sigma^2}{} is the variance of the captured auto-correlated variation in 
-\eqn{B(\mbox{\boldmath$s$\unboldmath})}{},  
-\eqn{\sigma_B^2=\sigma_{\mathrm{n}}^2+\sigma^2}{} 
-is the signal variance, and 
-\eqn{\xi=\sigma^2/\sigma_B^2}{}. 
-To estimate both 
-\eqn{\sigma_{\mathrm{n}}^2}{} and \eqn{\tau^2}{} (and not only their sum), one needs
-replicated measurements for some of the 
-\eqn{\mbox{\boldmath$s$\unboldmath}_i}{}.
+where \eqn{\sigma_{\mathrm{n}}^2}{} is the variance of seemingly
+uncorrelated micro-scale variation in \eqn{B(\boldsymbol{s})}{} that
+cannot be resolved with the chosen sampling design,
+\eqn{\boldsymbol{I}} is the identity matrix, \eqn{\sigma^2}{} is the
+variance of the captured auto-correlated variation in
+\eqn{B(\boldsymbol{s})}{},
+\eqn{\sigma_B^2=\sigma_{\mathrm{n}}^2+\sigma^2}{} is the signal
+variance, and \eqn{\xi=\sigma^2/\sigma_B^2}{}.  To estimate both
+\eqn{\sigma_{\mathrm{n}}^2}{} and \eqn{\tau^2}{} (and not only their
+sum), one needs replicated measurements for some of the
+\eqn{\boldsymbol{s}_i}{}.
 
-We define \eqn{\mbox{\boldmath$V$\unboldmath}_{\alpha}}{} to be the
-matrix with elements
+We define \eqn{\boldsymbol{V}_{\alpha}}{} to be the
+(generalized) correlation matrix with elements
 %
 \begin{equation}\label{eq:valpha}
-  (\mbox{\boldmath$V$\unboldmath}_{\alpha})_{ij} =
-  \gamma_0 - \gamma(|\mbox{\boldmath$A$\unboldmath}\;(
-  \mbox{\boldmath$s$\unboldmath}_i-\mbox{\boldmath$s$\unboldmath}_j)|),
+  (\boldsymbol{V}_{\alpha})_{ij} =
+  \gamma_0 - \gamma(|\boldsymbol{A}\;(
+  \boldsymbol{s}_i-\boldsymbol{s}_j)|),
 \end{equation}
 %
 where the constant \eqn{\gamma_0}{} is chosen large enough so that
-\eqn{\mbox{\boldmath$V$\unboldmath}_{\alpha}}{} is positive definite,
+\eqn{\boldsymbol{V}_{\alpha}}{} is positive definite,
 \eqn{\gamma(\cdot)}{} is a valid stationary or intrinsic variogram,
-and \eqn{\mbox{\boldmath$A$\unboldmath}
+and \eqn{\boldsymbol{A}
 % =
-% \mbox{\boldmath$A$\unboldmath}(\alpha, f_1, f_2; \omega, \phi,
+% \boldsymbol{A}(\alpha, f_1, f_2; \omega, \phi,
 % \zeta)
 }{} is a matrix that is used to model geometrically anisotropic
-auto-correlation (see section~\ref{sec:est-details-anisotropy}).
+auto-correlation.
+%
+The matrix \eqn{\boldsymbol{A} =
+\boldsymbol{A}(\alpha, f_1, f_2; \omega, \phi, \zeta)
+}{} maps an arbitrary point on an
+ellipsoidal surface with constant (generalized) covariance in \eqn{
+\mathrm{I}\!\mathrm{R}^3}{}, centred on the origin, and having lengths
+of semi-principal axes, \eqn{\boldsymbol{p}_1}{},
+\eqn{\boldsymbol{p}_2}{},
+\eqn{\boldsymbol{p}_3}{}, equal to
+\eqn{|\boldsymbol{p}_1|=\alpha}{},
+\eqn{|\boldsymbol{p}_2|=f_1\,\alpha}{} and
+\eqn{|\boldsymbol{p}_3|=f_2\,\alpha}{}, \eqn{0 < f_2
+\leq f_1 \leq 1}{}, respectively, onto the surface of the unit ball
+centred on the origin.
+%
+The orientation of the ellipsoid is defined by the three angles
+\eqn{\omega}{}, \eqn{\phi}{} and \eqn{\zeta}{}:
+\begin{description}
+
+  \item[\eqn{\omega}{}] is the azimuth of \eqn{\boldsymbol{p}_1}{}
+  (= angle between north and the projection
+  of
+  \eqn{\boldsymbol{p}_1}{}
+  onto the \eqn{x}{}-\eqn{y}{}-plane,
+  measured from north to south positive clockwise in degrees),
+
+
+  \item[\eqn{\phi}{}] is 90 degrees minus the altitude of
+  \eqn{\boldsymbol{p}_1}{}
+  (= angle between the zenith and
+  \eqn{\boldsymbol{p}_1}{},
+  measured from zenith to nadir positive clockwise in degrees), and
+
+
+  \item[\eqn{\zeta}{}] is the angle between
+  \eqn{\boldsymbol{p}_2}{}
+  and the direction of the line, say \eqn{y^\prime}{},
+  defined by the intersection between the
+  \eqn{x}{}-\eqn{y}{}-plane and the plane orthogonal to
+  \eqn{\boldsymbol{p}_1}{} running through the origin
+  (\eqn{\zeta}{} is measured from \eqn{y^\prime}{} positive counter-clockwise in degrees).
+
+\end{description}
+
+
+The transformation matrix is given by
+%
+\begin{equation}\label{eq:coordinate-transformation-matrix}
+  \boldsymbol{A}=
+  \left(\begin{array}{ccc} 1/\alpha & 0 & 0\\
+  0 & 1/(f_1\,\alpha) & 0\\
+  0 & 0 & 1/(f_2\,\alpha) \\
+  \end{array}\right) ( \boldsymbol{C}_1,
+  \boldsymbol{C}_2, \boldsymbol{C}_3)
+\end{equation}
+%
+where
+%
+\begin{eqnarray}\label{eq:coordinate-rotation-matrix}
+  \boldsymbol{C}_1^\mathrm{T} & = & ( \sin\omega \sin\phi, -\cos\omega \cos\zeta - \sin\omega \cos\phi \sin\zeta, \cos\omega \sin\zeta - \sin\omega \cos\phi \cos\zeta ) \nonumber \\
+  \boldsymbol{C}_2^\mathrm{T} & = & ( \cos\omega \sin\phi, \sin\omega \cos\zeta - \cos\omega \cos\phi \sin\zeta, -\sin\omega \sin\zeta - \cos\omega \cos\phi\cos\zeta )\nonumber \\
+  \boldsymbol{C}_3^\mathrm{T} & = & (\cos\phi, \sin\phi \sin\zeta, \sin\phi \cos\zeta )
+\end{eqnarray}
+%
+To model geometrically anisotropic variograms in
+\eqn{ \mathrm{I}\!\mathrm{R}^2}{}
+one has to set \eqn{\phi=90}{} and \eqn{f_2 = 1}{},
+and for \eqn{f_1 = f_2 = 1}{}
+one obtains the model for isotropic auto-correlation
+with range parameter \eqn{\alpha}{}.
+Note that for isotropic auto-correlation the software processes data for
+which \eqn{d}{} may exceed 3.
+
+
+\smallskip
+
+Some additional remarks might be helpful:
+
+\begin{itemize}
+
+  \item The first semi-principal axis points into the direction with
+  the farthest reaching auto-correlation, which is described by the range
+  parameter \code{scale} (\eqn{\alpha}{}).
+
+  \item The ranges in the direction of the second and third
+  semi-principal axes are given by \eqn{f_1\alpha}{} and \eqn{f_2
+  \alpha}{}, with \eqn{0 < f_2 \leq f_1 \leq 1}{}.
+
+  \item The default values for the anisotropy parameters (\eqn{f_1=1}{}, \eqn{f_2=1}{})
+  define an isotropic variogram model.
+
+  \item Valid ranges for the angles characterizing the orientation of
+  the semi-variance ellipsoid are (in degrees): \eqn{\omega}{} [0, 180],
+  \eqn{\phi}{} [0, 180], \eqn{\zeta}{} [-90, 90].
+
+\end{itemize}
 
 \smallskip
 
@@ -327,24 +421,23 @@ Two remarks are in order:
 
 \begin{enumerate}
 
-
-\item Clearly, the (generalized) covariance matrix of the observations 
-\eqn{\mbox{\boldmath $Y$\unboldmath}}{} is given by
-%
-\begin{equation}\label{eq:covariance-matrix-response}
-  \mathrm{Cov}[\mbox{\boldmath $Y$\unboldmath},\mbox{\boldmath $Y$\unboldmath}^\mathrm{T}]
-        = \tau^2 \mbox{\boldmath$I$\unboldmath} + \mbox{\boldmath$\Gamma$\unboldmath}_\theta.      
-\end{equation}
-%
-\item Depending on the context, the term ``variogram parameters''
-denotes sometimes all parameters of a geometrically anisotropic
-variogram model, but in places only the parameters of an isotropic
-variogram model, i.e. \eqn{\sigma^2, \ldots, \alpha, \ldots}{} and
-\eqn{f_1, \ldots, \zeta}{} are denoted by the term ``anisotropy
-parameters''.  In the sequel
-\eqn{\mbox{\boldmath$\theta$\unboldmath}}{} is used to denote all
-variogram and anisotropy parameters except the nugget effect
-\eqn{\tau^2}{}.
+  \item Clearly, the (generalized) covariance matrix of the observations
+  \eqn{\boldsymbol{Y}}{} is given by
+  %
+  \begin{equation}\label{eq:covariance-matrix-response}
+    \mathrm{Cov}[\boldsymbol{Y},\boldsymbol{Y}^\mathrm{T}]
+          = \tau^2 \boldsymbol{I} + \boldsymbol{\Gamma}_\theta.
+  \end{equation}
+  %
+  \item Depending on the context, the term ``variogram parameters''
+  denotes sometimes all parameters of a geometrically anisotropic
+  variogram model, but in places only the parameters of an isotropic
+  variogram model, i.e. \eqn{\sigma^2, \ldots, \alpha, \ldots}{} and
+  \eqn{f_1, \ldots, \zeta}{} are denoted by the term ``anisotropy
+  parameters''.  In the
+  sequel \eqn{\boldsymbol{\theta}}{} is used to denote
+  all variogram and anisotropy parameters except the nugget effect
+  \eqn{\tau^2}{}.
 
 \end{enumerate}
 
@@ -354,84 +447,84 @@ variogram and anisotropy parameters except the nugget effect
 %  Estimation
 
 \subsection{Estimation}\label{sec:intro-estimation}
-The unobserved spatial random effects 
-\eqn{\mbox{\boldmath$B$\unboldmath}}{} at the data locations 
-\eqn{\mbox{\boldmath$s$\unboldmath}_i}{}
-and the model parameters 
-\eqn{\mbox{\boldmath$\beta$\unboldmath}}{}, $\tau^2$ and
-\eqn{\mbox{\boldmath$\theta$\unboldmath}^\mathrm{T} = 
-      (\sigma^2, \sigma_{\mathrm{n}}^2, \alpha, \ldots,  f_{1}, f_{2}, 
+The unobserved spatial random effects
+\eqn{\boldsymbol{B}}{} at the data locations
+\eqn{\boldsymbol{s}_i}{}
+and the model parameters
+\eqn{\boldsymbol{\beta}}{}, $\tau^2$ and
+\eqn{\boldsymbol{\theta}^\mathrm{T} =
+      (\sigma^2, \sigma_{\mathrm{n}}^2, \alpha, \ldots,  f_{1}, f_{2},
         \omega, \phi, \zeta)
-    }{} 
-are unknown and are estimated in \pkg{georob} either by Gaussian or 
-robust restricted maximum likelihood (REML) or 
-Gaussian maximum likelihood (ML). Here \var{\ldots} 
+    }{}
+are unknown and are estimated in \pkg{georob} either by Gaussian or
+robust restricted maximum likelihood (REML) or
+Gaussian maximum likelihood (ML). Here \var{\ldots}
 denote further parameters of the variogram such as the smoothness parameter
-of the Whittle-Mat\'ern model. 
+of the Whittle-Mat\'ern model.
 
 \smallskip
 
 In brief, the robust REML method is based on the insight that for
-given \eqn{\mbox{\boldmath$\theta$\unboldmath}}{} and \eqn{\tau^2}{} the
+given \eqn{\boldsymbol{\theta}}{} and \eqn{\tau^2}{} the
 Kriging predictions (= BLUP) of
-\eqn{\mbox{\boldmath$B$\unboldmath}}{} and the generalized least
+\eqn{\boldsymbol{B}}{} and the generalized least
 squares (GLS = ML) estimates of
-\eqn{\mbox{\boldmath$\beta$\unboldmath}}{} can be obtained
-simultaneously by maximizing 
+\eqn{\boldsymbol{\beta}}{} can be obtained
+simultaneously by maximizing
 %
 \begin{displaymath}
-      - \sum_i 
+      - \sum_i
         \left(
           \frac{
-            y_i - 
-            \mbox{\boldmath $x$\unboldmath}(\mbox{\boldmath$s$\unboldmath}_i)^\mathrm{T}
-            \mbox{\boldmath$\beta$\unboldmath} -
-            B(\mbox{\boldmath$s$\unboldmath}_i)
+            y_i -
+            \boldsymbol{x}(\boldsymbol{s}_i)^\mathrm{T}
+            \boldsymbol{\beta} -
+            B(\boldsymbol{s}_i)
           }{\tau}
-        \right)^2 - 
-        \mbox{\boldmath$B$\unboldmath}^{\mathrm{T}} 
-        \mbox{\boldmath$\Gamma$\unboldmath}^{-1}_\theta
-        \mbox{\boldmath$B$\unboldmath}
+        \right)^2 -
+        \boldsymbol{B}^{\mathrm{T}}
+        \boldsymbol{\Gamma}^{-1}_\theta
+        \boldsymbol{B}
 \end{displaymath}
 %
 with respect to
-\eqn{\mbox{\boldmath$B$\unboldmath}}{} and
-\eqn{\mbox{\boldmath$\beta$\unboldmath}}{}, e.g.
+\eqn{\boldsymbol{B}}{} and
+\eqn{\boldsymbol{\beta}}{}, e.g.
 % \Cite{Harville (1977)}.
 \citet{Harville-1977}.
 
-Hence, the BLUP of \eqn{\mbox{\boldmath$B$\unboldmath}}{},
-ML estimates of \eqn{\mbox{\boldmath$\beta$\unboldmath}}{},  
-\eqn{\mbox{\boldmath$\theta$\unboldmath}}{} and \eqn{\tau^2}{} 
-are obtained by maximizing 
+Hence, the BLUP of \eqn{\boldsymbol{B}}{},
+ML estimates of \eqn{\boldsymbol{\beta}}{},
+\eqn{\boldsymbol{\theta}}{} and \eqn{\tau^2}{}
+are obtained by maximizing
 %
 \begin{equation}\label{eq:ml-objective-function}
       - \log(\det(
-        \tau^2 \mbox{\boldmath$I$\unboldmath} + 
-        \mbox{\boldmath$\Gamma$\unboldmath}_\theta        
+        \tau^2 \boldsymbol{I} +
+        \boldsymbol{\Gamma}_\theta
       )) -
-      \sum_i 
+      \sum_i
         \left(
           \frac{
-            y_i - 
-            \mbox{\boldmath $x$\unboldmath}(\mbox{\boldmath$s$\unboldmath}_i)^\mathrm{T}
-            \mbox{\boldmath$\beta$\unboldmath} -
-            B(\mbox{\boldmath$s$\unboldmath}_i)
+            y_i -
+            \boldsymbol{x}(\boldsymbol{s}_i)^\mathrm{T}
+            \boldsymbol{\beta} -
+            B(\boldsymbol{s}_i)
           }{\tau}
-        \right)^2 - 
-        \mbox{\boldmath$B$\unboldmath}^{\mathrm{T}} 
-        \mbox{\boldmath$\Gamma$\unboldmath}^{-1}_\theta
-        \mbox{\boldmath$B$\unboldmath}
+        \right)^2 -
+        \boldsymbol{B}^{\mathrm{T}}
+        \boldsymbol{\Gamma}^{-1}_\theta
+        \boldsymbol{B}
 \end{equation}
 %
-jointly with respect to \eqn{\mbox{\boldmath$B$\unboldmath}}{},
-\eqn{\mbox{\boldmath$\beta$\unboldmath}}{},
-\eqn{\mbox{\boldmath$\theta$\unboldmath}}{} and  \eqn{\tau^2}{}  or by solving the
+jointly with respect to \eqn{\boldsymbol{B}}{},
+\eqn{\boldsymbol{\beta}}{},
+\eqn{\boldsymbol{\theta}}{} and  \eqn{\tau^2}{}  or by solving the
 respective estimating equations.
 
 \smallskip
 
-The estimating equations can then by robustified by 
+The estimating equations can then by robustified by
 \begin{itemize}
 
 \item replacing the standardized errors, say
@@ -444,71 +537,73 @@ the Gaussian model,
 
 \end{itemize}
 
-see \citet{Kuensch-etal-2011} for details. 
+see \citet{Kuensch-etal-2011} for details.
 The robustified estimating equations
 are solved numerically by a combination of iterated re-weighted least squares
-(IRWLS) to estimate \eqn{\mbox{\boldmath$B$\unboldmath}}{} and
-\eqn{\mbox{\boldmath$\beta$\unboldmath}}{} for given 
-\eqn{\mbox{\boldmath$\theta$\unboldmath}}{} and  \eqn{\tau^2}{} 
-and non-linear root finding by the function 
+(IRWLS) to estimate \eqn{\boldsymbol{B}}{} and
+\eqn{\boldsymbol{\beta}}{} for given
+\eqn{\boldsymbol{\theta}}{} and  \eqn{\tau^2}{}
+and non-linear root finding by the function
 \code{nleqslv()} of the \R{} package \pkg{nleqslv}
-to get \eqn{\mbox{\boldmath$\theta$\unboldmath}}{} and  \eqn{\tau^2}{}.
+to get \eqn{\boldsymbol{\theta}}{} and  \eqn{\tau^2}{}.
 The robustness of the procedure is controlled by the tuning parameter \eqn{c}{}
 of the \eqn{\psi_c}{}-function. For \eqn{c \ge 1000}{} the algorithm computes
-Gaussian (RE)ML estimates and customary plug-in Kriging predictions. 
+Gaussian (RE)ML estimates and customary plug-in Kriging predictions.
 Instead of solving the Gaussian (RE)ML estimating equations, our software then
 maximizes the Gaussian (restricted) log-likelihood using  \code{nlminb()} or
-\code{optim()}.
+\code{optim()}, see \autoref{sec:est-details-gaussian-reml}.
 
 \smallskip
 
-\pkg{georob} uses variogram models implemented in the \R{} package
-\pkg{RandomFields} (see \code{RMmodel()}).  For most variogram
-parameters, closed-form expressions of \eqn{\partial \gamma/ \partial
-\theta_i}{} are used in the computations.  However, for the parameter
-\eqn{\nu}{} of the models \code{"RMbessel"}, \code{"RMmatern"} and
-\code{"RMwhittle"} \eqn{\partial \gamma/ \partial \nu}{} is evaluated
-numerically by the function \code{numericDeriv()}, and this results in
-an increase in computing time when \eqn{\nu}{} is estimated.
+\pkg{georob} uses variogram models that were provided formerly by the
+now archived \R\ package \pkg{RandomFields} and are now implemented in
+the function \code{gencorr()} of \pkg{georob}.  For most
+variogram parameters, closed-form expressions of \eqn{\partial \gamma/
+\partial \theta_i}{} are used in the computations.  However, for the
+parameter \eqn{\nu}{} of the models \code{"RMbessel"},
+\code{"RMmatern"} and \code{"RMwhittle"} \eqn{\partial \gamma/
+\partial \nu}{} is evaluated numerically by the function
+\code{numericDeriv()}, and this results in an increase in computing
+time when \eqn{\nu}{} is estimated.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%
 %  Prediction
 
 \subsection{Prediction}\label{sec:intro-prediction}
- 
-Robust plug-in external drift point Kriging predictions 
-can be computed for an unsampled location 
-\eqn{\mbox{\boldmath$s$\unboldmath}_0}{}
+
+Robust plug-in external drift point Kriging predictions
+can be computed for an unsampled location
+\eqn{\boldsymbol{s}_0}{}
 from the covariates
-\eqn{\mbox{\boldmath$x$\unboldmath}(\mbox{\boldmath$s$\unboldmath}_0)}{},
-the estimated parameters 
-\eqn{\widehat{\mbox{\boldmath$\beta$\unboldmath}}}{},
-\eqn{\widehat{\mbox{\boldmath$\theta$\unboldmath}}}{}
+\eqn{\boldsymbol{x}(\boldsymbol{s}_0)}{},
+the estimated parameters
+\eqn{\widehat{\boldsymbol{\beta}}}{},
+\eqn{\widehat{\boldsymbol{\theta}}}{}
 and the predicted random effects
-\eqn{\widehat{\mbox{\boldmath$B$\unboldmath}}}{}
+\eqn{\widehat{\boldsymbol{B}}}{}
 by
 %
 \begin{equation}\label{eq:robust-edk}
-      \widehat{Y}(\mbox{\boldmath$s$\unboldmath}_0) = \widehat{Z}(\mbox{\boldmath$s$\unboldmath}_0) = 
-      \mbox{\boldmath$x$\unboldmath}(\mbox{\boldmath$s$\unboldmath}_0)^\mathrm{T}
-      \widehat{\mbox{\boldmath$\beta$\unboldmath}} + 
-      \mbox{\boldmath$\gamma$\unboldmath}^\mathrm{T}_{\widehat{\theta}}(\mbox{\boldmath$s$\unboldmath}_0)
-      \mbox{\boldmath$\Gamma$\unboldmath}^{-1}_{\widehat{\theta}}
-      \widehat{\mbox{\boldmath$B$\unboldmath}},
+      \widehat{Y}(\boldsymbol{s}_0) = \widehat{Z}(\boldsymbol{s}_0) =
+      \boldsymbol{x}(\boldsymbol{s}_0)^\mathrm{T}
+      \widehat{\boldsymbol{\beta}} +
+      \boldsymbol{\gamma}^\mathrm{T}_{\widehat{\theta}}(\boldsymbol{s}_0)
+      \boldsymbol{\Gamma}^{-1}_{\widehat{\theta}}
+      \widehat{\boldsymbol{B}},
 \end{equation}
 %
 where
-\eqn{\mbox{\boldmath$\Gamma$\unboldmath}_{\widehat{\theta}}}{}
+\eqn{\boldsymbol{\Gamma}_{\widehat{\theta}}}{}
 is the estimated (generalized) covariance matrix of
-\eqn{\mbox{\boldmath$B$\unboldmath}}{} and
-\eqn{\mbox{\boldmath$\gamma$\unboldmath}_{\widehat{\theta}}(\mbox{\boldmath$s$\unboldmath}_0)}{}
-is the vector with the estimated (generalized) covariances between 
-\eqn{\mbox{\boldmath$B$\unboldmath}}{} and
-\eqn{B(\mbox{\boldmath$s$\unboldmath}_0)}{}.
-Kriging variances can be computed as well, based on approximated covariances of 
-\eqn{\widehat{\mbox{\boldmath$B$\unboldmath}}}{} and 
-\eqn{\widehat{\mbox{\boldmath$\beta$\unboldmath}}}{}
+\eqn{\boldsymbol{B}}{} and
+\eqn{\boldsymbol{\gamma}_{\widehat{\theta}}(\boldsymbol{s}_0)}{}
+is the vector with the estimated (generalized) covariances between
+\eqn{\boldsymbol{B}}{} and
+\eqn{B(\boldsymbol{s}_0)}{}.
+Kriging variances can be computed as well, based on approximated covariances of
+\eqn{\widehat{\boldsymbol{B}}}{} and
+\eqn{\widehat{\boldsymbol{\beta}}}{}
 (see \citealp{Kuensch-etal-2011}, and appendices of
 \citealp{Nussbaum-etal-2012,Nussbaum-etal-2014b}, for details).
 
@@ -524,30 +619,29 @@ functions of the \R{} package \pkg{constrainedKriging}
 %  Functionality
 
 \subsection{Functionality}\label{sec:intro-functionality}
-For the time being, the functionality of \pkg{georob} is limited 
-to robust geostatistical analyses of \emph{single} response variables. 
-No software is currently available for robust multivariate geostatistical 
-analyses.
-\pkg{georob} offers functions for: 
+For the time being, the functionality of \pkg{georob} is limited to
+geostatistical analyses of \emph{single} response variables.  No
+software is currently available for customary and robust multivariate
+geostatistical analyses.  \pkg{georob} offers functions for:
 \begin{enumerate}
-  
+
   \item Robustly fitting a spatial linear model to data that are
   possibly contaminated by independent errors from a long-tailed
   distribution by robust REML (see functions \code{georob()} ---
   which also fits such models efficiently by Gaussian (RE)ML ---
   \code{profilelogLik()} and \code{control.georob()}).
-  
+
   \item Extracting estimated model components (see
   \code{residuals.georob()},
-  \code{rstandard.georob()}, 
+  \code{rstandard.georob()},
   %   \code{rstudent.georob()},
   \code{ranef.georob()}).
-  
+
   \item Robustly estimating sample variograms and for fitting
   variogram model functions to them (see
   \code{sample.variogram()} and
   \code{fit.variogram.model()}).
-  
+
   \item Model building by forward and backward selection of covariates
   for the external drift (see \code{waldtest.georob()},
   \code{step.georob()}, \code{add1.georob()}, \code{drop1.georob()},
@@ -556,20 +650,23 @@ analyses.
   not defined.  The function then computes the (restricted)
   log-likelihood of an equivalent Gaussian model with heteroscedastic
   nugget (see \code{deviance.georob()} for details).
-  
+
   \item Assessing the goodness-of-fit and predictive power of the
   model by \var{K}-fold cross-validation (see
   \code{cv.georob()} and
   \code{validate.predictions()}).
-  
-  \item Computing robust external drift point and block Kriging
-  predictions (see \code{predict.georob()},
+
+  \item Computing customary and robust external drift point and block
+  Kriging predictions (see \code{predict.georob()},
   \code{control.predict.georob()}).
-  
+
   \item Unbiased back-transformation of both point and block Kriging
   predictions of log-transformed data to the original scale of the
   measurements (see \code{lgnpp()}).
-  
+
+  \item Computing unconditional and conditional Gaussian simulations
+  from a fitted spatial linear model (see \code{condsim()}).
+
 \end{enumerate}
 
 
@@ -579,7 +676,7 @@ analyses.
 
 \clearpage
 
-%% 
+%%
  % Analysis of meuse zinc data
  %%
 
@@ -591,9 +688,9 @@ if(file.exists("r_meuse_zinc_objects.RData")) load("r_meuse_zinc_objects.RData")
 
 The package \pkg{sp} provides this data set.  According to the help
 page, it ``gives locations and topsoil heavy metal concentrations,
-along with a number of soil and landscape variable at the observation
+along with a number of soil and landscape variables at the observation
 locations, collected in a flood plain of the river Meuse, near the
-village of Stein (NL)''. 
+village of Stein (NL)''.
 %
 <<meuse-data,eval=TRUE>>=
 data(meuse, package="sp")
@@ -610,19 +707,19 @@ We analyse here the data on \code{zinc} in the topsoil (Figure~\ref{fig:meuse}).
 \subsection{Exploratory analysis}\label{sec:meuse-zinc-eda}
 
 \bcf
-% 
+%
 \begin{center}
   \includegraphics[width=0.45\textwidth]{0-overview-zinc-meuse.pdf}
 \end{center}
-% 
+%
 \ecf{Meuse data set: zinc concentration at 155 locations in floodplain
 of river Meuse near Stein (NL) shown in Google Earth\texttrademark.}{meuse}
-% 
+%
 Figure~\ref{fig:meuse} suggests that \code{zinc} concentration depends
 on \code{dist}ance to the river.  We check graphically whether the
 two factors \code{ffreq} (frequency of flooding) and \code{soil}
 (type) also influence \code{zinc}:
-% 
+%
 \bcf
 %
 <<meuse-zinc-eda-plot-1,fig=TRUE,height=4,width=6,eval=TRUE>>=
@@ -642,44 +739,48 @@ legend("topright", col=c(rep(1, nlevels(meuse$ffreq)), 1:nlevels(meuse$soil)),
 #   pch=c(1:nlevels(meuse$ffreq), rep(1, nlevels(meuse$soil))), bty="n",
 #   legend=c(levels(meuse$ffreq), levels(meuse$soil)))
 @
-% 
+%
 \ecf{Dependence of \code{zinc} concentration on \code{dist}ance to
 river, frequency of flooding (\code{ffreq}) and \code{soil} type.}{meuse-eda-plot-1}
-% 
+%
 \code{zinc} depends non-linearly on \code{dist} and seems in addition
 to depend on \code{ffreq} (larger concentration at more often flooded
 sites).  Furthermore, the scatter of \code{zinc} for given distance
 increases with decreasing distance (= increasing \code{zinc}
 concentration, heteroscedastic variation).  We use \code{log(zinc)} to
 stabilize the variance:
-% 
+%
 \bcf
 %
 <<meuse-zinc-eda-plot-2,fig=TRUE,height=4,width=6,eval=TRUE>>=
-lattice::xyplot(log(zinc)~dist | ffreq, meuse, groups=soil, panel=function(x, y, ...){
+lattice::xyplot(log(zinc)~dist | ffreq, meuse, groups=soil,
+  panel=function(x, y, ...){
     lattice::panel.xyplot(x, y, ...)
     lattice::panel.loess(x, y, ...)
   }, auto.key=TRUE)
 @
 %
-\ecf{Dependence of \code{zinc} on \code{dist}ance to river, frequency
-of flooding (\code{ffreq}) and \code{soil} type.}{meuse-eda-plot-2}
+\ecf{Dependence of $\log(\mbox{\code{zinc}})$ on \code{dist}ance to
+river, frequency of flooding (\code{ffreq}) and \code{soil}
+type.}{meuse-eda-plot-2}
 %
 The relation \code{log(zinc)\~{}dist} is still non-linear, hence we
 transform \code{dist} by $\sqrt{\;\;}$:
-% 
+%
 \bcf
 %
 <<meuse-zinc-eda-plot-3,fig=TRUE,height=4,width=6,eval=TRUE>>=
-lattice::xyplot(log(zinc)~sqrt(dist) | ffreq, meuse, groups=soil, panel=function(x, y, ...){
+lattice::xyplot(log(zinc)~sqrt(dist) | ffreq, meuse, groups=soil,
+  panel=function(x, y, ...){
     lattice::panel.xyplot(x, y, ...)
     lattice::panel.loess(x, y, ...)
     lattice::panel.lmline(x, y, lty="dashed", ...)
   }, auto.key=TRUE)
 @
 %
-\ecf{Dependence of \code{zinc} concentration on \code{dist}ance to
-river, frequency of flooding (\code{ffreq}) and \code{soil} type.}{meuse-eda-plot-3}
+\ecf{Dependence of $\log(\mbox{\code{zinc}})$ concentration on
+$\sqrt{\mbox{\code{dist}ance}}$ to river, frequency of flooding
+(\code{ffreq}) and \code{soil} type.}{meuse-eda-plot-3}
 %
 which approximately linearizes the relation.
 
@@ -688,7 +789,7 @@ which approximately linearizes the relation.
 The slopes of the regression lines \code{log(zinc)\~{}sqrt(dist)} are
 about the same for all levels of \code{ffreq}.  But the intercept of
 \code{ffreq1} differs from the intercepts of the other levels.  Hence,
-as an initial drift model we use
+as an initial external drift model we use
 %
 <<meuse-zinc-lm,eval=TRUE>>=
 r.lm <- lm(log(zinc)~sqrt(dist)+ffreq, meuse)
@@ -707,7 +808,7 @@ op <- par(mfrow=c(2, 2)); plot(r.lm); par(op)
 \ecf{Residual diagnostic plots for linear drift model
 \code{log(zinc)\~{}sqrt(dist)+ffreq}.}{meuse-zinc-lm-resdiag}
 %
-do not show violations of modelling assumptions.
+do not show serious violations of modelling assumptions.
 
 \smallskip
 
@@ -729,24 +830,24 @@ plot(sample.variogram(residuals(r.lm), locations=meuse[, c("x","y")],
 %
 The residuals appear to be spatially dependent.  For the short lags
 there is no clear dependence on direction, hence, we assume that
-auto-correlation is isotropic.  
+auto-correlation is isotropic.
 
 To complete the exploratory modelling exercise, we compute the
-direction-indepdendent sample variogram and fit a spherical variogram
+direction-independent sample variogram and fit a spherical variogram
 model by weighted non-linear least squares (using Cressie's weights)
 %
 \bcf
 %
-<<meuse-zinc-lm-res-sv-2,fig=TRUE,width=6,height=4,results=hide>>=
+<<meuse-zinc-lm-res-sv-2,fig=FALSE,width=6,height=4,results=hide,echo=TRUE>>=
 library(georob)
 plot(r.sv <- sample.variogram(residuals(r.lm), locations=meuse[, c("x","y")],
-  lag.dist.def=100, max.lag=2000, 
+  lag.dist.def=100, max.lag=2000,
   estimator="matheron"), type="l",
   main="sample variogram of residuals log(zinc)~sqrt(dist)+ffreq")
 lines(r.sv.spher <- fit.variogram.model(r.sv, variogram.mode="RMspheric",
   param=c(variance=0.1, nugget=0.05, scale=1000)))
 @
-<<meuse-zinc-lm-res-sv-2,fig=TRUE,width=6,height=4,results=hide,echo=FALSE,eval=TRUE>>=
+<<meuse-zinc-lm-res-sv-3,fig=TRUE,width=6,height=4,results=hide,echo=FALSE,eval=TRUE>>=
 library(georob)
 plot(r.sv, type="l", main="sample variogram of residuals log(zinc)~sqrt(dist)+ffreq")
 lines(r.sv.spher)
@@ -775,7 +876,7 @@ Gaussian REML:
 %
 <<meuse-zinc-georob-reml,eval=TRUE>>=
 r.georob.m0.spher.reml <- georob(log(zinc)~sqrt(dist)+ffreq, meuse, locations=~x+y,
-  variogram.model="RMspheric", param=c(variance=0.1, nugget=0.05, scale=1000), 
+  variogram.model="RMspheric", param=c(variance=0.1, nugget=0.05, scale=1000),
   tuning.psi=1000)
 @
 %
@@ -787,7 +888,7 @@ The diagnostics at the begin of the \code{summary} output suggest that
 maximization of the restricted log-likelihood by \code{nlminb()} was
 successful.
 %
-Nevertheless, before we interprete the output, we compute the profile
+Nevertheless, before we interpret the output, we compute the profile
 log-likelihood for the range to see whether the maximization has found
 the global maximum:
 %
@@ -841,11 +942,11 @@ variogram.}{meuse-zinc-proflik-reml-scale-3}
 
 \smallskip
 
-We now study the \code{summary} output in detail: 
+We now study the \code{summary} output in detail:
 %
 % The criteria controlling convergence of the maximization can be
 % controlled by the arguments of \code{control.nlminb()}, see
-% section~\ref{sec:control-georob}.  The maximized restricted
+% \autoref{sec:control-georob}.  The maximized restricted
 % log-likelihood is equal to -54.6.
 %
 The estimated variogram parameters are reported along with 95\%
@@ -864,14 +965,14 @@ We can test equality of all pairs of intercepts
 %
 <<meuse-zinc-georob-reml-multcomp,eval=TRUE>>=
 if(requireNamespace("multcomp", quietly = TRUE)){
-  summary(multcomp::glht(r.georob.m0.spher.reml, 
+  summary(multcomp::glht(r.georob.m0.spher.reml,
     linfct = multcomp::mcp(ffreq = c("ffreq1 - ffreq2 = 0", "ffreq1 - ffreq3 = 0",
     "ffreq2 - ffreq3 = 0"))))
 } else {
   warning("package 'multcomp' is missing, install it and re-build vignette")
 }
 # library(multcomp)
-# summary(glht(r.georob.m0.spher.reml, 
+# summary(glht(r.georob.m0.spher.reml,
 #   linfct = mcp(ffreq = c("ffreq1 - ffreq2 = 0", "ffreq1 - ffreq3 = 0",
 #   "ffreq2 - ffreq3 = 0"))))
 @
@@ -907,28 +1008,28 @@ Start:  AIC=106.91
 log(zinc) ~ sqrt(dist) + ffreq
 
                    Df AIC Converged
-<none>                107          
+<none>                107
 + soil              2 107         1
 + ffreq:sqrt(dist)  2 110         1
 - ffreq             2 166         1
 - sqrt(dist)        1 178         1
 
-Tuning constant:  1000 
+Tuning constant:  1000
 
 Fixed effects coefficients:
-(Intercept)   sqrt(dist)  ffreqffreq2  ffreqffreq3  
-      7.094       -2.146       -0.526       -0.537  
+(Intercept)   sqrt(dist)  ffreqffreq2  ffreqffreq3
+      7.094       -2.146       -0.526       -0.537
 
-Variogram:  RMspheric 
- variance(fixed)    snugget(fixed)     nugget(fixed)      scale(fixed)  
-           0.123             0.000             0.056           872.400  
+Variogram:  RMspheric
+ variance(fixed)    snugget(fixed)     nugget(fixed)      scale(fixed)
+           0.123             0.000             0.056           872.400
 \end{Soutput}
 \end{Schunk}
 %
 or re-estimating them afresh for each evaluated model
 %
 <<meuse-zinc-georob-reml-step-2,eval=FALSE>>=
-step(r.georob.m0.spher.reml, scope=log(zinc)~ffreq*sqrt(dist)+soil, 
+step(r.georob.m0.spher.reml, scope=log(zinc)~ffreq*sqrt(dist)+soil,
   fixed.add1.drop1=FALSE)
 @
 %
@@ -944,15 +1045,15 @@ log(zinc) ~ sqrt(dist) + ffreq
 - sqrt(dist)        1 144         1
 - ffreq             2 158         1
 
-Tuning constant:  1000 
+Tuning constant:  1000
 
 Fixed effects coefficients:
-(Intercept)   sqrt(dist)  ffreqffreq2  ffreqffreq3  
-      7.094       -2.146       -0.526       -0.537  
+(Intercept)   sqrt(dist)  ffreqffreq2  ffreqffreq3
+      7.094       -2.146       -0.526       -0.537
 
-Variogram:  RMspheric 
-        variance    snugget(fixed)            nugget             scale  
-           0.123             0.000             0.056           872.400  
+Variogram:  RMspheric
+        variance    snugget(fixed)            nugget             scale
+           0.123             0.000             0.056           872.400
 \end{Soutput}
 \end{Schunk}
 %
@@ -963,7 +1064,7 @@ log-likelihood.  Before evaluating candidate models, the initial model
 is therefore re-fitted by ML, which can be done by
 %
 <<meuse-zinc-georob-ml,eval=TRUE>>=
-r.georob.m0.spher.ml <- update(r.georob.m0.spher.reml, 
+r.georob.m0.spher.ml <- update(r.georob.m0.spher.reml,
   control=control.georob(ml.method="ML"))
 @
 
@@ -1002,31 +1103,30 @@ transformed back to the original scale of the measurements.
 <<meuse-zinc-cv-plot,fig=TRUE,width=6,height=7.5,results=hide,eval=TRUE>>=
 op <- par(mfrow=c(3,2))
 plot(r.cv.m1.spher.reml, "sc")
-plot(r.cv.m0.spher.reml, "sc", add=TRUE, col=2) 
+plot(r.cv.m0.spher.reml, "sc", add=TRUE, col=2)
 abline(0, 1, lty="dotted")
-legend("topleft", pch=1, col=1:2, bty="n", 
+legend("topleft", pch=1, col=1:2, bty="n",
   legend=c("log(zinc)~sqrt(dist)", "log(zinc)~sqrt(dist)+ffreq"))
-plot(r.cv.m1.spher.reml, "lgn.sc"); plot(r.cv.m0.spher.reml, "lgn.sc", add=TRUE, col=2) 
+plot(r.cv.m1.spher.reml, "lgn.sc"); plot(r.cv.m0.spher.reml, "lgn.sc", add=TRUE, col=2)
 abline(0, 1, lty="dotted")
 plot(r.cv.m1.spher.reml, "hist.pit")
-plot(r.cv.m0.spher.reml, "hist.pit", col=2) 
+plot(r.cv.m0.spher.reml, "hist.pit", col=2)
 plot(r.cv.m1.spher.reml, "ecdf.pit")
 plot(r.cv.m0.spher.reml, "ecdf.pit", add=TRUE, col=2)
 abline(0, 1, lty="dotted")
 plot(r.cv.m1.spher.reml, "bs")
-plot(r.cv.m0.spher.reml, add=TRUE, "bs", col=2) 
+plot(r.cv.m0.spher.reml, add=TRUE, "bs", col=2)
 par(op)
 @
 %
 \ecf{Diagnostic plots of cross-validation predictions of REML fits of
 models \code{log(zinc)\~{}sqrt(dist)} (blue) and
-\code{log(zinc)\~{}sqrt(dist)+ffreq} (magenta).}{meuse-zinc-cv-plot}
+\code{log(zinc)\~{}sqrt(dist)+ffreq} (yellow).}{meuse-zinc-cv-plot}
 
 The simpler model gives less precise predictions (larger \code{rmse},
 Brier score and therefore also larger continuous ranked probability
-score \code{crps}), but it models prediction uncertainty better
-\citep[PIT closer to uniform distribution, see section~\ref{sec:cv}
-and][]{Gneiting-etal-2007}.  
+score \code{crps}), and both model prediction uncertainty about
+equally well \citep[see \autoref{sec:cv}][]{Gneiting-etal-2007}.
 
 We finish modelling by plotting residual diagnostics of the model
 \code{r.georob.m0.spher.reml} and comparing the estimated variogram
@@ -1046,8 +1146,8 @@ par(op)
 %
 \ecf{Residual diagnostic plots of model
 \code{log(zinc)\~{}sqrt(dist)+ffreq} and spherical variogram estimated
-by REML (blue), ML (magenta) and fit to sample variogram
-(darkgreen).}{meuse-zinc-georob-plot}
+by REML (blue), ML (yellow) and fit to sample variogram
+(green).}{meuse-zinc-georob-plot}
 %
 As expected REML estimates larger range and partial sill parameters.
 The diagnostics plots do not reveal serious violations of modelling
@@ -1080,10 +1180,10 @@ r.pk <- lgnpp(r.pk)
 @
 %
 <<meuse-zinc-meuse-point-Kriging-lgn,eval=TRUE>>=
-str(r.pk)
+str(r.pk, max=3)
 @
 %
-Note that 
+Note that
 \begin{itemize}
   \item \code{meuse.grid} was converted to a
   \code{SpatialPixelsDataFrame} object prior to Kriging.
@@ -1092,11 +1192,14 @@ Note that
   \item The argument
   \code{control=control.predict.georob(extended.output=TRUE)} of
   \code{predict.georob()} has the effect that all items required for
-  the back-transformation are computed.
-  
+  the back-transformation are computed, see \emph{Details} section of
+  \code{predict.georob()}.
+
   \item The variables \code{lgn.{\itshape xxx}} in \code{r.pk} contain
   the back-transformed prediction items.
 \end{itemize}
+
+\clearpage
 
 Finally, the function \code{spplot()} (package \pkg{sp}) allows to
 easily plot prediction results:
@@ -1111,7 +1214,7 @@ upr <- spplot(r.pk, zcol="lgn.upper", at=brks, main="upper bound 95% PI")
 plot(pred, position=c(0, 0, 1/3, 1), more=TRUE)
 plot(lwr, position=c(1/3, 0, 2/3, 1), more=TRUE)
 plot(upr, position=c(2/3, 0, 1, 1), more=FALSE)
-@ 
+@
 %
 \ecf{Lognormal point Kriging prediction of \code{zinc} (left:
 prediction; middle and right: lower and upper bounds of point-wise 95\%
@@ -1146,8 +1249,8 @@ r.bk <- predict(r.georob.m1.spher.reml, newdata=meuse.blocks,
 @
 %
 and transform the predictions back by the approximately unbiased
-back-transformation proposed by \citet{Cressie-2006} (see
-section~\ref{eq:spatial-covariance-covariates}):
+back-transformation proposed by \citet{Cressie-2006} (see also
+\autoref{sec:krig-details-lognormal-block-permanence}):
 %
 <<meuse-zinc-meuse-block-Kriging-2>>=
 r.bk <- lgnpp(r.bk, newdata=meuse.grid)
@@ -1158,16 +1261,16 @@ Note the following points:
   \item \code{pwidth} and \code{pheight} are the dimensions of the
   pixels used for efficiently computing ``block-block-'' and
   ``point-block- averages'' of the covariance function, see
-  section~\ref{sec:block-Kriging}).
-  
+  \autoref{sec:block-Kriging}).
+
   \item \code{mmax} controls parallelization when computing Kriging
   predictions, see
-  section~\ref{sec:Kriging-parallelized-computations}.
+  \autoref{sec:Kriging-parallelized-computations}.
 
   \item \code{newdata} is used to pass point support covariates to
   \code{lgnpp()}, from which the spatial covariances of the
   covariates, needed for the back-transformation, are computed,
-  \citep[see equation~\ref{eq:spatial-covariance-covariates}
+  \citep[see \autoref{eq:spatial-covariance-covariates}
   and][appendix~C]{Cressie-2006}.
 \end{itemize}
 
@@ -1183,7 +1286,7 @@ upr <- spplot(r.bk, zcol="lgn.upper", at=brks, main="upper bound 95% PI")
 plot(pred, position=c(0, 0, 1/3, 1), more=TRUE)
 plot(lwr, position=c(1/3, 0, 2/3, 1), more=TRUE)
 plot(upr, position=c(2/3, 0, 1, 1), more=FALSE)
-@ 
+@
 %
 \ecf{Lognormal block Kriging prediction of \code{zinc} computed under
 the assumption of permanence of log-normality (left: prediction; middle
@@ -1204,9 +1307,12 @@ the spatial mean over two larger square blocks:
 <<meuse-zinc-block-Kriging-blocks,fig=TRUE,width=4,height=5,results=hide,eval=TRUE>>=
 ## define blocks
 tmp <- data.frame(x=c(179100, 179900), y=c(330200, 331000))
-blks <- SpatialPolygons(sapply(1:nrow(tmp), function(i, x){  
-  Polygons(list(Polygon(t(x[,i] + 400*t(cbind(c(-1, 1, 1, -1, -1), c(-1, -1, 1, 1, -1)))),
-  hole=FALSE)), ID=paste("block", i, sep=""))}, x=t(tmp)))
+blks <- SpatialPolygons(
+  sapply(1:nrow(tmp), function(i, x){
+  Polygons(list(Polygon(
+    t(x[,i] + 400*t(cbind(c(-1, 1, 1, -1, -1), c(-1, -1, 1, 1, -1)))),
+    hole=FALSE)), ID=paste("block", i, sep="")
+  )}, x=t(tmp)))
 ## compute spatial mean of sqrt(dist) for blocks
 ind <- over(as(meuse.grid, "SpatialPoints"), blks)
 tmp <- tapply(sqrt(meuse.grid$dist), ind, mean)
@@ -1223,11 +1329,11 @@ optimal log-normal block predictor.}{meuse-zinc-block-Kriging-blocks}
 %
 
 We first compute block-Kriging predictions of \code{log(zinc)} and
-back-transform them as before under the permanence of log-normality
-assumption:
+back-transform them as before under the assumption of permanence of
+log-normality:
 %
 <<meuse-zinc-block-Kriging-3>>=
-r.blks <- predict(r.georob.m1.spher.reml, newdata=blks, 
+r.blks <- predict(r.georob.m1.spher.reml, newdata=blks,
   control=control.predict.georob(extended.output=TRUE, pwidth=800, pheight=800))
 r.blks <- lgnpp(r.blks, newdata=meuse.grid)
 @
@@ -1249,32 +1355,6 @@ t.pk <- predict(r.georob.m0.spher.reml, newdata=as.data.frame(meuse.grid),
 str(t.pk)
 @
 %
-\begin{Schunk}
-\begin{Soutput}
-List of 5
- $ pred           :'data.frame':	3103 obs. of  10 variables:
-  ..$ x              : num [1:3103] 181180 181140 181180 181220 181100 ...
-  ..$ y              : num [1:3103] 333740 333700 333700 333700 333660 ...
-  ..$ pred           : num [1:3103] 7.05 7.06 6.8 6.57 7.07 ...
-  ..$ se             : num [1:3103] 0.277 0.248 0.252 0.259 0.212 ...
-  ..$ lower          : num [1:3103] 6.51 6.57 6.3 6.06 6.65 ...
-  ..$ upper          : num [1:3103] 7.59 7.54 7.29 7.07 7.48 ...
-  ..$ trend          : num [1:3103] 7.09 7.09 6.85 6.64 7.09 ...
-  ..$ var.pred       : num [1:3103] 0.0779 0.0899 0.0822 0.0757 0.1027 ...
-  ..$ cov.pred.target: num [1:3103] 0.0681 0.0818 0.0768 0.0717 0.0963 ...
-  ..$ var.target     : num [1:3103] 0.135 0.135 0.135 0.135 0.135 ...
-  ..- attr(*, "variogram.model")= chr "RMspheric"
-  ..- attr(*, "param")= Named num [1:4] 0.1349 0 0.0551 876.5812
-  .. ..- attr(*, "names")= chr [1:4] "variance" "snugget" "nugget" "scale"
-  ..- attr(*, "psi.func")= chr "logistic"
-  ..- attr(*, "tuning.psi")= num 1000
-  ..- attr(*, "type")= chr "signal"
- $ mse.pred       : num [1:3103, 1:3103] 0.0766 0.0565 0.0606 0.0583 0.0373 ...
- $ var.pred       : num [1:3103, 1:3103] 0.0779 0.0833 0.0794 0.0748 0.0878 ...
- $ cov.pred.target: num [1:3103, 1:3103] 0.0681 0.0736 0.0714 0.0684 0.0781 ...
- $ var.target     : num [1:3103, 1:3103] 0.135 0.122 0.126 0.122 0.109 ...
-\end{Soutput}
-\end{Schunk}
 The predictions are now stored in the list component \code{pred}, and
 list components \code{mse.pred}, \code{var.pred}, \code{var.target}
 and \code{cov.pred.target} store the covariance matrices of prediction
@@ -1306,8 +1386,8 @@ r.blks <- cbind( r.blks, tmp)
 r.blks@data[, c("lgn.pred", "opt.pred", "lgn.se", "opt.se")]
 @
 %
-Both the predictions and the prediction standard errors differ
-somewhat for \code{block1}.  Based on the \citeauthor{Cressie-2006}'s
+Both the predictions and the prediction standard errors differ somewhat, in
+particular for \code{block1}.  Based on \citeauthor{Cressie-2006}'s
 simulation study, we prefer the optimal prediction results.
 
 
@@ -1317,7 +1397,7 @@ palette("default")
 
 <<meuse-zinc-cleanup-2,echo=FALSE>>=
 # save(list=ls(pattern="^r\\."), file="r_meuse_zinc_objects.RData", version = 2)
-save(list=c("r.sv", "r.sv.spher", "r.prfl.m0.spher.reml.scale", "r.cv.m0.spher.reml", 
+save(list=c("r.sv", "r.sv.spher", "r.prfl.m0.spher.reml.scale", "r.cv.m0.spher.reml",
     "r.cv.m1.spher.reml", "r.bk", "r.blks"), file="r_meuse_zinc_objects.RData", version = 2)
 rm(list=ls(pattern="^r\\."))
 @
@@ -1326,7 +1406,7 @@ rm(list=ls(pattern="^r\\."))
 \clearpage
 
 
-%% 
+%%
  % Analysis of coalash data
  %%
 
@@ -1335,7 +1415,7 @@ rm(list=ls(pattern="^r\\."))
 <<ash-load,eval=TRUE,echo=FALSE>>=
 if(file.exists("r_coalash_objects.RData")) load("r_coalash_objects.RData")
 @
-% 
+%
 This data set reports measurements of ash content [\% mass] in a
 coal seam in Pennsylvania \citep{Gomez-Hazen-1970}.  A subset of the
 data was analysed by \citet[section~2.2]{Cressie-1993a}
@@ -1370,7 +1450,7 @@ of the centred data:
 \bcf[0.55]
 %
 <<ash-centred-bubbleplot1,fig=TRUE,height=6,width=4,eval=TRUE>>=
-plot(y~x, coalash, cex=sqrt(abs(coalash - median(coalash))), 
+plot(y~x, coalash, cex=sqrt(abs(coalash - median(coalash))),
   col=c("blue", NA, "red")[sign(coalash - median(coalash))+2], asp=1,
   main="coalash - median(coalash)", ylab="northing", xlab="easting")
 points(y~x, coalash, subset=c(15, 50, 63, 73, 88, 111), pch=4); grid()
@@ -1437,7 +1517,7 @@ and check the fitted model by residual diagnostic plots:
 %
 \bcf
 %
-<<ash-diag-lmrob,fig=TRUE,width=6,height=5,eval=TRUE>>=
+<<ash-diag-lmrob,fig=TRUE,width=6,height=6,eval=TRUE>>=
 op <- par(mfrow=c(2,2))
 plot(r.lmrob, which=c(1:2, 4:5))
 par(op)
@@ -1480,7 +1560,7 @@ plot(sample.variogram(residuals(r.lmrob), locations=coalash[, c("x","y")],
 plot(sample.variogram(residuals(r.lmrob), locations=coalash[, c("x","y")],
   lag.dist.def=1, estimator="mad"), pch=4, col="orange", add=TRUE)
 legend("bottomright", pch=1:4, col=c("black", "blue", "cyan", "orange"),
-  legend=paste(c("method-of-moments", "Qn", "Cressie-Hawkins", "MAD"), 
+  legend=paste(c("method-of-moments", "Qn", "Cressie-Hawkins", "MAD"),
   "estimator"), bty="n")
 @
 %
@@ -1505,16 +1585,16 @@ r.sv <- sample.variogram(residuals(r.lmrob), locations=coalash[, c("x","y")],
   lag.dist.def=1, max.lag=10, xy.angle.def=c(-0.1, 0.1, 89.9, 90.1),
   estimator="qn")
 plot(gamma~lag.dist, r.sv, subset=lag.x < 1.e-6, xlim=c(0, 10), ylim=c(0, 1.4),
-  pch=1, col="blue", 
+  pch=1, col="blue",
   main="directional sample variogram of residuals (Qn-estimator)")
 points(gamma~lag.dist, r.sv, subset=lag.y < 1.e-6, pch=3, col="orange")
-legend("bottomright", pch=c(1, 3), col=c("blue", "orange"), 
+legend("bottomright", pch=c(1, 3), col=c("blue", "orange"),
   legend=c("N-S direction", "W-E direction"), bty="n")
 @
 %
 \ecf{Direction-dependent sample variogram of robust regression
 residuals of coalash data
-($\mathrm{Q_{n}}$-estimate).}{coalash-anisotropic-samplevariogram-lmrob}
+(Qn-estimate).}{coalash-anisotropic-samplevariogram-lmrob}
 %
 There is no indication that residual auto-correlation depends on
 direction.
@@ -1527,16 +1607,16 @@ direction.
 Based on the results of the exploratory analysis, we fit a model with a
 linear drift in the coordinates and an isotropic exponential variogram
 to the data by robust REML. By default, \code{georob()} uses a
-scaled and shifted ``logistic'' $\psi_{c}$-function 
-\[ 
+scaled and shifted ``logistic'' $\psi_{c}$-function
+\[
   \psi_{c}(x) = \tanh(x/c)
 \]
 with a tuning constant $c=2$ for robust REML, but the
 popular Huber function and a redescending $\psi$-function based on the
-$t$-distribution are also implemented (see section~\ref{sec:control-georob}):
+$t$-distribution are also implemented (see \autoref{sec:control-georob}):
 %
 <<ash-georob-robust-1,eval=TRUE>>=
-r.georob.m0.exp.c2 <- georob(coalash~x+y, coalash, locations=~x+y, 
+r.georob.m0.exp.c2 <- georob(coalash~x+y, coalash, locations=~x+y,
   variogram.model="RMexp", param=c(variance=0.1, nugget=0.9, scale=1))
 @
 %
@@ -1549,7 +1629,7 @@ The diagnostics at the begin of the \code{summary} output report that
 variogram parameters (reported numbers are function values evaluated
 at the root).  The criteria controlling convergence of the
 root-finding algorithm can be controlled by the arguments of
-\code{control.nleqslv()}, see section~\ref{sec:control-georob}.
+\code{control.nleqslv()}, see \autoref{sec:control-georob}.
 %
 
 \smallskip
@@ -1622,7 +1702,7 @@ the standardized errors $\widehat{\varepsilon}_{i} /
 The robustness weights of the outliers identified so far are equal to
 %
 <<ash-rw-georob-robust-2-1,eval=TRUE>>=
-round(cbind(coalash[, c("x", "y")], 
+round(cbind(coalash[, c("x", "y")],
   rweights=r.georob.m1.exp.c2[["rweights"]])[c(15, 50, 63, 73, 88, 111, 192),],
   2)
 @
@@ -1630,9 +1710,9 @@ round(cbind(coalash[, c("x", "y")],
 In addition, the observations
 %
 <<ash-rw-georob-robust-2-1,eval=TRUE>>=
-sel <- r.georob.m1.exp.c2[["rweights"]] <= 0.8 & 
+sel <- r.georob.m1.exp.c2[["rweights"]] <= 0.8 &
   !1:nrow(coalash) %in% c(15, 50, 63, 73, 88, 111, 192)
-round(cbind(coalash[, c("x", "y")], 
+round(cbind(coalash[, c("x", "y")],
   rweights=r.georob.m1.exp.c2[["rweights"]])[sel,],
   2)
 @
@@ -1643,7 +1723,7 @@ Figure~\ref{fig:coalash-bubble-residuals-robust-reml} by $\times$:
 \bcf[0.55]
 %
 <<ash-diag-georob-robust-2-2,fig=TRUE,height=6,width=4,eval=TRUE>>=
-plot(y~x, coalash, cex=sqrt(abs(residuals(r.georob.m1.exp.c2))), 
+plot(y~x, coalash, cex=sqrt(abs(residuals(r.georob.m1.exp.c2))),
   col=c("blue", NA, "red")[sign(residuals(r.georob.m1.exp.c2))+2], asp=1,
   main="estimated errors robust REML", xlab="northing", ylab="easting")
 points(y~x, coalash, subset=r.georob.m1.exp.c2[["rweights"]]<=0.8, pch=4); grid()
@@ -1671,18 +1751,18 @@ r.georob.m1.exp.c1000 <- update(r.georob.m1.exp.c2, tuning.psi=1000)
 <<ash-georob-summary-gaussian-1,eval=TRUE>>=
 summary(r.georob.m1.exp.c1000)
 @
-% 
+%
 and compare the Gaussian and robust REML estimates of the variogram:
 %
 \bcf
 %
 <<ash-georob-gaussian-2,fig=TRUE,width=6,height=4,eval=TRUE>>=
 plot(r.georob.m1.exp.c1000, lag.dist.def=1, max.lag=10, estimator="matheron")
-plot(r.georob.m1.exp.c2, lag.dist.def=1, max.lag=10, estimator="qn", add = TRUE, 
+plot(r.georob.m1.exp.c2, lag.dist.def=1, max.lag=10, estimator="qn", add = TRUE,
   col="blue")
-plot(update(r.georob.m1.exp.c2, subset=-50), lag.dist.def=1, max.lag=10, estimator="qn", 
+plot(update(r.georob.m1.exp.c2, subset=-50), lag.dist.def=1, max.lag=10, estimator="qn",
   add = TRUE, col="orange")
-legend("bottomright", lt=1, col=c("black","blue", "orange"), 
+legend("bottomright", lt=1, col=c("black","blue", "orange"),
   legend =c("Gaussian REML", "robust REML", "Gaussian REML without outlier (5,6)" ), bty="n")
 @
 %
@@ -1702,7 +1782,7 @@ variogram.}{coalash-gaussian-robust-reml-variogram}
 The outliers inflate mostly the nugget effect (by $\approx$ 20~\%) and less
 so the signal variance and range parameter (by $\approx$ 10~\%).  When
 we eliminate the severest outlier at (5,6) then the Gaussian and robust REML
-estimates of the variogram hardly differ. 
+estimates of the variogram hardly differ.
 
 \smallskip
 
@@ -1726,14 +1806,14 @@ estimates of random effects ($\widehat{B}(\mb{s}_{i})$):
 %
 <<ash-georob-diag-gaussian-robust-2,fig=TRUE,width=6.64,height=3.32,eval=TRUE>>=
 op <- par(mfrow=c(1,2), cex=5/6)
-plot(residuals(r.georob.m1.exp.c2), residuals(r.georob.m1.exp.c1000), 
+plot(residuals(r.georob.m1.exp.c2), residuals(r.georob.m1.exp.c1000),
   asp = 1, main=expression(paste("Gaussian vs robust ", widehat(epsilon))),
-  xlab=expression(paste("robust ", widehat(epsilon))), 
+  xlab=expression(paste("robust ", widehat(epsilon))),
   ylab=expression(paste("Gaussian ", widehat(epsilon))))
 abline(0, 1, lty="dotted")
-plot(ranef(r.georob.m1.exp.c2), ranef(r.georob.m1.exp.c1000), 
+plot(ranef(r.georob.m1.exp.c2), ranef(r.georob.m1.exp.c1000),
   asp = 1, main=expression(paste("Gaussian vs robust ", italic(widehat(B)))),
-  xlab=expression(paste("robust ", italic(widehat(B)))), 
+  xlab=expression(paste("robust ", italic(widehat(B)))),
   ylab=expression(paste("Gaussian ", italic(widehat(B)))))
 abline(0, 1, lty="dotted")
 @
@@ -1761,12 +1841,12 @@ In cv.georob(r.georob.m1.exp.c2, seed = 1, ) :
 The robustfied estimating equations could not be solved for one
 cross-valiation subset.  This may happen if the initial guesses of the
 variogram parameters are too far away from the root (see
-section~\ref{sec:est-details-initial-values}).  Sometimes it helps
+\autoref{sec:est-details-initial-values}).  Sometimes it helps
 then to suppress the computation of robust guesses of the variogram
 parameters and to use the robust parameter estimates computed from the
 whole data set as initial values (see argument \code{initial.param} of
 \code{control.georob()} and
-section~\ref{sec:est-details-initial-values}):
+\autoref{sec:est-details-initial-values}):
 
 <<ash-cv-georob-gaussian-robust-1,eval=FALSE>>=
 r.cv.georob.m1.exp.c2 <- cv(r.georob.m1.exp.c2, seed=1,
@@ -1775,14 +1855,14 @@ r.cv.georob.m1.exp.c1000 <- cv(r.georob.m1.exp.c1000, seed=1)
 @
 % %
 <<ash-cv-georob-gaussian-robust-2,echo=FALSE>>=
-r.cv.georob.m1.exp.c2 <- cv(r.georob.m1.exp.c2, seed=1, 
+r.cv.georob.m1.exp.c2 <- cv(r.georob.m1.exp.c2, seed=1,
   control=control.georob(initial.param=FALSE), ncores=my.ncores)
 r.cv.georob.m1.exp.c1000 <- cv(r.georob.m1.exp.c1000, seed=1, ncores=my.ncores)
 @
 %
 By default, \code{cv.georob()} partitions the data set into 10
 geographically compact subsets of adjacent locations (see argument
-\code{method} of \code{cv.georob()} and section~\ref{sec:cv}):
+\code{method} of \code{cv.georob()} and \autoref{sec:cv}):
 %
 \bcf[0.55]
 %
@@ -1792,13 +1872,13 @@ plot(y~x, r.cv.georob.m1.exp.c2$pred, asp=1, col=subset, pch=as.integer(subset))
 %
 \ecf{Default method for defining cross-validation subsets by
 \code{kmeans()} using argument \code{method="block"} of
-\code{cv.georob()}.}{coalash-cv-devault-partition}
+\code{cv.georob()}.}{coalash-cv-default-partition}
 
 \smallskip
 
 We compute now summary statistics of the (standardized)
 cross-validation prediction errors for the two model fits (see
-section~\ref{sec:cv}):
+\autoref{sec:cv}):
 %
 <<ash-summary-cv-georob-gaussian-robust,eval=TRUE>>=
 summary(r.cv.georob.m1.exp.c1000, se=TRUE)
@@ -1865,7 +1945,7 @@ Gaussian REML: The empirical distribution of the probability integral
 transform (PIT) is closer to a uniform distribution, the Brier score
 (BS) is smaller and the average predictive distribution $\bar{F}$ is
 closer to the empirical distribution of the data $\widehat{G}$
-\citep[see section~\ref{sec:cv} and][for more details about the
+\citep[see \autoref{sec:cv} and][for more details about the
 interpretation of these plots]{Gneiting-etal-2007}.
 
 
@@ -1881,7 +1961,7 @@ interpretation of these plots]{Gneiting-etal-2007}.
 For point Kriging  we must first generate a fine-meshed
 grid of predictions points (optionally with the covariates for the
 drift) that is passed as argument \code{newdata} to
-\code{predict.georob()}.  \code{newdata} can be an customary
+\code{predict.georob()}.  \code{newdata} can be a customary
 \code{data.frame}, an object of class \code{SpatialPointsDataFrame},
 \code{SpatialPixelsDataFrame} or \code{SpatialGridDataFrame} or
 \code{SpatialPoints}, \code{SpatialPixels} or \code{SpatialGrid}, all
@@ -1914,20 +1994,20 @@ r.pk.m1.exp.c1000 <- predict(r.georob.m1.exp.c1000, newdata=coalash.grid, contro
 %
 and plotting the results by the function \code{spplot()} of the
 package \pkg{sp} as well:
-% 
+%
 % \clearpage
-% 
+%
 %
 \bcf[1]
 %
 <<ash-pKriging-plot-robust-gaussian-1,fig=TRUE,width=9.96,height=9.96,eval=TRUE>>=
-pred.rob <- spplot(r.pk.m1.exp.c2, "pred", at=seq(8, 12, by=0.25), 
+pred.rob <- spplot(r.pk.m1.exp.c2, "pred", at=seq(8, 12, by=0.25),
   main="robust Kriging prediction", scales=list(draw=TRUE))
-pred.gauss <- spplot(r.pk.m1.exp.c1000, "pred", at=seq(8, 12, by=0.25), 
+pred.gauss <- spplot(r.pk.m1.exp.c1000, "pred", at=seq(8, 12, by=0.25),
   main="Gaussian Kriging prediction", scales=list(draw=TRUE))
-se.rob <- spplot(r.pk.m1.exp.c2, "se", at=seq(0.35, 0.65, by=0.025), 
+se.rob <- spplot(r.pk.m1.exp.c2, "se", at=seq(0.35, 0.65, by=0.025),
   main="standard error robust Kriging", scales=list(draw=TRUE))
-se.gauss <- spplot(r.pk.m1.exp.c1000, "se", at=seq(0.35, 0.65, by=0.025), 
+se.gauss <- spplot(r.pk.m1.exp.c1000, "se", at=seq(0.35, 0.65, by=0.025),
   main="standard error Gaussian Kriging", scales=list(draw=TRUE))
 plot(pred.rob, pos=c(0, 0.5, 0.5, 1), more=TRUE)
 plot(pred.gauss, pos=c(0.5, 0.5, 1, 1), more=TRUE)
@@ -1942,7 +2022,7 @@ By default, \code{predict.georob()} predicts the \emph{signal}
 $Z(\mb{s})$, but predictions of the \emph{response} $Y(\mb{s})$ or
 estimates of \emph{model terms} and \emph{trend} (drift) can be
 computed as well (see argument \code{type} of \code{predict.georob()}
-and section~\ref{sec:prediction-targets}).  Apart from Kriging
+and \autoref{sec:prediction-targets}).  Apart from Kriging
 predictions and standard errors, bounds (\code{lower}, \code{upper})
 of point-wise 95\%-prediction intervals (plug-in) are computed for
 assumed Gaussian predictive distributions.
@@ -1964,22 +2044,22 @@ of the respective Kriging variances:
 # rel. difference of predictions
 r.pk.m1.exp.c2$reldiff.pred <- (r.pk.m1.exp.c1000$pred -
   r.pk.m1.exp.c2$pred) / r.pk.m1.exp.c2$pred * 100
-reldiff.pred <- spplot(r.pk.m1.exp.c2, "reldiff.pred", at=-1:7, 
+reldiff.pred <- spplot(r.pk.m1.exp.c2, "reldiff.pred", at=-1:7,
   main="Gaussian - robust Kriging predictions", scales=list(draw=TRUE))
 # ratio Kriging variances
-r.pk.m1.exp.c2$ratio.msep <- r.pk.m1.exp.c1000$se^2 / 
+r.pk.m1.exp.c2$ratio.msep <- r.pk.m1.exp.c1000$se^2 /
   r.pk.m1.exp.c2$se^2 * 100
-ratio.msep <- spplot(r.pk.m1.exp.c2, "ratio.msep", at=105:115, 
+ratio.msep <- spplot(r.pk.m1.exp.c2, "ratio.msep", at=105:115,
   main="ratio of Gaussian to robust Kriging variances",scales=list(draw=TRUE))
 plot(reldiff.pred, pos=c(0, 0, 0.5, 1), more=TRUE)
 #  add bubble plot of centred data colored by "robustness" weights
 rw <- cut(r.georob.m1.exp.c2$rweights, seq(0.2, 1, by = 0.2))
 lattice::trellis.focus("panel", 1, 1)
-lattice::panel.points(coalash$x, coalash$y, lwd=2, 
-  cex=sqrt(abs(coalash$coalash - median((coalash$coalash)))), 
+lattice::panel.points(coalash$x, coalash$y, lwd=2,
+  cex=sqrt(abs(coalash$coalash - median((coalash$coalash)))),
   col=colorRampPalette(c("yellow", "orange", grey(0.4)))(4)[as.numeric(rw)])
-lattice::panel.text(rep(17, nlevels(rw)+1), 0:nlevels(rw), pos=2, cex=0.8, 
-  labels=c(rev(levels(rw)), "rob. weights"), 
+lattice::panel.text(rep(17, nlevels(rw)+1), 0:nlevels(rw), pos=2, cex=0.8,
+  labels=c(rev(levels(rw)), "rob. weights"),
   col=c(rev(colorRampPalette(c("yellow", "orange", grey(0.4)))(4)), "white"))
 lattice::trellis.unfocus()
 
@@ -1991,7 +2071,7 @@ plot(ratio.msep, pos=c(0.5, 0, 1, 1), more=FALSE)
 right).  The area of the ``bubbles'' in the left panel is proportional
 to the moduli of centred ash content and their color codes the
 ``robustness'' weights of robust
-REML.}{coalash-diff-Kriging-gaussian-robusts}
+REML.}{coalash-diff-Kriging-gaussian-robust}
 %
 The Kriging predictions differ by more than $\pm$ 1~\% around
 observations with robustness weights $\leq 0.6$, and the efficiency of
@@ -2011,12 +2091,12 @@ block Kriging predictions for \code{newdata} objects of class
 tmp <- expand.grid(x = seq(2.5, 16.5, by=4), y=seq(2, 22, by=4))
 rownames(tmp) <- paste("block", rownames(tmp), sep="")
 # create SpatialPolygonsDataFrame
-coalash.polygons <- sapply(1:nrow(tmp), function(i, x){  
+coalash.polygons <- sapply(1:nrow(tmp), function(i, x){
   Polygons(list(Polygon(
         t(x[,i] + t(cbind(c(-2, 2, 2, -2, -2), c(-2, -2, 2, 2, -2)))),
         hole=FALSE)), ID=paste("block", i, sep=""))},
   x=t(tmp))
-coalash.polygons <- SpatialPolygonsDataFrame(SpatialPolygons(coalash.polygons), 
+coalash.polygons <- SpatialPolygonsDataFrame(SpatialPolygons(coalash.polygons),
   data = tmp)
 summary(coalash.polygons)
 plot(coalash.polygons, col="grey", axes=TRUE); points(y~x, coalash)
@@ -2069,7 +2149,7 @@ domain by block Kriging:
 <<ash-bKriging-2,eval=TRUE>>=
 coalash.domain <- rbind(c(0.5,0), c(16.5,0), c(16.5,24), c(0.5,24), c(0.5,0))
 coalash.domain <- SpatialPolygonsDataFrame(
-  SpatialPolygons(list(Polygons(list(Polygon(coalash.domain)), ID= "domain"))), 
+  SpatialPolygons(list(Polygons(list(Polygon(coalash.domain)), ID= "domain"))),
   data=data.frame(x=8.5,y=12,row.names="domain"))
 slot(predict(r.georob.m1.exp.c2, newdata=coalash.domain,
   control=control.predict.georob(pwidth=16, pheight=24)), "data")
@@ -2081,13 +2161,13 @@ Kriging predictions:
 \bcf[1]
 %
 <<ash-bKriging-plot-robust-gaussian-1,fig=TRUE,width=9.96,height=9.96,eval=TRUE>>=
-pred.rob <- spplot(r.bk.m1.exp.c2$pred, "pred", at=seq(8, 11, by=0.25), 
+pred.rob <- spplot(r.bk.m1.exp.c2$pred, "pred", at=seq(8, 11, by=0.25),
   main="robust Kriging prediction", scales=list(draw=TRUE))
-pred.gauss <- spplot(r.bk.m1.exp.c1000$pred, "pred", at=seq(8, 11, by=0.25), 
+pred.gauss <- spplot(r.bk.m1.exp.c1000$pred, "pred", at=seq(8, 11, by=0.25),
   main="Gaussian Kriging prediction", scales=list(draw=TRUE))
-se.rob <- spplot(r.bk.m1.exp.c2$pred, "se", at=seq(0.15, 0.45, by=0.025), 
+se.rob <- spplot(r.bk.m1.exp.c2$pred, "se", at=seq(0.15, 0.45, by=0.025),
   main="standard error robust Kriging", scales=list(draw=TRUE))
-se.gauss <- spplot(r.bk.m1.exp.c1000$pred, "se", at=seq(0.15, 0.45, by=0.025), 
+se.gauss <- spplot(r.bk.m1.exp.c1000$pred, "se", at=seq(0.15, 0.45, by=0.025),
   main="standard error Gaussian Kriging", scales=list(draw=TRUE))
 plot(pred.rob, pos=c(0, 0.5, 0.5, 1), more=TRUE)
 plot(pred.gauss, pos=c(0.5, 0.5, 1, 1), more=TRUE)
@@ -2105,7 +2185,7 @@ block Kriging.
 <<ash-results-save-1,echo=FALSE>>=
 # save(list=ls(pattern="^r\\."), file="r_coalash_objects.RData", version = 2)
 save(list=c(
-    "r.cv.georob.m1.exp.c2", "r.cv.georob.m1.exp.c1000", 
+    "r.cv.georob.m1.exp.c2", "r.cv.georob.m1.exp.c1000",
     "r.pk.m1.exp.c2", "r.pk.m1.exp.c1000", "r.bk.m1.exp.c2", "r.bk.m1.exp.c1000"
   ), file="r_coalash_objects.RData", version = 2)
 rm(list=ls(pattern="^r\\."))
@@ -2116,7 +2196,7 @@ rm(list=ls(pattern="^r\\."))
 
 % \input
 
-%% 
+%%
  % Details about parameter estimation
  %%
 
@@ -2138,7 +2218,7 @@ implemented (see argument \code{variogram.model} of \code{georob()}):
 \code{"RMgenfbm"}, \code{"RMgengneiting"}, \code{"RMgneiting"},
 \code{"RMlgd"}, \\{} \code{"RMmatern"}, \code{"RMpenta"}, \code{"RMqexp"},
 \code{"RMspheric"}, \code{"RMstable"}, \code{"RMwave"}, \\{}
-\code{"RMwhittle"}. 
+\code{"RMwhittle"}.
 
 \smallskip
 
@@ -2146,10 +2226,9 @@ Some of these models have in addition to \code{variance},
 \code{snugget}, \code{nugget} and \code{scale} further parameters.
 Initial values of these parameters (\code{param}) and fitting flags
 (\code{fit.param}) must be passed to \code{georob()} by the same names
-as used by the functions \code{RM...()} of the package
-\pkg{RandomFields} (see \code{RMmodel())}.  Use the
-function \code{param.names()} to list additional parameters of a
-given variogram.model.
+as used for the models \code{RM...} in \code{gencorr()}.  Use the
+function \code{param.names()} to list additional parameters of a given
+variogram.model.
 
 \smallskip
 
@@ -2163,7 +2242,7 @@ anisotropy parameters for an isotropic variogram.
 
 
 \subsection{Estimating parameters of power function variogram}\label{sec:est-details-intrisic-models}
- 
+
 The intrinsic variogram model \code{RMfbm} is over-parametrized when
 both the \code{variance} (plus possibly \code{snugget}) and the
 \code{scale} are estimated.  Therefore, to estimate the parameters of this
@@ -2171,122 +2250,121 @@ model, \code{scale} must be kept fixed at an arbitrary value by using
 \code{fit.param = default.fit.param(scale = FALSE)}.
 
 
-\subsection{Estimating parameters of geometrically anisotropic variograms}\label{sec:est-details-anisotropy}
-
-Subsection~\ref{sec:intro-model} describes how covariances are
-modelled in general.  Here we describe in detail how geometrically
-anisotropic variogram are parametrized:
-
-\smallskip
-
-The matrix \eqn{\mbox{\boldmath$A$\unboldmath} =
-\mbox{\boldmath$A$\unboldmath}(\alpha, f_1, f_2; \omega, \phi, \zeta)
-}{} (see equation \ref{eq:valpha}) maps an arbitrary point on an
-ellipsoidal surface with constant (generalized) covariance in \eqn{
-\mathrm{I}\!\mathrm{R}^3}{}, centred on the origin, and having lengths
-of semi-principal axes, \eqn{\mbox{\boldmath$p$\unboldmath}_1}{},
-\eqn{\mbox{\boldmath$p$\unboldmath}_2}{},
-\eqn{\mbox{\boldmath$p$\unboldmath}_3}{}, equal to
-\eqn{|\mbox{\boldmath$p$\unboldmath}_1|=\alpha}{},
-\eqn{|\mbox{\boldmath$p$\unboldmath}_2|=f_1\,\alpha}{} and
-\eqn{|\mbox{\boldmath$p$\unboldmath}_3|=f_2\,\alpha}{}, \eqn{0 < f_2
-\leq f_1 \leq 1}{}, respectively, onto the surface of the unit ball
-centred on the origin.
+% \subsection{Estimating parameters of geometrically anisotropic variograms}\label{sec:est-details-anisotropy}
 %
-The orientation of the ellipsoid is defined by the three angles
-\eqn{\omega}{}, \eqn{\phi}{} and \eqn{\zeta}{}: 
-\begin{description}
-  
-  \item[\eqn{\omega}{}] is the azimuth of \eqn{\mbox{\boldmath$p$\unboldmath}_1}{}
-  (= angle between north and the projection  
-  of
-  \eqn{\mbox{\boldmath$p$\unboldmath}_1}{}
-  onto the \eqn{x}{}-\eqn{y}{}-plane, 
-  measured from north to south positive clockwise in degrees),
-  
-  
-  \item[\eqn{\phi}{}] is 90 degrees minus the altitude of 
-  \eqn{\mbox{\boldmath$p$\unboldmath}_1}{}
-  (= angle between the zenith and
-  \eqn{\mbox{\boldmath$p$\unboldmath}_1}{},
-  measured from zenith to nadir positive clockwise in degrees), and
-  
-  
-  \item[\eqn{\zeta}{}] is the angle between 
-  \eqn{\mbox{\boldmath$p$\unboldmath}_2}{}
-  and the direction of the line, say \eqn{y^\prime}{}, 
-  defined by the intersection between the
-  \eqn{x}{}-\eqn{y}{}-plane and the plane orthogonal to 
-  \eqn{\mbox{\boldmath$p$\unboldmath}_1}{} running through the origin
-  (\eqn{\zeta}{} is measured from \eqn{y^\prime}{} positive counter-clockwise in degrees).
-  
-\end{description}
-
-
-The transformation matrix is given by
+% Sub\autoref{sec:intro-model} describes how covariances are
+% modelled in general.  Here we describe in detail how geometrically
+% anisotropic variogram are parametrized:
 %
-\begin{equation}\label{eq:coordinate-transformation-matrix}
-  \mbox{\boldmath$A$\unboldmath}=
-  \left(\begin{array}{ccc} 1/\alpha & 0 & 0\\
-  0 & 1/(f_1\,\alpha) & 0\\
-  0 & 0 & 1/(f_2\,\alpha) \\
-  \end{array}\right) ( \mbox{\boldmath$C$\unboldmath}_1,
-  \mbox{\boldmath$C$\unboldmath}_2, \mbox{\boldmath$C$\unboldmath}_3)
-\end{equation}
+% \smallskip
 %
-where
+% The matrix \eqn{\boldsymbol{A} =
+% \boldsymbol{A}(\alpha, f_1, f_2; \omega, \phi, \zeta)
+% }{} (see equation \ref{eq:valpha}) maps an arbitrary point on an
+% ellipsoidal surface with constant (generalized) covariance in \eqn{
+% \mathrm{I}\!\mathrm{R}^3}{}, centred on the origin, and having lengths
+% of semi-principal axes, \eqn{\boldsymbol{p}_1}{},
+% \eqn{\boldsymbol{p}_2}{},
+% \eqn{\boldsymbol{p}_3}{}, equal to
+% \eqn{|\boldsymbol{p}_1|=\alpha}{},
+% \eqn{|\boldsymbol{p}_2|=f_1\,\alpha}{} and
+% \eqn{|\boldsymbol{p}_3|=f_2\,\alpha}{}, \eqn{0 < f_2
+% \leq f_1 \leq 1}{}, respectively, onto the surface of the unit ball
+% centred on the origin.
+% %
+% The orientation of the ellipsoid is defined by the three angles
+% \eqn{\omega}{}, \eqn{\phi}{} and \eqn{\zeta}{}:
+% \begin{description}
 %
-\begin{eqnarray}\label{eq:coordinate-rotation-matrix}
-  \mbox{\boldmath$C$\unboldmath}_1^\mathrm{T} & = & ( \sin\omega \sin\phi, -\cos\omega \cos\zeta - \sin\omega \cos\phi \sin\zeta, \cos\omega \sin\zeta - \sin\omega \cos\phi \cos\zeta ) \nonumber \\
-  \mbox{\boldmath$C$\unboldmath}_2^\mathrm{T} & = & ( \cos\omega \sin\phi, \sin\omega \cos\zeta - \cos\omega \cos\phi \sin\zeta, -\sin\omega \sin\zeta - \cos\omega \cos\phi\cos\zeta )\nonumber \\
-  \mbox{\boldmath$C$\unboldmath}_3^\mathrm{T} & = & (\cos\phi, \sin\phi \sin\zeta, \sin\phi \cos\zeta )
-\end{eqnarray}
+%   \item[\eqn{\omega}{}] is the azimuth of \eqn{\boldsymbol{p}_1}{}
+%   (= angle between north and the projection
+%   of
+%   \eqn{\boldsymbol{p}_1}{}
+%   onto the \eqn{x}{}-\eqn{y}{}-plane,
+%   measured from north to south positive clockwise in degrees),
 %
-To model geometrically anisotropic variograms in 
-\eqn{ \mathrm{I}\!\mathrm{R}^2}{} 
-one has to set \eqn{\phi=90}{} and \eqn{f_2 = 1}{},
-and for \eqn{f_1 = f_2 = 1}{} 
-one obtains the model for isotropic auto-correlation 
-with range parameter \eqn{\alpha}{}. 
-Note that for isotropic auto-correlation the software processes data for 
-which \eqn{d}{} may exceed 3.
+%
+%   \item[\eqn{\phi}{}] is 90 degrees minus the altitude of
+%   \eqn{\boldsymbol{p}_1}{}
+%   (= angle between the zenith and
+%   \eqn{\boldsymbol{p}_1}{},
+%   measured from zenith to nadir positive clockwise in degrees), and
+%
+%
+%   \item[\eqn{\zeta}{}] is the angle between
+%   \eqn{\boldsymbol{p}_2}{}
+%   and the direction of the line, say \eqn{y^\prime}{},
+%   defined by the intersection between the
+%   \eqn{x}{}-\eqn{y}{}-plane and the plane orthogonal to
+%   \eqn{\boldsymbol{p}_1}{} running through the origin
+%   (\eqn{\zeta}{} is measured from \eqn{y^\prime}{} positive counter-clockwise in degrees).
+%
+% \end{description}
+%
+%
+% The transformation matrix is given by
+% %
+% \begin{equation}\label{eq:coordinate-transformation-matrix}
+%   \boldsymbol{A}=
+%   \left(\begin{array}{ccc} 1/\alpha & 0 & 0\\
+%   0 & 1/(f_1\,\alpha) & 0\\
+%   0 & 0 & 1/(f_2\,\alpha) \\
+%   \end{array}\right) ( \boldsymbol{C}_1,
+%   \boldsymbol{C}_2, \boldsymbol{C}_3)
+% \end{equation}
+% %
+% where
+% %
+% \begin{eqnarray}\label{eq:coordinate-rotation-matrix}
+%   \boldsymbol{C}_1^\mathrm{T} & = & ( \sin\omega \sin\phi, -\cos\omega \cos\zeta - \sin\omega \cos\phi \sin\zeta, \cos\omega \sin\zeta - \sin\omega \cos\phi \cos\zeta ) \nonumber \\
+%   \boldsymbol{C}_2^\mathrm{T} & = & ( \cos\omega \sin\phi, \sin\omega \cos\zeta - \cos\omega \cos\phi \sin\zeta, -\sin\omega \sin\zeta - \cos\omega \cos\phi\cos\zeta )\nonumber \\
+%   \boldsymbol{C}_3^\mathrm{T} & = & (\cos\phi, \sin\phi \sin\zeta, \sin\phi \cos\zeta )
+% \end{eqnarray}
+% %
+% To model geometrically anisotropic variograms in
+% \eqn{ \mathrm{I}\!\mathrm{R}^2}{}
+% one has to set \eqn{\phi=90}{} and \eqn{f_2 = 1}{},
+% and for \eqn{f_1 = f_2 = 1}{}
+% one obtains the model for isotropic auto-correlation
+% with range parameter \eqn{\alpha}{}.
+% Note that for isotropic auto-correlation the software processes data for
+% which \eqn{d}{} may exceed 3.
+%
+%
+% \smallskip
+%
+% Some additional remarks might be helpful:
+%
+% \begin{itemize}
+%
+%   \item The first semi-principal axis points into the direction with
+%   the farthest reaching auto-correlation, which is described by the range
+%   parameter \code{scale} (\eqn{\alpha}{}).
+%
+%   \item The ranges in the direction of the second and third
+%   semi-principal axes are given by \eqn{f_1\alpha}{} and \eqn{f_2
+%   \alpha}{}, with \eqn{0 < f_2 \leq f_1 \leq 1}{}.
+%
+%   \item The default values for \code{aniso} (\eqn{f_1=1}{}, \eqn{f_2=1}{})
+%   define an isotropic variogram model.
+%
+%   \item Valid ranges for the angles characterizing the orientation of
+%   the semi-variance ellipsoid are (in degrees): \eqn{\omega}{} [0, 180],
+%   \eqn{\phi}{} [0, 180], \eqn{\zeta}{} [-90, 90].
+%
+% \end{itemize}
 
 
-\smallskip
-
-Some additional remarks might be helpful:
-
-\begin{itemize}
-  
-  \item The first semi-principal axis points into the direction with 
-  the farthest reaching auto-correlation, which is described by the range
-  parameter \code{scale} (\eqn{\alpha}{}).
-  
-  \item The ranges in the direction of the second and third
-  semi-principal axes are given by \eqn{f_1\alpha}{} and \eqn{f_2
-  \alpha}{}, with \eqn{0 < f_2 \leq f_1 \leq 1}{}.
-  
-  \item The default values for \code{aniso} (\eqn{f_1=1}{}, \eqn{f_2=1}{})
-  define an isotropic variogram model.
-  
-  \item Valid ranges for the angles characterizing the orientation of
-  the semi-variance ellipsoid are (in degrees): \eqn{\omega}{} [0, 180],
-  \eqn{\phi}{} [0, 180], \eqn{\zeta}{} [-90, 90].  
-  
-\end{itemize}
-
-
-\subsection{Estimating variance of micro-scale variation}\label{sec:est-details-microscale}
+\subsection{Estimating variance of micro-scale variation of signal}\label{sec:est-details-microscale}
 
 Simultaneous estimation of the variance of the micro-scale variation
-(\code{snugget}, \eqn{\sigma_\mathrm{n}^2}{}), which appears seemingly
-as spatially uncorrelated with a given sampling design, and of the
-variance (\code{nugget}, \eqn{\tau^2}{}) of the independent errors
-requires that for some locations
-\eqn{\mbox{\boldmath$s$\unboldmath}_i}{} replicated observations are
-available.  Locations less or equal than \code{zero.dist} apart are
-thereby considered as being coincident (see
-\code{control.georob()}).
+(\code{snugget}, \eqn{\sigma_\mathrm{n}^2}{}), of the signal, which
+appears seemingly as spatially uncorrelated with a given sampling
+design, and of the variance (\code{nugget}, \eqn{\tau^2}{}) of the
+independent errors requires that for some locations
+\eqn{\boldsymbol{s}_i}{} replicated observations are available.
+Locations less or equal than \code{zero.dist} apart are thereby
+considered as being coincident (see \code{control.georob()}).
 
 %
 \subsection{Estimating variance parameters by Gaussian (RE)ML}\label{sec:est-details-gaussian-reml}
@@ -2299,10 +2377,10 @@ variances can be re-parametrized to
 
 \begin{itemize}
 
-\item the signal variance 
+\item the signal variance
 \eqn{\sigma_B^2 = \sigma^2 + \sigma_{\mathrm{n}}^2}{},
 
-\item the inverse relative nugget 
+\item the inverse relative nugget
 \eqn{\eta = \sigma_B^2 / \tau^2}{} and
 
 \item the relative auto-correlated signal variance
@@ -2328,21 +2406,21 @@ by the argument \code{reparam} of the function
 \subsection{Constraining estimates of variogram parameters}\label{sec:est-details-constraining-parameters}
 
 Parameters of variogram models can vary only within certain bounds
-(see \code{param.bounds()} and \code{RMmodel()} for allowed ranges).
+(see \code{param.bounds()} and \code{gencorr()} for allowed ranges).
 \code{georob()} uses three mechanisms to constrain parameter estimates
 to permissible ranges:
 
 \begin{enumerate}
-  
+
   \item \emph{Parameter transformations}: By default, all variance
   (\code{variance}, \code{snugget}, \code{nugget}), the range
   \code{scale} and the anisotropy parameters \code{f1} and \code{f2}
   are log-transformed before solving the estimating equations or
   maximizing the restricted log-likelihood and this warrants that the
   estimates are always positive (see \code{control.georob()} and
-  section~\ref{sec:parameter-transformations} for detailed
+  \autoref{sec:parameter-transformations} for detailed
   explanations how to control parameter transformations).
-  
+
   \item \emph{Checking permissible ranges}: The additional parameters
   of the variogram models such as the smoothness parameter \eqn{\nu}{}
   of the Whittle-Mat\'ern model are forced to stay in the permissible
@@ -2353,7 +2431,7 @@ to permissible ranges:
   likely gets stuck at a point on the boundary of the parameter space
   and is therefore just a workaround for avoiding runtime errors due
   to invalid parameter values.
-  
+
   \item \emph{Exploiting the functionality of
   {\upshape\code{nlminb()}} and {\upshape\code{optim()}}}: If a
   spatial model is fitted non-robustly, then the arguments
@@ -2369,8 +2447,8 @@ to permissible ranges:
   models (use \\{} \code{param.names(variogram.model)} to display the
   names and the order of the additional parameters for
   \code{variogram.model}).
-  
-  
+
+
 \end{enumerate}
 
 
@@ -2378,22 +2456,22 @@ to permissible ranges:
 \subsection{Computing robust initial estimates of parameters for robust REML}\label{sec:est-details-initial-values}
 
 To solve the robustified estimating equations for
-\eqn{\mbox{\boldmath$B$\unboldmath}}{} and
-\eqn{\mbox{\boldmath$\beta$\unboldmath}}{} the following initial
+\eqn{\boldsymbol{B}}{} and
+\eqn{\boldsymbol{\beta}}{} the following initial
 estimates are used:
 
 \begin{itemize}
 
-  \item \eqn{ \widehat{\mbox{\boldmath$B$\unboldmath}}=
-  \mbox{\boldmath$0$\unboldmath},}{} if this turns out to be
+  \item \eqn{ \widehat{\boldsymbol{B}}=
+  \boldsymbol{0},}{} if this turns out to be
   infeasible, initial values can be passed to \code{georob()} by the
   argument \code{bhat} of \code{control.georob()}.
-  
-  \item \eqn{\widehat{\mbox{\boldmath$\beta$\unboldmath}}}{} is either
+
+  \item \eqn{\widehat{\boldsymbol{\beta}}}{} is either
   estimated robustly by the function \code{lmrob()}, \code{rq()} or
   non-robustly by \code{lm()} (see argument \code{initial.fixef} of
   \code{control.georob()}).
-  
+
 
 \end{itemize}
 
@@ -2410,25 +2488,25 @@ often sufficiently close to the roots so that \code{nleqslv()}
 converges.  This is achieved by:
 
 \begin{enumerate}
-  
+
   \item Initial values of the regression parameters are computed by
   \code{lmrob()} irrespective of the choice for \code{initial.fixef}
   (see \code{control.georob()}).
-  
+
   \item Observations with ``robustness weights'' of the \code{lmrob}
   fit, satisfying\\{}
   \eqn{\psi_c(\widehat{\varepsilon}_i/\widehat{\tau})/(\widehat{\varepsilon}_i/\widehat{\tau})
   \leq \mbox{\code{min.rweight}}}{}, are discarded (see
   \code{control.georob()}).
-  
-  \item The model is fit to the pruned data set by Gaussian REML using 
+
+  \item The model is fit to the pruned data set by Gaussian REML using
   \code{optim()} or \code{nlminb()}.
-  
+
   \item The resulting estimates of the variogram parameters
   (\code{param}, \code{aniso}) are used as initial estimates for the
   subsequent robust fit of the model by \code{nleqslv()}.
-  
-  
+
+
 \end{enumerate}
 
 
@@ -2439,15 +2517,15 @@ possibly \code{aniso}) must be provided to \code{georob()}.
 
 %
 % \subsection{Approximation of covariances of fixed and random effects and residuals}\label{sec:est-details-covariances}
-% 
+%
 % The robustified estimating equations of robust REML depend on the
-% covariances of \eqn{\widehat{\mbox{\boldmath$B$\unboldmath}}}{}.
+% covariances of \eqn{\widehat{\boldsymbol{B}}}{}.
 % These covariances (and the covariances of
-% \eqn{\mbox{\boldmath$B$\unboldmath}-\widehat{\mbox{\boldmath$B$\unboldmath}}}{},
-% \eqn{\widehat{\mbox{\boldmath$\beta$\unboldmath}}}{},
-% \eqn{\widehat{\mbox{\boldmath$\varepsilon$\unboldmath}}}{},
-% \eqn{\widehat{\mbox{\boldmath$\varepsilon$\unboldmath}} +
-% \widehat{\mbox{\boldmath$B$\unboldmath}}}{}) are approximated by
+% \eqn{\boldsymbol{B}-\widehat{\boldsymbol{B}}}{},
+% \eqn{\widehat{\boldsymbol{\beta}}}{},
+% \eqn{\widehat{\boldsymbol{\varepsilon}}}{},
+% \eqn{\widehat{\boldsymbol{\varepsilon}} +
+% \widehat{\boldsymbol{B}}}{}) are approximated by
 % expressions that in turn depend on the variances of
 % \eqn{\varepsilon}{}, \eqn{\psi_c(\varepsilon/\tau)}{} and the
 % expectation of \eqn{\psi_c'(\varepsilon/\tau)\ (= \partial / \partial
@@ -2458,28 +2536,28 @@ possibly \code{aniso}) must be provided to \code{georob()}.
 % compute the variances of \eqn{\varepsilon}{},
 % \eqn{\psi_c(\varepsilon/\tau)}{} and the expectation of
 % \eqn{\psi_c'(\varepsilon/\tau)}{} when
-% 
+%
 % \begin{itemize}
-%   
+%
 %   \item solving the estimating equations (\code{error.family.estimation}),
-%   
+%
 %   \item computing the covariances of
-%   \eqn{\widehat{\mbox{\boldmath$\beta$\unboldmath}}}{},
-%   \eqn{\widehat{\mbox{\boldmath$B$\unboldmath}}}{} and
-%   \eqn{\mbox{\boldmath$B$\unboldmath}-\widehat{\mbox{\boldmath$B$\unboldmath}}}{}
+%   \eqn{\widehat{\boldsymbol{\beta}}}{},
+%   \eqn{\widehat{\boldsymbol{B}}}{} and
+%   \eqn{\boldsymbol{B}-\widehat{\boldsymbol{B}}}{}
 %   (\code{error.family.cov.effects}) and
-%   
+%
 %   \item computing the covariances of
-%   \eqn{\widehat{\mbox{\boldmath$\varepsilon$\unboldmath}}=\mbox{\boldmath$Y$\unboldmath}
-%   - \mbox{\boldmath$X$\unboldmath}
-%   \widehat{\mbox{\boldmath$\beta$\unboldmath}} -
-%   \widehat{\mbox{\boldmath$B$\unboldmath}}}{} and \eqn{\widehat{\mbox{\boldmath$\varepsilon$\unboldmath}} +
-%   \widehat{\mbox{\boldmath$B$\unboldmath}}
-%   =\mbox{\boldmath$Y$\unboldmath} - \mbox{\boldmath$X$\unboldmath}
-%   \widehat{\mbox{\boldmath$\beta$\unboldmath}}}{} (\code{error.family.cov.residuals}).
-%   
+%   \eqn{\widehat{\boldsymbol{\varepsilon}}=\boldsymbol{Y}
+%   - \boldsymbol{x}
+%   \widehat{\boldsymbol{\beta}} -
+%   \widehat{\boldsymbol{B}}}{} and \eqn{\widehat{\boldsymbol{\varepsilon}} +
+%   \widehat{\boldsymbol{B}}
+%   =\boldsymbol{Y} - \boldsymbol{x}
+%   \widehat{\boldsymbol{\beta}}}{} (\code{error.family.cov.residuals}).
+%
 % \end{itemize}
-% 
+%
 % Possible options are: \code{"gaussian"} or \code{"long.tailed"}.  In
 % the latter case, the PDF of \eqn{\varepsilon}{} is assumed to be
 % proportional to \eqn{1/\tau \, \exp(-\rho_c(\varepsilon/\tau))}{}, where
@@ -2490,16 +2568,16 @@ possibly \code{aniso}) must be provided to \code{georob()}.
 
 As a further option, \code{georob()} allows to estimate parameters of
 so-called ``nested'' variogram models.  For this one assumes that the
-signal process $Z(\mb{s})$ is the sum of several independent
+Gaussian process $B(\mb{s})$ is the sum of several independent
 auto-correlated Gaussian processes $B_{k}(\mb{s})$
 %
 \begin{equation}
-  B(\mb{s}) = \sum_{k=1}^{K} B_{k}(\mb{s}), 
+  B(\mb{s}) = \sum_{k=1}^{K} B_{k}(\mb{s}),
 \end{equation}
 %
 each characterized by a parametric variogram function with parameters
-($\sigma^2_{Z,k}$, $\mb{\theta}_{k}$), see equation
-\ref{eq:covariance-matrix-signal}.
+($\sigma^2_{B,k}$, $\mb{\theta}_{k}$), see
+\autoref{eq:covariance-matrix-signal}.
 %
 Initial values for nested variogram models are passed to
 \code{georob()} by the argument \code{variogram.object}, which must be
@@ -2509,7 +2587,7 @@ and \code{param} and the optional components \code{fit.param},
 \code{aniso} and \code{fit.aniso}.  Note that sensible defaults are
 used if the optional components are missing.  Note further that
 \code{nugget} and \code{snugget} may be specified for all $k$ model
-strctures but these variances are summed-up and assigned to the first
+structures but these variances are summed-up and assigned to the first
 model structure ($k=1$) and all \code{nugget} and \code{snugget} are
 set to zero for $k > 1$.
 
@@ -2524,7 +2602,7 @@ constant $c$ of the $\psi_{c}$-function (argument \code{tuning.psi} of
 \code{georob()}) are set by the arguments of the function
 \code{control.georob()}, which generates a list that is passed by the
 \code{control} argument to \code{georob()}.
-% 
+%
 This section describes in some detail how to control \code{georob()}
 by the various arguments of \code{control.georob()}.
 
@@ -2532,12 +2610,12 @@ by the various arguments of \code{control.georob()}.
 \subsubsection{Gaussian (RE)ML estimation}\label{sec:gaussian-reml}
 
 Gaussian (RE)ML estimates are computed provided \code{tuning.psi}
-$\geq 1000$.  
+$\geq 1000$.
 %
 Use the argument \code{ml.method} to select either \code{"ML"} or
 \code{"REML"} (default) and the argument \code{reparam} to
 control whether the re-parametrized (default  \code{TRUE}) or the original
-variogram parameters are estimated (see section~\ref{sec:est-details-gaussian-reml}).
+variogram parameters are estimated (see \autoref{sec:est-details-gaussian-reml}).
 %
 The function used to maximize the (restricted) log-likelihood is
 chosen by the argument \code{maximizer} (default \code{"nlminb"}).
@@ -2559,7 +2637,7 @@ based on the asymptotic normal distribution of (RE)ML estimates
 The argument \code{psi.func} selects the $\psi_{c}$-function for robust
 REML. Apart from a shifted and scaled logistic CDF
 %
-\[ 
+\[
   \psi_{c}(x) = \tanh(x/c)
 \]
 %
@@ -2567,14 +2645,14 @@ REML. Apart from a shifted and scaled logistic CDF
 re-descending $\psi_c$-function based on the $t$-distribution
 (\code{"t.dist"})
 %
-\[ 
+\[
   \psi_{c}(x) = \frac{c^2\,x}{c^2+x^2}
 \]
 can be used.
 
 The argument \code{initial.fixef} chooses the function for computing
 (robust) initial estimates of \mb{\beta}.  Possible choices are
-\code{"lmrob"} (default) \code{"rq"} and \code{"lm"}.  
+\code{"lmrob"} (default) \code{"rq"} and \code{"lm"}.
 %
 Use the argument \code{lmrob} along with the function
 \code{lmrob.control()} (or the argument \code{rq} along with the
@@ -2583,7 +2661,7 @@ function \code{control.rq()} to pass arguments to \code{lmrob()} (or
 %
 The argument \code{initial.param} controls whether robust initial
 estimates of the variogram parameters are computed (default
-\code{TRUE}, see section~\ref{sec:est-details-initial-values}).
+\code{TRUE}, see \autoref{sec:est-details-initial-values}).
 
 For given variogram parameters, the estimating equations for
 \mb{\beta} and \mb{B} are solved by iterated re-weighted least squares
@@ -2604,13 +2682,13 @@ particular \code{ftol}, which controls convergence for root finding.
 \subsubsection{Approximation of covariances of fixed and random effects and residuals}\label{sec-covariances-fixed-random-efects}
 
 The robustified estimating equations of robust REML depend on the
-covariances of \eqn{\widehat{\mbox{\boldmath$B$\unboldmath}}}{}.
+covariances of \eqn{\widehat{\boldsymbol{B}}}{}.
 These covariances (and the covariances of
-\eqn{\mbox{\boldmath$B$\unboldmath}-\widehat{\mbox{\boldmath$B$\unboldmath}}}{},
-\eqn{\widehat{\mbox{\boldmath$\beta$\unboldmath}}}{},
-\eqn{\widehat{\mbox{\boldmath$\varepsilon$\unboldmath}}}{},
-\eqn{\widehat{\mbox{\boldmath$\varepsilon$\unboldmath}} +
-\widehat{\mbox{\boldmath$B$\unboldmath}}}{}) are approximated by
+\eqn{\boldsymbol{B}-\widehat{\boldsymbol{B}}}{},
+\eqn{\widehat{\boldsymbol{\beta}}}{},
+\eqn{\widehat{\boldsymbol{\varepsilon}}}{},
+\eqn{\widehat{\boldsymbol{\varepsilon}} +
+\widehat{\boldsymbol{B}}}{}) are approximated by
 expressions that in turn depend on the variances of
 \eqn{\varepsilon}{}, \eqn{\psi_c(\varepsilon/\tau)}{} and the
 expectation of \eqn{\psi_c'(\varepsilon/\tau)\ (= \partial / \partial
@@ -2623,24 +2701,24 @@ compute the variances of \eqn{\varepsilon}{},
 \eqn{\psi_c'(\varepsilon/\tau)}{} when
 
 \begin{itemize}
-  
+
   \item solving the estimating equations (\code{error.family.estimation}),
-  
+
   \item computing the covariances of
-  \eqn{\widehat{\mbox{\boldmath$\beta$\unboldmath}}}{},
-  \eqn{\widehat{\mbox{\boldmath$B$\unboldmath}}}{} and
-  \eqn{\mbox{\boldmath$B$\unboldmath}-\widehat{\mbox{\boldmath$B$\unboldmath}}}{}
+  \eqn{\widehat{\boldsymbol{\beta}}}{},
+  \eqn{\widehat{\boldsymbol{B}}}{} and
+  \eqn{\boldsymbol{B}-\widehat{\boldsymbol{B}}}{}
   (\code{error.family.cov.effects}) and
-  
+
   \item computing the covariances of
-  \eqn{\widehat{\mbox{\boldmath$\varepsilon$\unboldmath}}=\mbox{\boldmath$Y$\unboldmath}
-  - \mbox{\boldmath$X$\unboldmath}
-  \widehat{\mbox{\boldmath$\beta$\unboldmath}} -
-  \widehat{\mbox{\boldmath$B$\unboldmath}}}{} and \eqn{\widehat{\mbox{\boldmath$\varepsilon$\unboldmath}} +
-  \widehat{\mbox{\boldmath$B$\unboldmath}}
-  =\mbox{\boldmath$Y$\unboldmath} - \mbox{\boldmath$X$\unboldmath}
-  \widehat{\mbox{\boldmath$\beta$\unboldmath}}}{} (\code{error.family.cov.residuals}).
-  
+  \eqn{\widehat{\boldsymbol{\varepsilon}}=\boldsymbol{Y}
+  - \boldsymbol{x}
+  \widehat{\boldsymbol{\beta}} -
+  \widehat{\boldsymbol{B}}}{} and \eqn{\widehat{\boldsymbol{\varepsilon}} +
+  \widehat{\boldsymbol{B}}
+  =\boldsymbol{Y} - \boldsymbol{x}
+  \widehat{\boldsymbol{\beta}}}{} (\code{error.family.cov.residuals}).
+
 \end{itemize}
 
 Possible options are: \code{"gaussian"} or \code{"long.tailed"}.  In
@@ -2686,13 +2764,13 @@ returned by \code{fwd.transf()}, \code{dfwd.transf()} and
 
 \begin{enumerate}
   \item Extending the function definitions by arguments like
-  
+
   \code{fwd.tf = fwd.transf(my.fun = function(x) your transformation)},\\{}
   \code{deriv.fwd.tf = dfwd.transf(my.fun = function(x) your derivative)},\\{}
   \code{bwd.tf = bwd.transf(my.fun = function(x) your back-transformation)},
-  
+
   \item Assigning to a given argument of \code{param.transf} the name of
-  the new function, e.g.\\{} \code{variance = "my.fun"}.  
+  the new function, e.g.\\{} \code{variance = "my.fun"}.
 \end{enumerate}
 
 Note that the values given for the arguments of \code{param.transf()}
@@ -2707,28 +2785,28 @@ must match a name of the functions returned by \code{fwd.transf()},
 \begin{ldescription}
 
   \item[\code{bhat}] initial values for the spatial random effects
-  \eqn{\widehat{\mbox{\boldmath$B$\unboldmath}}}{}, with
-  \eqn{\widehat{\mbox{\boldmath$B$\unboldmath}}=\mbox{\boldmath$0$\unboldmath}}{}
+  \eqn{\widehat{\boldsymbol{B}}}{}, with
+  \eqn{\widehat{\boldsymbol{B}}=\boldsymbol{0}}{}
   if \code{bhat} is equal to \code{NULL} (default).
-  
+
   \item[\code{force.gradient}] logical controlling whether the estimating
   equations or the gradient of the Gaussian restricted log-likelihood are
   evaluated even if all variogram parameters are fixed (default
   \code{FALSE}).
-  
+
   \item[\code{min.condnum}] positive numeric.  Minimum acceptable ratio of smallest to
   largest singular value of the model matrix
-  \eqn{\mbox{\boldmath$X$\unboldmath}}{} (default \code{1.e-12}).
-  
+  \eqn{\boldsymbol{X}}{} (default \code{1.e-12}).
+
   \item[\code{zero.dist}] positive numeric equal to the maximum distance, separating two
   sampling locations that are still considered as being coincident.
-  
+
 \end{ldescription}
 
 Note that \code{georob()} can fit models with rank-deficient model
 matrices.  It uses then the Moore-Penrose inverse of the matrix
 $\mb{X} \mb{V}_{\alpha,\xi}^{-1}\mb{X}$ to compute the projection
-matrices $\mb{A}_{\alpha}$ and $\mb{P}_{\alpha}$ 
+matrices $\mb{A}_{\alpha}$ and $\mb{P}_{\alpha}$
 \citep[see][]{Kuensch-etal-in-prep}.
 
 
@@ -2744,29 +2822,29 @@ parallelized computations.  The following tasks may be executed in
 parallel:
 
 \begin{enumerate}
-  
+
   \item \label{item:parallel-other} Simultaneously fitting multiple
   models by functions \code{cv.georob()},
-  \code{profilelogLik()} (section~\ref{sec:model-assessment}),
+  \code{profilelogLik()} (\autoref{sec:model-assessment}),
   \code{add1.georob()}, \code{drop1.georob()} and
-  \code{step.georob()} (section~\ref{sec:model-building});
- 
+  \code{step.georob()} (\autoref{sec:model-building});
+
   \item \label{item:parallel-predict} computing Kriging predictions by
-  \code{predict.georob()} (section~\ref{sec:predict-georob});
-  
+  \code{predict.georob()} (\autoref{sec:predict-georob});
+
   \item \label{item:parallel-pmm} matrix multiplication by function \code{pmm()};
-    
+
   \item \label{item:parallel-gcr} computing the (generalized)
   covariance matrix $\mb{\Gamma}_{\theta}$ of the data by the
   (non-exported) function \code{f.aux.gcr()}.
-  
+
 \end{enumerate}
 
-For tasks \ref{item:parallel-other} and \ref{item:parallel-predict}
+For tasks~\ref{item:parallel-other} and \ref{item:parallel-predict}
 the functions have an argument \code{ncores} to control how many cores
 should be used for parallel computations.
 %
-For tasks \ref{item:parallel-pmm} and \ref{item:parallel-gcr} one can
+For tasks~\ref{item:parallel-pmm} and \ref{item:parallel-gcr} one can
 use the argument \code{pcmp} of \code{control.georob()} along with the
 function \code{pcmp.control()} to control parallelized computations.
 The function \code{pcmp.control()} has the following arguments:
@@ -2781,7 +2859,7 @@ computation of (generalized) covariance matrix.
 \item[\code{max.ncores}] allowed maximum number of cores (integer,
 default all cores of a machine) used for parallelized computations.
 
-\item[\code{f}] number (integer, default 2) of tasks assigned to each core in
+\item[\code{f}] number (integer, default 1) of tasks assigned to each core in
   parallelized computations.
 
 \item[\code{sfstop}] logical controlling whether the SNOW socket
@@ -2789,19 +2867,23 @@ cluster is stopped after each parallelized computations on windows OS
 (default \code{FALSE}).
 
 \item[\code{allow.recursive}] logical controlling whether nested parallelized
-computation should be allowed (default \code{TRUE}).
+computation should be allowed (default \code{FALSE}).
+
+\item[\code{fork}] logical controlling whether forking should be used
+for parallel computations (default TRUE on unix and FALSE on windows
+operating systems).  Note that settting fork = TRUE on windows
+suppresses parallel computations.
 
 \end{ldescription}
 
 Generating child processes requires itself resources and increasing
-the number of cores for tasks \ref{item:parallel-pmm} and
+the number of cores for tasks~\ref{item:parallel-pmm} and
 \ref{item:parallel-gcr} does not always result in reduced computing
-time.  A sensible default for the number of cores for tasks
-\ref{item:parallel-pmm} and \ref{item:parallel-gcr} is likely
-2.  \code{max.ncores} controls how many child processes
-are generated in total.  This can be used to prevent that child
-processes generate themselves children which may result in too many
-child processes.
+time.  A sensible default for the number of cores for
+tasks~\ref{item:parallel-pmm} and \ref{item:parallel-gcr} is likely 1.
+\code{max.ncores} controls how many child processes are generated in
+total.  This can be used to prevent that child processes generate
+themselves children which may result in too many child processes.
 
 \smallskip
 
@@ -2819,7 +2901,7 @@ multiplication, and one should therefore use the default argument
 
 
 
-%% 
+%%
  % Details Kriging
  %%
 
@@ -2835,7 +2917,7 @@ multiplication, and one should therefore use the default argument
 
 The \code{predict} method of class \code{georob} computes customary or
 robust external drift point or block plug-in Kriging predictions (see
-equation \ref{eq:robust-edk}).  
+\autoref{eq:robust-edk}).
 %
 Data about the prediction targets are passed as argument
 \code{newdata} to \code{predict.georob()}, where \code{newdata} can be
@@ -2854,34 +2936,34 @@ computed, otherwise point Kriging predictions.
 \subsubsection{Prediction targets}\label{sec:prediction-targets}
 
 % \smallskip
-% 
+%
 The argument \code{type} controls what quantities
 \code{predict.georob()} computes (given here for a target point
 \mb{s}, but the same quantities are also computed for a block):
 %
 \begin{itemize}
-  
+
   \item \code{"signal"}: the ``signal''
-  \eqn{Z(\mbox{\boldmath$s$\unboldmath}) =
-  \mbox{\boldmath$x$\unboldmath}(\mbox{\boldmath$s$\unboldmath})^\mathrm{T}
-  \mbox{\boldmath$\beta$\unboldmath} +
-  B(\mbox{\boldmath$s$\unboldmath})}{} of
+  \eqn{Z(\boldsymbol{s}) =
+  \boldsymbol{x}(\boldsymbol{s})^\mathrm{T}
+  \boldsymbol{\beta} +
+  B(\boldsymbol{s})}{} of
   the process (default),
-  
+
   \item \code{"response"}: the observations
-  \eqn{Y(\mbox{\boldmath$s$\unboldmath}) =
-  Z(\mbox{\boldmath$s$\unboldmath}) +
-  \varepsilon(\mbox{\boldmath$s$\unboldmath}),}{}
-  
+  \eqn{Y(\boldsymbol{s}) =
+  Z(\boldsymbol{s}) +
+  \varepsilon(\boldsymbol{s}),}{}
+
   \item \code{"trend"}: the external drift
-  \eqn{\mbox{\boldmath$x$\unboldmath}(\mbox{\boldmath$s$\unboldmath})^\mathrm{T}
-  \mbox{\boldmath$\beta$\unboldmath},}{}
-  
+  \eqn{\boldsymbol{x}(\boldsymbol{s})^\mathrm{T}
+  \boldsymbol{\beta},}{}
+
   \item \code{"terms"}: the model terms.  The argument \code{terms}
   can then be used to select the terms (default
   all terms) and \code{se.fit} controls whether standard errors of the
   terms are computed (default \code{TRUE}).
-  
+
 \end{itemize}
 
 
@@ -2892,7 +2974,7 @@ Use the argument \code{control} along with the function
 \code{predict.georob()} actually does:
 
 
-\paragraph{Covariance matrices} 
+\paragraph{Covariance matrices}
 The argument \code{full.covmat} of \code{control.predict.georob()}
 controls whether the full covariance matrices of prediction errors,
 fitted trend, etc.\ are computed (\code{TRUE}) or only the vector with
@@ -2905,32 +2987,32 @@ Use the argument \code{extended.output = TRUE} of
 the (approximately) unbiased back-transformation of Kriging
 predictions of log-transformed data to the original scale of the
 measurements by \code{lgnpp()} (see
-section~\ref{sec:krig-details-lognormal}).  In more detail, the
+\autoref{sec:krig-details-lognormal}).  In more detail, the
 following items are computed:
 
 \begin{itemize}
-  
+
   \item \code{trend}: the fitted values,
-  \eqn{\mbox{\boldmath$x$\unboldmath}(\mbox{\boldmath$s$\unboldmath})\mathrm{^T}\widehat{\mbox{\boldmath$\beta$\unboldmath}}}{},
-  
+  \eqn{\boldsymbol{x}(\boldsymbol{s})\mathrm{^T}\widehat{\boldsymbol{\beta}}}{},
+
   \item \code{var.pred}: the variances of the Kriging predictions,
-  \eqn{\mathrm{Var}_{\hat{\theta}}[\widehat{Y}(\mbox{\boldmath$s$\unboldmath})]}{}
+  \eqn{\mathrm{Var}_{\hat{\theta}}[\widehat{Y}(\boldsymbol{s})]}{}
   or
-  \eqn{\mathrm{Var}_{\hat{\theta}}[\widehat{Z}(\mbox{\boldmath$s$\unboldmath})]}{},
-  
+  \eqn{\mathrm{Var}_{\hat{\theta}}[\widehat{Z}(\boldsymbol{s})]}{},
+
   \item \code{cov.pred.target}: the covariances between the
   predictions and the prediction targets,\\{}
-  \eqn{\mathrm{Cov}_{\hat{\theta}}[\widehat{Y}(\mbox{\boldmath$s$\unboldmath}),Y(\mbox{\boldmath$s$\unboldmath})]}{}
+  \eqn{\mathrm{Cov}_{\hat{\theta}}[\widehat{Y}(\boldsymbol{s}),Y(\boldsymbol{s})]}{}
   or
-  \eqn{\mathrm{Cov}_{\hat{\theta}}[\widehat{Z}(\mbox{\boldmath$s$\unboldmath}),Z(\mbox{\boldmath$s$\unboldmath})]}{},
-  
-  
+  \eqn{\mathrm{Cov}_{\hat{\theta}}[\widehat{Z}(\boldsymbol{s}),Z(\boldsymbol{s})]}{},
+
+
   \item \code{var.target}: the variances of the prediction targets
-  \eqn{\mathrm{Var}_{\hat{\theta}}[Y(\mbox{\boldmath$s$\unboldmath})]}{}
+  \eqn{\mathrm{Var}_{\hat{\theta}}[Y(\boldsymbol{s})]}{}
   or
-  \eqn{\mathrm{Var}_{\hat{\theta}}[Z(\mbox{\boldmath$s$\unboldmath})]}{}.
-  
-  
+  \eqn{\mathrm{Var}_{\hat{\theta}}[Z(\boldsymbol{s})]}{}.
+
+
 \end{itemize}
 
 Note that the component \code{var.pred} is also present if \code{type}
@@ -2946,11 +3028,11 @@ Depending on the values passed to \code{type}, \code{full.covmat} and
 \code{extended.output}, \code{predict.georob()} returns the following object:
 
 \begin{enumerate}
-  
+
   \item If \code{type} is equal to \code{"terms"} then a vector, a
   matrix, or a list with prediction results along with bounds and
   standard errors, see \code{predict.lm()}.
-  
+
   \item If \code{type} is not equal to \code{"terms"} and
   \code{full.covmat} is \code{FALSE} then the result is an object of
   the same class as \code{newdata} (data frame,
@@ -2960,54 +3042,54 @@ Depending on the values passed to \code{type}, \code{full.covmat} and
   \code{{SpatialPolygonsDataFrame}}).
   The data frame or the \code{data} slot of the
   \code{Spatial{\itshape xxx\,}DataFrame} objects have the following components:
-  
+
   \begin{itemize}
-    
+
     \item the coordinates of the prediction points (only present if
     \code{newdata} is a data frame).
-    
+
     \item \code{pred}: the Kriging predictions (or fitted values).
-    
+
     \item \code{se}: the root mean squared prediction errors (Kriging
     standard errors).
-    
+
     \item \code{lower}, \code{upper}: the limits of
     tolerance/confidence intervals (the confidence level is set by the
     argument \code{signif}) of \code{predict.georob()}),
-    
+
     \item \code{trend}, \code{var.pred}, \code{cov.pred.target},
     \code{var.target}: only present if \code{extended.output} is \code{TRUE},
     see above.
-    
+
   \end{itemize}
-  
+
   \item If \code{type} is not equal to \code{"terms"} and
   \code{full.covmat} is \code{TRUE} then \code{predict.georob()}
   returns a list with the following components:
-  
+
   \begin{itemize}
-    
+
     \item \code{pred}: a data frame or a \code{Spatial{\itshape xxx\,}DataFrame}
     object as described above for\\{} \code{full.covmat = FALSE}.
-    
+
     \item \code{mse.pred}: the full covariance matrix of the
     prediction errors,
-    \eqn{Y(\mbox{\boldmath$s$\unboldmath})-\widehat{Y}(\mbox{\boldmath$s$\unboldmath})}{}
+    \eqn{Y(\boldsymbol{s})-\widehat{Y}(\boldsymbol{s})}{}
     or
-    \eqn{Z(\mbox{\boldmath$s$\unboldmath})-\widehat{Z}(\mbox{\boldmath$s$\unboldmath})}{}
+    \eqn{Z(\boldsymbol{s})-\widehat{Z}(\boldsymbol{s})}{}
     see above.
-    
+
     \item \code{var.pred}: the full covariance matrix of the Kriging
     predictions, see above.
-    
+
     \item \code{cov.pred.target}: the full covariance matrix of the
     predictions and the prediction targets, see above.
-    
+
     \item \code{var.target}: the full covariance matrix of the
     prediction targets, see above.
-        
+
   \end{itemize}
-  
+
 \end{enumerate}
 
 \clearpage
@@ -3071,24 +3153,24 @@ models cannot be used for block Kriging.
 its results in parallel.  The parallelization is controlled by the
 arguments \code{mmax} and \code{ncores} of
 \code{control.predict.georob()} (and \code{pcmp} along with the
-function \code{control.pcmp()}, see section~\ref{sec:parallization}):
-% 
+function \code{control.pcmp()}, see \autoref{sec:parallization}):
+%
 % \begin{ldescription}
-%   
+%
 %   \item[\code{mmax}] integer equal to the maximum number (default
 %   \code{10000}) of prediction items, computed in a sub-task, see
 %   below.
-%   
+%
 %   \item[\code{ncores}] positive integer controlling how many cores are
 %   used for parallelized computations, see below.
-%   
+%
 % \end{ldescription}
-% 
+%
 If there are \eqn{m}{} items to compute, the task is split into
 \code{ceiling(m/mmax)} sub-tasks that are then distributed to
 \code{ncores} CPUs.  Evidently, \code{ncores = 1} suppresses parallel
 execution.  By default, the function uses all available CPUs as
-returned by \code{{detectCores()}}.  Note that if \code{full.covmat} is
+returned by \code{parallel::detectCores()}.  Note that if \code{full.covmat} is
 \code{TRUE} \code{mmax} must exceed \eqn{m}{} (and parallel execution
 is not possible).
 
@@ -3110,37 +3192,37 @@ mean squared prediction error of the block mean.
 The items required for the back-transformation are computed by
 \code{predict.georob()} if the argument \code{control =
 control.georob.predict(extended.output = TRUE)} is used, see
-section~\ref{sec:predict-georob}.
+\autoref{sec:predict-georob}.
 
 % In more
 % detail, the following items are then computed:
-% 
+%
 % \begin{itemize}
-%   
-%   
+%
+%
 %   \item \code{trend}: the fitted values,
-%   \eqn{\mbox{\boldmath$x$\unboldmath}(\mbox{\boldmath$s$\unboldmath})\mathrm{^T}\widehat{\mbox{\boldmath$\beta$\unboldmath}}}{},
-%   
-%   \item \code{var.pred}: the variances of the Kriging predictions, 
-%   \eqn{\mathrm{Var}_{\hat{\theta}}[\widehat{Y}(\mbox{\boldmath$s$\unboldmath})]}{} or 
-%   \eqn{\mathrm{Var}_{\hat{\theta}}[\widehat{Z}(\mbox{\boldmath$s$\unboldmath})]}{},
-%   
+%   \eqn{\boldsymbol{x}(\boldsymbol{s})\mathrm{^T}\widehat{\boldsymbol{\beta}}}{},
+%
+%   \item \code{var.pred}: the variances of the Kriging predictions,
+%   \eqn{\mathrm{Var}_{\hat{\theta}}[\widehat{Y}(\boldsymbol{s})]}{} or
+%   \eqn{\mathrm{Var}_{\hat{\theta}}[\widehat{Z}(\boldsymbol{s})]}{},
+%
 %   \item \code{cov.pred.target}: the covariances between the predictions and the
 %   prediction targets,\\{}
-%   \eqn{\mathrm{Cov}_{\hat{\theta}}[\widehat{Y}(\mbox{\boldmath$s$\unboldmath}),Y(\mbox{\boldmath$s$\unboldmath})]}{} or 
-%   \eqn{\mathrm{Cov}_{\hat{\theta}}[\widehat{Z}(\mbox{\boldmath$s$\unboldmath}),Z(\mbox{\boldmath$s$\unboldmath})]}{},
-%   
-%   
+%   \eqn{\mathrm{Cov}_{\hat{\theta}}[\widehat{Y}(\boldsymbol{s}),Y(\boldsymbol{s})]}{} or
+%   \eqn{\mathrm{Cov}_{\hat{\theta}}[\widehat{Z}(\boldsymbol{s}),Z(\boldsymbol{s})]}{},
+%
+%
 %   \item \code{var.target}: the variances of the prediction targets
-%   \eqn{\mathrm{Var}_{\hat{\theta}}[Y(\mbox{\boldmath$s$\unboldmath})]}{} or 
-%   \eqn{\mathrm{Var}_{\hat{\theta}}[Z(\mbox{\boldmath$s$\unboldmath})]}{}.
-%   
-%   
+%   \eqn{\mathrm{Var}_{\hat{\theta}}[Y(\boldsymbol{s})]}{} or
+%   \eqn{\mathrm{Var}_{\hat{\theta}}[Z(\boldsymbol{s})]}{}.
+%
+%
 % \end{itemize}
-% 
-% 
-% Note that the component \code{var.pred} is also  present if 
-% \code{type} is equal to \code{"trend"}, irrespective of the choice for \code{extended.output}.  
+%
+%
+% Note that the component \code{var.pred} is also  present if
+% \code{type} is equal to \code{"trend"}, irrespective of the choice for \code{extended.output}.
 % This component contains then the variances of the fitted values.
 
 
@@ -3155,21 +3237,21 @@ The usual, marginally unbiased back-transformation for log-normal point
 Kriging is used:
 
 \begin{equation}\label{eq:point-lk-predictor}
-  \widehat{U}(\mbox{\boldmath$s$\unboldmath}) = \exp( \widehat{Z}(\mbox{\boldmath$s$\unboldmath}) + 
-  1/2 (  \mathrm{Var}_{\hat{\theta}}[ Z(\mbox{\boldmath$s$\unboldmath})]
-  - \mathrm{Var}_{\hat{\theta}}[\widehat{Z}(\mbox{\boldmath$s$\unboldmath})])), 
+  \widehat{U}(\boldsymbol{s}) = \exp( \widehat{Z}(\boldsymbol{s}) +
+  1/2 (  \mathrm{Var}_{\hat{\theta}}[ Z(\boldsymbol{s})]
+  - \mathrm{Var}_{\hat{\theta}}[\widehat{Z}(\boldsymbol{s})])),
 \end{equation}
 %
 \begin{eqnarray}\label{eq:point-lk-msep}
   \lefteqn{\mathrm{Cov}_{\hat{\theta}}[
-  U(\mbox{\boldmath$s$\unboldmath}_i) - \widehat{U}(\mbox{\boldmath$s$\unboldmath}_i),
-  U(\mbox{\boldmath$s$\unboldmath}_j) - \widehat{U}(\mbox{\boldmath$s$\unboldmath}_j) 
-  ] = \mu_{\hat{\theta}}(\mbox{\boldmath$s$\unboldmath}_i) \mu_{\hat{\theta}}(\mbox{\boldmath$s$\unboldmath}_j)
+  U(\boldsymbol{s}_i) - \widehat{U}(\boldsymbol{s}_i),
+  U(\boldsymbol{s}_j) - \widehat{U}(\boldsymbol{s}_j)
+  ] = \mu_{\hat{\theta}}(\boldsymbol{s}_i) \mu_{\hat{\theta}}(\boldsymbol{s}_j)
   \big\{
-  \exp(\mathrm{Cov}_{\hat{\theta}}[Z(\mbox{\boldmath$s$\unboldmath}_i),Z(\mbox{\boldmath$s$\unboldmath}_j)])} \hspace{2cm}\nonumber \\
-   &&  \quad\quad 
-   -2\exp(\mathrm{Cov}_{\hat{\theta}}[\widehat{Z}(\mbox{\boldmath$s$\unboldmath}_i),Z(\mbox{\boldmath$s$\unboldmath}_j)]) 
-    +\exp(\mathrm{Cov}_{\hat{\theta}}[\widehat{Z}(\mbox{\boldmath$s$\unboldmath}_i),\widehat{Z}(\mbox{\boldmath$s$\unboldmath}_j)])
+  \exp(\mathrm{Cov}_{\hat{\theta}}[Z(\boldsymbol{s}_i),Z(\boldsymbol{s}_j)])} \hspace{2cm}\nonumber \\
+   &&  \quad\quad
+   -2\exp(\mathrm{Cov}_{\hat{\theta}}[\widehat{Z}(\boldsymbol{s}_i),Z(\boldsymbol{s}_j)])
+    +\exp(\mathrm{Cov}_{\hat{\theta}}[\widehat{Z}(\boldsymbol{s}_i),\widehat{Z}(\boldsymbol{s}_j)])
   \big\},
 \end{eqnarray}
 where \eqn{\widehat{Z}}{} and \eqn{\widehat{U}}{} denote the
@@ -3177,18 +3259,18 @@ log- and back-transformed predictions of the signal,
 and
 %
 \begin{equation}\label{eq:point-lk-mean}
-  \mu_{\hat{\theta}}(\mbox{\boldmath$s$\unboldmath}) \approx 
-      \exp(\mbox{\boldmath$x$\unboldmath}(\mbox{\boldmath$s$\unboldmath})\mathrm{^T}\widehat{\mbox{\boldmath$\beta$\unboldmath}} 
-      + 1/2 \mathrm{Var}_{\hat{\theta}}[Z(\mbox{\boldmath$s$\unboldmath})]).    
+  \mu_{\hat{\theta}}(\boldsymbol{s}) \approx
+      \exp(\boldsymbol{x}(\boldsymbol{s})\mathrm{^T}\widehat{\boldsymbol{\beta}}
+      + 1/2 \mathrm{Var}_{\hat{\theta}}[Z(\boldsymbol{s})]).
 \end{equation}
 %
 The expressions for the required covariance terms can be found in the
-Appendices of \citet{Nussbaum-etal-2012,Nussbaum-etal-2014b}.  
+Appendices of \citet{Nussbaum-etal-2012,Nussbaum-etal-2014b}.
 %
-Instead of the signal \eqn{Z(\mbox{\boldmath$s$\unboldmath})}{},
+Instead of the signal \eqn{Z(\boldsymbol{s})}{},
 predictions of the log-transformed response
-\eqn{Y(\mbox{\boldmath$s$\unboldmath})}{} or the estimated trend
-\eqn{\mbox{\boldmath$x$\unboldmath}(\mbox{\boldmath$s$\unboldmath})^\mathrm{T}\widehat{\mbox{\boldmath$\beta$\unboldmath}}}{}
+\eqn{Y(\boldsymbol{s})}{} or the estimated trend
+\eqn{\boldsymbol{x}(\boldsymbol{s})^\mathrm{T}\widehat{\boldsymbol{\beta}}}{}
 of the log-transformed data can be back-transformed.  The above
 transformations are used if the \code{object} passed as first argument
 to \code{lgnpp()} contains point Kriging predictions and if the
@@ -3205,9 +3287,9 @@ by \citet[Appendix~C]{Cressie-2006}
 
 \begin{equation}\label{eq:block-lk-predictor}
   \widehat{U}(A) = \exp( \widehat{Z}(A) + 1/2 \{
-    \mathrm{Var}_{\hat{\theta}}[Z(\mbox{\boldmath$s$\unboldmath})] + \widehat{\mbox{\boldmath$\beta$\unboldmath}}\mathrm{^T}
-    \mbox{\boldmath$M$\unboldmath}(A) \widehat{\mbox{\boldmath$\beta$\unboldmath}} -
-    \mathrm{Var}_{\hat{\theta}}[\widehat{Z}(A)]  
+    \mathrm{Var}_{\hat{\theta}}[Z(\boldsymbol{s})] + \widehat{\boldsymbol{\beta}}\mathrm{^T}
+    \boldsymbol{M}(A) \widehat{\boldsymbol{\beta}} -
+    \mathrm{Var}_{\hat{\theta}}[\widehat{Z}(A)]
     \}),
 \end{equation}
 %
@@ -3220,28 +3302,28 @@ by \citet[Appendix~C]{Cressie-2006}
 
 where \eqn{\widehat{Z}(A)}{} and \eqn{\widehat{U}(A)}{} are the log- and
 back-transformed predictions of the block mean \eqn{U(A)}{}, respectively,
-\eqn{\mbox{\boldmath$M$\unboldmath}(A)}{} is the spatial
+\eqn{\boldsymbol{M}(A)}{} is the spatial
 covariance matrix of the covariates
 
 \begin{equation}  \label{eq:spatial-covariance-covariates}
-\mbox{\boldmath$M$\unboldmath}(A) = 1/|A| \int_A 
-  ( \mbox{\boldmath$x$\unboldmath}(\mbox{\boldmath$s$\unboldmath}) - \mbox{\boldmath$x$\unboldmath}(A) )
-  ( \mbox{\boldmath$x$\unboldmath}(\mbox{\boldmath$s$\unboldmath}) - \mbox{\boldmath$x$\unboldmath}(A) )\mathrm{^T} \,d\mbox{\boldmath$s$\unboldmath}
+\boldsymbol{M}(A) = 1/|A| \int_A
+  ( \boldsymbol{x}(\boldsymbol{s}) - \boldsymbol{x}(A) )
+  ( \boldsymbol{x}(\boldsymbol{s}) - \boldsymbol{x}(A) )\mathrm{^T} \,d\boldsymbol{s}
 \end{equation}
 
-within the block $A$, where 
+within the block $A$, where
 \begin{equation}  \label{eq:spatial-mean-covariates}
-\mbox{\boldmath$x$\unboldmath}(A) = 1/|A| \int_A \mbox{\boldmath$x$\unboldmath}(\mbox{\boldmath$s$\unboldmath}) \,d\mbox{\boldmath$s$\unboldmath}  
+\boldsymbol{x}(A) = 1/|A| \int_A \boldsymbol{x}(\boldsymbol{s}) \,d\boldsymbol{s}
 \end{equation}
-  and 
+  and
 
 \begin{equation}  \label{eq:spatial-mean}
-  \mu_{\hat{\theta}}(A) \approx \exp(\mbox{\boldmath$x$\unboldmath}(A)\mathrm{^T}
-    \widehat{\mbox{\boldmath$\beta$\unboldmath}} + 1/2 \mathrm{Var}_{\hat{\theta}}[Z(A)]). 
+  \mu_{\hat{\theta}}(A) \approx \exp(\boldsymbol{x}(A)\mathrm{^T}
+    \widehat{\boldsymbol{\beta}} + 1/2 \mathrm{Var}_{\hat{\theta}}[Z(A)]).
 \end{equation}
 
 This back-transformation is based on the assumption that both the
-point data \eqn{U(\mbox{\boldmath$s$\unboldmath})}{} and the block
+point data \eqn{U(\boldsymbol{s})}{} and the block
 means \eqn{U(A)}{} follow log-normal laws, which strictly cannot hold.
 But for small blocks the assumption works well as the bias and the
 loss of efficiency caused by this assumption are small
@@ -3252,12 +3334,12 @@ loss of efficiency caused by this assumption are small
 The above formulae are used by \code{lgnpp()} if \code{object}
 contains block Kriging predictions in the form of a
 \code{\LinkA{SpatialPolygonsDataFrame}{SpatialPolygonsDataFrame}}.  To
-approximate \eqn{\mbox{\boldmath$M$\unboldmath}(A)}{M(A)}{}, one needs
+approximate \eqn{\boldsymbol{M}(A)}{M(A)}{}, one needs
 the covariates on a fine grid for the whole study domain in which the
 blocks lie.  The covariates are passed  to \code{lgnpp()} as argument \code{newdata}, where
 \code{newdata} can be any spatial data frame accepted by
 \code{predict.georob}.  For evaluating
-\eqn{\mbox{\boldmath$M$\unboldmath}(A)}{} the geometry of the blocks
+\eqn{\boldsymbol{M}(A)}{} the geometry of the blocks
 is taken from the \code{polygons} slot of the
 \code{SpatialPolygonsDataFrame} passed as \code{object} to
 \code{lgnpp()}.
@@ -3274,7 +3356,7 @@ see][]{Cressie-2006}.  One then assumes that the predictions in
 Hence, one uses the approximation
 
 \begin{equation}  \label{eq:discrete-approx-spatial-mean-1}
-\widehat{U}(A) \approx \frac{1}{K} \sum_{s_i \in A} \widehat{U}(\mbox{\boldmath$s$\unboldmath}_i)
+\widehat{U}(A) \approx \frac{1}{K} \sum_{s_i \in A} \widehat{U}(\boldsymbol{s}_i)
 \end{equation}
 
 to predict the block mean \eqn{U(A)}{}, where \eqn{K}{} is the number
@@ -3283,10 +3365,10 @@ approximated by
 
 \begin{equation}  \label{eq:discrete-approx-msep-block-mean-1}
   \mathrm{E}_{\hat{\theta}}[\{U(A) - \widehat{U}(A)\}^2] \approx \frac{1}{K^2}
-    \sum_{s_i \in A} \sum_{s_j \in A} 
+    \sum_{s_i \in A} \sum_{s_j \in A}
     \mathrm{Cov}_{\hat{\theta}}[
-    U(\mbox{\boldmath$s$\unboldmath}_i) - \widehat{U}(\mbox{\boldmath$s$\unboldmath}_i),
-    U(\mbox{\boldmath$s$\unboldmath}_j) - \widehat{U}(\mbox{\boldmath$s$\unboldmath}_j) 
+    U(\boldsymbol{s}_i) - \widehat{U}(\boldsymbol{s}_i),
+    U(\boldsymbol{s}_j) - \widehat{U}(\boldsymbol{s}_j)
     ].
 \end{equation}
 In most instances, the evaluation of the above double sum is not feasible
@@ -3296,28 +3378,28 @@ mean squared error
 \citep[see][Appendices]{Nussbaum-etal-2012,Nussbaum-etal-2014b}:
 
 \begin{itemize}
-  
-  
+
+
   \item Point prediction results are passed as \code{object} to \code{lgnpp()}
   only for a \emph{random sample of points in \eqn{A}{}} (of size \eqn{k}{}),
   for which the evaluation of the above double sum is feasible.
-  
+
   \item The prediction results for the \emph{complete set of points}
   within the block are passed as argument \code{all.pred} to
   \code{lgnpp}.  These results are used to compute \eqn{\widehat{U}(A)}{}.
-  
-  \item The mean squared error is then approximated by  
-  
+
+  \item The mean squared error is then approximated by
+
   \begin{eqnarray}\label{eq:discrete-approx-msep-block-mean-2}
     \lefteqn{\mathrm{E}_{\hat{\theta}}[\{U(A) - \widehat{U}(A)\}^2]  \approx
-    \frac{1}{K^2} \sum_{s_i \in A} \mathrm{E}_{\hat{\theta}}[ \{ U(\mbox{\boldmath$s$\unboldmath}_i) - \widehat{U}(\mbox{\boldmath$s$\unboldmath}_i)\}^2]}  \nonumber\\
+    \frac{1}{K^2} \sum_{s_i \in A} \mathrm{E}_{\hat{\theta}}[ \{ U(\boldsymbol{s}_i) - \widehat{U}(\boldsymbol{s}_i)\}^2]}  \nonumber\\
     && + \frac{K-1}{K k (k-1)} \sum_{s_i \in \mathrm{sample}}\sum_{s_j \in \mathrm{sample}, s_j \neq s_i}
     \mathrm{Cov}_{\hat{\theta}}[
-    U(\mbox{\boldmath$s$\unboldmath}_i) - \widehat{U}(\mbox{\boldmath$s$\unboldmath}_i),
-    U(\mbox{\boldmath$s$\unboldmath}_j) - \widehat{U}(\mbox{\boldmath$s$\unboldmath}_j) 
+    U(\boldsymbol{s}_i) - \widehat{U}(\boldsymbol{s}_i),
+    U(\boldsymbol{s}_j) - \widehat{U}(\boldsymbol{s}_j)
     ].
   \end{eqnarray}
-  
+
   The first term of the RHS (and \eqn{\widehat{U}(A)}{}) can be
   computed from the point Kriging results contained in
   \code{all.pred}, and the double sum is evaluated from the full
@@ -3326,36 +3408,36 @@ mean squared error
   arguments \code{control=control.predict.georob(full.covmat=TRUE)}
   for \code{predict.georob()} when computing the point Kriging
   predictions stored in \code{object}).
-  
+
   \item If the prediction results are not available for the complete set
   of points in \eqn{A}{} then \code{all.pred} may be equal to \eqn{K}{}.  The
   block mean is then approximated by
-  
+
   \begin{equation}  \label{eq:discrete-approx-spatial-mean-2}
   \widehat{U}(A) \approx \frac{1}{k} \sum_{s_i \in \mathrm{sample}}
-  \widehat{U}(\mbox{\boldmath$s$\unboldmath}_i)
+  \widehat{U}(\boldsymbol{s}_i)
   \end{equation}
-  
+
   and the first term of the RHS of the expression for the mean squared
   error by
-  
+
   \begin{equation}  \label{eq:discrete-approx-msep-block-mean-3}
     \frac{1}{kK} \sum_{s_i \in \mathrm{sample}} \mathrm{E}_{\hat{\theta}}[ \{
-  U(\mbox{\boldmath$s$\unboldmath}_i) -
-  \widehat{U}(\mbox{\boldmath$s$\unboldmath}_i)\}^2].
+  U(\boldsymbol{s}_i) -
+  \widehat{U}(\boldsymbol{s}_i)\}^2].
   \end{equation}
-  
+
   \item By drawing samples repeatedly and passing the related Kriging
   results as \code{object} to \code{lgnpp()}, one can reduce the error
   of the approximation of the mean squared error.
-  
-  
+
+
 \end{itemize}
 
 \clearpage
 
 
-%% 
+%%
  % Details model building and assessment
  %%
 
@@ -3395,11 +3477,11 @@ fixed effects of the model.
 The \code{deviance} method for class \code{georob} returns for
 Gaussian (RE)ML fits the \emph{residual deviance}
 %
-\deqn{(\mbox{\boldmath $Y -X
-\widehat{\beta}$})^{\mathrm{T}} (\widehat{\tau}^2
-\mbox{\boldmath$I$\unboldmath} +
-\mbox{\boldmath$\Gamma$\unboldmath}_{\widehat{\theta}})^{-1}
-(\mbox{\boldmath $Y -X \widehat{\beta}$}),}{} 
+\deqn{(\boldsymbol{Y -X
+\widehat{\beta}})^{\mathrm{T}} (\widehat{\tau}^2
+\boldsymbol{I} +
+\boldsymbol{\Gamma}_{\widehat{\theta}})^{-1}
+(\boldsymbol{Y -X \widehat{\beta}}),}{}
 %
 and the \code{logLik} and \code{extractAIC} methods extract for class
 \code{georob} the respective goodness-of-fit criteria, depending on
@@ -3410,9 +3492,9 @@ the argument \code{REML} either for {ML} (default) or {REML}.
 For a robust REML fit the deviance is not defined because there is no
 robustified log-likelihood.  \code{deviance.georob()} then computes
 (with a warning) the residual deviance of an equivalent Gaussian model
-with heteroscedastic nugget effect \eqn{\widehat{\tau}^2/\mbox{\boldmath
-$w$\unboldmath}}{}, where \eqn{\mbox{\boldmath $w$\unboldmath}}{} are
-the ``robustness weights'' \deqn{w_{i} =
+with heteroscedastic nugget effect
+\eqn{\widehat{\tau}^2/\boldsymbol{w}}{}, where
+\eqn{\boldsymbol{w}}{} are the ``robustness weights'' \deqn{w_{i} =
 \psi_c(\widehat{\varepsilon}_i/\widehat{\tau})/(\widehat{\varepsilon}_i/\widehat{\tau}).}{}
 %
 For robust REML, \code{logLik()} and \code{extractAIC()} return the
@@ -3445,19 +3527,19 @@ fixed or re-estimated when evaluating single terms.  Two argument of
 \code{step.georob()} control the behaviour:
 
 \begin{ldescription}
-  
+
   \item[\code{fixed.add1.drop1}] logical controlling whether the
   variogram parameters are \emph{not} adjusted when \code{add}ing or
   \code{drop}ping model terms by \code{add1.georob()} and
   \code{drop1.georob()} (default \code{TRUE}).
-  
+
   \item[\code{fixed.step}] logical controlling whether the variogram
   parameters are \emph{not} adjusted after having called
   \code{add1.georob()} and \code{drop1.georob()} in a cycle of
   \code{step.georob()} (default \code{TRUE}).  For \code{fixed.step =
   FALSE} the parameters are estimated afresh for the new model that
   was chosen in the previous cycle.
-  
+
 \end{ldescription}
 
 Of course, model building based on AIC is only sound for Gaussian
@@ -3491,12 +3573,12 @@ class \code{georob} (either as \code{default} or specific
 
 Note that the are two kind of residuals: \code{residuals.georob()}
 extracts either the estimated independent errors
-\eqn{\widehat{\varepsilon}(\mbox{\boldmath$s$\unboldmath})}{} or the
+\eqn{\widehat{\varepsilon}(\boldsymbol{s})}{} or the
 sum of the latter quantities and the spatial random effects
-\eqn{\widehat{B}(\mbox{\boldmath$s$\unboldmath})}{} (regression
+\eqn{\widehat{B}(\boldsymbol{s})}{} (regression
 residuals).  \code{rstandard.georob()} does the same but standardizes
 the residuals to unit variance.  \code{ranef.georob()} extracts
-\eqn{\widehat{B}(\mbox{\boldmath$s$\unboldmath})}{} with the option to
+\eqn{\widehat{B}(\boldsymbol{s})}{} with the option to
 standardize them as well (by argument \code{standard}).
 
 \smallskip
@@ -3513,11 +3595,11 @@ following plots are created:
 
 \item \code{"correlation"}: the estimated correlation function,
 
-\item \code{"scale-location"}: square root of absolute regression
-residuals plotted against fitted values (Scale-Location plot),
-
 \item \code{"ta"}: regression residuals plotted against fitted values
 (Tukey-Anscombe plot),
+
+\item \code{"sl"}: square root of absolute regression
+residuals plotted against fitted values (Scale-Location plot),
 
 \item \code{"qq.res"}: normal QQ plot of standardized errors
 \eqn{\hat{\varepsilon}}{},
@@ -3538,7 +3620,7 @@ course, the maximized profile log-likelihood values are meaningful
 only for Gaussian (RE)ML fits (for robust fits the calculated values
 refer to the equivalent Gaussian model with heteroscedastic nugget
 effect, see above).  Use the argument \code{ncores} to fit multiple
-models in parallel.  
+models in parallel.
 
 \smallskip
 
@@ -3648,7 +3730,7 @@ the \emph{sharpness} of probabilistic predictions of
 \mbox{(cross-)}validation data.  To this aim,
 \code{validate.predictions()} uses the assumption that the prediction
 errors
-\eqn{Y(\mbox{\boldmath$s$\unboldmath})-\widehat{Y}(\mbox{\boldmath$s$\unboldmath})}{}
+\eqn{Y(\boldsymbol{s})-\widehat{Y}(\boldsymbol{s})}{}
 follow normal distributions with zero mean and standard deviations
 equal to the Kriging standard errors.  This assumption is an
 approximation if the errors \eqn{\varepsilon}{\epsilon} come from a
@@ -3659,7 +3741,7 @@ variance of the signal \eqn{Z}{}.  This approximation likely
 underestimates the mean squared prediction error of the response if
 the errors come from a long-tailed distribution.  Hence, for robust
 Kriging, the standard errors of the \mbox{(cross-)}validation errors
-are likely too small. 
+are likely too small.
 
 \smallskip
 
@@ -3667,49 +3749,49 @@ Notwithstanding these difficulties and imperfections,
 \code{validate.predictions()} computes
 
 \begin{itemize}
-  
-  
+
+
   \item the \emph{probability integral transform} (PIT),
-  
+
   \begin{equation}\label{eq:cv-pit}
     \mathrm{PIT}_i = F_i(y_i),
   \end{equation}
-  
+
   where \eqn{F_i(y_i)}{} denotes the (plug-in) predictive CDF evaluated
   at \eqn{y_i}{}, the value of the \eqn{i}{}th
   \mbox{(cross-)}validation datum,
-  
-  \item the \emph{average predictive CDF}  
-  
+
+  \item the \emph{average predictive CDF}
+
   \begin{equation}\label{eq:cv-average-pred-dist}
     \bar{F}_n(y)=1/n \sum_{i=1}^n F_i(y),
   \end{equation}
-  
+
   where \eqn{n}{} is the number of (cross-)validation observations and
   the \eqn{F_i}{} are evaluated at \eqn{N}{} quantiles equal to the set
   of distinct \eqn{y_i}{} (or a subset of size \eqn{N}{} of them),
-  
-  \item the \emph{Brier Score}  
-  
+
+  \item the \emph{Brier Score}
+
   \begin{equation}\label{ea:cv-bs}
     \mathrm{BS}(y) = 1/n \sum_{i=1}^n \left(F_i(y) - I(y_i \leq y)
     \right)^2,
   \end{equation}
-  
+
   where \eqn{I(x)}{} is the indicator function for the event \eqn{x}{},
   and the Brier score is again evaluated at the unique values of the
   (cross-)validation observations (or a subset of size \eqn{N}{} of
   them),
-  
+
   \item the \emph{averaged continuous ranked probability score}, CRPS, a
   strictly proper scoring criterion to rank predictions, which is
   related to the Brier score by
-  
+
   \begin{equation}\label{eq:cv-crps}
     \mathrm{CRPS} = \int_{-\infty}^\infty \mathrm{BS}(y) \,dy.
   \end{equation}
-  
-  
+
+
 \end{itemize}
 
 
@@ -3755,21 +3837,15 @@ prediction errors.
 % is \code{TRUE} then these statistics are evaluated separately for the
 % \eqn{K}{} cross-validation subsets and the standard errors of the means of
 % these statistics are returned as well.
-% 
+%
 % The \code{print} method for class \code{cv.georob} returns the mean
 % and dispersion statistics of the (standardized) prediction errors.
-% 
+%
 % The method \code{rstudent} returns for class \code{cv.georob} the
 % standardized prediction errors.
 
+\addcontentsline{toc}{section}{References}
 
-\bibliographystyle{natbib}\bibliography{georob}
+\bibliographystyle{jss2}\bibliography{georob}
 
 \end{document}
-
-
-
-
-
-
-

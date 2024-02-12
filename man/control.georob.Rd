@@ -1,4 +1,4 @@
-% 2024-02-01 A. Papritz
+% 2024-02-09 A. Papritz
 % R CMD Rdconv -t html -o bla.html control.georob.Rd ; open bla.html; R CMD Rd2pdf --force control.georob.Rd;
 % hunspell -d en_GB-ise,en_GB-ize,en_GB-large -t -i mac  control.georob.Rd
 \encoding{utf8}
@@ -406,24 +406,23 @@ control.nlminb(control = list(rel.tol = 1.e-5), lower = -Inf,
 
 \value{
 
-\code{control.georob}, \code{control.rq}, \code{control.nleqslv},
-\code{control.optim} and \code{control.nlminb} all create lists with
-control parameters passed to \code{\link{georob}},
-\code{\link[quantreg]{rq}}, \code{\link[nleqslv]{nleqslv}},
-\code{\link[stats]{optim}}, \code{\link[stats]{nlminb}}, see arguments
-above and the help pages of the respective functions for information about
-the components of these lists.  Note that the list returned by
-\code{code.georob} contains some components (\code{irwls.initial},
-\code{tuning.psi.nr},
-\code{cov.bhat.betahat}, \code{aux.cov.pred.target}) that cannot be
-changed by the user.
+  \code{control.georob}, \code{control.rq}, \code{control.nleqslv},
+  \code{control.optim} and \code{control.nlminb} all create lists with
+  control parameters passed to \code{\link{georob}},
+  \code{\link[quantreg]{rq}}, \code{\link[nleqslv]{nleqslv}},
+  \code{\link[stats]{optim}} or \code{\link[stats]{nlminb}}, see arguments
+  above and the help pages of the respective functions for information
+  about the components of these lists.  Note that the list returned by
+  \code{control.georob} contains some components (\code{irwls.initial},
+  \code{tuning.psi.nr}, \code{cov.bhat.betahat},
+  \code{aux.cov.pred.target}) that cannot be changed by the user.
 
-\code{param.transf} generates a list with character strings that
-define what transformations are used for estimating the variogram
-parameters, and \code{fwd.transf}, \code{bwd.transf} and
-\code{dfwd.transf} return lists of functions with forward and backward
-transformations and the first derivatives of the forward
-transformations, see \emph{Parameter transformations} above.
+  \code{param.transf} generates a list with character strings that
+  define what transformations are used for estimating the variogram
+  parameters, and \code{fwd.transf}, \code{bwd.transf} and
+  \code{dfwd.transf} return lists of functions with forward and backward
+  transformations and the first derivatives of the forward
+  transformations, see section \emph{Parameter transformations} above.
 
 }
 
@@ -465,7 +464,6 @@ transformations, see \emph{Parameter transformations} above.
 }
 
 \examples{
-\donttest{
 data(meuse)
 
 r.logzn.rob <- georob(log(zinc) ~ sqrt(dist), data = meuse, locations = ~ x + y,
@@ -477,72 +475,8 @@ r.logzn.rob <- georob(log(zinc) ~ sqrt(dist), data = meuse, locations = ~ x + y,
 qqnorm(rstandard(r.logzn.rob, level = 0)); abline(0, 1)
 qqnorm(ranef(r.logzn.rob, standard = TRUE)); abline(0, 1)
 }
-}
 
 
 \keyword{models}
 \keyword{spatial}
 \keyword{robust}
-
-% control.georob(ml.method = c("REML", "ML"), reparam = TRUE,
-%     maximizer = c("nlminb", "optim"), initial.param = TRUE,
-%     initial.fixef = c("lmrob", "rq", "lm"), bhat = NULL,
-%     min.rweight = 0.25,
-%     param.tf = param.transf(), fwd.tf = fwd.transf(),
-%     deriv.fwd.tf = dfwd.transf(), bwd.tf = bwd.transf(),
-%     safe.param = 1.e12, psi.func = c("logistic", "t.dist", "huber"),
-%     tuning.psi.nr = 1000,
-%     irwls.initial = TRUE,
-%     irwls.maxiter = 50,
-%     irwls.ftol = 1.e-5, force.gradient = FALSE,
-%     min.condnum = 1.e-12, zero.dist = sqrt(.Machine[["double.eps"]]),
-%     error.family.estimation = c("gaussian", "long.tailed"),
-%     error.family.cov.effects = c("gaussian", "long.tailed"),
-%     error.family.cov.residuals = c("long.tailed", "gaussian"),
-%     cov.bhat = FALSE, full.cov.bhat = FALSE, cov.betahat = TRUE,
-%     cov.bhat.betahat = FALSE,
-%     cov.delta.bhat = TRUE, full.cov.delta.bhat = TRUE,
-%     cov.delta.bhat.betahat = TRUE,
-%     cov.ehat = TRUE, full.cov.ehat = FALSE,
-%     cov.ehat.p.bhat = FALSE, full.cov.ehat.p.bhat = FALSE,
-%     aux.cov.pred.target = FALSE,
-%     hessian = TRUE,
-%     rq = control.rq(), lmrob = lmrob.control(),
-%     nleqslv = control.nleqslv(),
-%     optim = control.optim(), nlminb = control.nlminb(),
-%     pcmp = control.pcmp(), ...)
-%
-%
-%   \item{tuning.psi.nr}{positive numeric.  If \code{tuning.psi} is less than
-%   \code{tuning.psi.nr} then the model is fitted robustly by solving the
-%   robustified estimating equations, and for \code{tuning.psi} equal to or
-%   larger than \code{tuning.psi.nr} the Gaussian (restricted) log-likelihood is
-%   maximized (default \code{1000}).}
-%
-%   \item{irwls.initial}{logical.  If \code{TRUE} (default) the estimating
-%   equations of \eqn{\boldsymbol{B}}{B} and
-%   \eqn{\boldsymbol{\beta}}{\beta} are always solved by
-%   IRWLS from the initial estimates of
-%   \eqn{\widehat{\boldsymbol{B}}}{hatB} and
-%   \eqn{\widehat{\boldsymbol{\beta}}}{hat\beta}.  If
-%   \code{FALSE} then IRWLS starts from respective estimates computed for the
-%   variogram parameter estimates of the previous iteration of \code{nleqslv}
-%   or \code{optim}.}
-%
-%   \item{aux.cov.pred.target}{logical controlling whether a covariance term
-%   required for the back-transformation of Kriging predictions of
-%   log-transformed data is returned (default \code{FALSE}).}
-%
-%   \item{cov.bhat.betahat}{logical controlling whether the covariance matrix
-%   of \eqn{\widehat{\boldsymbol{B}}}{hatB} and
-%   \eqn{\widehat{\boldsymbol{\beta}}}{hat\beta} is returned
-%   (default \code{FALSE}).}
-%
-%   \item{safe.param}{maximum acceptable value for any variogram parameter.
-%   If trial parameter values generated by \code{\link[stats]{nlminb}}
-%   \code{\link[stats]{optim}} or \code{\link[nleqslv]{nleqslv}} exceed
-%   \code{safe.param} then an error is signalled to force \code{optim} or
-%   \code{nleqslv} to update the trial values (default \code{1.e12}).}
-
-
-

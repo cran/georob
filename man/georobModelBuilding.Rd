@@ -1,4 +1,4 @@
-% 2024-02-01 A. Papritz
+% 2024-02-09 A. Papritz
 % R CMD Rdconv -t html -o bla.html georobModelBuilding.Rd ; open bla.html;
 % R CMD Rd2pdf --force georobModelBuilding.Rd;
 % hunspell -d en_GB-ise,en_GB-ize,en_GB-large -t -i mac  georobModelBuilding.Rd
@@ -185,7 +185,7 @@ step(object, ...)
   \eqn{
     \tau^2 \boldsymbol{I} + \boldsymbol{\Gamma}_\theta
   }{ \tau^2 I + \Gamma_\theta}
-  of the observations and optionally the attribute
+  of the observations and optionally
   \code{log.det.xticovmatx} with the logarithm of the determinant of
   \eqn{
     \boldsymbol{X}^\mathrm{T} (\tau^2
@@ -209,11 +209,11 @@ step(object, ...)
   \code{Converged} which signals (non-)convergence when fitting the
   respective sub-model.
 
-  The generic \code{step} returns the stepwise selected model plus
+  The generic function \code{step} returns the stepwise selected model plus
   optionally some additional attributes depending on the method.
 
   The methods \code{step.default} and \code{step.georob} return the
-  stepwise-selected models with up to two additional components
+  stepwise-selected model with up to two additional components
   (\code{anova}, \code{keep}), see \code{\link[stats]{step}} for details.
 
   The method \code{waldtest.georob} returns an object of class \code{anova}
@@ -260,8 +260,6 @@ step(object, ...)
 }
 
 \examples{
-\donttest{
-
 data(meuse)
 
 ## Gaussian REML fit
@@ -279,15 +277,19 @@ waldtest(r.logzn.reml, .~. + ffreq)
 step(r.logzn.reml, ~ sqrt(dist) + ffreq + soil)
 
 ## robust REML fit
-r.logzn.rob <- update(r.logzn.reml, tuning.psi = 1)
+if(interactive()){
+  ## example is run only in interactive session because cpu times exceeds 5 s
 
-deviance(r.logzn.rob)
-logLik(r.logzn.rob)
-logLik(r.logzn.rob, REML=TRUE)
+  r.logzn.rob <- update(r.logzn.reml, tuning.psi = 1)
 
-step(r.logzn.rob, ~ sqrt(dist) + ffreq + soil, fixed.step=FALSE, trace=2)
+  deviance(r.logzn.rob)
+  logLik(r.logzn.rob)
+  logLik(r.logzn.rob, REML=TRUE)
+
+  step(r.logzn.rob, ~ sqrt(dist) + ffreq + soil, fixed.step=FALSE, trace=2)
 }
 }
+
 
 \keyword{models}
 \keyword{spatial}

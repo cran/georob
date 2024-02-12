@@ -71,7 +71,8 @@ legend("topright", col=c(rep(1, nlevels(meuse$ffreq)), 1:nlevels(meuse$soil)),
 ### code chunk number 5: meuse-zinc-eda-plot-2
 ###################################################
 getOption("SweaveHooks")[["fig"]]()
-lattice::xyplot(log(zinc)~dist | ffreq, meuse, groups=soil, panel=function(x, y, ...){
+lattice::xyplot(log(zinc)~dist | ffreq, meuse, groups=soil,
+  panel=function(x, y, ...){
     lattice::panel.xyplot(x, y, ...)
     lattice::panel.loess(x, y, ...)
   }, auto.key=TRUE)
@@ -81,7 +82,8 @@ lattice::xyplot(log(zinc)~dist | ffreq, meuse, groups=soil, panel=function(x, y,
 ### code chunk number 6: meuse-zinc-eda-plot-3
 ###################################################
 getOption("SweaveHooks")[["fig"]]()
-lattice::xyplot(log(zinc)~sqrt(dist) | ffreq, meuse, groups=soil, panel=function(x, y, ...){
+lattice::xyplot(log(zinc)~sqrt(dist) | ffreq, meuse, groups=soil,
+  panel=function(x, y, ...){
     lattice::panel.xyplot(x, y, ...)
     lattice::panel.loess(x, y, ...)
     lattice::panel.lmline(x, y, lty="dashed", ...)
@@ -116,10 +118,9 @@ plot(sample.variogram(residuals(r.lm), locations=meuse[, c("x","y")],
 ###################################################
 ### code chunk number 10: meuse-zinc-lm-res-sv-2 (eval = FALSE)
 ###################################################
-getOption("SweaveHooks")[["fig"]]()
 ## library(georob)
 ## plot(r.sv <- sample.variogram(residuals(r.lm), locations=meuse[, c("x","y")],
-##   lag.dist.def=100, max.lag=2000, 
+##   lag.dist.def=100, max.lag=2000,
 ##   estimator="matheron"), type="l",
 ##   main="sample variogram of residuals log(zinc)~sqrt(dist)+ffreq")
 ## lines(r.sv.spher <- fit.variogram.model(r.sv, variogram.mode="RMspheric",
@@ -127,7 +128,7 @@ getOption("SweaveHooks")[["fig"]]()
 
 
 ###################################################
-### code chunk number 11: meuse-zinc-lm-res-sv-2
+### code chunk number 11: meuse-zinc-lm-res-sv-3
 ###################################################
 getOption("SweaveHooks")[["fig"]]()
 library(georob)
@@ -145,7 +146,7 @@ summary(r.sv.spher)
 ### code chunk number 13: meuse-zinc-georob-reml
 ###################################################
 r.georob.m0.spher.reml <- georob(log(zinc)~sqrt(dist)+ffreq, meuse, locations=~x+y,
-  variogram.model="RMspheric", param=c(variance=0.1, nugget=0.05, scale=1000), 
+  variogram.model="RMspheric", param=c(variance=0.1, nugget=0.05, scale=1000),
   tuning.psi=1000)
 
 
@@ -198,14 +199,14 @@ waldtest(r.georob.m0.spher.reml, .~.-ffreq)
 ### code chunk number 20: meuse-zinc-georob-reml-multcomp
 ###################################################
 if(requireNamespace("multcomp", quietly = TRUE)){
-  summary(multcomp::glht(r.georob.m0.spher.reml, 
+  summary(multcomp::glht(r.georob.m0.spher.reml,
     linfct = multcomp::mcp(ffreq = c("ffreq1 - ffreq2 = 0", "ffreq1 - ffreq3 = 0",
     "ffreq2 - ffreq3 = 0"))))
 } else {
   warning("package 'multcomp' is missing, install it and re-build vignette")
 }
 # library(multcomp)
-# summary(glht(r.georob.m0.spher.reml, 
+# summary(glht(r.georob.m0.spher.reml,
 #   linfct = mcp(ffreq = c("ffreq1 - ffreq2 = 0", "ffreq1 - ffreq3 = 0",
 #   "ffreq2 - ffreq3 = 0"))))
 
@@ -231,14 +232,14 @@ waldtest(r.georob.m0.spher.reml, .~.+soil)
 ###################################################
 ### code chunk number 24: meuse-zinc-georob-reml-step-2 (eval = FALSE)
 ###################################################
-## step(r.georob.m0.spher.reml, scope=log(zinc)~ffreq*sqrt(dist)+soil, 
+## step(r.georob.m0.spher.reml, scope=log(zinc)~ffreq*sqrt(dist)+soil,
 ##   fixed.add1.drop1=FALSE)
 
 
 ###################################################
 ### code chunk number 25: meuse-zinc-georob-ml
 ###################################################
-r.georob.m0.spher.ml <- update(r.georob.m0.spher.reml, 
+r.georob.m0.spher.ml <- update(r.georob.m0.spher.reml,
   control=control.georob(ml.method="ML"))
 
 
@@ -279,19 +280,19 @@ summary(r.cv.m1.spher.reml)
 getOption("SweaveHooks")[["fig"]]()
 op <- par(mfrow=c(3,2))
 plot(r.cv.m1.spher.reml, "sc")
-plot(r.cv.m0.spher.reml, "sc", add=TRUE, col=2) 
+plot(r.cv.m0.spher.reml, "sc", add=TRUE, col=2)
 abline(0, 1, lty="dotted")
-legend("topleft", pch=1, col=1:2, bty="n", 
+legend("topleft", pch=1, col=1:2, bty="n",
   legend=c("log(zinc)~sqrt(dist)", "log(zinc)~sqrt(dist)+ffreq"))
-plot(r.cv.m1.spher.reml, "lgn.sc"); plot(r.cv.m0.spher.reml, "lgn.sc", add=TRUE, col=2) 
+plot(r.cv.m1.spher.reml, "lgn.sc"); plot(r.cv.m0.spher.reml, "lgn.sc", add=TRUE, col=2)
 abline(0, 1, lty="dotted")
 plot(r.cv.m1.spher.reml, "hist.pit")
-plot(r.cv.m0.spher.reml, "hist.pit", col=2) 
+plot(r.cv.m0.spher.reml, "hist.pit", col=2)
 plot(r.cv.m1.spher.reml, "ecdf.pit")
 plot(r.cv.m0.spher.reml, "ecdf.pit", add=TRUE, col=2)
 abline(0, 1, lty="dotted")
 plot(r.cv.m1.spher.reml, "bs")
-plot(r.cv.m0.spher.reml, add=TRUE, "bs", col=2) 
+plot(r.cv.m0.spher.reml, add=TRUE, "bs", col=2)
 par(op)
 
 
@@ -329,7 +330,7 @@ r.pk <- lgnpp(r.pk)
 ###################################################
 ### code chunk number 34: meuse-zinc-meuse-point-Kriging-lgn
 ###################################################
-str(r.pk)
+str(r.pk, max=3)
 
 
 ###################################################
@@ -391,9 +392,12 @@ plot(upr, position=c(2/3, 0, 1, 1), more=FALSE)
 getOption("SweaveHooks")[["fig"]]()
 ## define blocks
 tmp <- data.frame(x=c(179100, 179900), y=c(330200, 331000))
-blks <- SpatialPolygons(sapply(1:nrow(tmp), function(i, x){  
-  Polygons(list(Polygon(t(x[,i] + 400*t(cbind(c(-1, 1, 1, -1, -1), c(-1, -1, 1, 1, -1)))),
-  hole=FALSE)), ID=paste("block", i, sep=""))}, x=t(tmp)))
+blks <- SpatialPolygons(
+  sapply(1:nrow(tmp), function(i, x){
+  Polygons(list(Polygon(
+    t(x[,i] + 400*t(cbind(c(-1, 1, 1, -1, -1), c(-1, -1, 1, 1, -1)))),
+    hole=FALSE)), ID=paste("block", i, sep="")
+  )}, x=t(tmp)))
 ## compute spatial mean of sqrt(dist) for blocks
 ind <- over(as(meuse.grid, "SpatialPoints"), blks)
 tmp <- tapply(sqrt(meuse.grid$dist), ind, mean)
@@ -408,7 +412,7 @@ plot(geometry(blks), add=TRUE, col=2)
 ###################################################
 ### code chunk number 42: meuse-zinc-block-Kriging-3 (eval = FALSE)
 ###################################################
-## r.blks <- predict(r.georob.m1.spher.reml, newdata=blks, 
+## r.blks <- predict(r.georob.m1.spher.reml, newdata=blks,
 ##   control=control.predict.georob(extended.output=TRUE, pwidth=800, pheight=800))
 ## r.blks <- lgnpp(r.blks, newdata=meuse.grid)
 
@@ -457,7 +461,7 @@ palette("default")
 ### code chunk number 47: meuse-zinc-cleanup-2 (eval = FALSE)
 ###################################################
 ## # save(list=ls(pattern="^r\\."), file="r_meuse_zinc_objects.RData", version = 2)
-## save(list=c("r.sv", "r.sv.spher", "r.prfl.m0.spher.reml.scale", "r.cv.m0.spher.reml", 
+## save(list=c("r.sv", "r.sv.spher", "r.prfl.m0.spher.reml.scale", "r.cv.m0.spher.reml",
 ##     "r.cv.m1.spher.reml", "r.bk", "r.blks"), file="r_meuse_zinc_objects.RData", version = 2)
 ## rm(list=ls(pattern="^r\\."))
 
@@ -485,7 +489,7 @@ if(requireNamespace("gstat", quietly = TRUE)){
 ### code chunk number 50: ash-centred-bubbleplot1
 ###################################################
 getOption("SweaveHooks")[["fig"]]()
-plot(y~x, coalash, cex=sqrt(abs(coalash - median(coalash))), 
+plot(y~x, coalash, cex=sqrt(abs(coalash - median(coalash))),
   col=c("blue", NA, "red")[sign(coalash - median(coalash))+2], asp=1,
   main="coalash - median(coalash)", ylab="northing", xlab="easting")
 points(y~x, coalash, subset=c(15, 50, 63, 73, 88, 111), pch=4); grid()
@@ -541,7 +545,7 @@ plot(sample.variogram(residuals(r.lmrob), locations=coalash[, c("x","y")],
 plot(sample.variogram(residuals(r.lmrob), locations=coalash[, c("x","y")],
   lag.dist.def=1, estimator="mad"), pch=4, col="orange", add=TRUE)
 legend("bottomright", pch=1:4, col=c("black", "blue", "cyan", "orange"),
-  legend=paste(c("method-of-moments", "Qn", "Cressie-Hawkins", "MAD"), 
+  legend=paste(c("method-of-moments", "Qn", "Cressie-Hawkins", "MAD"),
   "estimator"), bty="n")
 
 
@@ -553,17 +557,17 @@ r.sv <- sample.variogram(residuals(r.lmrob), locations=coalash[, c("x","y")],
   lag.dist.def=1, max.lag=10, xy.angle.def=c(-0.1, 0.1, 89.9, 90.1),
   estimator="qn")
 plot(gamma~lag.dist, r.sv, subset=lag.x < 1.e-6, xlim=c(0, 10), ylim=c(0, 1.4),
-  pch=1, col="blue", 
+  pch=1, col="blue",
   main="directional sample variogram of residuals (Qn-estimator)")
 points(gamma~lag.dist, r.sv, subset=lag.y < 1.e-6, pch=3, col="orange")
-legend("bottomright", pch=c(1, 3), col=c("blue", "orange"), 
+legend("bottomright", pch=c(1, 3), col=c("blue", "orange"),
   legend=c("N-S direction", "W-E direction"), bty="n")
 
 
 ###################################################
 ### code chunk number 57: ash-georob-robust-1
 ###################################################
-r.georob.m0.exp.c2 <- georob(coalash~x+y, coalash, locations=~x+y, 
+r.georob.m0.exp.c2 <- georob(coalash~x+y, coalash, locations=~x+y,
   variogram.model="RMexp", param=c(variance=0.1, nugget=0.9, scale=1))
 
 
@@ -613,7 +617,7 @@ par(op)
 ###################################################
 ### code chunk number 64: ash-rw-georob-robust-2-1
 ###################################################
-round(cbind(coalash[, c("x", "y")], 
+round(cbind(coalash[, c("x", "y")],
   rweights=r.georob.m1.exp.c2[["rweights"]])[c(15, 50, 63, 73, 88, 111, 192),],
   2)
 
@@ -621,9 +625,9 @@ round(cbind(coalash[, c("x", "y")],
 ###################################################
 ### code chunk number 65: ash-rw-georob-robust-2-1
 ###################################################
-sel <- r.georob.m1.exp.c2[["rweights"]] <= 0.8 & 
+sel <- r.georob.m1.exp.c2[["rweights"]] <= 0.8 &
   !1:nrow(coalash) %in% c(15, 50, 63, 73, 88, 111, 192)
-round(cbind(coalash[, c("x", "y")], 
+round(cbind(coalash[, c("x", "y")],
   rweights=r.georob.m1.exp.c2[["rweights"]])[sel,],
   2)
 
@@ -632,7 +636,7 @@ round(cbind(coalash[, c("x", "y")],
 ### code chunk number 66: ash-diag-georob-robust-2-2
 ###################################################
 getOption("SweaveHooks")[["fig"]]()
-plot(y~x, coalash, cex=sqrt(abs(residuals(r.georob.m1.exp.c2))), 
+plot(y~x, coalash, cex=sqrt(abs(residuals(r.georob.m1.exp.c2))),
   col=c("blue", NA, "red")[sign(residuals(r.georob.m1.exp.c2))+2], asp=1,
   main="estimated errors robust REML", xlab="northing", ylab="easting")
 points(y~x, coalash, subset=r.georob.m1.exp.c2[["rweights"]]<=0.8, pch=4); grid()
@@ -656,11 +660,11 @@ summary(r.georob.m1.exp.c1000)
 ###################################################
 getOption("SweaveHooks")[["fig"]]()
 plot(r.georob.m1.exp.c1000, lag.dist.def=1, max.lag=10, estimator="matheron")
-plot(r.georob.m1.exp.c2, lag.dist.def=1, max.lag=10, estimator="qn", add = TRUE, 
+plot(r.georob.m1.exp.c2, lag.dist.def=1, max.lag=10, estimator="qn", add = TRUE,
   col="blue")
-plot(update(r.georob.m1.exp.c2, subset=-50), lag.dist.def=1, max.lag=10, estimator="qn", 
+plot(update(r.georob.m1.exp.c2, subset=-50), lag.dist.def=1, max.lag=10, estimator="qn",
   add = TRUE, col="orange")
-legend("bottomright", lt=1, col=c("black","blue", "orange"), 
+legend("bottomright", lt=1, col=c("black","blue", "orange"),
   legend =c("Gaussian REML", "robust REML", "Gaussian REML without outlier (5,6)" ), bty="n")
 
 
@@ -669,14 +673,14 @@ legend("bottomright", lt=1, col=c("black","blue", "orange"),
 ###################################################
 getOption("SweaveHooks")[["fig"]]()
 op <- par(mfrow=c(1,2), cex=5/6)
-plot(residuals(r.georob.m1.exp.c2), residuals(r.georob.m1.exp.c1000), 
+plot(residuals(r.georob.m1.exp.c2), residuals(r.georob.m1.exp.c1000),
   asp = 1, main=expression(paste("Gaussian vs robust ", widehat(epsilon))),
-  xlab=expression(paste("robust ", widehat(epsilon))), 
+  xlab=expression(paste("robust ", widehat(epsilon))),
   ylab=expression(paste("Gaussian ", widehat(epsilon))))
 abline(0, 1, lty="dotted")
-plot(ranef(r.georob.m1.exp.c2), ranef(r.georob.m1.exp.c1000), 
+plot(ranef(r.georob.m1.exp.c2), ranef(r.georob.m1.exp.c1000),
   asp = 1, main=expression(paste("Gaussian vs robust ", italic(widehat(B)))),
-  xlab=expression(paste("robust ", italic(widehat(B)))), 
+  xlab=expression(paste("robust ", italic(widehat(B)))),
   ylab=expression(paste("Gaussian ", italic(widehat(B)))))
 abline(0, 1, lty="dotted")
 
@@ -692,7 +696,7 @@ abline(0, 1, lty="dotted")
 ###################################################
 ### code chunk number 72: ash-cv-georob-gaussian-robust-2 (eval = FALSE)
 ###################################################
-## r.cv.georob.m1.exp.c2 <- cv(r.georob.m1.exp.c2, seed=1, 
+## r.cv.georob.m1.exp.c2 <- cv(r.georob.m1.exp.c2, seed=1,
 ##   control=control.georob(initial.param=FALSE), ncores=my.ncores)
 ## r.cv.georob.m1.exp.c1000 <- cv(r.georob.m1.exp.c1000, seed=1, ncores=my.ncores)
 
@@ -765,13 +769,13 @@ str(coalash.grid, max=2)
 ### code chunk number 79: ash-pKriging-plot-robust-gaussian-1
 ###################################################
 getOption("SweaveHooks")[["fig"]]()
-pred.rob <- spplot(r.pk.m1.exp.c2, "pred", at=seq(8, 12, by=0.25), 
+pred.rob <- spplot(r.pk.m1.exp.c2, "pred", at=seq(8, 12, by=0.25),
   main="robust Kriging prediction", scales=list(draw=TRUE))
-pred.gauss <- spplot(r.pk.m1.exp.c1000, "pred", at=seq(8, 12, by=0.25), 
+pred.gauss <- spplot(r.pk.m1.exp.c1000, "pred", at=seq(8, 12, by=0.25),
   main="Gaussian Kriging prediction", scales=list(draw=TRUE))
-se.rob <- spplot(r.pk.m1.exp.c2, "se", at=seq(0.35, 0.65, by=0.025), 
+se.rob <- spplot(r.pk.m1.exp.c2, "se", at=seq(0.35, 0.65, by=0.025),
   main="standard error robust Kriging", scales=list(draw=TRUE))
-se.gauss <- spplot(r.pk.m1.exp.c1000, "se", at=seq(0.35, 0.65, by=0.025), 
+se.gauss <- spplot(r.pk.m1.exp.c1000, "se", at=seq(0.35, 0.65, by=0.025),
   main="standard error Gaussian Kriging", scales=list(draw=TRUE))
 plot(pred.rob, pos=c(0, 0.5, 0.5, 1), more=TRUE)
 plot(pred.gauss, pos=c(0.5, 0.5, 1, 1), more=TRUE)
@@ -786,22 +790,22 @@ getOption("SweaveHooks")[["fig"]]()
 # rel. difference of predictions
 r.pk.m1.exp.c2$reldiff.pred <- (r.pk.m1.exp.c1000$pred -
   r.pk.m1.exp.c2$pred) / r.pk.m1.exp.c2$pred * 100
-reldiff.pred <- spplot(r.pk.m1.exp.c2, "reldiff.pred", at=-1:7, 
+reldiff.pred <- spplot(r.pk.m1.exp.c2, "reldiff.pred", at=-1:7,
   main="Gaussian - robust Kriging predictions", scales=list(draw=TRUE))
 # ratio Kriging variances
-r.pk.m1.exp.c2$ratio.msep <- r.pk.m1.exp.c1000$se^2 / 
+r.pk.m1.exp.c2$ratio.msep <- r.pk.m1.exp.c1000$se^2 /
   r.pk.m1.exp.c2$se^2 * 100
-ratio.msep <- spplot(r.pk.m1.exp.c2, "ratio.msep", at=105:115, 
+ratio.msep <- spplot(r.pk.m1.exp.c2, "ratio.msep", at=105:115,
   main="ratio of Gaussian to robust Kriging variances",scales=list(draw=TRUE))
 plot(reldiff.pred, pos=c(0, 0, 0.5, 1), more=TRUE)
 #  add bubble plot of centred data colored by "robustness" weights
 rw <- cut(r.georob.m1.exp.c2$rweights, seq(0.2, 1, by = 0.2))
 lattice::trellis.focus("panel", 1, 1)
-lattice::panel.points(coalash$x, coalash$y, lwd=2, 
-  cex=sqrt(abs(coalash$coalash - median((coalash$coalash)))), 
+lattice::panel.points(coalash$x, coalash$y, lwd=2,
+  cex=sqrt(abs(coalash$coalash - median((coalash$coalash)))),
   col=colorRampPalette(c("yellow", "orange", grey(0.4)))(4)[as.numeric(rw)])
-lattice::panel.text(rep(17, nlevels(rw)+1), 0:nlevels(rw), pos=2, cex=0.8, 
-  labels=c(rev(levels(rw)), "rob. weights"), 
+lattice::panel.text(rep(17, nlevels(rw)+1), 0:nlevels(rw), pos=2, cex=0.8,
+  labels=c(rev(levels(rw)), "rob. weights"),
   col=c(rev(colorRampPalette(c("yellow", "orange", grey(0.4)))(4)), "white"))
 lattice::trellis.unfocus()
 
@@ -815,12 +819,12 @@ getOption("SweaveHooks")[["fig"]]()
 tmp <- expand.grid(x = seq(2.5, 16.5, by=4), y=seq(2, 22, by=4))
 rownames(tmp) <- paste("block", rownames(tmp), sep="")
 # create SpatialPolygonsDataFrame
-coalash.polygons <- sapply(1:nrow(tmp), function(i, x){  
+coalash.polygons <- sapply(1:nrow(tmp), function(i, x){
   Polygons(list(Polygon(
         t(x[,i] + t(cbind(c(-2, 2, 2, -2, -2), c(-2, -2, 2, 2, -2)))),
         hole=FALSE)), ID=paste("block", i, sep=""))},
   x=t(tmp))
-coalash.polygons <- SpatialPolygonsDataFrame(SpatialPolygons(coalash.polygons), 
+coalash.polygons <- SpatialPolygonsDataFrame(SpatialPolygons(coalash.polygons),
   data = tmp)
 summary(coalash.polygons)
 plot(coalash.polygons, col="grey", axes=TRUE); points(y~x, coalash)
@@ -853,7 +857,7 @@ c(pred=mean(r.bk.m1.exp.c2$pred$pred),
 ###################################################
 coalash.domain <- rbind(c(0.5,0), c(16.5,0), c(16.5,24), c(0.5,24), c(0.5,0))
 coalash.domain <- SpatialPolygonsDataFrame(
-  SpatialPolygons(list(Polygons(list(Polygon(coalash.domain)), ID= "domain"))), 
+  SpatialPolygons(list(Polygons(list(Polygon(coalash.domain)), ID= "domain"))),
   data=data.frame(x=8.5,y=12,row.names="domain"))
 slot(predict(r.georob.m1.exp.c2, newdata=coalash.domain,
   control=control.predict.georob(pwidth=16, pheight=24)), "data")
@@ -863,13 +867,13 @@ slot(predict(r.georob.m1.exp.c2, newdata=coalash.domain,
 ### code chunk number 86: ash-bKriging-plot-robust-gaussian-1
 ###################################################
 getOption("SweaveHooks")[["fig"]]()
-pred.rob <- spplot(r.bk.m1.exp.c2$pred, "pred", at=seq(8, 11, by=0.25), 
+pred.rob <- spplot(r.bk.m1.exp.c2$pred, "pred", at=seq(8, 11, by=0.25),
   main="robust Kriging prediction", scales=list(draw=TRUE))
-pred.gauss <- spplot(r.bk.m1.exp.c1000$pred, "pred", at=seq(8, 11, by=0.25), 
+pred.gauss <- spplot(r.bk.m1.exp.c1000$pred, "pred", at=seq(8, 11, by=0.25),
   main="Gaussian Kriging prediction", scales=list(draw=TRUE))
-se.rob <- spplot(r.bk.m1.exp.c2$pred, "se", at=seq(0.15, 0.45, by=0.025), 
+se.rob <- spplot(r.bk.m1.exp.c2$pred, "se", at=seq(0.15, 0.45, by=0.025),
   main="standard error robust Kriging", scales=list(draw=TRUE))
-se.gauss <- spplot(r.bk.m1.exp.c1000$pred, "se", at=seq(0.15, 0.45, by=0.025), 
+se.gauss <- spplot(r.bk.m1.exp.c1000$pred, "se", at=seq(0.15, 0.45, by=0.025),
   main="standard error Gaussian Kriging", scales=list(draw=TRUE))
 plot(pred.rob, pos=c(0, 0.5, 0.5, 1), more=TRUE)
 plot(pred.gauss, pos=c(0.5, 0.5, 1, 1), more=TRUE)
@@ -882,7 +886,7 @@ plot(se.gauss, pos=c(0.5, 0, 1, 0.5), more=FALSE)
 ###################################################
 ## # save(list=ls(pattern="^r\\."), file="r_coalash_objects.RData", version = 2)
 ## save(list=c(
-##     "r.cv.georob.m1.exp.c2", "r.cv.georob.m1.exp.c1000", 
+##     "r.cv.georob.m1.exp.c2", "r.cv.georob.m1.exp.c1000",
 ##     "r.pk.m1.exp.c2", "r.pk.m1.exp.c1000", "r.bk.m1.exp.c2", "r.bk.m1.exp.c1000"
 ##   ), file="r_coalash_objects.RData", version = 2)
 ## rm(list=ls(pattern="^r\\."))

@@ -1,4 +1,4 @@
-% 2024-01-26 A. Papritz
+% 2024-02-07 A. Papritz
 % R CMD Rd2pdf --force georobPackage.Rd;  R CMD Rdconv -t html -o bla.html georobPackage.Rd ; open bla.html;
 % hunspell -d en_GB-ise,en_GB-ize,en_GB-large -t -i mac  georobPackage.Rd
 \encoding{utf8}
@@ -83,6 +83,7 @@
     is the variance of seemingly uncorrelated micro-scale variation in
     \eqn{B(\boldsymbol{s})}{B(s)}
     that cannot be resolved with the chosen sampling design,
+    \eqn{\boldsymbol{I}} is the identity matrix, 
     \eqn{\sigma^2} is the variance of the captured auto-correlated variation in
     \eqn{B(\boldsymbol{s})}{B(s)},
     \eqn{\sigma_B^2=\sigma_{\mathrm{n}}^2+\sigma^2}{\sigma_B^2=\sigma_n^2+\sigma^2}
@@ -95,7 +96,7 @@
 
     We define
     \eqn{\boldsymbol{V}_{\alpha}}{V_{\alpha}}
-    to be the matrix with elements
+    to be the (generalized) correlation matrix with elements
     \deqn{(\boldsymbol{V}_{\alpha})_{ij} =
       \gamma_0 - \gamma(|\boldsymbol{A}\;(
       \boldsymbol{s}_i-\boldsymbol{s}_j)|),}{
@@ -429,8 +430,9 @@
       by \var{K}-fold cross-validation (see \code{\link{cv.georob}} and
       \code{\link{validate.predictions}}).
 
-      \item Computing robust external drift point and block Kriging
-      predictions (see \code{\link{predict.georob}}, \code{\link{control.predict.georob}}).
+      \item Computing customary and robust external drift point and block
+      Kriging predictions (see \code{\link{predict.georob}},
+      \code{\link{control.predict.georob}}).
 
       \item Unbiased back-transformation of both point and block Kriging
       predictions of log-transformed data to the original scale of the

@@ -110,7 +110,7 @@ function(
   ## 2023-12-20 AP added on.exit(options(old.opt)), replaced makeCluster by makePSOCKcluster
   ## 2023-12-20 AP replacement of identical(class(...), ...) by inherits(..., ...)
   ## 2024-02-01 AP saving SOCKcluster.RData to tempdir()
-
+  ## 2024-02-09 AP correction of error in processing output
   ##  ##############################################################################
 
 
@@ -1229,11 +1229,11 @@ function(
 
       t.pred <- data.frame( pred.coords, t.pred )
 
-      if( !inherits( newdata, "data.frame" ) ){
+      if( class( newdata )[1] != "data.frame" ){
         coordinates( t.pred ) <- locations
-        if( !inherits( newdata, c( "SpatialPoints", "SpatialPointsDataFrame" ) ) ){
+        if( !( class( newdata )[1] %in% c( "SpatialPoints", "SpatialPointsDataFrame" ) ) ){
           gridded( t.pred ) <- TRUE
-          if( !inherits( newdata, c( "SpatialPixels", "SpatialPixelsDataFrame" ) ) ){
+          if( !( class( newdata )[1] %in% c( "SpatialPixels", "SpatialPixelsDataFrame" ) ) ){
             fullgrid( t.pred ) <- TRUE
           }
         }

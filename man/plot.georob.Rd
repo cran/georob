@@ -1,4 +1,4 @@
-% 2024-02-01 A. Papritz
+% 2024-02-09 A. Papritz
 % R CMD Rdconv -t html -o bla.html plot.georob.Rd ; open bla.html; R CMD Rd2pdf --force plot.georob.Rd;
 
 \encoding{utf8}
@@ -228,7 +228,6 @@ of residuals and random effects).
 }
 
 \examples{
-\donttest{
 ################
 ## meuse data ##
 ################
@@ -240,14 +239,16 @@ r.logzn.reml <- georob(log(zinc) ~ sqrt(dist), data = meuse, locations = ~ x + y
     param = c(variance = 0.15, nugget = 0.05, scale = 200),
     tuning.psi = 1000)
 summary(r.logzn.reml, correlation = TRUE)
+plot(r.logzn.reml, lag.dist.def = seq(0, 2000, by = 100))
 
 ## robust REML fit
-r.logzn.rob <- update(r.logzn.reml, tuning.psi = 1)
+if(interactive()){
+  ## example is run only in interactive session because cpu times exceeds 5 s
+  r.logzn.rob <- update(r.logzn.reml, tuning.psi = 1)
 
-summary(r.logzn.rob, correlation = TRUE)
-
-plot(r.logzn.reml, lag.dist.def = seq(0, 2000, by = 100))
-lines(r.logzn.rob, col = "red")}
+  summary(r.logzn.rob, correlation = TRUE)
+  lines(r.logzn.rob, col = "red")
+}
 }
 
 

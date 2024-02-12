@@ -1,4 +1,4 @@
-% 2021-06-04 A. Papritz
+% 2024-02-09 A. Papritz
 % R CMD Rdconv -t html -o bla.html sample.variogram.Rd ; open bla.html; R CMD Rd2pdf --force sample.variogram.Rd;
 
 \encoding{utf8}
@@ -187,19 +187,32 @@ sample.variogram(object, ...)
   class by ( \var{xy.angle.def}[\var{K}-2], \var{xy.angle.def}[\var{K}-1]].
 }
 
-\value{An object of class \code{sample.variogram}, which is a data frame
-with the following components:
+\value{
 
-\tabular{ll}{
-  \code{lag.dist} \tab the mean lag distance of the lag class, \cr
-  \code{xy.angle} \tab the angular class in the \eqn{x}-\eqn{y}-plane, \cr
-  \code{xz.angle} \tab the angular class in the \eqn{x}-\eqn{z}-plane, \cr
-  \code{gamma} \tab the estimated semi-variance of the lag class, \cr
-  \code{npairs} \tab the number of data pairs in the lag class, \cr
-  \code{lag.x} \tab the \eqn{x}-component of the mean lag vector of the lag class, \cr
-  \code{lag.x} \tab the \eqn{y}-component of the mean lag vector of the lag class, \cr
-  \code{lag.z} \tab the \eqn{z}-component of the mean lag vector of the lag class.\cr
-}
+  All methods of the generic function \code{sample.variogram}
+  return an object of class  \code{sample.variogram}, which
+  is a data frame with the following components:
+
+  \tabular{ll}{
+    \code{lag.dist} \tab the mean lag distance of the lag class, \cr
+    \code{xy.angle} \tab the angular class in the \eqn{x}-\eqn{y}-plane, \cr
+    \code{xz.angle} \tab the angular class in the \eqn{x}-\eqn{z}-plane, \cr
+    \code{gamma} \tab the estimated semi-variance of the lag class, \cr
+    \code{npairs} \tab the number of data pairs in the lag class, \cr
+    \code{lag.x} \tab the \eqn{x}-component of the mean lag vector of the lag class, \cr
+    \code{lag.x} \tab the \eqn{y}-component of the mean lag vector of the lag class, \cr
+    \code{lag.z} \tab the \eqn{z}-component of the mean lag vector of the lag class.\cr
+  }
+
+  The method \code{summary.sample.variogram} returns an object of class
+  \code{summary.sample.variogram} which is list with the components
+  \code{log.dist}, \code{npairs}, \code{xy.angle} and \code{xz.angle}, see
+  description for object of class \code{sample.variogram} above.  There is a
+  \code{print} method for objects of class \code{summary.sample.variogram}
+  which invisibly returns the object unchanged.
+
+  The method \code{plot.sample.variogram} is called for its side effects and
+  invisibly returns the object \code{sample.variogram} unchanged.
 
 }
 
@@ -261,19 +274,17 @@ with the following components:
 \examples{
 data(wolfcamp)
 
-## fitting an isotropic IRF(0) model
+## omnidirectional sample variogram
 r.sv.iso <- sample.variogram(pressure~1, data = wolfcamp,
     locations = ~x + y, lag.dist.def = seq(0, 200, by = 15))
 
-\donttest{
-plot(r.sv.iso, type = "l")}
+plot(r.sv.iso, type = "l")
 
-## fitting an anisotropic IRF(0) model
+## direction-dependent sample variogram
 r.sv.aniso <- sample.variogram(pressure~1, data = wolfcamp,
     locations = ~x + y, lag.dist.def = seq(0, 200, by = 15),
     xy.angle.def = c(0., 22.5, 67.5, 112.5, 157.5, 180.))
-\donttest{
-plot(r.sv.aniso, type = "l", add = TRUE, col = 2:5)}
+plot(r.sv.aniso, type = "l", add = TRUE, col = 2:5)
 }
 
 \keyword{models}

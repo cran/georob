@@ -915,8 +915,6 @@ function(
         ##  implements a sufficient condition for positive definiteness of
         ##  Valpha (strong row sum criterion)
 
-#         browser()
-
         if( is.na( gcr.constant ) ){
           if( variogram.model %in% irf.models ){
             if( identical( variogram.model, "RMfbm" ) ){

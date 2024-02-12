@@ -1,4 +1,4 @@
-% 2024-01-26 A. Papritz
+% 2024-02-09 A. Papritz
 % R CMD Rdconv -t html -o bla.html georobS3methods.Rd ; open bla.html; R CMD Rd2pdf --force georobS3methods.Rd;
 % hunspell -d en_GB-ise,en_GB-ize,en_GB-large -t -i mac  georobS3methods.Rd
 
@@ -171,27 +171,36 @@
 
 \value{
 
-  The methods \code{fixef}, \code{fixed.effects} and \code{coef} return the
-  numeric vector of estimated fixed-effects regression coefficients or
-  variogram and anisotropy parameters (\code{coef} only), and \code{vcov}
-  returns the covariance matrix of the estimated regression coefficients.
+  The methods \code{fixef.georob} and \code{fixed.effects.georob} return
+  the numeric vector of estimated fixed-effects regression coefficients, and
+  \code{vcov.georob} returns the covariance matrix of the estimated
+  regression coefficients.
 
-  The methods \code{resid}, \code{residuals} and \code{rstandard} return
-  numeric vectors of (standardized) residuals, and \code{ranef} and
-  \code{random.effects} the numeric vector of (standardized) spatial random
-  effects, see \emph{Details}.
+  The method \code{coef.georob} returns an object of class
+  \code{coef.georob} which is a numeric vector with estimated fixed-effects
+  regression coefficients or variogram and anisotropy parameters.  There is
+  a \code{print} method for objects of class \code{coef.georob} which
+  returns invisibly the object unchanged.
 
-  The methods \code{model.frame} and \code{model.matrix} return a model
-  frame and the fixed-effects model matrix, respectively, and \code{nobs}
-  returns the number of observations used to fit a spatial linear model.
+  The methods \code{resid.georob}, \code{residuals.georob} and
+  \code{rstandard.georob} return numeric vectors of (standardized)
+  residuals, and \code{ranef.georob} and \code{random.effects.georob} the
+  numeric vector of (standardized) spatial random effects, see
+  \emph{Details}.
 
-  The method \code{summary} generates a list with components extracted
-  directly from \code{object} (\code{call}, \code{residuals}, \code{bhat},
+  The methods \code{model.frame.georob} and \code{model.matrix.georob}
+  return a model frame and the fixed-effects model matrix, respectively,
+  and \code{nobs.georob} returns the number of observations used to fit a
+  spatial linear model.
+
+  The method \code{summary.georob} generates an object of class
+  \code{summary.georob} which is a list with components extracted directly
+  from \code{object} (\code{call}, \code{residuals}, \code{bhat},
   \code{rweights}, \code{converged}, \code{convergence.code}, \code{iter},
   \code{loglik}, \code{variogram.object}, \code{gradient},
-  \code{tuning.psi}, \code{df.residual}, \code{control}, \code{terms}) and
-  complements the list by the following components:
-  %
+  \code{tuning.psi}, \code{df.residual}, \code{control}, \code{terms})
+  and complemented by the following components:
+
   \describe{
 
     \item{\code{scale}}{the square root of the estimated nugget effect
@@ -219,6 +228,10 @@
     estimated \eqn{\varepsilon}{\epsilon}.}
 
   }
+  There is a \code{print} methods for class \code{summary.georob} which
+  invisibly returns the object unchanged.
+
+  The method \code{print.georob} invisibly returns the object unchanged.
 
 }
 
@@ -259,8 +272,6 @@
 }
 
 \examples{
-\donttest{
-
 data(meuse)
 
 ## Gaussian REML fit
@@ -293,14 +304,9 @@ abline(0, 1)
 
 par(old.par)
 }
-}
 
 \keyword{models}
 \keyword{spatial}
 \keyword{robust}
 \keyword{methods}
 \keyword{print}
-
-% \method{rstudent}{georob}(model, ...)
-
-

@@ -1,4 +1,4 @@
-% 2024-02-01 A. Papritz
+% 2024-02-9 A. Papritz
 % R CMD Rdconv -t html -o bla.html fit.variogram.model.Rd ; open bla.html; R CMD Rd2pdf --force fit.variogram.model.Rd;
 % hunspell -d en_GB-ise,en_GB-ize,en_GB-large -t -i mac  fit.variogram.model.Rd
 
@@ -268,23 +268,25 @@ control.fit.variogram.model(maximizer = c("nlminb", "optim"),
   \item{\dots}{additional arguments passed to methods.}
 
 }
-\details{The parametrization of geometrically anisotropic variograms is
-described in detail in \code{\link{georobPackage}}, and the section
-\emph{Details} of \code{\link{georob}} describes how the parameter
-estimates are constrained to permissible ranges.  The same
-mechanisms are used in \code{fit.variogram.model}.
+\details{
 
-The method \code{summary} computes confidence intervals of the estimated
-variogram and anisotropy parameters from the Hessian matrix of the residual
-sums of squares, based on the asymptotic normal distribution of least
-squares estimates.  Note that the Hessian matrix with respect to the
-\emph{transformed} variogram and anisotropy parameters is used for this.
-Hence the inverse Hessian matrix is the covariance matrix of the
-transformed parameters, confidence intervals are first computed for the
-transformed parameters and the limits of these intervals are transformed
-back to the original scale of the parameters.  Optionally, \code{summary}
-reports the correlation matrix of the \emph{transformed} parameters, also
-computed from the Hessian matrix.
+  The parametrization of geometrically anisotropic variograms is
+  described in detail in \code{\link{georobPackage}}, and the section
+  \emph{Details} of \code{\link{georob}} describes how the parameter
+  estimates are constrained to permissible ranges.  The same
+  mechanisms are used in \code{fit.variogram.model}.
+
+  The method \code{summary} computes confidence intervals of the estimated
+  variogram and anisotropy parameters from the Hessian matrix of the residual
+  sums of squares, based on the asymptotic normal distribution of least
+  squares estimates.  Note that the Hessian matrix with respect to the
+  \emph{transformed} variogram and anisotropy parameters is used for this.
+  Hence the inverse Hessian matrix is the covariance matrix of the
+  transformed parameters, confidence intervals are first computed for the
+  transformed parameters and the limits of these intervals are transformed
+  back to the original scale of the parameters.  Optionally, \code{summary}
+  reports the correlation matrix of the \emph{transformed} parameters, also
+  computed from the Hessian matrix.
 
 }
 
@@ -378,7 +380,7 @@ computed from the Hessian matrix.
   }
 
   The function \code{control.fit.variogram.model} returns a list with
-  control parameters to steer \cr \code{fit.variogram.model}, see arguments of
+  parameters to steer \cr \code{fit.variogram.model}, see arguments of
   the function above for its components.
 
   The method \code{print.fitted.variogram} invisibly returns the fitted
@@ -394,8 +396,7 @@ computed from the Hessian matrix.
   confidence intervals and optionally the correlation matrix
   \code{cor.tf.param} of the estimated transformed parameters.  There is a
   \code{print} method for objects of class \code{summary.fitted.variogram}
-  which returns invisibly the object \code{summary.fitted.variogram}
-  unchanged.
+  which returns invisibly the object unchanged.
 
   The method \code{lines.fitted.variogram} is called for its side effects
   and returns the value \code{NULL} invisibly.
@@ -451,37 +452,40 @@ data(wolfcamp)
 ## fitting an isotropic IRF(0) model
 r.sv.iso <- sample.variogram(pressure~1, data = wolfcamp,
     locations = ~x + y, lag.dist.def = seq(0, 200, by = 15))
-
-\donttest{
-r.irf0.iso <- fit.variogram.model(r.sv.iso, variogram.model = "RMfbm",
-    param = c(variance = 100, nugget = 1000, scale = 1., alpha = 1.),
-    fit.param = default.fit.param(scale = FALSE, alpha = TRUE))
-summary(r.irf0.iso, correlation = TRUE)
-
 plot(r.sv.iso, type = "l")
-lines(r.irf0.iso, line.col = "red")}
+
+if(interactive()){
+  ## example is run only in interactive session because cpu times exceeds 5 s
+  r.irf0.iso <- fit.variogram.model(r.sv.iso, variogram.model = "RMfbm",
+      param = c(variance = 100, nugget = 1000, scale = 1., alpha = 1.),
+      fit.param = default.fit.param(scale = FALSE, alpha = TRUE))
+  summary(r.irf0.iso, correlation = TRUE)
+  lines(r.irf0.iso, line.col = "red")
+}
 
 ## fitting an anisotropic IRF(0) model
 r.sv.aniso <- sample.variogram(pressure~1, data = wolfcamp,
     locations = ~x + y, lag.dist.def = seq(0, 200, by = 15),
     xy.angle.def = c(0., 22.5, 67.5, 112.5, 157.5, 180.))
-
-\donttest{
-r.irf0.aniso <- fit.variogram.model(r.sv.aniso, variogram.model = "RMfbm",
-    param = c(variance = 100, nugget = 1000, scale = 1., alpha = 1.5),
-    fit.param = default.fit.param(scale = FALSE, alpha = TRUE),
-    aniso = default.aniso(f1 = 0.4, omega = 135.),
-    fit.aniso = default.fit.aniso(f1 = TRUE, omega = TRUE),
-    control = control.fit.variogram.model(
-      maximizer = "optim",
-      optim = control.optim(
-        method = "BFGS", hessian = TRUE, control = list(maxit = 5000)
-      )
-    ))
-summary(r.irf0.aniso, correlation = TRUE)
-
 plot(r.sv.aniso, type = "l")
-lines(r.irf0.aniso, xy.angle = seq(0, 135, by = 45))}
+
+if(interactive()){
+  ## example is run only in interactive session because cpu times exceeds 5 s
+  r.irf0.aniso <- fit.variogram.model(r.sv.aniso, variogram.model = "RMfbm",
+      param = c(variance = 100, nugget = 1000, scale = 1., alpha = 1.5),
+      fit.param = default.fit.param(scale = FALSE, alpha = TRUE),
+      aniso = default.aniso(f1 = 0.4, omega = 135.),
+      fit.aniso = default.fit.aniso(f1 = TRUE, omega = TRUE),
+      control = control.fit.variogram.model(
+        maximizer = "optim",
+        optim = control.optim(
+          method = "BFGS", hessian = TRUE, control = list(maxit = 5000)
+        )
+      ))
+  summary(r.irf0.aniso, correlation = TRUE)
+
+  lines(r.irf0.aniso, xy.angle = seq(0, 135, by = 45))
+}
 }
 
 \keyword{models}

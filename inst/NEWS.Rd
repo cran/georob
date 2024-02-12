@@ -1,10 +1,38 @@
-% 2023-11-14 A. Papritz
+% 2024-02-09 A. Papritz
 \name{georobNews}
 \encoding{UTF-8}
 
 \title{News for Package \pkg{georob}}
 
-\section{Changes in version 0.3-17 (2024-01-25)}{
+\section{Changes in version 0.3-18 (2024-02-09)}{
+  \subsection{NEW FEATURES}{
+    \itemize{
+
+      \item minor revision of vignette
+      
+      \item substituted all \code{donttest} statements in examples with
+      lengthy computations by interactive() clause which has the effect
+      that executes lenghty computations are only carried out interactive
+      sessions
+
+    }
+  }
+  \subsection{BUG FIXES}{
+    \itemize{
+
+      \item correction of error in \code{predict.georob() when processing
+      output}
+      
+      \item \code{plot.sample.variogram()} now returns NULL
+      
+      \item eliminated lonely item in \code{NEWS.Rd}
+
+    }
+  }
+}
+
+
+\section{Changes in version 0.3-17 (2024-02-01)}{
   \subsection{NEW FEATURES}{
     \itemize{
 
@@ -27,7 +55,7 @@
 
       \item thorough revision of function \code{condsim()} (new functions
       \code{sim.chol.decomp()} and \code{sim.circulant.embedding()} for
-      simulating unconditional Gaussian realization by Cholesky matrix
+      simulating unconditional Gaussian realizations by Cholesky matrix
       decomposition and circulant embedding method)
 
     }
@@ -42,7 +70,7 @@
       vignette
       
       \item complemented value section of various help pages, diverse fixes 
-      in order to comply with CRAN policies
+      in order to comply with CRAN policies in Rd-files
 
     }
   }
@@ -223,7 +251,6 @@
       introduced in version 0.3-8 when computing semivariances for
       anisotropic variogram models
 
-      \item
     }
   }
 }

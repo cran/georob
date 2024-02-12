@@ -1,4 +1,4 @@
-% 2024-02-01 A. Papritz
+% 2024-02-09 A. Papritz
 % R CMD Rdconv -t html -o bla.html validate.predictions.Rd ; open bla.html; R CMD Rd2pdf --force validate.predictions.Rd;
 
 \encoding{utf8}
@@ -331,34 +331,40 @@ validate.predictions(data, pred, se.pred,
 }
 
 \examples{
-\donttest{
+## define number of cores for parallel computations
+if(interactive()) ncpu <- 10L else ncpu <- 1L
+
 data(meuse)
 
 r.logzn <- georob(log(zinc) ~ sqrt(dist), data = meuse, locations = ~ x + y,
-    variogram.model = "RMexp",
-    param = c(variance = 0.15, nugget = 0.05, scale = 200),
-    tuning.psi = 1)
+  variogram.model = "RMexp",
+  param = c(variance = 0.15, nugget = 0.05, scale = 200),
+  tuning.psi = 1000)
 
-r.logzn.cv.1 <- cv(r.logzn, seed = 1, lgn = TRUE, ncores = 1, verbose = 1)
-r.logzn.cv.2 <- cv(r.logzn, formula = .~. + ffreq, seed = 1, lgn = TRUE,
-    ncores = 1, verbose = 1)
+if(interactive()){
+  ## example is run only in interactive session because cpu times exceeds 5 s
+  r.logzn.cv.1 <- cv(r.logzn, seed = 1, lgn = TRUE, ncores = 1, verbose = 1)
 
-summary(r.logzn.cv.1, se = TRUE)
-summary(r.logzn.cv.2, se = TRUE)
+  r.logzn.cv.2 <- cv(r.logzn, formula = .~. + ffreq, seed = 1, lgn = TRUE,
+      ncores = ncpu)
 
-op <- par(mfrow = c(2,2))
-plot(r.logzn.cv.1, type = "lgn.sc")
-plot(r.logzn.cv.2, type = "lgn.sc", add = TRUE, col = "red")
-abline(0, 1, lty= "dotted")
-plot(r.logzn.cv.1, type = "ta")
-plot(r.logzn.cv.2, type = "ta", add = TRUE, col = "red")
-abline(h=0, lty= "dotted")
-plot(r.logzn.cv.2, type = "mc", col = "red")
-plot(r.logzn.cv.1, type = "bs")
-plot(r.logzn.cv.2, type = "bs", add = TRUE, col = "red")
-legend("topright", lty = 1, col = c("black", "red"), bty = "n",
-    legend = c("log(Zn) ~ sqrt(dist)", "log(Zn) ~ sqrt(dist) + ffreq"))
-par(op)}
+  summary(r.logzn.cv.1, se = TRUE)
+  summary(r.logzn.cv.2, se = TRUE)
+
+  op <- par(mfrow = c(2,2))
+  plot(r.logzn.cv.1, type = "lgn.sc")
+  plot(r.logzn.cv.2, type = "lgn.sc", add = TRUE, col = "red")
+  abline(0, 1, lty= "dotted")
+  plot(r.logzn.cv.1, type = "ta")
+  plot(r.logzn.cv.2, type = "ta", add = TRUE, col = "red")
+  abline(h=0, lty= "dotted")
+  plot(r.logzn.cv.2, type = "mc", col = "red")
+  plot(r.logzn.cv.1, type = "bs")
+  plot(r.logzn.cv.2, type = "bs", add = TRUE, col = "red")
+  legend("topright", lty = 1, col = c("black", "red"), bty = "n",
+      legend = c("log(Zn) ~ sqrt(dist)", "log(Zn) ~ sqrt(dist) + ffreq"))
+  par(op)
+}
 }
 
 \keyword{models}
