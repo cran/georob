@@ -84,6 +84,7 @@ cv.georob <-
   ## 2023-12-20 AP added on.exit(options(old.opt)), replaced makeCluster by makePSOCKcluster,
   ##               class queries by inherits()
   ## 2024-02-01 AP saving SOCKcluster.RData to tempdir()
+  ## 2024-02-21 AP conditionally prevent recursive parallelizations in pmm or f.aux.gcr
 
 #### -- auxiliary function
 
@@ -664,6 +665,12 @@ cv.georob <-
 
   cl <- f.call.set_x_to_value( cl, "verbose", verbose )
 
+  ## conditionally prevent recursive parallelizations in pmm or f.aux.gcr
+
+  if( ncores > 1L && !object[["control"]][["pcmp"]][["allow.recursive"]] ){
+    cl <- f.call.prevent_recursive_parallelization( cl )
+  }
+
   ## update call in object
 
   object[["call"]] <- cl
@@ -678,6 +685,7 @@ cv.georob <-
   if( is.null( object[["control"]][["pcmp"]][["fork"]] ) ){
     object[["control"]][["pcmp"]][["fork"]] <- !identical( .Platform[["OS.type"]], "windows" )
   }
+
 
   if( ncores > 1L && !object[["control"]][["pcmp"]][["fork"]] ){
 

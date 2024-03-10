@@ -1,4 +1,4 @@
-% 2024-02-09 A. Papritz
+% 2024-03-09 A. Papritz
 % R CMD Rdconv -t html -o bla.html sample.variogram.Rd ; open bla.html; R CMD Rd2pdf --force sample.variogram.Rd;
 
 \encoding{utf8}
@@ -83,7 +83,7 @@ sample.variogram(object, ...)
   Another possible value is \code{NULL}, no action.  Value
   \code{\link{na.exclude}} can be useful.}
 
-  \item{lag.dist.def}{a numeric defining a constant bin
+  \item{lag.dist.def}{a numeric scalar defining a constant bin
   width for grouping the lag distances or a numeric vector with the bounds
   of a set of contiguous bins (upper bounds of bins except for the first
   element of \code{lag.dist.def} which is the lower bound of the first

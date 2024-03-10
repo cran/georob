@@ -1,8 +1,32 @@
-% 2024-02-09 A. Papritz
+% 2024-02-21 A. Papritz
 \name{georobNews}
 \encoding{UTF-8}
 
 \title{News for Package \pkg{georob}}
+
+\section{Changes in version 0.3-19 (2024-03-09)}{
+  \subsection{NEW FEATURES}{
+    \itemize{
+
+      \item improved handling of parallelized matrix multiplications and
+      parallelized computations of generalized covariances by main process
+      and and child processes running already in parallel
+      
+      \item code file georob_private_functions.R replaced by 4 new code
+      files georob_private_further_functions.R,
+      georob_private_generalized_covariances.R, georob_private_georob_fit.R
+      and georob_private_psi_functions_etc.R
+      
+    }
+  }
+  \subsection{BUG FIXES}{
+    \itemize{
+
+      \item minor edits in various help pages
+
+    }
+  }}
+
 
 \section{Changes in version 0.3-18 (2024-02-09)}{
   \subsection{NEW FEATURES}{
@@ -11,8 +35,8 @@
       \item minor revision of vignette
       
       \item substituted all \code{donttest} statements in examples with
-      lengthy computations by interactive() clause which has the effect
-      that executes lenghty computations are only carried out interactive
+      lengthy computations by \code{interactive()} clause which has the effect
+      that lenghty computations are only carried out in interactive
       sessions
 
     }

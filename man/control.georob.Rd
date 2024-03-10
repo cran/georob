@@ -396,9 +396,11 @@ control.nlminb(control = list(rel.tol = 1.e-5), lower = -Inf,
     }
 
     Possible options are: \code{"gaussian"} or \code{"long.tailed"}.  In
-    the latter case the PDF of \eqn{\varepsilon}{\epsilon} is assumed to be
-    proportional to \eqn{1/\tau \, \exp(-\rho(\varepsilon/\tau))}{1/\tau \exp(-\rho(\epsilon/\tau))}, where
-    \eqn{\psi(x)=\rho'(x)}.
+    the latter case the probability density function of
+    \eqn{\varepsilon}{\epsilon} is assumed to be proportional to
+    \eqn{1/\tau \, \exp(-\rho_c(\varepsilon/\tau))}{1/\tau
+    \exp(-\rho_c(\epsilon/\tau))}, where
+    \eqn{\psi_c(x)=\rho_c^\prime(x)}{\psi_c(x)=\rho'_c(x)}.
 
   }
 

@@ -1,4 +1,4 @@
-% 2024-02-09 A. Papritz
+% 2024-03-09 A. Papritz
 % R CMD Rdconv -t html -o bla.html plot.georob.Rd ; open bla.html; R CMD Rd2pdf --force plot.georob.Rd;
 
 \encoding{utf8}
@@ -67,7 +67,7 @@ of residuals and random effects).
   generated (\code{FALSE}, default) or whether the information should be
   added to the current plot (\code{TRUE}).}
 
-  \item{lag.dist.def}{an optional numeric defining a constant bin
+  \item{lag.dist.def}{an optional numeric scalar defining a constant bin
   width for grouping the lag distances or an optional numeric vector with
   the upper bounds of a set of contiguous bins for computing the sample
   variogram of the regression residuals, see
@@ -91,8 +91,8 @@ of residuals and random effects).
   \item{max.lag}{a positive numeric defining the largest lag distance for
   which semi-variances should be computed (default no restriction).}
 
-  \item{estimator}{a character keyword defining the estimator for the
-  sample variogram.  Possible values are:
+  \item{estimator}{a character keyword defining the estimator for computing
+  the sample variogram.  Possible values are:
 
     \itemize{
 

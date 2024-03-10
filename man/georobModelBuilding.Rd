@@ -1,4 +1,4 @@
-% 2024-02-09 A. Papritz
+% 2024-03-09 A. Papritz
 % R CMD Rdconv -t html -o bla.html georobModelBuilding.Rd ; open bla.html;
 % R CMD Rd2pdf --force georobModelBuilding.Rd;
 % hunspell -d en_GB-ise,en_GB-ize,en_GB-large -t -i mac  georobModelBuilding.Rd
@@ -119,7 +119,9 @@ step(object, ...)
   \item{use.fitted.param}{a logical scalar controlling whether fitted
     values of \code{param} (and \code{aniso} are used as initial values
     when variogram parameters are fitted afresh for \code{add}ing and
-    \code{drop}ping terms from the model (default \code{TRUE}).}
+    \code{drop}ping terms from the model (default \code{TRUE}).  If equal
+    to \code{FALSE} then the initial values in \code{object[["call"]]} are
+    used.}
 
   \item{vcov}{a function for estimating the covariance matrix of the
     regression coefficients, see \code{\link[lmtest]{waldtest}}.}

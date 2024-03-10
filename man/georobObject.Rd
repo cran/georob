@@ -1,4 +1,4 @@
-% 2024-01-26 A. Papritz
+% 2024-03-09 A. Papritz
 % R CMD Rdconv -t html -o bla.html georobObject.Rd ; open bla.html; R CMD Rd2pdf --force georobObject.Rd;
 % hunspell -d en_GB-ise,en_GB-ize,en_GB-large -t -i mac  georobObject.Rd
 \encoding{utf8}
@@ -50,7 +50,7 @@
 
       \item{\code{sincos}: a list with \code{sin} and \code{cos} of the
       angles \eqn{\omega}, \eqn{\phi} and \eqn{\zeta} that define the
-      orientation of the anisotropy ellipsoid.}
+      orientation of the anisotropy ellipsoid (see \code{\link{georobPackage}}).}
 
       \item{\code{rotmat}: the matrix
       \eqn{(\boldsymbol{C}_1,
@@ -72,7 +72,8 @@
   \item{tuning.psi}{the value of the tuning constant \eqn{c} of the
   \eqn{\psi_c}-function.}
 
-  \item{coefficients}{a named vector with the estimated regression coefficients.}
+  \item{coefficients}{a named vector with the estimated regression coefficients
+  \eqn{\widehat{\boldsymbol{\beta}}}{hat\beta}.}
 
   \item{fitted.values}{a named vector with the fitted values of the
   external drift
@@ -88,9 +89,9 @@
   \widehat{\boldsymbol{B}}}{hat\epsilon=Y-X hat\beta - hatB}.}
 
   \item{rweights}{a named numeric vector with the \dQuote{robustness weights}
-  \eqn{\psi(\widehat{\varepsilon}_i/\widehat{\tau}) /
+  \eqn{\psi_c(\widehat{\varepsilon}_i/\widehat{\tau}) /
     (\widehat{\varepsilon}_i/\widehat{\tau})}{
-    \psi(hat\epsilon_i/hat\tau) / (hat\epsilon_i/hat\tau)}.}
+    \psi_c(hat\epsilon_i/hat\tau) / (hat\epsilon_i/hat\tau)}.}
 
   \item{converged}{a logical scalar indicating whether numerical maximization of
   the (restricted)\cr log-likelihood by \code{nlminb} or \code{optim} or root
@@ -177,7 +178,7 @@
       \item \code{Valpha}: a list with the (generalized) correlation
       matrices (\code{Valpha}) of the nested variogram models structures
       along with the constants (\code{gcr.constant}) added to the respective
-      semi-variances matrices.
+      semi-variance matrices.
 
       \item \code{Valphaxi}: the (generalized) correlation matrix
       \eqn{\boldsymbol{V}_{\alpha,\xi} =

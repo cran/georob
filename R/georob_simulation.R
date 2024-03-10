@@ -104,6 +104,11 @@ condsim <- function(
   ## 2023-12-21 AP replacement of identical(class(...), ...) by inherits(..., ...)
   ## 2024-01-21 AP new function sim.chol.decomp for simulation with exact coordinates
   ## 2024-01-21 AP new function sim.circulant.embedding for simulation on rectangular grid
+  ## 2024-02-10 AP better handling of recursive parallelization
+  ## 2024-02-10 AP parallelized matrix multiplication
+  ## 2024-02-21 AP added sfStop()
+
+  on.exit( if( sfIsRunning() ) sfStop() )
 
   ## auxiliary function for aggregating a response variable x for the
   ## levels of the variable by.one
@@ -434,7 +439,8 @@ condsim <- function(
           covariances = FALSE,
           control = control.predict.georob(
             mmax = control[["mmax"]],
-            ncores = control[["ncores"]]
+            ncores = control[["ncores"]],
+            pcmp = control[["pcmp"]]
           )
         )
 
@@ -482,7 +488,8 @@ condsim <- function(
           type = type,
           control = control.predict.georob(
             mmax = control[["mmax"]],
-            ncores = control[["ncores"]]
+            ncores = control[["ncores"]],
+            pcmp = control[["pcmp"]]
           )
         )
 
@@ -614,7 +621,8 @@ condsim <- function(
         covariances = FALSE,
         control = control.predict.georob(
           mmax = control[["mmax"]],
-          ncores = control[["ncores"]]
+          ncores = control[["ncores"]],
+          pcmp = control[["pcmp"]]
         )
       )
 
@@ -804,7 +812,8 @@ condsim <- function(
         covariances = control[["covariances"]],
         control = control.predict.georob(
           mmax = control[["mmax"]],
-          ncores = control[["ncores"]]
+          ncores = control[["ncores"]],
+          pcmp = control[["pcmp"]]
         )
       )
 
@@ -818,8 +827,10 @@ condsim <- function(
 
       ## conditional errors
 
+      #       tmp <- sim.values[c(ii.d, ii.s), , drop = FALSE] -
+      #         skw %*% sim.values[i.d, , drop = FALSE]
       tmp <- sim.values[c(ii.d, ii.s), , drop = FALSE] -
-        skw %*% sim.values[i.d, , drop = FALSE]
+        pmm( skw, sim.values[i.d, , drop = FALSE], control = control[["pcmp"]] )
 
       ## conditional realizations
 
@@ -1049,7 +1060,8 @@ condsim <- function(
         covariances = control[["covariances"]],
         control = control.predict.georob(
           mmax = control[["mmax"]],
-          ncores = control[["ncores"]]
+          ncores = control[["ncores"]],
+          pcmp = control[["pcmp"]]
         )
       )
 
@@ -1063,8 +1075,10 @@ condsim <- function(
 
       ## conditional errors
 
+      #       tmp <- sim.values[c(ii.d, ii.s), , drop = FALSE] -
+      #         skw %*% sim.values[i.d, , drop = FALSE]
       tmp <- sim.values[c(ii.d, ii.s), , drop = FALSE] -
-      skw %*% sim.values[i.d, , drop = FALSE]
+        pmm( skw, sim.values[i.d, , drop = FALSE], control = control[["pcmp"]] )
 
       ## conditional realizations
 
@@ -1164,7 +1178,11 @@ sim.chol.decomp <- function(
   ## fields by the Cholesky matrix decomposition method, cf.  Davies (1987)
 
   ## 2024-01-06 A. Papritz
+  ## 2024-02-10 AP parallelized matrix multiplication
+  ## 2024-02-21 AP added sfStop()
 
+
+  on.exit( if( sfIsRunning() ) sfStop() )
 
 #### -- prepare required objects
 
@@ -1292,7 +1310,8 @@ sim.chol.decomp <- function(
 
   ## compute L_22 %*% w, cf. Davis, 1987, p. 96
 
-  result <- t( U ) %*% w
+#   result <- t( U ) %*% w
+  result <- pmm( t( U ), w, control = control.pcmp )
 
   ## return simulated values
 
@@ -1320,6 +1339,9 @@ sim.circulant.embedding <- function(
   ## 2024-01-29 AP minor changes in handling negative eigenvalues of base matrix
   ## 2024-02-01 AP setting random seeds for parallel processing
   ## 2024-02-01 AP saving SOCKcluster.RData to tempdir()
+  ## 2024-02-21 AP added sfStop()
+
+  on.exit( if( sfIsRunning() ) sfStop() )
 
 #### -- auxiliary function to simulate realizations
 
@@ -1748,8 +1770,10 @@ sim.circulant.embedding <- function(
 
     ## convert list to matrix and return result
 
-    matrix( unlist( result ), ncol = nsim )
+    result <- matrix( unlist( result ), ncol = nsim )
 
   }
+
+  return( result )
 
 }

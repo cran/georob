@@ -1,4 +1,4 @@
-% 2024-02-06 A. Papritz
+% 2024-03-09 A. Papritz
 % R CMD Rdconv -t html -o bla.html georob.Rd ; open bla.html; R CMD Rd2pdf --force georob.Rd;
 % hunspell -d en_GB-ise,en_GB-ize,en_GB-large -t -i mac  georob.Rd
 
@@ -132,7 +132,7 @@ georob(formula, data, subset, weights, na.action, model = TRUE,
       \item{\code{omega}: azimuth in degrees of the first semi-principal axis
         of the semi-variance ellipsoid (default \code{omega = 90}).}
 
-      \item{\code{phi}: 90 degrees minus altitude of the first semi-principal axis
+      \item{\code{phi}: 90 degrees minus latitude of the first semi-principal axis
         of the semi-variance ellipsoid (default \code{phi = 90}).}
 
       \item{\code{zeta}: angle in degrees between the second semi-principal

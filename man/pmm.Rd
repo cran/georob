@@ -1,4 +1,4 @@
-% 2024-02-09 A. Papritz
+% 2024-03-09 A. Papritz
 % R CMD Rdconv -t html -o bla.html pmm.Rd ; open bla.html; R CMD Rd2pdf --force pmm.Rd;
 
 \encoding{utf8}
@@ -40,7 +40,7 @@ control.pcmp(pmm.ncores = 1, gcr.ncores = 1, max.ncores = parallel::detectCores(
   \item{max.ncores}{maximum number of cores (integer, default all cores of
   a machine) used for parallelized computations.}
 
-  \item{f}{an integer (default 1) with the numger of tasks assigned to each
+  \item{f}{an integer (default 1) with the number of tasks assigned to each
   core in parallelized operations.}
 
   \item{sfstop}{a logical scalar controlling whether the SNOW socket
@@ -49,7 +49,8 @@ control.pcmp(pmm.ncores = 1, gcr.ncores = 1, max.ncores = parallel::detectCores(
 
   \item{allow.recursive}{a logical scalar controlling whether parallelized
   matrix multiplicaction and computation of generalized) covariances should
-  be allowed (default \code{FALSE}).}
+  be allowed by child processes running already in parallel (default
+  \code{FALSE}).}
 
   \item{fork}{a logical scalar controlling whether forking should be used for
   parallel computations (default \code{TRUE} on unix and \code{FALSE} on
@@ -73,7 +74,8 @@ initiated by child processes, that were itself spawned by functions like
 parallelized matrix multiplication and computation of covariances is then
 suppressed to avoid that child processes itself spawn child processes.  To
 allow parallelized matrix multipliation and parallelized computation of
-covariances one has to use the argument \code{allow.recursive = TRUE}.
+covariances by child processes one has to use the argument
+\code{allow.recursive = TRUE}.
 
 Note that very substantial reductions in computing time results when one
 uses the \strong{OpenBLAS} library instead of the reference BLAS library
@@ -116,7 +118,7 @@ if(interactive()){
   B <- as.matrix(dist(rnorm(2000)))
   system.time(C <- A \%*\% B)
   system.time(C <- pmm(
-      A, B, control = control.pcmp(pmm.ncores = 2L, allow.recursive = TRUE)))
+      A, B, control = control.pcmp(pmm.ncores = 2L)))
 }
 }
 

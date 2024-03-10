@@ -55,6 +55,9 @@ georob <-
   ## 2017-05-07 AP correcting error for interface to rq.fit
   ## 2020-02-14 AP sanity checks of arguments and for if() and switch()
   ## 2020-02-19 AP correction of error in sanity checks of arguments and for if() and switch()
+  ## 2024-02-21 AP added sfStop()
+
+  on.exit( if( sfIsRunning() ) sfStop() )
 
 #### -- check arguments
 
@@ -769,7 +772,6 @@ pmm <-
   ## determine number of cores
 
   ncores <- control[["pmm.ncores"]]
-  if( !control[["allow.recursive"]] ) ncores <- 1L
 
   ## determine columns indices of matrix blocks
 
@@ -1626,6 +1628,7 @@ profilelogLik <- function( object, values, use.fitted = TRUE, verbose = 0,
   ## 2023-12-20 AP added on.exit(options(old.opt)), replaced makeCluster by makePSOCKcluster
   ## 2023-12-20 AP replacement of identical(class(...), ...) by inherits(..., ...)
   ## 2024-02-01 AP saving SOCKcluster.RData to tempdir()
+  ## 2024-02-21 AP conditionally prevent recursive parallelizations in pmm or f.aux.gcr
 
 #### -- auxiliary function
 
@@ -1801,6 +1804,15 @@ profilelogLik <- function( object, values, use.fitted = TRUE, verbose = 0,
   cl <- f.call.set_x_to_value_in_fun( cl, "control", "control.georob", "cov.delta.bhat.betahat", FALSE )
   cl <- f.call.set_x_to_value_in_fun( cl, "control", "control.georob", "cov.ehat", FALSE )
   cl <- f.call.set_x_to_value_in_fun( cl, "control", "control.georob", "cov.ehat.p.bhat", FALSE )
+
+
+  ## conditionally prevent recursive parallelizations in pmm or f.aux.gcr
+
+  if( ncores > 1L && !object[["control"]][["pcmp"]][["allow.recursive"]] ){
+    cl <- f.call.prevent_recursive_parallelization( cl )
+  }
+
+  ## update call in object
 
   object[["call"]] <- cl
 

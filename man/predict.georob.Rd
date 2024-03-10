@@ -1,4 +1,4 @@
-% 2024-02-09 A. Papritz
+% 2024-03-09 A. Papritz
 % R CMD Rdconv -t html -o bla.html predict.georob.Rd ; open bla.html; R CMD Rd2pdf --force predict.georob.Rd;
 
 \encoding{utf8}
@@ -77,7 +77,7 @@ control.predict.georob(full.covmat = FALSE, extended.output = FALSE,
   \code{"terms"}, see \code{\link[stats]{predict.lm}}.}
 
 
-  \item{signif}{a positive numeric equal to the tolerance or confidence level
+  \item{signif}{a positive numeric scalar equal to the tolerance or confidence level
   for computing respective intervals.  If \code{NULL} no intervals are
   computed.}
 

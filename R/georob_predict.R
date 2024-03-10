@@ -111,8 +111,12 @@ function(
   ## 2023-12-20 AP replacement of identical(class(...), ...) by inherits(..., ...)
   ## 2024-02-01 AP saving SOCKcluster.RData to tempdir()
   ## 2024-02-09 AP correction of error in processing output
-  ##  ##############################################################################
+  ## 2024-02-10 AP better handling of recursive parallelization
+  ## 2024-02-21 AP added sfStop()
 
+##  ##############################################################################
+
+  on.exit( if( sfIsRunning() ) sfStop() )
 
 #### -- check arguments
 
@@ -978,7 +982,12 @@ function(
       control.pcmp[["pmm.ncores"]],
       max( 1L, floor( (ncores.available - ncores) / ncores ) )
     )
-    if( ncores > 1L && !control.pcmp[["allow.recursive"]] ) control.pcmp[["pmm.ncores"]] <- 1L
+
+    ## conditionally prevent recursive parallelizations in pmm or f.aux.gcr
+    if( ncores > 1L && !control.pcmp[["allow.recursive"]] ){
+      control.pcmp[["pmm.ncores"]] <- 1L
+      control.pcmp[["gcr.ncores"]] <- 1L
+    }
 
     if( control[["full.covmat"]] && n.part > 1L ) stop(
       "full covariance matrix of prediction errors cannot ",
@@ -1332,6 +1341,9 @@ f.robust.uk <- function(
   ## 2016-11-28 AP correcting error when computing predictions for intrinsic variograms
   ## 2023-12-20 AP replacement of identical(class(...), ...) by inherits(..., ...)
   ## 2024-01-21 AP more efficient calculation of lag.vectors for anisotropic variograms
+  ## 2024-02-21 AP added sfStop()
+
+  on.exit( if( sfIsRunning() ) sfStop() )
 
 #### -- preparation
 
@@ -1911,8 +1923,12 @@ simple.kriging.weights <- function(
   ## 2023-12-20 AP replacement of identical(class(...), ...) by inherits(..., ...)
   ## 2024-01-21 AP more efficient calculation of lag.vectors for anisotropic variograms
   ## 2024-02-01 AP saving SOCKcluster.RData to tempdir()
+  ## 2024-02-10 AP better handling of recursive parallelization
+  ## 2024-02-21 AP added sfStop()
 
   ##  ###########################################################################
+
+  on.exit( if( sfIsRunning() ) sfStop() )
 
 #### -- auxiliary function for computing generalized covariances between
   ## prediction targets and support data
@@ -2410,7 +2426,13 @@ simple.kriging.weights <- function(
     control.pcmp[["pmm.ncores"]],
     max( 1L, floor( (ncores.available - ncores) / ncores ) )
   )
-  if( ncores > 1L && !control.pcmp[["allow.recursive"]] ) control.pcmp[["pmm.ncores"]] <- 1L
+
+  ## conditionally prevent recursive parallelizations in pmm oder
+  ## f.aux.gcr
+  if( ncores > 1L && !control.pcmp[["allow.recursive"]] ){
+    control.pcmp[["pmm.ncores"]] <- 1L
+    control.pcmp[["gcr.ncores"]] <- 1L
+  }
 
   if( control[["full.covmat"]] && n.part > 1L ) stop(
     "full covariance matrix of prediction errors cannot ",

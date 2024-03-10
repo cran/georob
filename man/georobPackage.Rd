@@ -1,4 +1,4 @@
-% 2024-02-07 A. Papritz
+% 2024-03-09 A. Papritz
 % R CMD Rd2pdf --force georobPackage.Rd;  R CMD Rdconv -t html -o bla.html georobPackage.Rd ; open bla.html;
 % hunspell -d en_GB-ise,en_GB-ize,en_GB-large -t -i mac  georobPackage.Rd
 \encoding{utf8}
@@ -83,7 +83,7 @@
     is the variance of seemingly uncorrelated micro-scale variation in
     \eqn{B(\boldsymbol{s})}{B(s)}
     that cannot be resolved with the chosen sampling design,
-    \eqn{\boldsymbol{I}} is the identity matrix, 
+    \eqn{\boldsymbol{I}} is the identity matrix,
     \eqn{\sigma^2} is the variance of the captured auto-correlated variation in
     \eqn{B(\boldsymbol{s})}{B(s)},
     \eqn{\sigma_B^2=\sigma_{\mathrm{n}}^2+\sigma^2}{\sigma_B^2=\sigma_n^2+\sigma^2}
@@ -136,7 +136,7 @@
         measured from north to south positive clockwise in degrees),
       }
 
-      \item{\eqn{\phi}}{is 90 degrees minus the altitude of
+      \item{\eqn{\phi}}{is 90 degrees minus the latitude of
         \eqn{\boldsymbol{p}_1}{p_1}
         (= angle between the zenith and
         \eqn{\boldsymbol{p}_1}{p_1},
@@ -298,7 +298,11 @@
     The estimating equations can then by robustified by
     \itemize{
       \item replacing the standardized errors, say
-        \eqn{\varepsilon_i/\tau}{\epsilon_i/\tau},
+        \eqn{\varepsilon_i/\tau = (
+          y_i - \boldsymbol{x}(\boldsymbol{s}_i)^\mathrm{T}
+          \boldsymbol{\beta} -
+          B(\boldsymbol{s}_i)
+        ) / \tau}{\epsilon_i/\tau = (y_i - x^T(s_i)\beta - B(s_i)) / \tau},
         by a bounded or re-descending \eqn{\psi}-function,
         \eqn{\psi_c(\varepsilon_i/\tau)}{\psi_c(\epsilon_i/\tau)},
         of them (e.g. \cite{Maronna et al, 2006, chap. 2}) and by
@@ -325,7 +329,7 @@
     now archived \R package \pkg{RandomFields} and are now implemented in
     the function \code{\link{gencorr}} of \pkg{georob}.
     Currently, estimation of the parameters of the following models is
-    possible:
+    implemented:
 
     \code{"RMaskey"}, \code{"RMbessel"}, \code{"RMcauchy"},
     \code{"RMcircular"}, \code{"RMcubic"}, \code{"RMdagum"}, \cr

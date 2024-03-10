@@ -20,7 +20,7 @@
 % 2024-02-01 AP Korrektur Fehler Begrenzung Code chunk options
 % 2024-02-01 AP install.packages() entfernt
 % 2024-02-04 AP duplizierter chunk label korrigiert
-% 2024-02-09 AP alte section 5.3 in section 2.1 integriert, 
+% 2024-02-09 AP alte section 5.3 in section 2.1 integriert,
 %               kleine Textaenderungen, Version f\"{u}r georob_0.3-18.tar.gz
 
 % cd ~/R.user.home/georob/vignettes/

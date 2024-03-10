@@ -272,6 +272,9 @@ ranef.georob <-
   ## 2016-08-05 AP changes for nested variogram models
   ## 2020-02-14 AP sanity checks of arguments and for if() and switch()
   ## 2023-12-21 AP replacement of identical(class(...), ...) by inherits(..., ...)
+  ## 2024-02-21 AP added sfStop()
+#
+  on.exit( if( sfIsRunning() ) sfStop() )
 
   ## check arguments
 
@@ -320,7 +323,7 @@ ranef.georob <-
         cov.ehat = FALSE, full.cov.ehat = FALSE,
         cov.ehat.p.bhat = FALSE, full.cov.ehat.p.bhat = FALSE,
         aux.cov.pred.target = FALSE,
-        control.pcmp = control.pcmp(),
+        control.pcmp = object[["control"]][["pcmp"]],
         verbose = 0.
       )
 
@@ -470,8 +473,11 @@ rstandard.georob <-
   ## 2104-08-19 AP correcting error when computing covariances of residuals
   ## 2016-08-05 AP changes for nested variogram models
   ## 2023-12-21 AP replacement of identical(class(...), ...) by inherits(..., ...)
+  ## 2024-02-21 AP added sfStop()
 
 #
+  on.exit( if( sfIsRunning() ) sfStop() )
+
   ## temporarily redefine na.action component of model
 
   model.na <- model[["na.action"]]
@@ -1261,6 +1267,7 @@ add1.georob <- function( object, scope, scale = 0, test=c("none", "Chisq"),
   ## 2023-12-20 AP added on.exit(options(old.opt)), replaced makeCluster by makePSOCKcluster
   ## 2023-12-21 AP replacement of identical(class(...), ...) by inherits(..., ...)
   ## 2024-02-01 AP saving SOCKcluster.RData to tempdir()
+  ## 2024-02-21 AP conditionally prevent recursive parallelizations in pmm or f.aux.gcr
 
 #
   ## match arguments
@@ -1346,6 +1353,14 @@ add1.georob <- function( object, scope, scale = 0, test=c("none", "Chisq"),
   cl <- f.call.set_x_to_value_in_fun( cl, "control", "control.georob", "cov.ehat", FALSE )
   cl <- f.call.set_x_to_value_in_fun( cl, "control", "control.georob", "cov.ehat.p.bhat", FALSE )
 
+  ## conditionally prevent recursive parallelizations in pmm or f.aux.gcr
+
+  if( ncores > 1L && !object[["control"]][["pcmp"]][["allow.recursive"]] ){
+    cl <- f.call.prevent_recursive_parallelization( cl )
+  }
+
+  ## update call in object
+
   object[["call"]] <- cl
 
   ## check if object is result of GAUSSIAN ML fit, manipulate its call and
@@ -1383,6 +1398,8 @@ add1.georob <- function( object, scope, scale = 0, test=c("none", "Chisq"),
     object <- update( object )
 
   }
+
+
 
   ##  check whether argument "data" has been provided in call and get data
   ##  from parent.frame
@@ -1554,6 +1571,7 @@ drop1.georob <- function( object, scope, scale = 0, test=c( "none", "Chisq" ),
   ## 2023-12-20 AP added on.exit(options(old.opt)), replaced makeCluster by makePSOCKcluster
   ## 2023-12-21 AP replacement of identical(class(...), ...) by inherits(..., ...)
   ## 2024-02-01 AP saving SOCKcluster.RData to tempdir()
+  ## 2024-02-21 AP conditionally prevent recursive parallelizations in pmm or f.aux.gcr
 
   ## match arguments
 
@@ -1630,6 +1648,14 @@ drop1.georob <- function( object, scope, scale = 0, test=c( "none", "Chisq" ),
   cl <- f.call.set_x_to_value_in_fun( cl, "control", "control.georob", "cov.delta.bhat.betahat", FALSE )
   cl <- f.call.set_x_to_value_in_fun( cl, "control", "control.georob", "cov.ehat", FALSE )
   cl <- f.call.set_x_to_value_in_fun( cl, "control", "control.georob", "cov.ehat.p.bhat", FALSE )
+
+  ## conditionally prevent recursive parallelizations in pmm or f.aux.gcr
+
+  if( ncores > 1L && !object[["control"]][["pcmp"]][["allow.recursive"]] ){
+    cl <- f.call.prevent_recursive_parallelization( cl )
+  }
+
+  ## update call in object
 
   object[["call"]] <- cl
 
