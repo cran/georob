@@ -4,6 +4,18 @@
 
 \title{News for Package \pkg{georob}}
 
+\section{Changes in version 0.3-20 (2024-09-05)}{
+  \subsection{BUG FIXES}{
+    \itemize{
+
+      \item corrected missing package anchor in \link{} in documentation 
+      lgnpp.Rd
+  anchors
+
+    }
+  }}
+
+
 \section{Changes in version 0.3-19 (2024-03-09)}{
   \subsection{NEW FEATURES}{
     \itemize{

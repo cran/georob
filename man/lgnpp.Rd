@@ -160,7 +160,7 @@ lgnpp(object, newdata, locations, is.block = FALSE, all.pred = NULL,
 
   The above formulae are used by \code{lgnpp} if \code{object} contains
   block Kriging predictions in the form of a
-  \code{\link{SpatialPolygonsDataFrame}}.  To approximate
+  \code{\link[sp]{SpatialPolygonsDataFrame}}.  To approximate
   \eqn{\boldsymbol{M}(A)}{M(A)}{}, one needs the covariates
   on a fine grid for the whole study domain in which the blocks lie.  The
   covariates are passed \code{lgnpp} as argument \code{newdata}, where

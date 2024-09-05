@@ -1,5 +1,5 @@
-c6a58877de4f0a13cb7a2ee6442363a1 *ChangeLog
-dc2f8e94dc285e2652b9b10f87202576 *DESCRIPTION
+3cc5f5b982d9179d3e396b8413072dfa *ChangeLog
+719125bc40d06aad51318f868828f457 *DESCRIPTION
 4a6618b3d6890d8f6696956f761b4766 *NAMESPACE
 bc0a678c0590287efb73a2890f3901e6 *R/georob_S3methods.R
 0fdd818f90738ac2fb45a43a668fad7e *R/georob_cv.R
@@ -12,15 +12,15 @@ a7d8fec95ac4c4ccd2f44601db1c3470 *R/georob_private_georob_fit.R
 8b519b473efef6b2cdb4016de9e2074e *R/georob_private_psi_functions_etc.R
 05a80fe80c5fa5b0e64d834d48df8e72 *R/georob_simulation.R
 fd7d5a301cec80d207b46142ba265035 *R/georob_variogram.R
-8faf250d78a120ba4c7ea2186efddd24 *build/partial.rdb
-23abd7a74b7aa3765566dbcc4fb31153 *build/vignette.rds
+aa5e5a2cbfaea3d9b6cdbe378ac48cee *build/partial.rdb
+75f7a55902cb428fbc96d757fb3ef789 *build/vignette.rds
 e7ee6102924977a7d244c83e6b392883 *data/datalist
 1872e62f43073c7b37f9e17f66cdf2db *data/elevation.rda
 23acabdbb64d4593da12a5f02131059c *data/wolfcamp.rda
-f14ec572353a2c95b4544d3e59e4df70 *inst/NEWS.Rd
+d290b41ed6fedbd3a627522867d036a1 *inst/NEWS.Rd
 b9a43619a07a806a919656f16db41c46 *inst/doc/georob_vignette.R
 92142a31bb1deb2304f20b3ad7564e6b *inst/doc/georob_vignette.Rnw
-1ee5276cf8c0faa81e128418e714eb0b *inst/doc/georob_vignette.pdf
+f6260be956c211d1b38acc04838a9751 *inst/doc/georob_vignette.pdf
 16053102e30479e78cb185d8a28794b7 *man/compress.Rd
 fd2820d68e6e842202cc7f25dbf166b2 *man/control.georob.Rd
 c82ae1869b89223daab4d23e79540db6 *man/cv.Rd
@@ -35,7 +35,7 @@ ebb3c3fc55af6792bcd2ef8072349685 *man/georobModelBuilding.Rd
 34e046618769cb1d6d3970563a87a2d0 *man/georobS3methods.Rd
 a79828cbb95801c01ebf11f934142b08 *man/georobSimulation.Rd
 4b90dba5f88e9017d5fbb762f039510b *man/internal.functions.Rd
-cc8e4a92417bdce3f60efc1ac5c30a40 *man/lgnpp.Rd
+f669e2a7832e7cb64a9f845f48af342b *man/lgnpp.Rd
 a323a48a903043f17b88fd5581ac55f5 *man/param.defaults.Rd
 545b5e7f14324d06ee9aaec12938b121 *man/param.names.Rd
 64dd81a9577541f197c1efa95545caf3 *man/plot.georob.Rd

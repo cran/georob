@@ -1,6 +1,6 @@
 Package: georob
-Version: 0.3-19
-Date: 2024-03-09
+Version: 0.3-20
+Date: 2024-09-05
 Type: Package
 Title: Robust Geostatistical Analysis of Spatial Data
 Authors@R: c(person("Andreas", "Papritz", role = c("aut", "cre"), email =  "papritz@retired.ethz.ch" ))
@@ -12,8 +12,8 @@ Imports: abind, constrainedKriging(>= 0.2-7), fields, graphics, lmtest,
 Suggests: gstat, multcomp, lattice
 License: GPL (>= 2) | LGPL (>= 2)
 NeedsCompilation: no
-Packaged: 2024-03-09 17:18:36 UTC; papritz
+Packaged: 2024-09-05 06:10:01 UTC; papritz
 Author: Andreas Papritz [aut, cre]
 Maintainer: Andreas Papritz <papritz@retired.ethz.ch>
 Repository: CRAN
-Date/Publication: 2024-03-10 09:30:02 UTC
+Date/Publication: 2024-09-05 08:30:03 UTC
