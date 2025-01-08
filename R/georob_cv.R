@@ -85,7 +85,8 @@ cv.georob <-
   ##               class queries by inherits()
   ## 2024-02-01 AP saving SOCKcluster.RData to tempdir()
   ## 2024-02-21 AP conditionally prevent recursive parallelizations in pmm or f.aux.gcr
-
+  ## 2024-12-23 AP substituting TRUE for T
+  
 #### -- auxiliary function
 
   ## auxiliary function that fits the model and computes the predictions of
@@ -767,7 +768,7 @@ cv.georob <-
       )
     )
   }
-  t.ix <- sort( result[["i"]], index.return = T )[["ix"]]
+  t.ix <- sort( result[["i"]], index.return = TRUE )[["ix"]]
   result <- result[t.ix, ]
   result[["data"]] <- model.response(
     model.frame( formula( object), data, na.action = na.pass )

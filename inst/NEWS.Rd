@@ -4,11 +4,38 @@
 
 \title{News for Package \pkg{georob}}
 
+\section{Changes in version 0.3-21 (2025-01-08)}{
+  \subsection{NEW FEATURES}{
+    \itemize{
+    
+      \item spatial covariance of covariates set equal to 0 (instead of NA)
+      for blocks that contain only one grid point in lognormal
+      back-transformation of block kriging results under assumption of 
+      permanence of lognormality of block means
+%
+      \item changes of vignette (temporary substitution of R-code chunks 
+      for block Kriging by tex output)
+%
+    }
+  }
+  
+  \subsection{BUG FIXES}{
+    \itemize{
+%
+      \item correction of error in lognormal back-transformation of block
+      kriging results under assumption of permanence of lognormality of
+      block means
+%
+    }
+  }
+}
+
+
 \section{Changes in version 0.3-20 (2024-09-05)}{
   \subsection{BUG FIXES}{
     \itemize{
 
-      \item corrected missing package anchor in \link{} in documentation 
+      \item corrected missing package anchor in documentation 
       lgnpp.Rd
   anchors
 

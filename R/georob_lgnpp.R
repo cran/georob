@@ -23,11 +23,17 @@ lgnpp <-
   ## 2019-12-13 AP correcting use of class() in if() and switch()
   ## 2020-02-14 AP sanity checks of arguments and for if() and switch()
   ## 2023-12-20 AP checking class by inherits()
+  ## 2024-12-24 AP - correction of error in back-transformation under
+  ##               assumption of permanence of lognormality of block means
+  ##               (point.support variance of target is now used in
+  ##               back-transformation instead of object[, "var.target"]
+  ##               - spatial covariance of covariates set equal to 0 (instead of NA) for blocks that
+  ##               contain only one grid point
 
   ## auxiliary function to backtransform the point predictions and
   ## optionally the mean squared errors and the prediction intervals
 
- f.backtrf <- function( object, btMb = 0., pred.only ){
+ f.backtrf <- function( object, var.target.ps, btMb = 0., pred.only ){
 
 #### -- auxiliary function
 
@@ -38,7 +44,7 @@ lgnpp <-
     ## pred.only: logical scalar controlling wether only predictions are computed
 
     t.result <- exp(
-      object[, "pred"] + 0.5 * ( object[, "var.target"] + btMb - object[, "var.pred"] )
+      object[, "pred"] + 0.5 * ( var.target.ps + btMb - object[, "var.pred"] )
     )
 
     if( !pred.only ){
@@ -157,6 +163,18 @@ lgnpp <-
     "lognormal kriging requires a weakly stationary variogram model"
   )
 
+  ## compute variance of target variable on point support
+
+  var.target.ps <- attr(
+    f.reparam.fwd( variogram.object ), "var.signal"
+  )
+
+  if( identical( type, "response" ) ){
+
+    var.target.ps <- var.target.ps + variogram.object[[1]][["param"]]["nugget"]
+
+  }
+
   ## check whether object is complete
 
   if( is.null( t.object[["pred"]]) || is.null( t.object[["trend"]] ) ||
@@ -180,7 +198,7 @@ lgnpp <-
 
       t.result <- cbind(
         t.object,
-        f.backtrf( t.object, pred.only = FALSE )
+        f.backtrf( t.object, var.target.ps = var.target.ps, pred.only = FALSE )
       )
 
       attr( t.result, "variogram.object" ) <- variogram.object
@@ -356,6 +374,11 @@ lgnpp <-
           geometry( object )
         }
       )
+      
+      if( !all( table( t.ip ) > 1L ) ) cat(
+        "there is only one grid point in some blocks: spatial covariance matrix M(A) of covariates\n",
+        "cannot be computed for these blocks and backtransformation will be computed without this term"
+      )
 
       ## compute t(coefficients) %*% Cov( covariates ) %*% coefficients
       ## cf Cressie, 2006, Eq. 18 & Appendix C
@@ -365,7 +388,11 @@ lgnpp <-
           1L:length( t.ip ),
           factor( t.ip ),
           function( i, x, b ){
-            drop( b %*% cov( x[i, , drop = FALSE ] ) %*% b )
+            if( length(i) > 1L ){
+              drop( b %*% cov( x[i, , drop = FALSE ] ) %*% b )
+            } else {
+              0.
+            }
           },
           x = pred.X,
           b = coefficients
@@ -376,7 +403,9 @@ lgnpp <-
 
       t.result <- cbind(
         t.object,
-        f.backtrf( t.object, btMb, pred.only = FALSE )
+        f.backtrf(
+          t.object, var.target.ps = var.target.ps, btMb = btMb, pred.only = FALSE
+        )
       )
 
       attr( t.result, "variogram.object" ) <- variogram.object
@@ -442,7 +471,9 @@ lgnpp <-
         ## check whether back-transformation were done
 
         if( !all( c( "lgn.pred", "lgn.se", "lgn.lower", "lgn.upper" ) %in% names( all.pred ) ) ){
-          all.pred <- f.backtrf( all.pred, pred.only = T )
+          all.pred <- f.backtrf(
+            all.pred, var.target.ps = var.target.ps, pred.only = TRUE
+          )
         }
 
         ## check wether variogram models in all.pred and object match
@@ -481,7 +512,9 @@ lgnpp <-
       ## back-transform trend and kriging predictions for the points in the block
 
       t.mu <- exp( t.object[, "trend"] + 0.5 * t.object[, "var.target"] )
-      t.pred <- f.backtrf( t.object, pred.only = TRUE )
+      t.pred <- f.backtrf(
+        t.object, var.target.ps = var.target.ps, pred.only = TRUE
+      )
 
       ## covariance matrix of log(observations)
 

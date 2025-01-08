@@ -713,5 +713,11 @@ georob_private_functions.R  (getCall.georob) elimination of this function
 * code file georob_private_functions.R replaced by 4 new code files georob_private_further_functions.R (covariances.fixed.random.effects, estimate.zhat, estimating.equations.theta, estimating.equations.z, f.aux.Qstar, f.aux.RSS, f.aux.eeq, f.aux.gradient.nll, f.aux.gradient.npll, f.aux.print.gradient, f.aux.tf.param.fwd, f.call.prevent_recursive_parallelization, f.call.set_allfitxxx_to_false, f.call.set_allxxx_to_fitted_values, f.call.set_onefitxxx_to_value, f.call.set_onexxx_to_value, f.call.set_x_to_value, f.call.set_x_to_value_in_fun, f.diag, f.reparam.bwd, f.reparam.fwd, f.stop.cluster, gradient.negative.loglikelihood, likelihood.calculations, negative.loglikelihood, update_zhat), georob_private_generalized_covariances.R (f.aux.Valphaxi, f.aux.gcr, partial.derivatives.variogram), georob_private_georob_fit.R (georob.fit) and georob_private_psi_functions_etc.R (f.psi.function)
 
 
-2024-03-08 Andreas Papritz  <papritz@retired.ethz.ch>
+2024-09-05 Andreas Papritz  <papritz@retired.ethz.ch>
 * lgnpp.Rd corrected missing package anchor in \link{}
+
+
+2024-12-26 Andreas Papritz  <papritz@retired.ethz.ch>
+* georob_cv.R (cv.georob) substituting TRUE for T
+* georob_lgnpp.R (lgnpp) correction of error in back-transformation under assumption of permanence of lognormality of block means, spatial covariance of covariates set equal to 0 (instead of NA) for blocks that contain only one grid point
+* georob_vignette.Rnw reduction of pwidth and pheight arguments for block Kriging to use a 2x2 pixel representation of the blocks
