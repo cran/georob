@@ -721,3 +721,8 @@ georob_private_functions.R  (getCall.georob) elimination of this function
 * georob_cv.R (cv.georob) substituting TRUE for T
 * georob_lgnpp.R (lgnpp) correction of error in back-transformation under assumption of permanence of lognormality of block means, spatial covariance of covariates set equal to 0 (instead of NA) for blocks that contain only one grid point
 * georob_vignette.Rnw reduction of pwidth and pheight arguments for block Kriging to use a 2x2 pixel representation of the blocks
+
+
+2025-01-17 Andreas Papritz  <papritz@retired.ethz.ch>
+* georob_vignette.Rnw change of pwidth and pheight arguments for block Kriging to use a 2x2 pixel representation of the blocks for meuse example
+
