@@ -461,8 +461,9 @@ palette("default")
 ### code chunk number 47: meuse-zinc-cleanup-2 (eval = FALSE)
 ###################################################
 ## # save(list=ls(pattern="^r\\."), file="r_meuse_zinc_objects.RData", version = 2)
-## save(list=c("r.sv", "r.sv.spher", "r.prfl.m0.spher.reml.scale", "r.cv.m0.spher.reml",
-##     "r.cv.m1.spher.reml", 
+## save(list=c("r.sv", "r.sv.spher", "r.georob.m1.spher.reml",
+##     "r.prfl.m0.spher.reml.scale", "r.cv.m0.spher.reml",
+##     "r.cv.m1.spher.reml",
 ##     "r.bk", "r.blks"
 ##   ), file="r_meuse_zinc_objects.RData", version = 2)
 ## rm(list=ls(pattern="^r\\."))
@@ -855,18 +856,24 @@ c(pred=mean(r.bk.m1.exp.c2$pred$pred),
 
 
 ###################################################
-### code chunk number 85: ash-bKriging-2
+### code chunk number 85: ash-bKriging-2 (eval = FALSE)
 ###################################################
-coalash.domain <- rbind(c(0.5,0), c(16.5,0), c(16.5,24), c(0.5,24), c(0.5,0))
-coalash.domain <- SpatialPolygonsDataFrame(
-  SpatialPolygons(list(Polygons(list(Polygon(coalash.domain)), ID= "domain"))),
-  data=data.frame(x=8.5,y=12,row.names="domain"))
-slot(predict(r.georob.m1.exp.c2, newdata=coalash.domain,
-  control=control.predict.georob(pwidth=16, pheight=24)), "data")
+## coalash.domain <- rbind(c(0.5,0), c(16.5,0), c(16.5,24), c(0.5,24), c(0.5,0))
+## coalash.domain <- SpatialPolygonsDataFrame(
+##   SpatialPolygons(list(Polygons(list(Polygon(coalash.domain)), ID= "domain"))),
+##   data=data.frame(x=8.5,y=12,row.names="domain"))
+## r.domain <- predict(r.georob.m1.exp.c2, newdata=coalash.domain,
+##   control=control.predict.georob(pwidth=16, pheight=24))
 
 
 ###################################################
-### code chunk number 86: ash-bKriging-plot-robust-gaussian-1
+### code chunk number 86: ash-bKriging-3
+###################################################
+slot(r.domain, "data")
+
+
+###################################################
+### code chunk number 87: ash-bKriging-plot-robust-gaussian-1
 ###################################################
 getOption("SweaveHooks")[["fig"]]()
 pred.rob <- spplot(r.bk.m1.exp.c2$pred, "pred", at=seq(8, 11, by=0.25),
@@ -884,13 +891,14 @@ plot(se.gauss, pos=c(0.5, 0, 1, 0.5), more=FALSE)
 
 
 ###################################################
-### code chunk number 87: ash-results-save-1 (eval = FALSE)
+### code chunk number 88: ash-results-save-1 (eval = FALSE)
 ###################################################
 ## # save(list=ls(pattern="^r\\."), file="r_coalash_objects.RData", version = 2)
 ## save(list=c(
 ##     "r.cv.georob.m1.exp.c2", "r.cv.georob.m1.exp.c1000",
-##     "r.pk.m1.exp.c2", "r.pk.m1.exp.c1000", 
-##     "r.bk.m1.exp.c2", "r.bk.m1.exp.c1000"
+##     "r.pk.m1.exp.c2", "r.pk.m1.exp.c1000",
+##     "r.bk.m1.exp.c2", "r.bk.m1.exp.c1000",
+##     "r.domain"
 ##   ), file="r_coalash_objects.RData", version = 2)
 ## rm(list=ls(pattern="^r\\."))
 

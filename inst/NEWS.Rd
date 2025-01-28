@@ -4,6 +4,18 @@
 
 \title{News for Package \pkg{georob}}
 
+\section{Changes in version 0.3-23 (2025-01-28)}{
+  \subsection{BUG FIXES}{
+    \itemize{
+    
+      \item changes of vignette to avoid errors in address sanitizer CRAN
+      checks
+    }
+  }
+  
+}
+
+
 \section{Changes in version 0.3-22 (2025-01-17)}{
   \subsection{NEW FEATURES}{
     \itemize{
@@ -11,7 +23,6 @@
       \item changes of vignette (reverse substitution of R-code  
       chunks for block Kriging by tex output, changed pwidth and pheight 
       arguments for block kriging in Meuse example)
-%
     }
   }
   

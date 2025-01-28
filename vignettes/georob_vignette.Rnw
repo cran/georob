@@ -20,13 +20,14 @@
 % 2024-02-01 AP Korrektur Fehler Begrenzung Code chunk options
 % 2024-02-01 AP install.packages() entfernt
 % 2024-02-04 AP duplizierter chunk label korrigiert
-% 2024-02-09 AP alte section 5.3 in section 2.1 integriert, 
+% 2024-02-09 AP alte section 5.3 in section 2.1 integriert,
 %               kleine Textaenderungen, Version f\"{u}r georob_0.3-18.tar.gz
-% 2025-01-08 AP R chunks in Abschnitten ueber block kriging durch Tex output ersetzt um 
+% 2025-01-08 AP R chunks in Abschnitten ueber block kriging durch Tex output ersetzt um
 %               ASAN CRAN checks zu bestehen
-% 2025-01-17 AP R chunks in Abschnitten ueber block kriging wieder aktiviert und 
-%               TeX output entfernt, Verkleinerung von pwidth und pheigth 
+% 2025-01-17 AP R chunks in Abschnitten ueber block kriging wieder aktiviert und
+%               TeX output entfernt, Verkleinerung von pwidth und pheigth
 %               bei block Kriging fuer meuse Bespiel
+% 2025-01-18 AP Aenderungen in chunks ash-bKriging-2 fuer block kriging
 
 % cd ~/R.user.home/georob/vignettes/
 % R CMD Stangle georob_vignette.Rnw; R CMD Sweave georob_vignette.Rnw;  pdflatex georob_vignette.tex; open georob_vignette.pdf;
@@ -1255,6 +1256,20 @@ r.bk <- predict(r.georob.m1.spher.reml, newdata=meuse.blocks,
   control=control.predict.georob(extended.output=TRUE, pwidth=75, pheight=75))
 @
 %
+% example from CKrige help page
+%
+% <<meuse-zinc-meuse-block-CKrige,echo=FALSE,eval=TRUE>>=
+% warning("meuse block kriging by CKrige")
+% if(!requireNamespace("constrainedKriging", quietly = TRUE)){
+%   stop("package 'constrainedKriging' is missing, install it and re-build vignette")
+% }
+% preCK_block <- constrainedKriging::preCKrige(newdata = meuse.blocks, model = covmodel(modelname =
+%     "exponential", mev = 0, nugget = 0.05, variance = 0.15,
+%     scale = 192.5), pwidth = 75, pheight = 75)
+% CK_block <- constrainedKriging::CKrige(formula = log(zinc) ~ sqrt(dist), data = meuse,
+%   locations = ~ x+y, object = preCK_block, ex.out = TRUE)
+% @
+%
 and transform the predictions back by the approximately unbiased
 back-transformation proposed by \citet{Cressie-2006} (see also
 \autoref{sec:krig-details-lognormal-block-permanence}):
@@ -1399,254 +1414,6 @@ simulation study, we prefer the optimal prediction results.
 
 % end rnw code on lognormal block kriging
 
-% % begin sweave output on lognormal block kriging
-% 
-% If \code{newdata} is a \code{SpatialPolygonsDataFrame} then
-% \code{predict.georob()} computes block Kriging predictions.  We
-% illustrate this here with the \code{SpatialPolygonsDataFrame}
-% \code{meuse.blocks} that is provided by the package
-% \pkg{constrainedKriging}:
-% %
-% \begin{Schunk}
-% \begin{Sinput}
-% > data(meuse.blocks, package="constrainedKriging")
-% > str(meuse.blocks, max=2)
-% \end{Sinput}
-% \begin{Soutput}
-% Formal class 'SpatialPolygonsDataFrame' [package "sp"] with 5 slots
-%   ..@ data       :'data.frame':	259 obs. of  2 variables:
-%   ..@ polygons   :List of 259
-%   ..@ plotOrder  : int [1:259] 177 179 180 178 188 182 181 92 51 201 ...
-%   ..@ bbox       : num [1:2, 1:2] 178438 329598 181562 333762
-%   .. ..- attr(*, "dimnames")=List of 2
-%   ..@ proj4string:Formal class 'CRS' [package "sp"] with 1 slot
-% \end{Soutput}
-% \end{Schunk}
-% %
-% \code{meuse.blocks} contains  \code{dist} as only covariate for the
-% blocks, therefore, we use the model \code{log(zinc)\~{}sqrt(dist)} for
-% computing the block Kriging predictions of \code{log(zinc)}:
-% %
-% \begin{Schunk}
-% \begin{Sinput}
-% > r.bk <- predict(r.georob.m1.spher.reml, newdata=meuse.blocks,
-% +   control=control.predict.georob(extended.output=TRUE, pwidth=25, pheight=25, mmax=25))
-% \end{Sinput}
-% \end{Schunk}
-% %
-% %
-% and transform the predictions back by the approximately unbiased
-% back-transformation proposed by \citet{Cressie-2006} (see also
-% \autoref{sec:krig-details-lognormal-block-permanence}):
-% %
-% \begin{Schunk}
-% \begin{Sinput}
-% > r.bk <- lgnpp(r.bk, newdata=meuse.grid)
-% \end{Sinput}
-% \begin{Soutput}
-% there is only one grid point in some blocks: spatial covariance matrix M(A) of covariates
-%  cannot be computed for these blocks and backtransformation will be computed without this term
-% \end{Soutput}
-% \end{Schunk}
-% %
-% Note the following points:
-% \begin{itemize}
-%   \item \code{pwidth} and \code{pheight} are the dimensions of the
-%   pixels used for efficiently computing ``block-block-'' and
-%   ``point-block-averages'' of the covariance function, see
-%   \autoref{sec:block-Kriging}).
-% 
-%   \item \code{mmax} controls parallelization when computing Kriging
-%   predictions, see
-%   \autoref{sec:Kriging-parallelized-computations}.
-% 
-%   \item \code{newdata} is used to pass point support covariates to
-%   \code{lgnpp()}, from which the spatial covariances of the
-%   covariates, needed for the back-transformation, are computed,
-%   \citep[see \autoref{eq:spatial-covariance-covariates}
-%   and][appendix~C]{Cressie-2006}.
-% \end{itemize}
-% 
-% We display the prediction results again by \code{spplot()}:
-% %
-% \bcf[1]
-% %
-% \begin{Schunk}
-% \begin{Sinput}
-% > brks <- c(25, 50, 75, 100, 150, 200, seq(500, 3500,by=500))
-% > pred <- spplot(r.bk, zcol="lgn.pred", at=brks, main="prediction")
-% > lwr <- spplot(r.bk, zcol="lgn.lower", at=brks, main="lower bound 95% PI")
-% > upr <- spplot(r.bk, zcol="lgn.upper", at=brks, main="upper bound 95% PI")
-% > plot(pred, position=c(0, 0, 1/3, 1), more=TRUE)
-% > plot(lwr, position=c(1/3, 0, 2/3, 1), more=TRUE)
-% > plot(upr, position=c(2/3, 0, 1, 1), more=FALSE)
-% \end{Sinput}
-% \end{Schunk}
-% \includegraphics{fig-meuse-zinc-block-Kriging-plot}
-% %
-% \ecf{Lognormal block Kriging prediction of \code{zinc} computed under
-% the assumption of permanence of log-normality (left: prediction; middle
-% and right: lower and upper bounds of point-wise 95\% prediction
-% intervals).}{meuse-zinc-block-Kriging-plot}
-% %
-% 
-% The assumption that both point values and block means follow
-% log-normal laws~---~which strictly cannot hold~---~does not much
-% impair the efficiency of the back-transformation as long as the blocks
-% are small \citep{Cressie-2006,Hofer-etal-2013}.  However, for
-% larger blocks, one should use the optimal predictor obtained by
-% \emph{averaging back-transformed point predictions}.  \code{lgnpp()}
-% allows to compute this as well.  We illustrate this here by predicting
-% the spatial mean over two larger square blocks:
-% %
-% \bcf[0.4]
-% \begin{Schunk}
-% \begin{Sinput}
-% > ## define blocks
-% > tmp <- data.frame(x=c(179100, 179900), y=c(330200, 331000))
-% > blks <- SpatialPolygons(
-% +   sapply(1:nrow(tmp), function(i, x){
-% +   Polygons(list(Polygon(
-% +     t(x[,i] + 400*t(cbind(c(-1, 1, 1, -1, -1), c(-1, -1, 1, 1, -1)))),
-% +     hole=FALSE)), ID=paste("block", i, sep="")
-% +   )}, x=t(tmp)))
-% > ## compute spatial mean of sqrt(dist) for blocks
-% > ind <- over(as(meuse.grid, "SpatialPoints"), blks)
-% > tmp <- tapply(sqrt(meuse.grid$dist), ind, mean)
-% > names(tmp) <- paste("block", 1:length(tmp), sep="")
-% > ## create SpatialPolygonsDataFrame
-% > blks <- SpatialPolygonsDataFrame(blks, data=data.frame(dist=tmp^2))
-% > ## and plot
-% > plot(as(meuse.grid, "SpatialPoints"), axes=TRUE)
-% > plot(geometry(blks), add=TRUE, col=2)
-% \end{Sinput}
-% \end{Schunk}
-% \includegraphics{fig-meuse-zinc-block-Kriging-blocks}
-% %
-% \ecf{Point prediction grid and position of 2 target blocks for computing
-% optimal log-normal block predictor.}{meuse-zinc-block-Kriging-blocks}
-% %
-% 
-% We first compute block-Kriging predictions of \code{log(zinc)} and
-% back-transform them as before under the assumption of permanence of
-% log-normality:
-% %
-% \begin{Schunk}
-% \begin{Sinput}
-% > r.blks <- predict(r.georob.m1.spher.reml, newdata=blks,
-% +   control=control.predict.georob(extended.output=TRUE, pwidth=800, pheight=800))
-% > r.blks <- lgnpp(r.blks, newdata=meuse.grid)
-% \end{Sinput}
-% \end{Schunk}
-% %
-% Note that we set \code{pwidth} and \code{pheight} equal to the
-% dimension of the blocks.  This is best for rectangular blocks
-% because the blocks are then represented by a single pixel, which
-% reduces computations.
-% 
-% Next we use \code{lgnpp()} for computing the optimal log-normal block
-% predictions.  As we need the full covariance matrix of the point
-% prediction errors for this we must re-compute the points predictions
-% of \code{log(zinc)} with the additional \code{control} argument
-% \code{full.covmat=TRUE}:
-% %
-% \begin{Schunk}
-% \begin{Sinput}
-% > t.pk <- predict(r.georob.m0.spher.reml, newdata=as.data.frame(meuse.grid),
-% +   control=control.predict.georob(extended.output=TRUE, full.covmat=TRUE))
-% > str(t.pk)
-% \end{Sinput}
-% \begin{Soutput}
-% List of 5
-%  $ pred           :'data.frame':	3103 obs. of  10 variables:
-%   ..$ x              : num [1:3103] 181180 181140 181180 181220 181100 ...
-%   ..$ y              : num [1:3103] 333740 333700 333700 333700 333660 ...
-%   ..$ pred           : num [1:3103] 7.05 7.06 6.8 6.57 7.07 ...
-%   ..$ se             : num [1:3103] 0.277 0.248 0.252 0.259 0.212 ...
-%   ..$ lower          : num [1:3103] 6.51 6.57 6.3 6.06 6.65 ...
-%   ..$ upper          : num [1:3103] 7.59 7.54 7.29 7.07 7.48 ...
-%   ..$ trend          : num [1:3103] 7.09 7.09 6.85 6.64 7.09 ...
-%   ..$ var.pred       : num [1:3103] 0.0779 0.0899 0.0822 0.0757 0.1027 ...
-%   ..$ cov.pred.target: num [1:3103] 0.0681 0.0818 0.0768 0.0717 0.0963 ...
-%   ..$ var.target     : num [1:3103] 0.135 0.135 0.135 0.135 0.135 ...
-%   ..- attr(*, "variogram.object")=List of 1
-%   .. ..$ :List of 9
-%   .. .. ..$ variogram.model: chr "RMspheric"
-%   .. .. ..$ param          : Named num [1:4] 0.1349 0 0.0551 876.5812
-%   .. .. .. ..- attr(*, "names")= chr [1:4] "variance" "snugget" "nugget" "scale"
-%   .. .. ..$ fit.param      : Named logi [1:4] TRUE FALSE TRUE TRUE
-%   .. .. .. ..- attr(*, "names")= chr [1:4] "variance" "snugget" "nugget" "scale"
-%   .. .. ..$ isotropic      : logi TRUE
-%   .. .. ..$ aniso          : Named num [1:5] 1 1 90 90 0
-%   .. .. .. ..- attr(*, "names")= chr [1:5] "f1" "f2" "omega" "phi" ...
-%   .. .. ..$ fit.aniso      : Named logi [1:5] FALSE FALSE FALSE FALSE FALSE
-%   .. .. .. ..- attr(*, "names")= chr [1:5] "f1" "f2" "omega" "phi" ...
-%   .. .. ..$ sincos         :List of 6
-%   .. .. .. ..$ co: num 6.12e-17
-%   .. .. .. ..$ so: num 1
-%   .. .. .. ..$ cp: num 6.12e-17
-%   .. .. .. ..$ sp: num 1
-%   .. .. .. ..$ cz: num 1
-%   .. .. .. ..$ sz: num 0
-%   .. .. ..$ rotmat         : num [1:2, 1:2] 1.00 -6.12e-17 6.12e-17 1.00
-%   .. .. ..$ sclmat         : Named num [1:2] 1 1
-%   .. .. .. ..- attr(*, "names")= chr [1:2] "" "f1"
-%   ..- attr(*, "psi.func")= chr "logistic"
-%   ..- attr(*, "tuning.psi")= num 1000
-%   ..- attr(*, "type")= chr "signal"
-%  $ mse.pred       : num [1:3103, 1:3103] 0.0766 0.0565 0.0606 0.0583 0.0373 ...
-%  $ var.pred       : num [1:3103, 1:3103] 0.0779 0.0833 0.0794 0.0748 0.0878 ...
-%  $ cov.pred.target: num [1:3103, 1:3103] 0.0681 0.0736 0.0714 0.0684 0.0781 ...
-%  $ var.target     : num [1:3103, 1:3103] 0.135 0.122 0.126 0.122 0.109 ...
-% \end{Soutput}
-% \end{Schunk}
-% %
-% The predictions are now stored in the list component \code{pred}, and
-% list components \code{mse.pred}, \code{var.pred}, \code{var.target}
-% and \code{cov.pred.target} store the covariance matrices of prediction
-% errors, predictions, prediction targets and the covariances between
-% predictions and targets.
-% 
-% Then we back-transform the predictions and
-% average them separately for the two blocks:
-% %
-% \begin{Schunk}
-% \begin{Sinput}
-% > ## index defining to which block the points predictions belong
-% > ind <- over(geometry(meuse.grid), geometry(blks))
-% > ind <- tapply(1:nrow(meuse.grid), factor(ind), function(x) x)
-% > ## select point predictions in block and predict block average
-% > tmp <- t(sapply(ind, function(i, x){
-% +   x$pred <- x$pred[i,]
-% +   x$mse.pred <- x$mse.pred[i,i]
-% +   x$var.pred <- x$var.pred[i,i]
-% +   x$cov.pred.target <- x$cov.pred.target[i,i]
-% +   x$var.target <- x$var.target[i,i]
-% +   res <- lgnpp(x, is.block=TRUE)
-% +   res
-% +   }, x=t.pk))
-% > colnames(tmp) <- c("opt.pred", "opt.se")
-% > r.blks <- cbind( r.blks, tmp)
-% \end{Sinput}
-% \end{Schunk}
-% %
-% \begin{Schunk}
-% \begin{Sinput}
-% > r.blks@data[, c("lgn.pred", "opt.pred", "lgn.se", "opt.se")]
-% \end{Sinput}
-% \begin{Soutput}
-%        lgn.pred opt.pred lgn.se opt.se
-% block1   312.18   330.10 18.771 17.671
-% block2   202.55   190.69 12.082 12.480
-% \end{Soutput}
-% \end{Schunk}
-% %
-% Both the predictions and the prediction standard errors differ somewhat, in
-% particular for \code{block1}.  Based on \citeauthor{Cressie-2006}'s
-% simulation study, we prefer the optimal prediction results.
-% 
-% % end sweave output on lognormal block kriging
-
 
 <<meuse-zinc-cleanup-1,echo=FALSE,eval=TRUE>>=
 palette("default")
@@ -1655,22 +1422,13 @@ palette("default")
 % code chunk for saving with block kriging results
 <<meuse-zinc-cleanup-2,echo=FALSE>>=
 # save(list=ls(pattern="^r\\."), file="r_meuse_zinc_objects.RData", version = 2)
-save(list=c("r.sv", "r.sv.spher", "r.prfl.m0.spher.reml.scale", "r.cv.m0.spher.reml",
-    "r.cv.m1.spher.reml", 
+save(list=c("r.sv", "r.sv.spher", "r.georob.m1.spher.reml",
+    "r.prfl.m0.spher.reml.scale", "r.cv.m0.spher.reml",
+    "r.cv.m1.spher.reml",
     "r.bk", "r.blks"
   ), file="r_meuse_zinc_objects.RData", version = 2)
 rm(list=ls(pattern="^r\\."))
 @
-
-% % code chunk for saving without block kriging results
-% <<meuse-zinc-cleanup-2,echo=FALSE>>=
-% # save(list=ls(pattern="^r\\."), file="r_meuse_zinc_objects.RData", version = 2)
-% save(list=c("r.sv", "r.sv.spher", "r.prfl.m0.spher.reml.scale", "r.cv.m0.spher.reml",
-%     "r.cv.m1.spher.reml" 
-% #    , "r.bk", "r.blks"
-%   ), file="r_meuse_zinc_objects.RData", version = 2)
-% rm(list=ls(pattern="^r\\."))
-% @
 
 
 \clearpage
@@ -2396,7 +2154,7 @@ Since the blocks are squares of constant size, choosing a square
 ``integration pixel'' of the same dimension (arguments \code{pwidth},
 \code{pheight} of \code{control.predict.georob()}) allows to compute
 the required mean semi-variances most efficiently \citep[see][for
-details]{Hofer-Papritz-2011}.  
+details]{Hofer-Papritz-2011}.
 The third argument
 \code{full.covmat=TRUE} of \code{control.predict.georob()} has the
 effect that the full covariance matrix of the predictions errors of
@@ -2419,13 +2177,38 @@ c(pred=mean(r.bk.m1.exp.c2$pred$pred),
 which is of course the same as predicting the mean over the whole
 domain by block Kriging:
 %
-<<ash-bKriging-2,eval=TRUE>>=
+% example from CKrige help page
+%
+% <<ash-bKriging-CKrige,echo=FALSE,eval=TRUE>>=
+% warning("coalash block kriging by CKrige")
+% if(!requireNamespace("constrainedKriging", quietly = TRUE)){
+%   stop("package 'constrainedKriging' is missing, install it and re-build vignette")
+% }
+% ### generate SpatialPointsDataFrame covering entire domain of coalash data
+% coalash.domain <- rbind(c(0.5,0), c(16.5,0), c(16.5,24), c(0.5,24), c(0.5,0))
+% coalash.domain <- SpatialPolygonsDataFrame(
+%   SpatialPolygons(list(Polygons(list(Polygon(coalash.domain)), ID= "domain"))),
+%   data=data.frame(x=8.5,y=12,row.names="domain"))
+% 
+% ### universal block Kriging
+% preCK_coalash <- constrainedKriging::preCKrige(newdata = coalash.domain, 
+%     model = constrainedKriging::covmodel(modelname = "exponential", 
+% 		mev = 1.023, nugget = 0, variance = 0.268, scale = 1.907), 
+% 		pwidth = 16, pheight = 24)
+% UK_coalash <- constrainedKriging::CKrige(formula = coalash ~ x, data = coalash,
+%   locations = ~ x+y, object = preCK_coalash, method = 1)
+% @
+%
+<<ash-bKriging-2>>=
 coalash.domain <- rbind(c(0.5,0), c(16.5,0), c(16.5,24), c(0.5,24), c(0.5,0))
 coalash.domain <- SpatialPolygonsDataFrame(
   SpatialPolygons(list(Polygons(list(Polygon(coalash.domain)), ID= "domain"))),
   data=data.frame(x=8.5,y=12,row.names="domain"))
-slot(predict(r.georob.m1.exp.c2, newdata=coalash.domain,
-  control=control.predict.georob(pwidth=16, pheight=24)), "data")
+r.domain <- predict(r.georob.m1.exp.c2, newdata=coalash.domain,
+  control=control.predict.georob(pwidth=16, pheight=24))
+@
+<<ash-bKriging-3,eval=TRUE>>=
+slot(r.domain, "data")
 @
 
 We conclude this section by graphs of the robust and Gaussian block
@@ -2457,180 +2240,17 @@ block Kriging.
 
 % end rnw code on lognormal block kriging
 
-% % begin sweave output on block kriging
-% 
-% First, we must define the blocks (and the covariates) for which
-% predictions should be computed.  The package \pkg{georob} computes
-% block Kriging predictions for \code{newdata} objects of class
-% \code{SpatialPolygonsDataFrame}s provided by \pkg{sp}:
-% %
-% \bcf[0.4]
-% \begin{Schunk}
-% \begin{Sinput}
-% > tmp <- expand.grid(x = seq(2.5, 16.5, by=4), y=seq(2, 22, by=4))
-% > rownames(tmp) <- paste("block", rownames(tmp), sep="")
-% > # create SpatialPolygonsDataFrame
-% > coalash.polygons <- sapply(1:nrow(tmp), function(i, x){
-% +   Polygons(list(Polygon(
-% +         t(x[,i] + t(cbind(c(-2, 2, 2, -2, -2), c(-2, -2, 2, 2, -2)))),
-% +         hole=FALSE)), ID=paste("block", i, sep=""))},
-% +   x=t(tmp))
-% > coalash.polygons <- SpatialPolygonsDataFrame(SpatialPolygons(coalash.polygons),
-% +   data = tmp)
-% > summary(coalash.polygons)
-% \end{Sinput}
-% \begin{Soutput}
-% Object of class SpatialPolygonsDataFrame
-% Coordinates:
-%   min  max
-% x 0.5 16.5
-% y 0.0 24.0
-% Is projected: NA 
-% proj4string : [NA]
-% Data attributes:
-%        x              y     
-%  Min.   : 2.5   Min.   : 2  
-%  1st Qu.: 5.5   1st Qu.: 6  
-%  Median : 8.5   Median :12  
-%  Mean   : 8.5   Mean   :12  
-%  3rd Qu.:11.5   3rd Qu.:18  
-%  Max.   :14.5   Max.   :22  
-% \end{Soutput}
-% \begin{Sinput}
-% > plot(coalash.polygons, col="grey", axes=TRUE); points(y~x, coalash)
-% \end{Sinput}
-% \end{Schunk}
-% \includegraphics{fig-ash-Kriging-polygons}
-% %
-% \ecf{Geometry of blocks for which Kriging predictions are
-% computed (dots are data locations).}{coalash-block-geometry}
-% %
-% Note that coordinates of the  block centres are the covariates for the
-% drift model of the block means.
-% %
-% Block-block- and point-block-means of the semi-variance are computed by
-% \code{predict.georob()} efficiently by functions of the R packages
-% \pkg{constrainedKriging} and \pkg{spatialCovariance}
-% \citep[see section~\protect\ref{sec:predict-georob} and][]{Hofer-Papritz-2011,Clifford-2005}:
-% %
-% \begin{Schunk}
-% \begin{Sinput}
-% > r.bk.m1.exp.c2 <- predict(r.georob.m1.exp.c2, newdata=coalash.polygons,
-% +   control=control.predict.georob(pwidth=4, pheight=4, full.covmat=TRUE))
-% > r.bk.m1.exp.c1000 <- predict(r.georob.m1.exp.c1000, newdata=coalash.polygons,
-% +   control=control.predict.georob(pwidth=4, pheight=4, full.covmat=TRUE))
-% \end{Sinput}
-% \end{Schunk}
-% %
-% Since the blocks are squares of constant size, choosing a square
-% ``integration pixel'' of the same dimension (arguments \code{pwidth},
-% \code{pheight} of \code{control.predict.georob()}) allows to compute
-% the required mean semi-variances most efficiently \citep[see][for
-% details]{Hofer-Papritz-2011}.  
-% The third argument
-% \code{full.covmat=TRUE} of \code{control.predict.georob()} has the
-% effect that the full covariance matrix of the predictions errors of
-% the block means is computed (and stored as list component
-% \code{mse.pred} in \code{r.bk.m1.exp.c2}):
-% %
-% \begin{Schunk}
-% \begin{Sinput}
-% > str(r.bk.m1.exp.c2, max=2)
-% \end{Sinput}
-% \begin{Soutput}
-% List of 2
-%  $ pred    :Formal class 'SpatialPolygonsDataFrame' [package "sp"] with 5 slots
-%  $ mse.pred: num [1:24, 1:24] 0.08216 0.01212 -0.00303 -0.01803 0.02881 ...
-% \end{Soutput}
-% \end{Schunk}
-% %
-% We can compute from these covariances the Kriging variances of the
-% spatial means over groups of block, in particular of the spatial mean
-% over the whole domain:
-% %
-% \begin{Schunk}
-% \begin{Sinput}
-% > c(pred=mean(r.bk.m1.exp.c2$pred$pred),
-% +   se=sqrt(sum(r.bk.m1.exp.c2$mse.pred))/24)
-% \end{Sinput}
-% \begin{Soutput}
-%     pred       se 
-% 9.558919 0.087422 
-% \end{Soutput}
-% \end{Schunk}
-% %
-% which is of course the same as predicting the mean over the whole
-% domain by block Kriging:
-% %
-% \begin{Schunk}
-% \begin{Sinput}
-% > coalash.domain <- rbind(c(0.5,0), c(16.5,0), c(16.5,24), c(0.5,24), c(0.5,0))
-% > coalash.domain <- SpatialPolygonsDataFrame(
-% +   SpatialPolygons(list(Polygons(list(Polygon(coalash.domain)), ID= "domain"))),
-% +   data=data.frame(x=8.5,y=12,row.names="domain"))
-% > slot(predict(r.georob.m1.exp.c2, newdata=coalash.domain,
-% +   control=control.predict.georob(pwidth=16, pheight=24)), "data")
-% \end{Sinput}
-% \begin{Soutput}
-%          pred       se  lower  upper
-% domain 9.5589 0.087422 9.3876 9.7303
-% \end{Soutput}
-% \end{Schunk}
-% 
-% We conclude this section by graphs of the robust and Gaussian block
-% Kriging predictions:
-% %
-% \bcf[1]
-% %
-% \begin{Schunk}
-% \begin{Sinput}
-% > pred.rob <- spplot(r.bk.m1.exp.c2$pred, "pred", at=seq(8, 11, by=0.25),
-% +   main="robust Kriging prediction", scales=list(draw=TRUE))
-% > pred.gauss <- spplot(r.bk.m1.exp.c1000$pred, "pred", at=seq(8, 11, by=0.25),
-% +   main="Gaussian Kriging prediction", scales=list(draw=TRUE))
-% > se.rob <- spplot(r.bk.m1.exp.c2$pred, "se", at=seq(0.15, 0.45, by=0.025),
-% +   main="standard error robust Kriging", scales=list(draw=TRUE))
-% > se.gauss <- spplot(r.bk.m1.exp.c1000$pred, "se", at=seq(0.15, 0.45, by=0.025),
-% +   main="standard error Gaussian Kriging", scales=list(draw=TRUE))
-% > plot(pred.rob, pos=c(0, 0.5, 0.5, 1), more=TRUE)
-% > plot(pred.gauss, pos=c(0.5, 0.5, 1, 1), more=TRUE)
-% > plot(se.rob, pos=c(0, 0, 0.5, 0.5), more=TRUE)
-% > plot(se.gauss, pos=c(0.5, 0, 1, 0.5), more=FALSE)
-% \end{Sinput}
-% \end{Schunk}
-% \includegraphics{fig-ash-bKriging-plot-robust-gaussian-1}
-% %
-% \ecf{Robust (left) and Gaussian (right) block Kriging predictions (top) and
-% Kriging standard errors (bottom).}{coalash-Kriging-robust-gaussian}
-% %
-% The outlier at (5,6) also affects the the prediction of the block
-% means and robust block Kriging is again more efficient than Gaussian
-% block Kriging.
-% 
-% % end sweave output on lognormal block kriging
-
 % code chunk for saving with block kriging results
 <<ash-results-save-1,echo=FALSE>>=
 # save(list=ls(pattern="^r\\."), file="r_coalash_objects.RData", version = 2)
 save(list=c(
     "r.cv.georob.m1.exp.c2", "r.cv.georob.m1.exp.c1000",
-    "r.pk.m1.exp.c2", "r.pk.m1.exp.c1000", 
-    "r.bk.m1.exp.c2", "r.bk.m1.exp.c1000"
+    "r.pk.m1.exp.c2", "r.pk.m1.exp.c1000",
+    "r.bk.m1.exp.c2", "r.bk.m1.exp.c1000",
+    "r.domain"
   ), file="r_coalash_objects.RData", version = 2)
 rm(list=ls(pattern="^r\\."))
 @
-
-% % code chunk for saving without block kriging results
-% <<ash-results-save-1,echo=FALSE>>=
-% # save(list=ls(pattern="^r\\."), file="r_coalash_objects.RData", version = 2)
-% save(list=c(
-%     "r.cv.georob.m1.exp.c2", "r.cv.georob.m1.exp.c1000",
-%     "r.pk.m1.exp.c2", "r.pk.m1.exp.c1000" 
-% #    , "r.bk.m1.exp.c2", "r.bk.m1.exp.c1000"
-%   ), file="r_coalash_objects.RData", version = 2)
-% rm(list=ls(pattern="^r\\."))
-% @
-% 
 
 \clearpage
 

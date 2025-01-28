@@ -1,5 +1,5 @@
-1e7b4d4adf06a5ae2d494e523002db4e *ChangeLog
-d4c838b7d43754b80e0644c15fc66fb6 *DESCRIPTION
+f05f4d9ca76dc44f20b5a3646ba0d9a6 *ChangeLog
+a312ccf33300cf7730eaf7969ff438c4 *DESCRIPTION
 4a6618b3d6890d8f6696956f761b4766 *NAMESPACE
 bc0a678c0590287efb73a2890f3901e6 *R/georob_S3methods.R
 5146b4f1e0f44972b6e8ebc805a46e58 *R/georob_cv.R
@@ -17,10 +17,10 @@ fd7d5a301cec80d207b46142ba265035 *R/georob_variogram.R
 e7ee6102924977a7d244c83e6b392883 *data/datalist
 1872e62f43073c7b37f9e17f66cdf2db *data/elevation.rda
 23acabdbb64d4593da12a5f02131059c *data/wolfcamp.rda
-28d8a83ca5e75c0f4f686a367d44183e *inst/NEWS.Rd
-f42e971d902804d206160ad55d41f5f4 *inst/doc/georob_vignette.R
-165de21543bc0d6730fd5b1a0ca70502 *inst/doc/georob_vignette.Rnw
-c3e429a8ec5eaf12b7664d79fab1c9b3 *inst/doc/georob_vignette.pdf
+065c55b0b1fa25345a3b9cf84a056a48 *inst/NEWS.Rd
+c433c3e5cef52a0e749fecc3924aacee *inst/doc/georob_vignette.R
+c32c8da99d98e5f4ec1abb0ab341e876 *inst/doc/georob_vignette.Rnw
+050b3acb0e57bae0acc123a758961ae7 *inst/doc/georob_vignette.pdf
 16053102e30479e78cb185d8a28794b7 *man/compress.Rd
 fd2820d68e6e842202cc7f25dbf166b2 *man/control.georob.Rd
 c82ae1869b89223daab4d23e79540db6 *man/cv.Rd
@@ -49,6 +49,6 @@ ed9d27618a1b8fb03dcd02a7987e8297 *man/validate.predictions.Rd
 bb27c0989db96d417b6420d1b941bf53 *vignettes/0-block-discretization.pdf
 43e94e7c726e507b341dc8dbbab2c3c3 *vignettes/0-overview-zinc-meuse.pdf
 157dcc2aae35a1bafc5e5729e7b91047 *vignettes/georob.bib
-165de21543bc0d6730fd5b1a0ca70502 *vignettes/georob_vignette.Rnw
-41e6bba2edc3a28988907f0580c11717 *vignettes/r_coalash_objects.RData
-73b17c2ef1c5a90ad25c2046e6c93b67 *vignettes/r_meuse_zinc_objects.RData
+c32c8da99d98e5f4ec1abb0ab341e876 *vignettes/georob_vignette.Rnw
+c8339bd6779e60059a44dfd314563bc5 *vignettes/r_coalash_objects.RData
+c9fc9bb9f7a42b20dc23a9da10bbd028 *vignettes/r_meuse_zinc_objects.RData
